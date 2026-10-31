@@ -696,7 +696,12 @@ main.has-dock:has(#dlPanelBox .panel-card){padding-bottom:calc(var(--nav-h) + 12
 /* ---------- tags ---------- */
 .tag-editor{background:var(--panel);border:2px solid var(--line);border-radius:8px;padding:12px;margin:10px auto 0;max-width:330px;}
 .tag-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
-.tag-chip.tag-scry{border-style:dashed;padding-right:10px;}
+.tag-chip.tag-scry{border:2px solid var(--gold);box-shadow:0 0 0 1px rgba(0,0,0,0.35);}
+span.tag-chip.tag-scry:not(:has(button)){padding-right:10px;}
+.sort-tags-row{display:flex;align-items:center;gap:10px;}
+.sort-tags-row > .ghost-btn{flex:1 1 auto;min-width:0;margin:0;}
+.sort-scry{display:flex;flex-direction:column;align-items:center;gap:3px;flex:none;cursor:pointer;}
+.sort-scry-l{font-size:10.5px;font-weight:700;color:var(--sub-text);white-space:nowrap;}
 .tag-chip{display:inline-flex;align-items:center;gap:5px;background:var(--brass-glow);border:2px solid var(--line);color:var(--brass);border-radius:14px;padding:4px 6px 4px 10px;font-size:12.5px;font-weight:600;}
 .tag-chip button{background:none;border:none;color:var(--brass);cursor:pointer;font-size:15px;line-height:1;padding:0 3px;opacity:0.7;}
 .tag-chip button:hover{opacity:1;color:var(--danger);}
@@ -966,6 +971,27 @@ html .tag-drop .tag-drop-list > .tag-drop-h b{opacity:0.75;}
 .pt-gy-cards{display:flex;gap:5px;max-width:100%;overflow:hidden;}
 .pt-gy-cards .pt-card{width:44px;flex:0 0 44px;}
 .pt-gy-l{font-size:11px;color:var(--sub-text);}
+/* 1.42 packages, visual and bottom-up */
+.pkg-main{padding:12px 14px 0;}
+.pkg-stack{display:flex;flex-direction:column-reverse;gap:10px;min-height:100%;}
+.pkg-grid.visual-grid{gap:6px;}
+.pkg-grid.visual-grid > *{flex:0 0 calc(25% - 4.5px);}
+.pkg-card{position:relative;cursor:pointer;}
+.pkg-card img{width:100%;display:block;border-radius:5px;aspect-ratio:63/88;object-fit:cover;background:#0006;}
+.pkg-noimg{aspect-ratio:63/88;border-radius:5px;background:var(--ink-2, #0006);border:1.5px dashed var(--line);font-size:10px;color:var(--sub-text);display:flex;align-items:center;justify-content:center;text-align:center;padding:4px;}
+.pkg-rm{position:absolute;top:-5px;right:-5px;width:22px;height:22px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.8);background:var(--danger);color:#fff;font-size:11px;line-height:1;padding:0;cursor:pointer;}
+.pkg-row-h{display:flex;align-items:center;gap:10px;margin-top:10px;}
+.pkg-row-h .pkg-row-t{flex:1;min-width:0;}
+.pkg-row-h .pkg-edit{width:auto;flex:none;margin:0;padding:8px 14px;}
+.pkg-count{font-size:12px;color:var(--sub-text);text-align:right;margin-top:6px;}
+.pkg-foot{position:sticky;bottom:0;z-index:5;display:flex;align-items:center;gap:12px;padding:10px 0 12px;background:linear-gradient(to top, var(--ink) 70%, transparent);}
+.pkg-hint{flex:1;min-width:0;margin:0;font-size:12.5px;line-height:1.4;color:var(--sub-text);}
+.pkg-fab{flex:none;box-shadow:0 4px 14px rgba(0,0,0,0.5);}
+.pkg-fab svg{width:24px;height:24px;stroke-width:2.6;}
+.pkg-actions .ghost-btn, .pkg-actions .primary-btn{flex:1 1 0;margin:0;width:auto;}
+.pkg-find{display:flex;align-items:center;gap:8px;background:var(--field);border:1.5px solid var(--field-line);border-radius:10px;padding:0 10px;}
+.pkg-find .tds-ico svg{width:17px;height:17px;display:block;opacity:0.7;}
+.pkg-find input{flex:1;min-width:0;background:none;border:none;color:var(--ink-text);padding:11px 0;font-size:15px;outline:none;}
 .pkg-row{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;}
 .pkg-row-t{display:flex;flex-direction:column;gap:2px;}
 .pkg-row-t span{font-size:12.5px;color:var(--sub-text);}
@@ -3021,6 +3047,42 @@ html.desk main.has-dock, html.desk main.has-dock:has(#builderBody), html.desk ma
 html.desk .deck-dock .menu-pop{top:54px;bottom:auto;left:auto;right:0;}
 html.desk .deck-dock .dk-tool, html.desk .deck-dock #menuBtn{width:auto;height:36px;padding:0 10px 0 8px;gap:6px;display:inline-flex;align-items:center;flex:0 0 auto;}
 html.desk .deck-dock .dk-tool::after, html.desk .deck-dock #menuBtn::after{content:attr(title);font-size:13px;font-weight:600;white-space:nowrap;}
+/* 1.44: a narrower window keeps the toolbar's icons, drops their words */
+@media (max-width: 1320px){
+  html.desk .deck-dock .dk-tool::after, html.desk .deck-dock #menuBtn::after{content:none;}
+  html.desk .deck-dock .dk-tool, html.desk .deck-dock #menuBtn{padding:0;width:36px;justify-content:center;}
+}
+/* 1.44: the search / filter bar runs the full page width on PC */
+html.desk .app > main > .searchbar{max-width:none;width:auto;}
+
+/* ===== 1.45 desk: the page's name sits in the top bar, between Back and
+   the page buttons -- no second bar unless it carries tools (deck tabs).
+   --capL / --capR are measured from the bar itself (deskCapFit). ===== */
+html.desk{--cap-h:0px;}
+html.desk .page-cap{top:0 !important;height:var(--top-nav) !important;min-height:0;left:var(--capL, 280px) !important;right:var(--capR, 680px) !important;padding:0 !important;background:none !important;border:none !important;box-shadow:none !important;z-index:86;}
+html.desk .page-cap{display:flex !important;align-items:center;justify-content:center;gap:10px;}
+html.desk .page-cap > *{position:static !important;transform:none !important;flex:0 0 auto;margin:0 !important;}
+html.desk .page-cap > .brand-txt{flex:1 1 auto;min-width:0;max-width:none !important;font-size:17px;text-align:center;line-height:1.15;}
+html.desk .page-cap > .cap-note{order:9;}
+html.desk #capDeckCount{padding:0 !important;}
+html.desk .overlay-inner:has(> .ov-nav){position:relative;}
+html.desk .overlay-inner:has(> .ov-nav) > .ov-cap{position:absolute !important;top:0;left:var(--capL, 280px);right:var(--capR, 680px);height:var(--top-nav);min-height:0;padding:0 !important;margin:0 !important;background:none !important;border:none !important;box-shadow:none !important;z-index:90;display:flex;align-items:center;justify-content:center;}
+html.desk .overlay-inner:has(> .ov-nav) > .ov-cap .ov-title{font-size:17px;}
+/* a narrower window: the page buttons keep their icons, drop their words */
+@media (max-width: 1500px){
+  html.desk .brand-banner .banner-tab::after{content:none;}
+  html.desk .brand-banner .banner-tabs .banner-tab{padding:0 10px;}
+}
+/* the filter panel opens centred under the search bar, not at the side */
+html.desk .app > main > .adv-panel, html.desk .app > main > #advSlot > .adv-panel, html.desk .app > main > #colAdvBox, html.desk .app > main > #spAdvBox{
+  left:50% !important;right:auto !important;transform:translateX(-50%);top:calc(var(--top-h) + 64px) !important;bottom:auto !important;
+  width:min(720px, calc(100vw - 32px)) !important;max-height:calc(100vh - var(--top-h) - 84px) !important;overflow-y:auto;
+  border:2px solid var(--line) !important;border-radius:12px !important;box-shadow:0 18px 50px rgba(0,0,0,0.55) !important;
+}
+html.desk .app > main:has(> #advSlot > .adv-panel), html.desk .app > main:has(> #colAdvBox), html.desk .app > main:has(> #spAdvBox){padding-right:16px !important;}
+/* the gold + sits top-left, at the start of the search bar */
+html.desk .deck-fab:not(.col-sel-fab):not(.dl-empty-plus){position:fixed;top:calc(var(--top-h) + 6px);left:calc(var(--dl) + 10px);right:auto;bottom:auto;width:46px;height:46px;font-size:22px;z-index:42;}
+html.desk .app > main:has(> .deck-fab:not(.col-sel-fab):not(.dl-empty-plus)) > .searchbar{padding-left:70px !important;}
 html.desk .deck-dock .dk-mid:has(.dk-type){justify-content:flex-end;gap:14px;}
 html.desk #builderBody{min-height:0;justify-content:flex-start;}
 html.desk .dl-bridge-desc{justify-content:flex-start;}
@@ -5855,7 +5917,9 @@ function getCardTags(d, name){
   let g = ensureGlobalTags()[name] || [];
   // In a deck, a card starts WITH its Scryfall recommended tags. They are not
   // copied anywhere: removing one simply hides it in this deck, like any tag.
-  if(d){
+  // 1.45: the deck's "Scryfall tags" switch (Sort Decklist) can turn them off;
+  // tags you added yourself always stay.
+  if(d && d.scryTags !== false){
     let auto = null;
     try{ auto = (state._otagCache || loadOtagCache())[name]; }catch(e){}
     if(auto && auto.length){
@@ -6878,17 +6942,27 @@ const LS_PREFIX = 'admiral_app:';
    FRESH START (Stef, 9 Oct 2026): the line that ran to 1.41 starts over at
    1.0, the version shared with friends. A device that last saw a higher
    number simply adopts 1.0 (see maybeShowChangelog). */
-const APP_VERSION = '1.41';
+const APP_VERSION = '1.45';
 const CHANGELOG_NOTES = {
   en: [
-    'Price and salt pills look like buttons',
-    'Deck and collection totals too',
-    'Title bars no longer grow'
+    'Scryfall tags on/off per deck',
+    'Scryfall tags have a gold rim',
+    'PC: page names in the top bar',
+    'PC: filters open in the middle',
+    'PC: gold + at the top left',
+    'PC: deck menu opens under Menu',
+    'PC: click again to close the zoom',
+    'PC: click beside a popup closes it'
   ],
   nl: [
-    'Prijs- en saltpil lijken knoppen',
-    'Ook bij deck- en collectietotaal',
-    'Titelbalken worden niet hoger'
+    'Scryfall-tags aan/uit per deck',
+    'Scryfall-tags hebben een gouden rand',
+    'Pc: paginanaam in de bovenbalk',
+    'Pc: filters openen in het midden',
+    'Pc: gouden + linksboven',
+    'Pc: deckmenu opent onder Menu',
+    'Pc: nogmaals klikken sluit de zoom',
+    'Pc: klik naast popup sluit hem'
   ]
 };
 /* The history. PUBLISHER, every release: move the previous CHANGELOG_NOTES
@@ -6896,8 +6970,20 @@ const CHANGELOG_NOTES = {
    above and set APP_DATE. The start-up note shows every release since the
    player's last visit; Extras -> What's new shows the past month (the
    button appears once there is a history: 1.0 is the starting point). */
-const APP_DATE = '2026-10-31';
+const APP_DATE = '2026-11-01';
 const CHANGELOG_HISTORY = [
+  { v: '1.44', d: '2026-10-31',
+    en: ['PC: search bar full page width', 'PC: deck toolbar fits small windows'],
+    nl: ['Pc: zoekbalk over volle breedte', 'Pc: deckwerkbalk past in klein venster'] },
+  { v: '1.43', d: '2026-10-31',
+    en: ['Added cards use your own printing'],
+    nl: ['Toegevoegde kaart krijgt jouw printing'] },
+  { v: '1.42', d: '2026-10-31',
+    en: ['Packages show their cards as pictures', 'Package editor: search to add cards', 'Add to a package from Search', 'Gold + makes a new package'],
+    nl: ['Pakketten tonen kaarten als plaatjes', 'Pakket bewerken: zoek en voeg toe', 'Vanuit Zoeken toevoegen aan pakket', 'Gouden + maakt een nieuw pakket'] },
+  { v: '1.41', d: '2026-10-31',
+    en: ['Price and salt pills look like buttons', 'Deck and collection totals too', 'Title bars no longer grow'],
+    nl: ['Prijs- en saltpil lijken knoppen', 'Ook bij deck- en collectietotaal', 'Titelbalken worden niet hoger'] },
   { v: '1.40', d: '2026-10-31',
     en: ['Card packages: make your own', 'Packages in Inspiration and Search', 'Add: pick amount, deck or collection', 'Select: collection & maybe buttons', 'Jump opens a folded Maybeboard', 'Smart: you choose to block or not', 'Show everything on top in filters', 'Extras tiles rearranged'],
     nl: ['Kaartpakketten: maak je eigen', 'Pakketten bij Inspiratie en Zoeken', 'Add: aantal, deck of collectie', 'Selectie: collectie- en maybeknop', 'Springen opent een dichte Maybeboard', 'Smart: jij kiest blokken of niet', 'Show everything bovenaan in filters', 'Tegels bij Extra\u2019s herschikt'] },
@@ -16594,6 +16680,11 @@ function fitDockTypes(){
   }
 }
 function wireMeterRow(d){
+  // 1.45 desk: the Menu drops down right under its own button
+  if(isDesk()) requestAnimationFrame(()=>{
+    const mp = document.querySelector('#deckMeterRow .menu-pop'), mb = document.getElementById('menuBtn');
+    if(mp && mb){ mp.style.left = mb.offsetLeft + 'px'; mp.style.right = 'auto'; mp.style.top = (mb.offsetTop + mb.offsetHeight + 6) + 'px'; }
+  });
   try{ document.body.classList.toggle('dl-searching', !!state.dlSearchOpen && state.screen === 'decklist'); }catch(e){}
   try{ fitDockTypes(); requestAnimationFrame(fitDockTypes); }catch(e){}
   document.getElementById('menuBtn')?.addEventListener('click', (e)=>{ e.stopPropagation();
@@ -17274,7 +17365,9 @@ function renderTagEditor(d, card, box){
       // the tags Scryfall gives it too -- as in a deck, minus the remove
       const scry = d ? [] : autoTags.filter(t=>!tags.some(x=>String(x).toLowerCase() === String(t).toLowerCase()));
       if(!tags.length && !scry.length) return '<span class="tag-none">No tags yet.</span>';
-      return tags.map(t=>`<span class="tag-chip">${escapeHtml(t)}<button data-rmtag="${encodeURIComponent(t)}">×</button></span>`).join('')
+      // 1.45: in a deck, a tag that came from Scryfall (not typed by you) has the gold rim
+      const mine = new Set(((ensureGlobalTags()[card.name]) || []).map(x=>String(x).toLowerCase()));
+      return tags.map(t=>`<span class="tag-chip${d && !mine.has(String(t).toLowerCase()) ? ' tag-scry' : ''}"${d && !mine.has(String(t).toLowerCase()) ? ' title="Scryfall"' : ''}>${escapeHtml(t)}<button data-rmtag="${encodeURIComponent(t)}">×</button></span>`).join('')
         + scry.map(t=>`<span class="tag-chip tag-scry" title="Scryfall">${escapeHtml(t)}</span>`).join('');
     })()}</div>
     <div class="tag-add-row" style="position:relative;">
@@ -19010,6 +19103,33 @@ function searchRowHtml(c, d, opts){
 }
 
 /* ---- validated add/assign helpers (shared by pinned mode, popup mode, browse, card of the day) ---- */
+/* 1.43: the deck slot wears the printing from your collection when you own
+   the card (a non-foil copy first). A pinned/hand-picked printing is left
+   alone, and Change printing still overrides it afterwards. */
+function ownedPrintingOf(name){
+  const items = ((state.collection && state.collection.items) || []).filter(it=>it && it.name === name && it.set && it.cn);
+  if(!items.length) return null;
+  return items.find(it=>!it.foil) || items[0];
+}
+async function useOwnedPrinting(d, arr, c){
+  try{
+    if(!c || c.pin || c._foilPick) return;
+    const it = ownedPrintingOf(c.name);
+    if(!it) return;
+    if(String(c.set || '').toLowerCase() === String(it.set).toLowerCase() && String(c.collector_number || '') === String(it.cn)) return;
+    const r = await sfFetch(`${SF_BASE}/cards/${it.set}/${encodeURIComponent(it.cn)}`, 0, true);
+    if(!r || !r.ok) return;
+    const full = await r.json();
+    if(!full || full.name !== c.name) return;
+    const i = arr.indexOf(c);
+    if(i < 0) return;                          // moved or removed meanwhile
+    if(it.foil && !items_hasNonFoil(c.name)) full._foilPick = true;
+    arr[i] = full;
+    scheduleSave(d);
+    if(state.screen === 'decklist' && state.activeDeckId === d.id){ try{ refreshDecklistBox(d); }catch(e){} }
+  }catch(e){}
+}
+function items_hasNonFoil(name){ return ((state.collection && state.collection.items) || []).some(it=>it && it.name === name && !it.foil); }
 function addCardToDeckValidated(d, c, refreshFn){
   { const why = deckBlockReason(c, d); if(why){ toast(`${c.name}: ${why.toLowerCase()}.`); return false; } }
   if(!d.admiral && !deckIsConstructed(d)){ toast(`Appoint an Admiral for ${d.name} first.`); return false; }
@@ -19021,6 +19141,7 @@ function addCardToDeckValidated(d, c, refreshFn){
   toast(`${c.name} added to ${d.name}.`);
   scheduleSave(d);
   if(refreshFn) refreshFn(c);   // callers that care can refresh just this card's tile
+  useOwnedPrinting(d, d.cards, c);   // 1.43
   return true;
 }
 function addToMaybeValidated(d, c, refreshFn){
@@ -19031,6 +19152,7 @@ function addToMaybeValidated(d, c, refreshFn){
   toast(`${c.name} added to ${d.name}'s ${sideName(d)}.`);
   scheduleSave(d);
   if(refreshFn) refreshFn(c);
+  useOwnedPrinting(d, d.maybeboard, c);   // 1.43
   return true;
 }
 function setAdmiralValidated(d, c, refreshFn){
@@ -19134,6 +19256,7 @@ function openDeckPickPopup(card, mode, refreshFn, pairWith, withCollection){
       ${withCollection ? `<button class="dp-row" data-tocollection="1"><div class="dp-txt"><span class="ib">${ICONS.collection}</span>${trS('Collection')}<div class="dp-meta">${trS('Add to collection')}</div></div></button>` : ''}
       ${mode!=='reco' ? `<button class="dp-row" data-newdeck="1"><div class="dp-txt">＋ New deck<div class="dp-meta">Create a fresh deck and add ${escapeHtml(nm)} to it</div></div></button>` : ''}
       ${mode!=='reco' ? deckPickRowsHtml() : ''}
+      ${mode==='main' && !pairWith ? pkgAll().map(p=>`<button class="dp-row" data-topkg="${p.id}"><div class="dp-txt"><span class="ib">${ICONS.collection}</span>${escapeHtml(p.name)}<div class="dp-meta">${appLang() === 'nl' ? 'Pakket' : 'Package'}${p.fn ? ' \u00b7 ' + escapeHtml(p.fn) : ''} \u00b7 ${p.cards.length}</div></div></button>`).join('') : ''}
     </div>
     <button class="dp-cancel" id="dpCancel">Cancel</button>
   </div>`;
@@ -19144,6 +19267,7 @@ function openDeckPickPopup(card, mode, refreshFn, pairWith, withCollection){
     closeDeckPickPopup();
     openAddToCollection(card);
   });
+  el.querySelectorAll('[data-topkg]').forEach(b=>b.addEventListener('click', ()=>{ closeDeckPickPopup(); pkgAddCard(b.dataset.topkg, card); }));   // 1.42
   // Recommendations pick their COLORS here with the Inspiration page's own
   // dropdowns: a count select, then a combination select with the app's mana
   // symbols. Only combinations that can actually HOLD this card are offered —
@@ -21998,66 +22122,118 @@ function pkgAll(){
 }
 function pkgSave(a){ try{ localStorage.setItem(LS_PREFIX + PKG_KEY, JSON.stringify(a)); }catch(e){} }
 function pkgLabel(p){ return escapeHtml(p.name) + (p.fn ? ' \u00b7 ' + escapeHtml(p.fn) : ''); }
-/* Extras -> Packages: the list, and a simple editor per package. */
+/* Extras -> Packages (1.42: visual). The list shows every package with its
+   cards as pictures; a package opens in an editor with a name search like
+   Search's, the cards as a grid with a x each. Bottom-up: the gold + and
+   the explanation sit at the foot, the first package right above them. */
+const _pkgCardCache = new Map();
+async function pkgCards(names){
+  const need = names.filter(n=>!_pkgCardCache.has(n.toLowerCase()));
+  if(need.length){
+    try{ (await resolveEdhrecNames(need, ()=>true)).forEach(c=>_pkgCardCache.set(String(c.name).toLowerCase(), c)); }catch(e){}
+  }
+  return names.map(n=>_pkgCardCache.get(n.toLowerCase()) || { name: n, _missing: true });
+}
+function pkgTileHtml(c, rm){
+  const img = c._missing ? '' : cardImageMed(c);
+  return `<div class="vg-card pkg-card" data-name="${encodeURIComponent(c.name)}">${img ? `<img class="${wbClass(c)}" src="${img}" alt="${escapeHtml(c.name)}" loading="lazy">` : `<div class="pkg-noimg">${escapeHtml(c.name)}</div>`}${rm ? `<button type="button" class="pkg-rm" data-pkrm="${encodeURIComponent(c.name)}" aria-label="Remove">✕</button>` : ''}</div>`;
+}
 function openPackagesEditor(){
   const nl = appLang() === 'nl', T = (a, b)=>nl ? a : b;
   pushOverlay('pkgEdit', ()=>{ document.getElementById('pkgEditOverlay')?.remove(); });
   let el = document.getElementById('pkgEditOverlay');
   if(!el){ el = document.createElement('div'); el.className = 'overlay'; el.id = 'pkgEditOverlay'; }
   document.body.appendChild(el);
-  const list = ()=>{
-    const a = pkgAll();
-    el.innerHTML = `<div class="overlay-inner">${overlayCapHtml(T('Kaartpakketten', 'Card packages'))}
-      <main class="pkg-main"><div class="pkg-list">
-        <p class="hint" style="text-align:center;margin:0 0 10px;">${T('Groepen kaarten voor één taak. Ze verschijnen bij Inspiratie van een deck en bij Zoeken.', 'Groups of cards for one job. They show up on a deck\u2019s Inspiration page and in Search.')}</p>
-        ${a.map(p=>`<div class="panel-card pkg-row"><div class="pkg-row-t"><b>${escapeHtml(p.name)}</b><span>${p.fn ? escapeHtml(p.fn) + ' \u00b7 ' : ''}${p.cards.length} ${T('kaarten', 'cards')}</span></div>
-          <div class="pkg-row-b"><button type="button" class="ghost-btn" data-pkedit="${p.id}"><span class="ib">${ICONS.edit || ''}</span>${T('Bewerken', 'Edit')}</button><button type="button" class="ghost-btn" data-pkdel="${p.id}" style="color:var(--danger);border-color:var(--danger);">${T('Verwijderen', 'Delete')}</button></div></div>`).join('')}
-        <button type="button" class="primary-btn" id="pkgNew" style="width:100%;margin-top:6px;">\uFF0B ${T('Nieuw pakket', 'New package')}</button>
-      </div></main>${overlayNavHtml()}</div>`;
+  const shell = (title, body)=>{
+    el.innerHTML = `<div class="overlay-inner">${overlayCapHtml(title)}<main class="pkg-main"><div class="pkg-stack">${body}</div></main>${overlayNavHtml()}</div>`;
     wireOverlayNav(el);
+  };
+  const toFoot = ()=>requestAnimationFrame(()=>{ const mn = el.querySelector('main'); if(mn) mn.scrollTop = mn.scrollHeight; });
+  const preview = (c)=>{ if(!c._missing) openCardInfo(c); };
+  const list = async ()=>{
+    const all = pkgAll();
+    // column-reverse: DOM-first = the foot
+    shell(T('Kaartpakketten', 'Card packages'), `
+      <div class="pkg-foot"><p class="pkg-hint">${T('Groepen kaarten voor één taak. Ze verschijnen bij Inspiratie van een deck en bij Zoeken.', 'Groups of cards for one job. They show up on a deck’s Inspiration page and in Search.')}</p><button type="button" class="adv-go pkg-fab" id="pkgNew" title="${T('Nieuw pakket', 'New package')}" aria-label="${T('Nieuw pakket', 'New package')}">${ICONS.plus}</button></div>
+      ${all.map(p=>`<div class="panel-card pkg-row" data-pk="${p.id}">
+        <div class="pkg-grid visual-grid" data-pkg="${p.id}"><div class="status" style="flex:1 1 100%;"><div class="spinner"></div></div></div>
+        <div class="pkg-row-h"><div class="pkg-row-t"><b>${escapeHtml(p.name)}</b><span>${p.fn ? escapeHtml(p.fn) + ' · ' : ''}${p.cards.length} ${T('kaarten', 'cards')}</span></div><button type="button" class="ghost-btn pkg-edit" data-pkedit="${p.id}"><span class="ib">${ICONS.edit || ''}</span>${T('Bewerken', 'Edit')}</button></div>
+      </div>`).join('')}`);
     el.querySelector('#pkgNew').addEventListener('click', ()=>form(null));
     el.querySelectorAll('[data-pkedit]').forEach(b=>b.addEventListener('click', ()=>form(b.dataset.pkedit)));
-    el.querySelectorAll('[data-pkdel]').forEach(b=>b.addEventListener('click', ()=>{
-      const p = pkgAll().find(x=>x.id === b.dataset.pkdel); if(!p) return;
-      openInAppConfirm(T(`Pakket “${p.name}” verwijderen?`, `Delete the package “${p.name}”?`), (ok)=>{ if(!ok) return; pkgSave(pkgAll().filter(x=>x.id !== p.id)); list(); });
-    }));
-    const mn = el.querySelector('main'); if(mn) mn.scrollTop = mn.scrollHeight;
+    toFoot();
+    for(const p of all){
+      const cards = await pkgCards(p.cards);
+      const g = el.querySelector(`[data-pkg="${p.id}"]`); if(!g) return;
+      g.innerHTML = cards.length ? cards.map(c=>pkgTileHtml(c, false)).join('') : `<div class="empty-note" style="flex:1 1 100%;padding:6px 0;">${T('Nog leeg.', 'Empty so far.')}</div>`;
+      g.querySelectorAll('.pkg-card').forEach(t=>t.addEventListener('click', ()=>{ const c = cards.find(x=>x.name === decodeURIComponent(t.dataset.name)); if(c) preview(c); }));
+      toFoot();
+    }
   };
   const form = (id)=>{
-    const p = id ? pkgAll().find(x=>x.id === id) : { name: '', fn: '', cards: [] };
-    if(!p) return list();
-    el.querySelector('.pkg-list').innerHTML = `<div class="panel-card pkg-form">
-      <div class="panel-h">${id ? T('Pakket bewerken', 'Edit package') : T('Nieuw pakket', 'New package')}</div>
-      <div class="adv-row"><label>${T('Naam', 'Name')}</label><input id="pkName" type="text" maxlength="40" value="${escapeHtml(p.name)}" placeholder="${T('bijv. Ramp-basis', 'e.g. Ramp staples')}"></div>
-      <div class="adv-row"><label>${T('Functie', 'Function')}</label><input id="pkFn" type="text" maxlength="24" value="${escapeHtml(p.fn || '')}" placeholder="${T('bijv. Ramp', 'e.g. Ramp')}"></div>
-      <div class="adv-row stacked"><label>${T('Kaarten (één per regel)', 'Cards (one per line)')}</label><textarea id="pkCards" class="bulk-textarea" style="min-height:180px;">${escapeHtml(p.cards.join('\n'))}</textarea></div>
-      <div class="action-row"><button type="button" class="ghost-btn" id="pkCancel">${T('Annuleren', 'Cancel')}</button><button type="button" class="primary-btn" id="pkSave">${T('Opslaan', 'Save')}</button></div>
-    </div>`;
+    const p0 = id ? pkgAll().find(x=>x.id === id) : null;
+    const p = p0 ? { id: p0.id, name: p0.name, fn: p0.fn || '', cards: p0.cards.slice() } : { id: null, name: '', fn: '', cards: [] };
+    shell(id ? T('Pakket bewerken', 'Edit package') : T('Nieuw pakket', 'New package'), `
+      <div class="pkg-foot pkg-actions">
+        ${id ? `<button type="button" class="ghost-btn" id="pkDel" style="color:var(--danger);border-color:var(--danger);">${T('Verwijderen', 'Delete')}</button>` : ''}
+        <button type="button" class="ghost-btn" id="pkCancel">${T('Annuleren', 'Cancel')}</button>
+        <button type="button" class="primary-btn" id="pkSave">${T('Opslaan', 'Save')}</button>
+      </div>
+      <div class="pkg-find"><span class="tds-ico">${ICONS.search}</span><input id="pkFind" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${T('Zoek een kaart om toe te voegen…', 'Find a card to add…')}"></div>
+      <div class="panel-card"><div class="pkg-grid visual-grid" id="pkGrid"></div><div class="pkg-count" id="pkCount"></div></div>
+      <div class="panel-card pkg-form">
+        <div class="adv-row"><label>${T('Naam', 'Name')}</label><input id="pkName" type="text" maxlength="40" value="${escapeHtml(p.name)}" placeholder="${T('bijv. Ramp-basis', 'e.g. Ramp staples')}"></div>
+        <div class="adv-row"><label>${T('Functie', 'Function')}</label><input id="pkFn" type="text" maxlength="24" value="${escapeHtml(p.fn)}" placeholder="${T('bijv. Ramp', 'e.g. Ramp')}"></div>
+      </div>`);
+    const paintGrid = async ()=>{
+      const g = el.querySelector('#pkGrid'); if(!g) return;
+      const cards = await pkgCards(p.cards);
+      el.querySelector('#pkCount').textContent = `${p.cards.length} ${T('kaarten', 'cards')}`;
+      g.innerHTML = cards.length ? cards.map(c=>pkgTileHtml(c, true)).join('') : `<div class="empty-note" style="flex:1 1 100%;padding:6px 0;">${T('Zoek hieronder kaarten om toe te voegen.', 'Find cards below to add them.')}</div>`;
+      g.querySelectorAll('[data-pkrm]').forEach(b=>b.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        const n = decodeURIComponent(b.dataset.pkrm);
+        p.cards = p.cards.filter(x=>x.toLowerCase() !== n.toLowerCase());
+        paintGrid();
+      }));
+      g.querySelectorAll('.pkg-card').forEach(t=>t.addEventListener('click', ()=>{ const c = cards.find(x=>x.name === decodeURIComponent(t.dataset.name)); if(c) preview(c); }));
+    };
+    const addName = (n)=>{
+      n = String(n || '').trim(); if(!n) return;
+      if(p.cards.some(x=>x.toLowerCase() === n.toLowerCase())){ toast(T('Die zit er al in.', 'Already in the package.')); return; }
+      p.cards.push(n); paintGrid();
+    };
+    const find = el.querySelector('#pkFind');
+    wireNameSuggest(find, allCardNamesFor, (name)=>{ addName(name); find.value = ''; });
+    find.addEventListener('keydown', (e)=>{ if(e.key === 'Enter'){ e.preventDefault(); addName(find.value); find.value = ''; } });
     el.querySelector('#pkCancel').addEventListener('click', list);
-    el.querySelector('#pkSave').addEventListener('click', async ()=>{
+    el.querySelector('#pkDel')?.addEventListener('click', ()=>{
+      openInAppConfirm(T(`Pakket “${p.name}” verwijderen?`, `Delete the package “${p.name}”?`), (ok)=>{ if(!ok) return; pkgSave(pkgAll().filter(x=>x.id !== id)); list(); });
+    });
+    el.querySelector('#pkSave').addEventListener('click', ()=>{
       const name = el.querySelector('#pkName').value.trim();
       if(!name){ toast(T('Geef het pakket een naam.', 'Give the package a name.')); return; }
-      const raw = el.querySelector('#pkCards').value.split(/\n+/).map(x=>x.replace(/^\s*\d+x?\s+/i, '').trim()).filter(Boolean);
-      const cards = raw.filter((x, i)=>raw.findIndex(y=>y.toLowerCase() === x.toLowerCase()) === i);
       const all = pkgAll();
-      const rec = { id: id || ('pk' + Date.now().toString(36)), name, fn: el.querySelector('#pkFn').value.trim(), cards };
+      const rec = { id: id || ('pk' + Date.now().toString(36)), name, fn: el.querySelector('#pkFn').value.trim(),
+        cards: p.cards.map(n=>{ const c = _pkgCardCache.get(n.toLowerCase()); return c ? c.name : n; }) };
       const at = all.findIndex(x=>x.id === rec.id);
       if(at >= 0) all[at] = rec; else all.push(rec);
       pkgSave(all);
       list();
-      // names checked against the card database: proper spelling, and a word about unknowns
-      try{
-        const got = await resolveEdhrecNames(cards, ()=>true);
-        const byLow = new Map(got.map(c=>[String(c.name).toLowerCase(), c.name]));
-        const fixed = cards.map(n=>byLow.get(n.toLowerCase()) || n);
-        const unknown = cards.filter(n=>!byLow.has(n.toLowerCase()));
-        const all2 = pkgAll(); const k = all2.findIndex(x=>x.id === rec.id);
-        if(k >= 0){ all2[k].cards = fixed; pkgSave(all2); }
-        if(unknown.length) toast(T('Niet gevonden: ', 'Not found: ') + unknown.slice(0, 3).join(', ') + (unknown.length > 3 ? ' \u2026' : ''));
-      }catch(e){}
     });
+    paintGrid();
+    toFoot();
   };
   list();
+}
+/* 1.42: put a card into a package (from any "Add to…" popup). */
+function pkgAddCard(id, card){
+  const all = pkgAll(); const p = all.find(x=>x.id === id); if(!p) return;
+  const nl = appLang() === 'nl';
+  if(p.cards.some(n=>n.toLowerCase() === String(card.name).toLowerCase())){ toast(nl ? `${card.name} zit al in ${p.name}.` : `${card.name} is already in ${p.name}.`); return; }
+  p.cards.push(card.name); pkgSave(all);
+  _pkgCardCache.set(String(card.name).toLowerCase(), card);
+  toast(nl ? `${card.name} toegevoegd aan ${p.name}.` : `${card.name} added to ${p.name}.`);
 }
 /* A deck's packages page: every package, its cards that fit this deck,
    grouped under the package's name -- the recommendation layout. */
@@ -32337,6 +32513,27 @@ function renderHistoryPanel(){
   box.innerHTML = `<div class="life-panel"><h4>History</h4><div class="history-list">${state.life.history.length ? state.life.history.map(h=>`<div>${escapeHtml(h)}</div>`).join('') : '<div>No events yet.</div>'}</div></div>`;
 }
 document.addEventListener('click', (e)=>{ const t = e.target && e.target.closest && e.target.closest('#pkgRow'); if(t) openPackagesEditor(); });   // 1.40
+/* 1.45 desk: measure the free strip of the top bar (between Back and the
+   page buttons) so the page's name can sit in it. */
+function deskCapFit(){
+  if(!isDesk()) return;
+  const nav = document.querySelector('.app .brand-banner:not(.ov-nav)') || document.querySelector('.brand-banner');
+  if(!nav) return;
+  const kids = Array.from(nav.children).filter(k=>k.getBoundingClientRect().width > 0);
+  const sp = kids.findIndex(k=>k.classList.contains('spacer'));
+  if(sp < 0) return;
+  let L = 0, R = window.innerWidth;
+  kids.slice(0, sp).forEach(k=>{ L = Math.max(L, k.getBoundingClientRect().right); });
+  kids.slice(sp + 1).forEach(k=>{ R = Math.min(R, k.getBoundingClientRect().left); });
+  const root = document.documentElement.style;
+  root.setProperty('--capL', Math.round(L + 12) + 'px');
+  root.setProperty('--capR', Math.round(window.innerWidth - R + 12) + 'px');
+}
+{ let _cfT = 0; const go = ()=>{ if(_cfT) return; _cfT = requestAnimationFrame(()=>{ _cfT = 0; try{ deskCapFit(); }catch(e){} }); };
+  window.addEventListener('resize', go);
+  try{ new MutationObserver(go).observe(document.body, { childList: true }); }catch(e){}
+  try{ const a = document.querySelector('.app'); if(a) new MutationObserver(go).observe(a, { childList: true }); }catch(e){}
+  setTimeout(go, 300); }
 function renderSettingsPanel(){
   const box = document.getElementById('lifeSettingsPanel');
   if(!box) return;
@@ -32792,9 +32989,22 @@ function renderModal(){
     });
   } else if(m.type==='sort'){
     el.innerHTML = `<div class="modal-backdrop" id="mbd"><div class="modal-sheet"><h3>Sort Decklist</h3>
-      <div style="display:flex;flex-direction:column;gap:8px;">${SORT_MODES.map(s=>`<button class="ghost-btn ${state.sortMode===s.key?'active':''}" data-sortpick="${s.key}" style="width:100%;text-align:left;">${s.label}</button>`).join('')}</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">${SORT_MODES.map(s=>{
+        const btn = `<button class="ghost-btn ${state.sortMode===s.key?'active':''}" data-sortpick="${s.key}" style="width:100%;text-align:left;">${s.label}</button>`;
+        if(s.key !== 'tags') return btn;
+        const dd = getDeck(state.activeDeckId);
+        return `<div class="sort-tags-row">${btn}<label class="sort-scry" title="Scryfall tags"><span class="toggle-switch"><input type="checkbox" id="scryTagsSw" ${!dd || dd.scryTags !== false ? 'checked' : ''}><span class="track"></span><span class="knob"></span></span><span class="sort-scry-l">Scryfall tags</span></label></div>`;
+      }).join('')}</div>
       <div class="modal-actions" style="margin-top:14px;"><button class="cancel" id="cancelBtn">Close</button></div>
     </div></div>`;
+    document.getElementById('scryTagsSw')?.addEventListener('change', (e)=>{
+      const dd = getDeck(state.activeDeckId); if(!dd) return;
+      dd.scryTags = !!e.target.checked;
+      scheduleSave(dd);
+      try{ if(dd.scryTags) ensureDeckOtags(dd).then(()=>refreshDecklistBox(dd)); }catch(err){}
+      refreshDecklistBox(dd);
+      toast(appLang() === 'nl' ? (dd.scryTags ? 'Scryfall-tags aan voor dit deck.' : 'Scryfall-tags uit voor dit deck; je eigen tags blijven.') : (dd.scryTags ? 'Scryfall tags on for this deck.' : 'Scryfall tags off for this deck; your own tags stay.'));
+    });
     document.querySelectorAll('[data-sortpick]').forEach(b=>{
       b.addEventListener('click', ()=>{
         state.sortMode = b.dataset.sortpick;
@@ -33567,6 +33777,7 @@ document.addEventListener('mousedown', (e)=>{
   if(e.button === 2 && ctxCardTarget(e.target)) e.stopPropagation();
 }, true);
 document.addEventListener('contextmenu', (e)=>{
+  if(state._zoomEat && Date.now() - state._zoomEat < 700){ state._zoomEat = 0; e.preventDefault(); e.stopPropagation(); return; }   // 1.45
   if(!pcFinePointer()) return;
   const tg = ctxCardTarget(e.target);
   if(!tg){ if(csPopTop() && !e.target.closest('.overlay.cs-pop')) csPopCloseNow(); return; }
@@ -33584,7 +33795,9 @@ document.addEventListener('pointerdown', (e)=>{
   if(e.button !== 0) return;
   const pop = csPopTop(); if(!pop) return;
   if(pop.contains(e.target)) return;
-  if(!(e.target.closest && e.target.closest('.app'))) return;   // menus/sheets the popup opened stay
+  // 1.45: menus and sheets the popup opened stay; anything else closes it --
+  // the page AND the empty margins beside it
+  if(e.target.closest && e.target.closest('.overlay, .deckpick-scrim, .menu-pop, #nselPop, .cselect-panel, #cardZoomBox, .toast, .modal-backdrop')) return;
   csPopCloseNow();
 }, true);
 window.addEventListener('resize', ()=>{ const p = csPopTop(); if(p) csPopPlace(p); });
@@ -33738,7 +33951,13 @@ const cardZoom = (function(){
     box.style.cssText = `display:block;left:${left}px;top:${top}px;width:${w}px;height:${h}px;`;
     open = true;
   };
-  document.addEventListener('mousedown', (e)=>{ if(open && !(box && box.contains(e.target))) hide(); }, true);
+  document.addEventListener('mousedown', (e)=>{
+    if(!open || (box && box.contains(e.target))) return;
+    // 1.45: a click (left or right) on the card that is zoomed only closes it
+    let tg = null; try{ tg = ctxCardTarget(e.target); }catch(err){}
+    if(tg && tg === state._zoomTg) state._zoomEat = Date.now();
+    hide();
+  }, true);
   window.addEventListener('wheel', ()=>{ if(open) hide(); }, { passive: true, capture: true });
   window.addEventListener('resize', ()=>{ if(open) hide(); });
   document.addEventListener('keydown', (e)=>{ if(open && e.key === 'Escape') hide(); }, true);
@@ -33747,6 +33966,7 @@ const cardZoom = (function(){
 // A plain left click on a card (desk, mouse): note where, and let the
 // click run -- the card page it would open shows the big card instead.
 document.addEventListener('click', (e)=>{
+  if(state._zoomEat && Date.now() - state._zoomEat < 700){ state._zoomEat = 0; e.preventDefault(); e.stopPropagation(); return; }   // 1.45
   if(!isDesk() || !pcFinePointer() || !e.isTrusted || e.button !== 0) return;
   if(e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
   const tg = ctxCardTarget(e.target);
@@ -33755,6 +33975,7 @@ document.addEventListener('click', (e)=>{
   const scope = tg.closest('.overlay') || document.querySelector('.app > main') || document;
   if(scope.querySelector('.sr-tile.selected, .sc-tile.selected, .vg-card.dl-msel, .col-tile.csel')) return;
   state._zoomAt = { x: e.clientX, y: e.clientY, t: Date.now(), src: tg.tagName === 'IMG' ? (tg.currentSrc || tg.src) : tg.getAttribute('data-himg') };
+  state._zoomTg = tg;
 }, true);
 function zoomTake(card){
   const z = state._zoomAt;
