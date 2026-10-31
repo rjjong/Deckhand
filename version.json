@@ -1,8 +1,8 @@
 {
-  "version": "1.41",
-  "date": "2026-10-31",
+  "version": "1.45",
+  "date": "2026-11-01",
   "notes": {
-    "en": ["Price and salt pills look like buttons", "Deck and collection totals too", "Title bars no longer grow"],
-    "nl": ["Prijs- en saltpil lijken knoppen", "Ook bij deck- en collectietotaal", "Titelbalken worden niet hoger"]
+    "en": ["Scryfall tags on/off per deck", "Scryfall tags have a gold rim", "PC: page names in the top bar", "PC: filters open in the middle", "PC: gold + at the top left", "PC: deck menu opens under Menu", "PC: click again to close the zoom", "PC: click beside a popup closes it"],
+    "nl": ["Scryfall-tags aan/uit per deck", "Scryfall-tags hebben een gouden rand", "Pc: paginanaam in de bovenbalk", "Pc: filters openen in het midden", "Pc: gouden + linksboven", "Pc: deckmenu opent onder Menu", "Pc: nogmaals klikken sluit de zoom", "Pc: klik naast popup sluit hem"]
   }
 }
