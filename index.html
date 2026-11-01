@@ -2663,16 +2663,31 @@ body:has(#colSelFab) #binderFab, body:has(#colSelFab) #colFab{display:none !impo
 .lf-x svg{width:22px;height:22px;flex:none;}
 .lf-x span{display:none;}
 .lf-x.on{border-color:var(--gold);color:var(--gold);background:rgba(0,0,0,0.45);}
-.dg-sheet{gap:10px;max-height:82vh;overflow-y:auto;}
-.dg-box{border:1.5px solid var(--line);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px;}
-.dg-box.on{border-color:var(--gold);}
-.dg-name{font-weight:700;font-size:13.5px;color:var(--ink-text);display:flex;justify-content:space-between;gap:8px;}
-.dg-name span{font-weight:600;font-size:12px;color:var(--gold);}
-.dg-levels{display:flex;flex-direction:column;gap:5px;}
-.dg-level{display:flex;gap:5px;}
-.dg-sheet .dg-room{flex:1 1 0;min-width:0;padding:7px 4px;border-radius:7px;border:1.5px solid rgba(255,255,255,0.18) !important;background:rgba(0,0,0,0.28) !important;background-image:none !important;color:var(--sub-text) !important;-webkit-text-fill-color:currentColor;text-shadow:none !important;font-size:11.5px;line-height:1.2;cursor:pointer;box-shadow:none !important;}
-.dg-sheet .dg-room.next{border:2px solid var(--gold) !important;color:#fff !important;}
-.dg-sheet .dg-room.here{background:var(--gold) !important;border-color:var(--gold) !important;color:#241A04 !important;font-weight:800;}
+.dg-sheet{gap:10px;max-height:88vh;overflow-y:auto;}
+.dg-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.dg-card{display:flex;flex-direction:column;gap:5px;cursor:pointer;}
+.dg-card.big{cursor:default;width:min(100%, 380px);margin:0 auto;}
+.dg-pic{position:relative;aspect-ratio:488/680;border-radius:4.75% / 3.5%;overflow:hidden;background:#111;box-shadow:0 6px 18px rgba(0,0,0,0.45);}
+.dg-pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}
+.dg-noimg-name{display:none;}
+.dg-pic.noimg img{display:none;}
+.dg-pic.noimg .dg-noimg-name{display:block;position:absolute;top:4%;left:0;right:0;text-align:center;font-weight:800;color:var(--gold);font-size:13px;}
+.dg-spot{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;gap:3px;min-width:14px;min-height:14px;padding:0;border:none;background:none;}
+.dg-card.big .dg-spot{width:30%;height:9%;border-radius:8px;cursor:pointer;}
+.dg-card.big .dg-spot.next{box-shadow:0 0 0 2.5px var(--gold), 0 0 14px rgba(240,200,90,0.55);background:rgba(240,200,90,0.12);}
+.dg-spot-name{display:none;}
+.dg-pic.noimg .dg-spot{background:rgba(255,255,255,0.08);border-radius:6px;}
+.dg-card.big .dg-pic.noimg .dg-spot-name{display:block;font-size:9.5px;color:#fff;line-height:1.1;text-align:center;}
+.dg-dot{display:inline-block;width:14px;height:14px;border-radius:50%;background:color-mix(in srgb, var(--pc) 75%, white);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.7);flex:none;}
+.dg-card:not(.big) .dg-dot{width:11px;height:11px;border-width:1.5px;}
+.dg-dot.me{outline:2px solid var(--gold);outline-offset:1px;}
+.dg-card.big .dg-dot{width:18px;height:18px;}
+.dg-done{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;}
+.dg-donechip{font-size:11px;font-weight:700;color:#fff;background:color-mix(in srgb, var(--pc) 70%, black);border-radius:999px;padding:2px 8px;}
+.dg-players{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;}
+.dg-pl{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1.5px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.25);color:var(--ink-text);font-size:12.5px;font-weight:700;cursor:pointer;}
+.dg-pl.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold);}
+.dg-pl .dg-dot{width:12px;height:12px;}
 .dg-actions{display:flex;gap:8px;}
 .dg-actions > *{flex:1 1 0;margin:0;}
 .br-title b svg{width:16px;height:16px;vertical-align:-3px;}
@@ -2683,6 +2698,15 @@ body:has(#colSelFab) #binderFab, body:has(#colSelFab) #colFab{display:none !impo
 .lr-row.cur{border-color:var(--gold);}
 #crScrim{position:fixed;inset:0;z-index:9599;background:rgba(0,0,0,0.55);}
 #crOverlay.cr-popup{inset:auto;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px, 94vw);height:min(78vh, 680px);border:2px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.6);}
+/* 1.48 the winner's card */
+.life-card-v2.winner{box-shadow:0 0 0 3px var(--gold), 0 0 28px rgba(240,200,90,0.75);animation:winGlow 1.6s ease-in-out infinite;}
+@keyframes winGlow{0%,100%{box-shadow:0 0 0 3px var(--gold), 0 0 18px rgba(240,200,90,0.5);}50%{box-shadow:0 0 0 4px #fff3c4, 0 0 42px rgba(240,200,90,0.95);}}
+.win-banner{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:5;padding:5px 14px;border-radius:999px;background:linear-gradient(180deg,#F6DA82,#C9982E);color:#241A04;font-weight:900;font-size:clamp(13px, 6cqmin, 20px);letter-spacing:0.04em;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,0.5);animation:winPop 0.9s cubic-bezier(.2,1.6,.4,1) both, winBob 2.4s 0.9s ease-in-out infinite;pointer-events:none;}
+@keyframes winPop{from{transform:translateX(-50%) scale(0.2);opacity:0;}to{transform:translateX(-50%) scale(1);opacity:1;}}
+@keyframes winBob{0%,100%{transform:translateX(-50%) translateY(0);}50%{transform:translateX(-50%) translateY(-5px);}}
+.win-fx{position:absolute;inset:0;z-index:4;overflow:hidden;pointer-events:none;}
+.win-fx i{position:absolute;bottom:-12px;left:calc(4% + var(--i) * 6.7%);width:7px;height:12px;border-radius:2px;background:hsl(calc(var(--i) * 47), 85%, 62%);opacity:0;animation:winRise calc(2.2s + var(--i) * 0.13s) calc(var(--i) * 0.17s) linear infinite;}
+@keyframes winRise{0%{transform:translateY(0) rotate(0);opacity:0;}10%{opacity:1;}100%{transform:translateY(-110cqh) rotate(540deg);opacity:0;}}
 .medal-badge{position:absolute;top:8px;right:10px;font-size:27px;line-height:1;z-index:2;color:var(--gold);filter:drop-shadow(0 1px 2px rgba(0,0,0,0.6));}
 .life-card-v2.medal-alt .medal-badge{right:auto;left:10px;}
 .defeat-banner{position:absolute;inset:0;background:rgba(0,0,0,0.75);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:10px;z-index:3;}
@@ -3212,7 +3236,7 @@ html.desk :is(.sr-tile, .sc-tile, .vg-card, .col-tile) img{cursor:zoom-in;}
 
 /* ===== 1.29 Life counter: full screen, the Deckhand logo in the middle ===== */
 #lifeOverlay{padding-bottom:env(safe-area-inset-bottom) !important;}
-#lifeOverlay main{padding:max(10px, env(safe-area-inset-top)) 10px 10px !important;}
+#lifeOverlay main{padding:env(safe-area-inset-top) 0 0 !important;}   /* 1.48: no outer margin -- the cards run to the edge */
 #lifeOverlay .life-grid-v2{gap:10px;margin-top:0;}
 #lifeCogBtn{width:92px;height:92px;padding:0;overflow:hidden;border:3px solid var(--gold);background:#000 !important;background-image:none !important;box-shadow:0 6px 22px rgba(0,0,0,0.6);}
 #lifeCogBtn img{width:100%;height:100%;display:block;object-fit:contain;transform:scale(1.24);transform-origin:50% 50%;pointer-events:none;}
@@ -3221,10 +3245,10 @@ html.desk :is(.sr-tile, .sc-tile, .vg-card, .col-tile) img{cursor:zoom-in;}
 .life-face.front .lval2:not(.pz-val){font-size:clamp(42px, 33cqmin, 110px);}
 .life-face.front .tap-glyph{font-size:clamp(30px, 15cqmin, 52px);}
 /* a thin status pill, the player's name under it */
-.life-face.front{padding-bottom:92px;}
-.life-face.front > .submenu-toggle.lbadge{bottom:40px;height:40px;min-width:118px;padding:0 18px;gap:12px;border-radius:999px;}
-.life-face.front > .submenu-toggle.lbadge .lb-grp{font-size:18px;}
-.life-face.front > .submenu-toggle.lbadge .lb-grp svg{width:16px !important;height:16px !important;}
+.life-face.front{padding-bottom:100px;}
+.life-face.front > .submenu-toggle.lbadge{bottom:40px;height:50px;min-width:140px;padding:0 22px;gap:14px;border-radius:999px;}
+.life-face.front > .submenu-toggle.lbadge .lb-grp{font-size:21px;}
+.life-face.front > .submenu-toggle.lbadge .lb-grp svg{width:19px !important;height:19px !important;}
 .life-face.front > .pname-input{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);margin:0;z-index:3;font-size:clamp(14px, 7cqmin, 19px);}
 .submenu-toggle.done{height:44px;}
 /* New game: the table shapes read clearly, the picked one in gold */
@@ -6974,19 +6998,19 @@ const LS_PREFIX = 'admiral_app:';
    FRESH START (Stef, 9 Oct 2026): the line that ran to 1.41 starts over at
    1.0, the version shared with friends. A device that last saw a higher
    number simply adopts 1.0 (see maybeShowChangelog). */
-const APP_VERSION = '1.46';
+const APP_VERSION = '1.48';
 const CHANGELOG_NOTES = {
   en: [
-    'Life counter: Monarch with a crown',
-    'Life counter: track every Dungeon',
-    'Life counter: AI judge as a popup',
-    'Life counter: restore an earlier game'
+    'Life counter: bigger cards, no margin',
+    'Life counter: thicker status pill',
+    'History: a run of taps is one line',
+    'Win animation for the last player'
   ],
   nl: [
-    'Life counter: Monarch met kroon',
-    'Life counter: alle Dungeons bijhouden',
-    'Life counter: AI-judge als popup',
-    'Life counter: eerder potje herstellen'
+    'Life counter: grotere kaarten',
+    'Life counter: dikkere statuspil',
+    'Geschiedenis: reeks tikken = één regel',
+    'Winanimatie voor de laatste speler'
   ]
 };
 /* The history. PUBLISHER, every release: move the previous CHANGELOG_NOTES
@@ -6996,6 +7020,12 @@ const CHANGELOG_NOTES = {
    button appears once there is a history: 1.0 is the starting point). */
 const APP_DATE = '2026-11-01';
 const CHANGELOG_HISTORY = [
+  { v: '1.47', d: '2026-11-01',
+    en: ['Dungeons shown as the real cards', 'Coloured dots: who is in which room'],
+    nl: ['Dungeons als de echte kaarten', 'Gekleurde stipjes: wie zit waar'] },
+  { v: '1.46', d: '2026-11-01',
+    en: ['Life counter: Monarch with a crown', 'Life counter: track every Dungeon', 'Life counter: AI judge as a popup', 'Life counter: restore an earlier game'],
+    nl: ['Life counter: Monarch met kroon', 'Life counter: alle Dungeons bijhouden', 'Life counter: AI-judge als popup', 'Life counter: eerder potje herstellen'] },
   { v: '1.45', d: '2026-11-01',
     en: ['Scryfall tags on/off per deck', 'Scryfall tags have a gold rim', 'PC: page names in the top bar', 'PC: filters open in the middle', 'PC: gold + at the top left', 'PC: deck menu opens under Menu', 'PC: click again to close the zoom', 'PC: click beside a popup closes it'],
     nl: ['Scryfall-tags aan/uit per deck', 'Scryfall-tags hebben een gouden rand', 'Pc: paginanaam in de bovenbalk', 'Pc: filters openen in het midden', 'Pc: gouden + linksboven', 'Pc: deckmenu opent onder Menu', 'Pc: nogmaals klikken sluit de zoom', 'Pc: klik naast popup sluit hem'] },
@@ -32096,6 +32126,17 @@ const LIFE_DUNGEONS = [
     'Stash':['Catacombs'], 'Archives':['Throne of the Dead Three'], 'Catacombs':['Throne of the Dead Three'], 'Throne of the Dead Three':[] },
     levels:[['Secret Entrance'],['Forge','Lost Well'],['Trap!','Arena','Stash'],['Archives','Catacombs'],['Throne of the Dead Three']] }
 ];
+/* 1.47: the printed dungeon cards, and where each room sits on them (%). */
+const DUNGEON_CARD = {
+  lmp: { set:'tafr', cn:'21', pos:{ 'Cave Entrance':[50,19], 'Goblin Lair':[28,41], 'Mine Tunnels':[72,41], 'Storeroom':[18,63], 'Dark Pool':[50,63], 'Fungi Cavern':[82,63], 'Temple of Dumathoin':[50,85] } },
+  toa: { set:'tafr', cn:'22', pos:{ 'Trapped Entry':[50,19], 'Veils of Fear':[30,41], 'Oubliette':[72,52], 'Sandfall Cell':[30,63], 'Cradle of the Death God':[50,85] } },
+  dmm: { set:'tafr', cn:'20', pos:{ 'Yawning Portal':[50,17], 'Dungeon Level':[50,29], 'Goblin Bazaar':[28,41], 'Twisted Caverns':[72,41], 'Lost Level':[50,53], 'Runestone Caverns':[28,65], "Muiral's Graveyard":[72,65], 'Deep Mines':[50,77], "Mad Wizard's Lair":[50,89] } },
+  uc:  { set:'tclb', cn:'20', back:true, pos:{ 'Secret Entrance':[50,18], 'Forge':[28,34], 'Lost Well':[72,34], 'Trap!':[18,51], 'Arena':[50,51], 'Stash':[82,51], 'Archives':[30,68], 'Catacombs':[70,68], 'Throne of the Dead Three':[50,85] } }
+};
+function dungeonImg(id){
+  const c = DUNGEON_CARD[id];
+  return c ? `https://api.scryfall.com/cards/${c.set}/${c.cn}?format=image&version=normal${c.back ? '&face=back' : ''}` : '';
+}
 const CROWN_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" stroke="rgba(0,0,0,0.55)" stroke-width="0.9" stroke-linejoin="round" d="M3 8.5l4.6 3.6L12 5l4.4 7.1L21 8.5l-1.8 9.5H4.8z"/><rect x="4.8" y="18.6" width="14.4" height="2.2" rx="0.8" fill="currentColor"/></svg>';
 const DUNGEON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V9a8 8 0 0 1 16 0v12"/><path d="M2 21h20"/><path d="M9 21v-6a3 3 0 0 1 6 0v6"/></svg>';
 function lifeSetMonarch(idx){
@@ -32108,41 +32149,62 @@ function lifeSetMonarch(idx){
 }
 function openLifeDungeon(idx){
   const nl = appLang() === 'nl';
-  const p = ensureLifePlayers()[idx];
-  if(!p.dgDone) p.dgDone = {};
+  const ps = ensureLifePlayers();
+  let me = idx;                         // whose move a tap makes
+  let view = ps[me].dg ? ps[me].dg.id : null;   // a dungeon up close, or all four
+  ps.forEach(p=>{ if(!p.dgDone) p.dgDone = {}; });
   document.getElementById('lifeDgSheet')?.remove();
   const m = document.createElement('div');
   m.className = 'deckpick-scrim'; m.id = 'lifeDgSheet'; m.style.zIndex = 9000; m.style.alignItems = 'flex-end';
-  const paint = ()=>{
-    const cur = p.dg ? LIFE_DUNGEONS.find(D=>D.id === p.dg.id) : null;
-    const nextOk = (D, room)=> cur ? (cur.id === D.id && (cur.rooms[p.dg.room] || []).includes(room)) : (D.levels[0][0] === room);
-    const totalDone = Object.values(p.dgDone).reduce((a, n)=>a + n, 0);
-    m.innerHTML = `<div class="deckpick br-sheet dg-sheet">
-      <div class="dg-actions">${p.dg ? `<button type="button" class="ghost-btn" id="dgLeave">${nl ? 'Dungeon verlaten' : 'Leave the dungeon'}</button>` : ''}<button type="button" class="primary-btn" id="dgOk">${nl ? 'Klaar' : 'Done'}</button></div>
-      ${LIFE_DUNGEONS.map(D=>`<div class="dg-box${cur && cur.id === D.id ? ' on' : ''}">
-        <div class="dg-levels">${D.levels.slice().reverse().map(L=>`<div class="dg-level">${L.map(r=>`<button type="button" class="dg-room${p.dg && p.dg.id === D.id && p.dg.room === r ? ' here' : ''}${nextOk(D, r) ? ' next' : ''}" data-dg="${D.id}" data-room="${escapeHtml(r)}">${escapeHtml(r)}</button>`).join('')}</div>`).join('')}</div>
-        <div class="dg-name">${escapeHtml(D.name)}${p.dgDone[D.id] ? `<span>${nl ? 'voltooid' : 'completed'} \u00d7${p.dgDone[D.id]}</span>` : ''}</div>
-      </div>`).join('')}
-      <div class="br-title"><b>${DUNGEON_SVG} ${escapeHtml(p.name)}</b><span>${nl ? 'Tik de kamer waar je heen gaat. Goud = mogelijke volgende kamer.' : 'Tap the room you venture into. Gold = a room you can go to next.'}${totalDone ? (nl ? ` \u00b7 ${totalDone} voltooid` : ` \u00b7 ${totalDone} completed`) : ''}</span></div>
+  const dotCol = (i)=>PLAYER_COLORS[i % PLAYER_COLORS.length].base;
+  const venture = (D, room)=>{
+    const p = ps[me];
+    p.dg = { id: D.id, room };
+    lifeLog(`${p.name}: ${room} (${D.name})`);
+    if(!(D.rooms[room] || []).length){
+      p.dgDone[D.id] = (p.dgDone[D.id] || 0) + 1;
+      p.dg = null;
+      lifeLog(`${p.name} ${nl ? 'voltooide' : 'completed'} ${D.name}.`);
+      toast(nl ? `${p.name}: ${D.name} voltooid!` : `${p.name}: ${D.name} completed!`);
+    }
+    paint(); renderLifeGrid();
+  };
+  // one dungeon card with every player's dot on it; big = rooms can be tapped
+  const cardHtml = (D, big)=>{
+    const C = DUNGEON_CARD[D.id];
+    const p = ps[me];
+    const nextOk = (room)=> p.dg ? (p.dg.id === D.id && (D.rooms[p.dg.room] || []).includes(room)) : (D.levels[0][0] === room);
+    const dots = {};
+    ps.forEach((q, i)=>{ if(q.dg && q.dg.id === D.id) (dots[q.dg.room] = dots[q.dg.room] || []).push(i); });
+    const done = ps.map((q, i)=>q.dgDone[D.id] ? `<span class="dg-donechip" style="--pc:${dotCol(i)}">${escapeHtml(q.name)} ×${q.dgDone[D.id]}</span>` : '').join('');
+    return `<div class="dg-card${big ? ' big' : ''}" data-dgcard="${D.id}">
+      <div class="dg-pic"><img src="${dungeonImg(D.id)}" alt="${escapeHtml(D.name)}" loading="lazy" onerror="this.closest('.dg-pic').classList.add('noimg')"><span class="dg-noimg-name">${escapeHtml(D.name)}</span>
+        ${Object.keys(C.pos).map(room=>{
+          const [x, y] = C.pos[room], who = dots[room] || [];
+          return `<${big ? 'button type="button"' : 'span'} class="dg-spot${big && nextOk(room) ? ' next' : ''}" data-room="${escapeHtml(room)}" style="left:${x}%;top:${y}%;" title="${escapeHtml(room)}"><span class="dg-spot-name">${escapeHtml(room)}</span>${who.map(i=>`<i class="dg-dot${i === me ? ' me' : ''}" style="--pc:${dotCol(i)}"></i>`).join('')}</${big ? 'button' : 'span'}>`;
+        }).join('')}
+      </div>
+      ${done ? `<div class="dg-done">${done}</div>` : ''}
     </div>`;
-    m.querySelectorAll('.dg-room').forEach(b=>b.addEventListener('click', ()=>{
-      const D = LIFE_DUNGEONS.find(x=>x.id === b.dataset.dg), room = b.dataset.room;
-      if(p.dg && p.dg.id !== D.id && !confirm0()) return;
-      p.dg = { id: D.id, room };
-      lifeLog(`${p.name}: ${room} (${D.name})`);
-      if(!(D.rooms[room] || []).length){
-        p.dgDone[D.id] = (p.dgDone[D.id] || 0) + 1;
-        p.dg = null;
-        lifeLog(`${p.name} ${nl ? 'voltooide' : 'completed'} ${D.name}.`);
-        toast(nl ? `${D.name} voltooid!` : `${D.name} completed!`);
-      }
-      paint(); renderLifeGrid();
-    }));
-    m.querySelector('#dgLeave')?.addEventListener('click', ()=>{ p.dg = null; paint(); renderLifeGrid(); });
+  };
+  const paint = ()=>{
+    const p = ps[me];
+    const D = view ? LIFE_DUNGEONS.find(x=>x.id === view) : null;
+    m.innerHTML = `<div class="deckpick br-sheet dg-sheet">
+      <div class="dg-actions">${D ? `<button type="button" class="ghost-btn" id="dgAll">← ${nl ? 'Alle dungeons' : 'All dungeons'}</button>` : ''}${p.dg ? `<button type="button" class="ghost-btn" id="dgLeave">${nl ? 'Verlaten' : 'Leave'}</button>` : ''}<button type="button" class="primary-btn" id="dgOk">${nl ? 'Klaar' : 'Done'}</button></div>
+      <div class="dg-players">${ps.map((q, i)=>`<button type="button" class="dg-pl${i === me ? ' on' : ''}" data-dgme="${i}" style="--pc:${dotCol(i)}"><i class="dg-dot" style="--pc:${dotCol(i)}"></i>${escapeHtml(q.name)}</button>`).join('')}</div>
+      ${D ? cardHtml(D, true) : `<div class="dg-grid">${LIFE_DUNGEONS.map(X=>cardHtml(X, false)).join('')}</div>`}
+      <div class="br-title"><b>${DUNGEON_SVG} ${D ? escapeHtml(D.name) : 'Dungeons'}</b><span>${D
+        ? (nl ? `Tik de kamer waar ${escapeHtml(p.name)} heen gaat. Goud = kan als volgende.` : `Tap the room ${escapeHtml(p.name)} ventures into. Gold = can go next.`)
+        : (nl ? 'Tik een dungeon. De stipjes laten zien wie waar zit.' : 'Tap a dungeon. The dots show who is where.')}</span></div>
+    </div>`;
+    m.querySelectorAll('[data-dgme]').forEach(b=>b.addEventListener('click', ()=>{ me = +b.dataset.dgme; paint(); }));
+    m.querySelectorAll('.dg-grid [data-dgcard]').forEach(c=>c.addEventListener('click', ()=>{ view = c.dataset.dgcard; paint(); }));
+    if(D) m.querySelectorAll('.dg-card.big .dg-spot').forEach(b=>b.addEventListener('click', ()=>venture(D, b.dataset.room)));
+    m.querySelector('#dgAll')?.addEventListener('click', ()=>{ view = null; paint(); });
+    m.querySelector('#dgLeave')?.addEventListener('click', ()=>{ ps[me].dg = null; paint(); renderLifeGrid(); });
     m.querySelector('#dgOk').addEventListener('click', ()=>brSheetClose('lifeDgSheet'));
   };
-  // switching dungeons midway: the old one is left behind (rules: one at a time)
-  const confirm0 = ()=>true;
   paint();
   m.addEventListener('click', (e)=>{ if(e.target === m) brSheetClose('lifeDgSheet'); });
   brSheetOpen(m, 'lifeDgSheet', ()=>{});
@@ -32215,6 +32277,30 @@ function openJudgePopup(){
   const mo = new MutationObserver(()=>{ if(!el.isConnected){ sc.remove(); mo.disconnect(); } });
   mo.observe(document.body, { childList: true });
 }
+/* 1.48: while the running +N / -N is on screen, more taps on the same
+   counter update ONE history line instead of adding a line per tap. */
+function lifeLogLive(p, key, msg){
+  const h = state.life.history;
+  const live = p._hl && p._hl[key];
+  if(live && Date.now() - live.t < 2500){
+    const i = h.indexOf(live.s);
+    if(i >= 0){
+      if(msg === null){ h.splice(i, 1); delete p._hl[key]; return; }
+      h[i] = msg; live.s = msg; live.t = Date.now(); return;
+    }
+  }
+  if(msg === null) return;
+  lifeLog(msg);
+  (p._hl = p._hl || {})[key] = { s: msg, t: Date.now() };
+}
+function lifeRunStart(p, key, before){
+  const live = p._hl && p._hl[key];
+  const fresh = !(live && Date.now() - live.t < 2500 && state.life.history.indexOf(live.s) >= 0);
+  p._hlFrom = p._hlFrom || {};
+  if(fresh) p._hlFrom[key] = before;
+  return p._hlFrom[key];
+}
+const _sgn = (n)=> n > 0 ? '+' + n : '\u2212' + Math.abs(n);
 function lifeLog(msg){
   state.life.history.unshift(msg);
   if(state.life.history.length > 40) state.life.history.length = 40;
@@ -32276,7 +32362,8 @@ function adjustLifeField(idx, field, d, from){
     if(p._delta === 0){ delete p._delta; delete p._deltaFresh; }
     clearTimeout(p._deltaT);
     p._deltaT = setTimeout(()=>{ delete p._delta; renderLifeGrid(); }, 2500);
-    lifeLog(`${p.name}: life ${d>0?'+':''}${d} → ${p.life}`);
+    { const from = lifeRunStart(p, 'life', p.life - d), sum = p.life - from;
+      lifeLogLive(p, 'life', sum ? `${p.name}: life ${_sgn(sum)} → ${p.life}` : null); }
   }
   else if(field==='poison'){
     const before = p.poison;
@@ -32289,7 +32376,8 @@ function adjustLifeField(idx, field, d, from){
       clearTimeout(p._pzT);
       p._pzT = setTimeout(()=>{ delete p._pzDelta; renderLifeGrid(); }, 2500);
     }
-    lifeLog(`${p.name}: poison ${d>0?'+':''}${d} → ${p.poison}`);
+    { const from = lifeRunStart(p, 'poison', p.poison - ap), sum = p.poison - from;
+      lifeLogLive(p, 'poison', sum ? `${p.name}: poison ${_sgn(sum)} → ${p.poison}` : null); }
   }
   else if(field==='dmg'){
     // Commander damage IS damage: the tally and the life total move together.
@@ -32310,7 +32398,8 @@ function adjustLifeField(idx, field, d, from){
       clearTimeout(p._dmgT[from]);
       p._dmgT[from] = setTimeout(()=>{ if(p._dmgDelta) delete p._dmgDelta[from]; renderLifeGrid(); }, 2500);
     }
-    lifeLog(`${p.name}: cmdr dmg from ${players[from].name} ${d>0?'+':''}${d} → ${p.dmg[from]}${applied?` · life → ${p.life}`:''}`);
+    { const k = 'dmg' + from, st = lifeRunStart(p, k, p.dmg[from] - applied), sum = p.dmg[from] - st;
+      lifeLogLive(p, k, sum ? `${p.name}: cmdr dmg from ${players[from].name} ${_sgn(sum)} → ${p.dmg[from]} · life → ${p.life}` : null); }
   }
   checkDefeat(p);
   renderLifeGrid();
@@ -32819,7 +32908,11 @@ function lifeCardHtml(p, idx, count){
   }
 
   const isTurn = false;
-  return `<div class="life-cell"><div class="life-card-v2 ${isTurn?'active-turn':''}" data-idx="${idx}" data-rot="${rot}" style="${style}">
+  // 1.48: everyone else is out -- this player won
+  const _alive = players.filter(q=>!q.defeated);
+  const won = players.length > 1 && !p.defeated && _alive.length === 1;
+  return `<div class="life-cell"><div class="life-card-v2 ${isTurn?'active-turn':''}${won ? ' winner' : ''}" data-idx="${idx}" data-rot="${rot}" style="${style}">
+    ${won ? `<div class="win-fx" aria-hidden="true">${Array.from({length: 14}, (_, i)=>`<i style="--i:${i}"></i>`).join('')}</div><div class="win-banner">\u{1F3C6} ${appLang() === 'nl' ? 'Winnaar!' : 'Winner!'}</div>` : ''}
     <div class="life-face front ${p.defeated?'defeated':''}">
       ${p.medal?`<div class="medal-badge" title="High roll winner">${modeGlyph()}</div>`:''}
       <div class="tap-zone left" data-idx="${idx}" data-side="minus"><span class="tap-glyph">−</span></div>
@@ -32865,6 +32958,12 @@ function renderLifeGrid(){
   wireLifeGrid();
   requestAnimationFrame(layoutLifeCards);
   if(state.life.setupDone) lifeAutosave();   // 1.46
+  { // 1.48: the win goes into the history once
+    const alive = players.filter(q=>!q.defeated);
+    const wid = (players.length > 1 && alive.length === 1) ? players.indexOf(alive[0]) : -1;
+    if(wid >= 0 && state.life._winLogged !== wid){ state.life._winLogged = wid; lifeLog(`\u{1F3C6} ${alive[0].name} ${appLang() === 'nl' ? 'wint!' : 'wins!'}`); try{ navigator.vibrate && navigator.vibrate([30, 60, 30]); }catch(e){} }
+    if(wid < 0) state.life._winLogged = null;
+  }
 }
 /* 1.29: the logo sits where the most cards MEET -- a corner shared by four
    cards beats a T, and a T beats the bare middle -- nearest the middle of
