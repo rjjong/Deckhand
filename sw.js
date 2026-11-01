@@ -8,7 +8,7 @@
    - Fonts + Scryfall card images: cache-first (they never change for a given
      URL), keeping repeat browsing fast and cheap.
    - Scryfall API responses are NOT cached — searches and prices stay live. */
-const VERSION = 'admiral-v1.48';
+const VERSION = 'admiral-v1.50';
 // Card images and fonts survive app updates: this cache is deliberately
 // NOT version-named, so activating a new version never wipes it.
 const ASSETS = 'admiral-assets-v1';
@@ -85,10 +85,7 @@ self.addEventListener('fetch', (e) => {
   // Static, immutable assets: cache-first
   const isFont = url.hostname.includes('fonts.googleapis.com') || url.hostname.includes('fonts.gstatic.com');
   const isCardImage = url.hostname === 'cards.scryfall.io' || url.hostname.endsWith('.scryfall.io');
-  // The card scanner's text reader (Tesseract): pinned versions never change,
-  // so after the first scan it works offline.
-  const isOcr = url.hostname === 'cdn.jsdelivr.net' && /^\/npm\/(tesseract\.js|tesseract\.js-core|@tesseract\.js-data\/eng)@/.test(url.pathname);
-  if (isFont || isCardImage || isOcr) {
+  if (isFont || isCardImage) {
     e.respondWith(
       caches.open(ASSETS).then(cache =>
         cache.match(e.request).then(hit => hit || fetch(e.request).then(res => {
