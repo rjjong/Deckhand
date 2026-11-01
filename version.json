@@ -1,8 +1,8 @@
 {
-  "version": "1.45",
+  "version": "1.46",
   "date": "2026-11-01",
   "notes": {
-    "en": ["Scryfall tags on/off per deck", "Scryfall tags have a gold rim", "PC: page names in the top bar", "PC: filters open in the middle", "PC: gold + at the top left", "PC: deck menu opens under Menu", "PC: click again to close the zoom", "PC: click beside a popup closes it"],
-    "nl": ["Scryfall-tags aan/uit per deck", "Scryfall-tags hebben een gouden rand", "Pc: paginanaam in de bovenbalk", "Pc: filters openen in het midden", "Pc: gouden + linksboven", "Pc: deckmenu opent onder Menu", "Pc: nogmaals klikken sluit de zoom", "Pc: klik naast popup sluit hem"]
+    "en": ["Life counter: Monarch with a crown", "Life counter: track every Dungeon", "Life counter: AI judge as a popup", "Life counter: restore an earlier game"],
+    "nl": ["Life counter: Monarch met kroon", "Life counter: alle Dungeons bijhouden", "Life counter: AI-judge als popup", "Life counter: eerder potje herstellen"]
   }
 }
