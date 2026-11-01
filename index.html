@@ -2651,6 +2651,38 @@ body:has(#colSelFab) #binderFab, body:has(#colSelFab) #colFab{display:none !impo
 .lbtn.sm{width:60px;height:60px;font-size:28px;}
 .submenu-toggle{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:2;background:rgba(0,0,0,0.28);border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:26px;padding:15px 36px;font-size:20px;cursor:pointer;margin-top:10px;-webkit-tap-highlight-color:transparent;}
 .submenu-toggle.back{position:static;transform:none;align-self:flex-start;font-size:14px;font-weight:700;margin:0 0 10px;background:none;border:none;padding:2px 4px;}
+/* 1.46 monarch, dungeons, judge popup, restore */
+.lmonarch{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);width:clamp(30px, 17cqmin, 60px);color:var(--gold);filter:drop-shadow(0 2px 3px rgba(0,0,0,0.55));pointer-events:none;line-height:0;}
+.lmonarch svg{width:100%;height:auto;display:block;}
+.ldungeon{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:2;display:inline-flex;align-items:center;gap:5px;max-width:70%;padding:3px 10px;border-radius:999px;background:rgba(0,0,0,0.32);color:#fff;font-size:12px;font-weight:700;pointer-events:none;white-space:nowrap;}
+.ldungeon svg{width:14px;height:14px;flex:none;}
+.ldungeon span{overflow:hidden;text-overflow:ellipsis;}
+.lf-extras{position:absolute;bottom:64px;left:50%;transform:translateX(-50%);z-index:4;display:flex;gap:12px;justify-content:center;pointer-events:none;}
+@container (min-width: 300px){ .lf-extras{bottom:12px;width:calc(132px + 2 * 54px);gap:0;justify-content:space-between;} }
+.lf-x{pointer-events:auto;display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border-radius:50%;border:1.5px solid rgba(255,255,255,0.45);background:rgba(0,0,0,0.3);color:#fff;cursor:pointer;}
+.lf-x svg{width:22px;height:22px;flex:none;}
+.lf-x span{display:none;}
+.lf-x.on{border-color:var(--gold);color:var(--gold);background:rgba(0,0,0,0.45);}
+.dg-sheet{gap:10px;max-height:82vh;overflow-y:auto;}
+.dg-box{border:1.5px solid var(--line);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px;}
+.dg-box.on{border-color:var(--gold);}
+.dg-name{font-weight:700;font-size:13.5px;color:var(--ink-text);display:flex;justify-content:space-between;gap:8px;}
+.dg-name span{font-weight:600;font-size:12px;color:var(--gold);}
+.dg-levels{display:flex;flex-direction:column;gap:5px;}
+.dg-level{display:flex;gap:5px;}
+.dg-sheet .dg-room{flex:1 1 0;min-width:0;padding:7px 4px;border-radius:7px;border:1.5px solid rgba(255,255,255,0.18) !important;background:rgba(0,0,0,0.28) !important;background-image:none !important;color:var(--sub-text) !important;-webkit-text-fill-color:currentColor;text-shadow:none !important;font-size:11.5px;line-height:1.2;cursor:pointer;box-shadow:none !important;}
+.dg-sheet .dg-room.next{border:2px solid var(--gold) !important;color:#fff !important;}
+.dg-sheet .dg-room.here{background:var(--gold) !important;border-color:var(--gold) !important;color:#241A04 !important;font-weight:800;}
+.dg-actions{display:flex;gap:8px;}
+.dg-actions > *{flex:1 1 0;margin:0;}
+.br-title b svg{width:16px;height:16px;vertical-align:-3px;}
+.life-set-pair{display:flex;gap:8px;margin-top:12px;}
+.life-set-pair .ghost-btn{flex:1 1 0;min-width:0;margin:0;font-size:13px;padding:10px 6px;}
+.lr-row{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;width:100%;margin:0;}
+.lr-row span{font-size:12px;color:var(--sub-text);font-weight:500;white-space:normal;}
+.lr-row.cur{border-color:var(--gold);}
+#crScrim{position:fixed;inset:0;z-index:9599;background:rgba(0,0,0,0.55);}
+#crOverlay.cr-popup{inset:auto;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px, 94vw);height:min(78vh, 680px);border:2px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,0.6);}
 .medal-badge{position:absolute;top:8px;right:10px;font-size:27px;line-height:1;z-index:2;color:var(--gold);filter:drop-shadow(0 1px 2px rgba(0,0,0,0.6));}
 .life-card-v2.medal-alt .medal-badge{right:auto;left:10px;}
 .defeat-banner{position:absolute;inset:0;background:rgba(0,0,0,0.75);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:10px;z-index:3;}
@@ -6942,27 +6974,19 @@ const LS_PREFIX = 'admiral_app:';
    FRESH START (Stef, 9 Oct 2026): the line that ran to 1.41 starts over at
    1.0, the version shared with friends. A device that last saw a higher
    number simply adopts 1.0 (see maybeShowChangelog). */
-const APP_VERSION = '1.45';
+const APP_VERSION = '1.46';
 const CHANGELOG_NOTES = {
   en: [
-    'Scryfall tags on/off per deck',
-    'Scryfall tags have a gold rim',
-    'PC: page names in the top bar',
-    'PC: filters open in the middle',
-    'PC: gold + at the top left',
-    'PC: deck menu opens under Menu',
-    'PC: click again to close the zoom',
-    'PC: click beside a popup closes it'
+    'Life counter: Monarch with a crown',
+    'Life counter: track every Dungeon',
+    'Life counter: AI judge as a popup',
+    'Life counter: restore an earlier game'
   ],
   nl: [
-    'Scryfall-tags aan/uit per deck',
-    'Scryfall-tags hebben een gouden rand',
-    'Pc: paginanaam in de bovenbalk',
-    'Pc: filters openen in het midden',
-    'Pc: gouden + linksboven',
-    'Pc: deckmenu opent onder Menu',
-    'Pc: nogmaals klikken sluit de zoom',
-    'Pc: klik naast popup sluit hem'
+    'Life counter: Monarch met kroon',
+    'Life counter: alle Dungeons bijhouden',
+    'Life counter: AI-judge als popup',
+    'Life counter: eerder potje herstellen'
   ]
 };
 /* The history. PUBLISHER, every release: move the previous CHANGELOG_NOTES
@@ -6972,6 +6996,9 @@ const CHANGELOG_NOTES = {
    button appears once there is a history: 1.0 is the starting point). */
 const APP_DATE = '2026-11-01';
 const CHANGELOG_HISTORY = [
+  { v: '1.45', d: '2026-11-01',
+    en: ['Scryfall tags on/off per deck', 'Scryfall tags have a gold rim', 'PC: page names in the top bar', 'PC: filters open in the middle', 'PC: gold + at the top left', 'PC: deck menu opens under Menu', 'PC: click again to close the zoom', 'PC: click beside a popup closes it'],
+    nl: ['Scryfall-tags aan/uit per deck', 'Scryfall-tags hebben een gouden rand', 'Pc: paginanaam in de bovenbalk', 'Pc: filters openen in het midden', 'Pc: gouden + linksboven', 'Pc: deckmenu opent onder Menu', 'Pc: nogmaals klikken sluit de zoom', 'Pc: klik naast popup sluit hem'] },
   { v: '1.44', d: '2026-10-31',
     en: ['PC: search bar full page width', 'PC: deck toolbar fits small windows'],
     nl: ['Pc: zoekbalk over volle breedte', 'Pc: deckwerkbalk past in klein venster'] },
@@ -32049,6 +32076,145 @@ function ensureLifePlayers(){
   });
   return L.players;
 }
+/* 1.46 DUNGEONS -- every room and where it leads. */
+const LIFE_DUNGEONS = [
+  { id:'lmp', name:'Lost Mine of Phandelver', rooms:{
+    'Cave Entrance':['Goblin Lair','Mine Tunnels'], 'Goblin Lair':['Storeroom','Dark Pool'], 'Mine Tunnels':['Dark Pool','Fungi Cavern'],
+    'Storeroom':['Temple of Dumathoin'], 'Dark Pool':['Temple of Dumathoin'], 'Fungi Cavern':['Temple of Dumathoin'], 'Temple of Dumathoin':[] },
+    levels:[['Cave Entrance'],['Goblin Lair','Mine Tunnels'],['Storeroom','Dark Pool','Fungi Cavern'],['Temple of Dumathoin']] },
+  { id:'toa', name:'Tomb of Annihilation', rooms:{
+    'Trapped Entry':['Veils of Fear','Oubliette'], 'Veils of Fear':['Sandfall Cell'], 'Oubliette':['Cradle of the Death God'],
+    'Sandfall Cell':['Cradle of the Death God'], 'Cradle of the Death God':[] },
+    levels:[['Trapped Entry'],['Veils of Fear','Oubliette'],['Sandfall Cell'],['Cradle of the Death God']] },
+  { id:'dmm', name:'Dungeon of the Mad Mage', rooms:{
+    'Yawning Portal':['Dungeon Level'], 'Dungeon Level':['Goblin Bazaar','Twisted Caverns'], 'Goblin Bazaar':['Lost Level'], 'Twisted Caverns':['Lost Level'],
+    'Lost Level':['Runestone Caverns',"Muiral's Graveyard"], 'Runestone Caverns':['Deep Mines'], "Muiral's Graveyard":['Deep Mines'],
+    'Deep Mines':["Mad Wizard's Lair"], "Mad Wizard's Lair":[] },
+    levels:[['Yawning Portal'],['Dungeon Level'],['Goblin Bazaar','Twisted Caverns'],['Lost Level'],['Runestone Caverns',"Muiral's Graveyard"],['Deep Mines'],["Mad Wizard's Lair"]] },
+  { id:'uc', name:'Undercity', rooms:{
+    'Secret Entrance':['Forge','Lost Well'], 'Forge':['Trap!','Arena'], 'Lost Well':['Arena','Stash'], 'Trap!':['Archives'], 'Arena':['Archives','Catacombs'],
+    'Stash':['Catacombs'], 'Archives':['Throne of the Dead Three'], 'Catacombs':['Throne of the Dead Three'], 'Throne of the Dead Three':[] },
+    levels:[['Secret Entrance'],['Forge','Lost Well'],['Trap!','Arena','Stash'],['Archives','Catacombs'],['Throne of the Dead Three']] }
+];
+const CROWN_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" stroke="rgba(0,0,0,0.55)" stroke-width="0.9" stroke-linejoin="round" d="M3 8.5l4.6 3.6L12 5l4.4 7.1L21 8.5l-1.8 9.5H4.8z"/><rect x="4.8" y="18.6" width="14.4" height="2.2" rx="0.8" fill="currentColor"/></svg>';
+const DUNGEON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V9a8 8 0 0 1 16 0v12"/><path d="M2 21h20"/><path d="M9 21v-6a3 3 0 0 1 6 0v6"/></svg>';
+function lifeSetMonarch(idx){
+  const ps = ensureLifePlayers();
+  const was = !!ps[idx].monarch;
+  ps.forEach(p=>{ p.monarch = false; });
+  if(!was){ ps[idx].monarch = true; lifeLog(`👑 ${ps[idx].name} ${appLang() === 'nl' ? 'is de monarch.' : 'became the monarch.'}`); }
+  else lifeLog(`${ps[idx].name} ${appLang() === 'nl' ? 'is geen monarch meer.' : 'is no longer the monarch.'}`);
+  renderLifeGrid();
+}
+function openLifeDungeon(idx){
+  const nl = appLang() === 'nl';
+  const p = ensureLifePlayers()[idx];
+  if(!p.dgDone) p.dgDone = {};
+  document.getElementById('lifeDgSheet')?.remove();
+  const m = document.createElement('div');
+  m.className = 'deckpick-scrim'; m.id = 'lifeDgSheet'; m.style.zIndex = 9000; m.style.alignItems = 'flex-end';
+  const paint = ()=>{
+    const cur = p.dg ? LIFE_DUNGEONS.find(D=>D.id === p.dg.id) : null;
+    const nextOk = (D, room)=> cur ? (cur.id === D.id && (cur.rooms[p.dg.room] || []).includes(room)) : (D.levels[0][0] === room);
+    const totalDone = Object.values(p.dgDone).reduce((a, n)=>a + n, 0);
+    m.innerHTML = `<div class="deckpick br-sheet dg-sheet">
+      <div class="dg-actions">${p.dg ? `<button type="button" class="ghost-btn" id="dgLeave">${nl ? 'Dungeon verlaten' : 'Leave the dungeon'}</button>` : ''}<button type="button" class="primary-btn" id="dgOk">${nl ? 'Klaar' : 'Done'}</button></div>
+      ${LIFE_DUNGEONS.map(D=>`<div class="dg-box${cur && cur.id === D.id ? ' on' : ''}">
+        <div class="dg-levels">${D.levels.slice().reverse().map(L=>`<div class="dg-level">${L.map(r=>`<button type="button" class="dg-room${p.dg && p.dg.id === D.id && p.dg.room === r ? ' here' : ''}${nextOk(D, r) ? ' next' : ''}" data-dg="${D.id}" data-room="${escapeHtml(r)}">${escapeHtml(r)}</button>`).join('')}</div>`).join('')}</div>
+        <div class="dg-name">${escapeHtml(D.name)}${p.dgDone[D.id] ? `<span>${nl ? 'voltooid' : 'completed'} \u00d7${p.dgDone[D.id]}</span>` : ''}</div>
+      </div>`).join('')}
+      <div class="br-title"><b>${DUNGEON_SVG} ${escapeHtml(p.name)}</b><span>${nl ? 'Tik de kamer waar je heen gaat. Goud = mogelijke volgende kamer.' : 'Tap the room you venture into. Gold = a room you can go to next.'}${totalDone ? (nl ? ` \u00b7 ${totalDone} voltooid` : ` \u00b7 ${totalDone} completed`) : ''}</span></div>
+    </div>`;
+    m.querySelectorAll('.dg-room').forEach(b=>b.addEventListener('click', ()=>{
+      const D = LIFE_DUNGEONS.find(x=>x.id === b.dataset.dg), room = b.dataset.room;
+      if(p.dg && p.dg.id !== D.id && !confirm0()) return;
+      p.dg = { id: D.id, room };
+      lifeLog(`${p.name}: ${room} (${D.name})`);
+      if(!(D.rooms[room] || []).length){
+        p.dgDone[D.id] = (p.dgDone[D.id] || 0) + 1;
+        p.dg = null;
+        lifeLog(`${p.name} ${nl ? 'voltooide' : 'completed'} ${D.name}.`);
+        toast(nl ? `${D.name} voltooid!` : `${D.name} completed!`);
+      }
+      paint(); renderLifeGrid();
+    }));
+    m.querySelector('#dgLeave')?.addEventListener('click', ()=>{ p.dg = null; paint(); renderLifeGrid(); });
+    m.querySelector('#dgOk').addEventListener('click', ()=>brSheetClose('lifeDgSheet'));
+  };
+  // switching dungeons midway: the old one is left behind (rules: one at a time)
+  const confirm0 = ()=>true;
+  paint();
+  m.addEventListener('click', (e)=>{ if(e.target === m) brSheetClose('lifeDgSheet'); });
+  brSheetOpen(m, 'lifeDgSheet', ()=>{});
+}
+/* 1.46 GAME SAVES -- the table is saved as you play (the last 10 games), so
+   a game survives the app closing; Settings -> Restore a game brings one back. */
+const LIFE_SAVE_KEY = 'lifeSaves';
+function lifeSavesAll(){ try{ const a = JSON.parse(localStorage.getItem(LS_PREFIX + LIFE_SAVE_KEY) || '[]'); return Array.isArray(a) ? a : []; }catch(e){ return []; } }
+let _lifeSaveT = null;
+function lifeAutosave(){
+  clearTimeout(_lifeSaveT);
+  _lifeSaveT = setTimeout(()=>{
+    try{
+      const L = state.life;
+      if(!L.players || !L.players.length) return;
+      if(!L.gameId) L.gameId = Date.now().toString(36);
+      const clean = L.players.map(p=>{ const o = {}; Object.keys(p).forEach(k=>{ if(k[0] !== '_') o[k] = p[k]; }); return o; });
+      const rec = { id: L.gameId, t: Date.now(), d: { count: L.count, layout: L.layout, rotate: L.rotate, players: clean, history: (L.history || []).slice(0, 40), turnNum: L.turnNum, startIdx: L.startIdx, turnIdx: L.turnIdx, settings: L.settings } };
+      const all = lifeSavesAll().filter(x=>x && x.id !== rec.id);
+      all.unshift(rec);
+      localStorage.setItem(LS_PREFIX + LIFE_SAVE_KEY, JSON.stringify(all.slice(0, 10)));
+    }catch(e){}
+  }, 1200);
+}
+function openLifeRestore(){
+  const nl = appLang() === 'nl';
+  const all = lifeSavesAll();
+  document.getElementById('lifeRestoreSheet')?.remove();
+  const m = document.createElement('div');
+  m.className = 'deckpick-scrim'; m.id = 'lifeRestoreSheet'; m.style.zIndex = 9000; m.style.alignItems = 'flex-end';
+  const when = (t)=>{ try{ return new Date(t).toLocaleString(nl ? 'nl-NL' : 'en-GB', { weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }); }catch(e){ return ''; } };
+  let pick = null;
+  m.innerHTML = `<div class="deckpick br-sheet pt-menu">
+    ${all.length ? all.map((g, i)=>`<button type="button" class="ghost-btn lr-row${g.id === state.life.gameId ? ' cur' : ''}" data-lr="${i}"><b>${escapeHtml(when(g.t))}${g.id === state.life.gameId ? (nl ? ' \u00b7 dit potje' : ' \u00b7 this game') : ''}</b><span>${(g.d.players || []).map(p=>`${escapeHtml(p.name)} ${p.life}${p.monarch ? ' 👑' : ''}`).join(' \u00b7 ')}</span></button>`).join('')
+      : `<div class="empty-note">${nl ? 'Nog geen opgeslagen potjes.' : 'No saved games yet.'}</div>`}
+    <div class="br-title"><b>${nl ? 'Potje herstellen' : 'Restore a game'}</b><span>${nl ? 'Potjes worden onder het spelen bewaard (de laatste 10).' : 'Games are saved as you play (the last 10).'}</span></div></div>`;
+  m.querySelectorAll('[data-lr]').forEach(b=>b.addEventListener('click', ()=>{ pick = all[+b.dataset.lr]; brSheetClose('lifeRestoreSheet'); }));
+  m.addEventListener('click', (e)=>{ if(e.target === m) brSheetClose('lifeRestoreSheet'); });
+  brSheetOpen(m, 'lifeRestoreSheet', ()=>{
+    if(!pick) return;
+    const g = pick; pick = null;
+    setTimeout(()=>{
+      const L = state.life, D = g.d || {};
+      ['count', 'layout', 'rotate', 'turnNum', 'startIdx', 'turnIdx'].forEach(k=>{ if(D[k] !== undefined) L[k] = D[k]; });
+      if(D.settings) L.settings = Object.assign({}, L.settings, D.settings);
+      L.players = (D.players || []).map(p=>Object.assign({}, p));
+      L.history = (D.history || []).slice();
+      L.gameId = g.id; L.setupDone = true; L.expandedIdx = null;
+      const top = state.overlayStack[state.overlayStack.length - 1];
+      if(top && top.id === 'lifeSet') closeTopOverlay();
+      L.settingsOpen = false;
+      renderLifeOverlay();
+      toast(nl ? 'Potje hersteld.' : 'Game restored.');
+    }, 0);
+  });
+}
+/* 1.46: the judge as a popup over the table */
+function openJudgePopup(){
+  openCROverlay();
+  const el = document.getElementById('crOverlay');
+  if(!el) return;
+  el.classList.add('cr-popup');
+  el.querySelector(':scope > .ov-nav, :scope > .brand-banner')?.remove();
+  const sc = document.createElement('div');
+  sc.id = 'crScrim';
+  el.parentNode.insertBefore(sc, el);
+  // the scrim closes the judge's layers one by one (question, rules, judge)
+  const shut = (n)=>{ const top = state.overlayStack[state.overlayStack.length - 1]; if(!el.isConnected || n > 4) return; if(top && /^cr/.test(top.id)){ closeTopOverlay(); setTimeout(()=>shut(n + 1), 60); } else el.remove(); };
+  sc.addEventListener('click', ()=>shut(0));
+  const mo = new MutationObserver(()=>{ if(!el.isConnected){ sc.remove(); mo.disconnect(); } });
+  mo.observe(document.body, { childList: true });
+}
 function lifeLog(msg){
   state.life.history.unshift(msg);
   if(state.life.history.length > 40) state.life.history.length = 40;
@@ -32234,6 +32400,7 @@ function doRestartLife(){
   state.life._keepNames = (state.life.players || []).map(p=>p.name);
   state.life.players = null;
   state.life.history = [];
+  state.life.gameId = Date.now().toString(36);   // 1.46: a new save slot
   state.life.setupDone = false;
   state.life.expandedIdx = null;
   state.life.turnIdx = null;
@@ -32552,6 +32719,7 @@ function renderSettingsPanel(){
     ${rows.map(r=>`<div class="toggle-row"><div><div>${r.label}</div><div style="color:var(--sub-text);font-size:11.5px;margin-top:2px;">${r.sub}</div></div><label class="toggle-switch"><input type="checkbox" data-lset="${r.key}" ${S[r.key]?'checked':''}><span class="track"></span><span class="knob"></span></label></div>`).join('')}
     <div class="toggle-row"><div><div>Rotate for Pass-and-Play</div><div style="color:var(--sub-text);font-size:11.5px;margin-top:2px;">Flip cards to face each seat around the table</div></div><label class="toggle-switch"><input type="checkbox" id="rotateToggle" ${state.life.rotate?'checked':''}><span class="track"></span><span class="knob"></span></label></div>
     ${canSetLifeBright() ? `<div class="toggle-row life-bright"><div style="flex:1;min-width:0;"><div>${_lnl ? 'Helderheid' : 'Brightness'} <b id="lifeBrightVal">${lifeBrightLabel(lifeBrightPct())}</b></div><div style="color:var(--sub-text);font-size:11.5px;margin-top:2px;">${_lnl ? 'Helemaal links: je telefoon bepaalt. Verder: vast op die stand zolang de life counter open is, en onthouden.' : 'All the way left: your phone decides. Further: locked at that level while the life counter is open, and remembered.'}</div><input type="range" id="lifeBrightRange" min="0" max="100" step="5" value="${lifeBrightPct()}" style="width:100%;margin-top:8px;accent-color:var(--brass);"></div></div>` : ''}
+    <div class="life-set-pair"><button class="ghost-btn" id="lifeJudgeBtn"><span class="ib">${ICONS.gavel}</span>${_lnl ? 'Vraag de AI-judge' : 'Ask AI judge'}</button><button class="ghost-btn" id="lifeRestoreBtn"><span class="ib">${ICONS.restore || '\u21ba'}</span>${_lnl ? 'Potje herstellen' : 'Restore a game'}</button></div>
     <button class="ghost-btn" id="restartLifeBtn" style="width:100%;margin-top:12px;color:var(--danger);border-color:var(--danger);">↺ Restart Game</button>
     <button class="primary-btn" id="leaveLifeBtn" style="width:100%;margin-top:10px;">${_lnl ? '\u2190 Life counter verlaten' : '\u2190 Leave the life counter'}</button>
   </div>`;
@@ -32566,6 +32734,8 @@ function renderSettingsPanel(){
   });
   document.getElementById('rotateToggle').addEventListener('change', e=>{ state.life.rotate = e.target.checked; renderLifeGrid(); });
   document.getElementById('restartLifeBtn').addEventListener('click', restartLife);
+  document.getElementById('lifeJudgeBtn')?.addEventListener('click', openJudgePopup);
+  document.getElementById('lifeRestoreBtn')?.addEventListener('click', openLifeRestore);
   const br = document.getElementById('lifeBrightRange');
   br?.addEventListener('input', ()=>{
     let v = Math.max(0, Math.min(100, parseInt(br.value, 10) || 0));
@@ -32642,6 +32812,7 @@ function lifeCardHtml(p, idx, count){
         ${pz ? `<div class="pz-label">${phyrexianSvg(15)}<span>Poison</span></div>
         <div class="lval-row">${ldeltaHtml(p._pzDelta, p._pzFresh)}<div class="lval2 pz-val ${p.poison >= 10 ? 'danger' : ''}">${p.poison}</div>${ldeltaHtml(p._pzDelta, p._pzFresh, true)}</div>`
           : `<div class="pz-label" style="max-width:80%;white-space:normal;text-transform:none;">${trS('Tap another player to count the damage you took from them.')}</div>`}
+        <div class="lf-extras"><button type="button" class="lf-x${p.monarch ? ' on' : ''}" data-lmonarch="${idx}" title="Monarch" aria-label="Monarch">${CROWN_SVG}<span>Monarch</span></button><button type="button" class="lf-x${p.dg ? ' on' : ''}" data-ldungeon="${idx}" title="Dungeon" aria-label="Dungeon">${DUNGEON_SVG}<span>${p.dg ? escapeHtml(p.dg.room) : 'Dungeon'}</span></button></div>
         <button class="submenu-toggle done" data-idx="${idx}">${trS('\u2713 Done')}</button>
       </div>
     </div></div>`;
@@ -32654,7 +32825,9 @@ function lifeCardHtml(p, idx, count){
       <div class="tap-zone left" data-idx="${idx}" data-side="minus"><span class="tap-glyph">−</span></div>
       <div class="tap-zone right" data-idx="${idx}" data-side="plus"><span class="tap-glyph">+</span></div>
       <input class="pname-input" data-idx="${idx}" value="${escapeHtml(p.name)}" size="${Math.max(4, Math.min(14, p.name.length || 8))}">
+      ${p.dg ? `<div class="ldungeon">${DUNGEON_SVG}<span>${escapeHtml(p.dg.room)}</span></div>` : ''}
       <div class="lval-row">
+        ${p.monarch ? `<span class="lmonarch" title="Monarch">${CROWN_SVG}</span>` : ''}
         <span class="ldelta minus ${p._delta<0?'show':''} ${p._delta<0&&p._deltaFresh?'pop':''}">${p._delta<0?'−'+Math.abs(p._delta):''}</span>
         <div class="lval2" data-setlife="${idx}" title="Tap to set life">${p.life}</div>
         <span class="ldelta plus ${p._delta>0?'show':''} ${p._delta>0&&p._deltaFresh?'pop':''}">${p._delta>0?'+'+p._delta:''}</span>
@@ -32691,6 +32864,7 @@ function renderLifeGrid(){
   });
   wireLifeGrid();
   requestAnimationFrame(layoutLifeCards);
+  if(state.life.setupDone) lifeAutosave();   // 1.46
 }
 /* 1.29: the logo sits where the most cards MEET -- a corner shared by four
    cards beats a T, and a T beats the bare middle -- nearest the middle of
@@ -32860,6 +33034,15 @@ function wireLifeGrid(){
       e.stopPropagation();
       openSetLifePopup(+v.dataset.setlife);
     });
+  });
+  // 1.46: Monarch and Dungeons in the poison menu
+  document.querySelectorAll('[data-lmonarch]').forEach(b=>{
+    ['pointerdown','touchstart'].forEach(ev=>b.addEventListener(ev, (e)=>e.stopPropagation(), {passive:true}));
+    b.addEventListener('click', (e)=>{ e.stopPropagation(); lifeSetMonarch(+b.dataset.lmonarch); });
+  });
+  document.querySelectorAll('[data-ldungeon]').forEach(b=>{
+    ['pointerdown','touchstart'].forEach(ev=>b.addEventListener(ev, (e)=>e.stopPropagation(), {passive:true}));
+    b.addEventListener('click', (e)=>{ e.stopPropagation(); openLifeDungeon(+b.dataset.ldungeon); });
   });
   document.querySelectorAll('.revive-btn').forEach(b=>{
     b.addEventListener('click', (e)=>{
