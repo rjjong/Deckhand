@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 <title>Deckhand — MTG deck builder</title>
+<script src="/runtime-config.js"></script>
 <meta name="description" content="Deck builder, card search, play-data recommendations, and a life tracker for every Magic: The Gathering format — Commander, Admiral, Pauper Commander, PreDH, Duel Commander, Standard, Pauper, Modern, Legacy and Vintage.">
 <meta name="theme-color" content="#111111">
 <meta property="og:type" content="website">
@@ -20,6 +21,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://deckhandcompanion.netlify.app/og-image.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="A&C MTG">
 <link rel="manifest" href="manifest.json?v=563" id="manifestLink">
@@ -356,9 +358,6 @@ main{flex:1;padding:16px 16px calc(var(--nav-h) + 30px + env(safe-area-inset-bot
 /* 1.37 (phone): the gold button floats at the foot again (Stef: floating
    over text is fine), and the "Show everything" row stays put beside it --
    the filters scroll behind both. */
-/* 1.40: the packages drop-up rides beside the gold button */
-.adv-go-row > .adv-go-pkg{pointer-events:auto;flex:1 1 auto;min-width:0;margin-left:14px;align-self:center;}
-.adv-go-row > .adv-go-pkg .nsel-btn{width:100%;}
 /* 1.35: "Show everything" starts where the fields start, so the gold
    button rises into the free space beside it (phone, bottom-up) */
 .adv-panel > .adv-showall{display:grid;grid-template-columns:96px minmax(0,1fr) auto;column-gap:10px;}
@@ -516,9 +515,6 @@ main.card-detail > div:nth-child(2){order:10;}
 .dl-empty-t{font-family:'Cinzel',serif;font-size:19px;font-weight:700;color:var(--ink-text);letter-spacing:0.04em;margin-top:4px;}
 .dl-empty-s{font-size:13.5px;color:var(--sub-text);}
 #decklistBox{display:flex;flex-direction:column-reverse;}
-main.has-dock{padding-bottom:calc(var(--nav-h) + 112px + env(safe-area-inset-bottom)) !important;}
-main.has-dock:has(#builderBody){padding-bottom:calc(var(--nav-h) + 84px + env(safe-area-inset-bottom)) !important;}
-main.has-dock:has(#dlPanelBox .panel-card){padding-bottom:calc(var(--nav-h) + 122px + env(safe-area-inset-bottom)) !important;}
 
 /* ---------- persistent brand banner (symbol + wordmark + tabs), same on every page ---------- */
 :root{ --nav-h: 66px; }
@@ -971,32 +967,6 @@ html .tag-drop .tag-drop-list > .tag-drop-h b{opacity:0.75;}
 .pt-gy-cards{display:flex;gap:5px;max-width:100%;overflow:hidden;}
 .pt-gy-cards .pt-card{width:44px;flex:0 0 44px;}
 .pt-gy-l{font-size:11px;color:var(--sub-text);}
-/* 1.42 packages, visual and bottom-up */
-.pkg-main{padding:12px 14px 0;}
-.pkg-stack{display:flex;flex-direction:column-reverse;gap:10px;min-height:100%;}
-.pkg-grid.visual-grid{gap:6px;}
-.pkg-grid.visual-grid > *{flex:0 0 calc(25% - 4.5px);}
-.pkg-card{position:relative;cursor:pointer;}
-.pkg-card img{width:100%;display:block;border-radius:5px;aspect-ratio:63/88;object-fit:cover;background:#0006;}
-.pkg-noimg{aspect-ratio:63/88;border-radius:5px;background:var(--ink-2, #0006);border:1.5px dashed var(--line);font-size:10px;color:var(--sub-text);display:flex;align-items:center;justify-content:center;text-align:center;padding:4px;}
-.pkg-rm{position:absolute;top:-5px;right:-5px;width:22px;height:22px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.8);background:var(--danger);color:#fff;font-size:11px;line-height:1;padding:0;cursor:pointer;}
-.pkg-row-h{display:flex;align-items:center;gap:10px;margin-top:10px;}
-.pkg-row-h .pkg-row-t{flex:1;min-width:0;}
-.pkg-row-h .pkg-edit{width:auto;flex:none;margin:0;padding:8px 14px;}
-.pkg-count{font-size:12px;color:var(--sub-text);text-align:right;margin-top:6px;}
-.pkg-foot{position:sticky;bottom:0;z-index:5;display:flex;align-items:center;gap:12px;padding:10px 0 12px;background:linear-gradient(to top, var(--ink) 70%, transparent);}
-.pkg-hint{flex:1;min-width:0;margin:0;font-size:12.5px;line-height:1.4;color:var(--sub-text);}
-.pkg-fab{flex:none;box-shadow:0 4px 14px rgba(0,0,0,0.5);}
-.pkg-fab svg{width:24px;height:24px;stroke-width:2.6;}
-.pkg-actions .ghost-btn, .pkg-actions .primary-btn{flex:1 1 0;margin:0;width:auto;}
-.pkg-find{display:flex;align-items:center;gap:8px;background:var(--field);border:1.5px solid var(--field-line);border-radius:10px;padding:0 10px;}
-.pkg-find .tds-ico svg{width:17px;height:17px;display:block;opacity:0.7;}
-.pkg-find input{flex:1;min-width:0;background:none;border:none;color:var(--ink-text);padding:11px 0;font-size:15px;outline:none;}
-.pkg-row{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;}
-.pkg-row-t{display:flex;flex-direction:column;gap:2px;}
-.pkg-row-t span{font-size:12.5px;color:var(--sub-text);}
-.pkg-row-b{display:flex;gap:8px;}
-.pkg-row-b .ghost-btn{flex:1 1 0;margin:0;}
 .add-sheet .primary-btn{width:100%;margin:0;}
 .add-qty{display:flex;align-items:center;justify-content:center;gap:14px;padding:4px 0;}
 .add-qty .ghost-btn{width:48px;flex:none;margin:0;font-size:20px;padding:6px 0;}
@@ -1710,9 +1680,9 @@ html[data-main="W"] :is(.sr-tile, .pair-cell) .st-meta-row .add-btn svg{color:#2
 .cselect-btn .cs-car{font-size:11px;color:var(--sub-text);flex:0 0 auto;}
 .ph-movers{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
 .col-tile .col-bnd{color:var(--brass);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.name-suggest{position:fixed;z-index:10060;display:flex;flex-direction:column-reverse;overflow-y:auto;background:var(--pop-bg);border:1.5px solid var(--pop-line);border-radius:10px;box-shadow:0 -10px 26px rgba(0,0,0,0.5);}
+.name-suggest{position:fixed;z-index:10060;display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior:contain;background:var(--pop-bg);border:1.5px solid var(--pop-line);border-radius:10px;box-shadow:0 10px 26px rgba(0,0,0,0.5);}
 .name-suggest .ns-opt{flex:0 0 auto;display:block;width:100%;text-align:left;background:none;border:none;border-top:1.5px solid var(--line);color:var(--ink-text);padding:11px 14px;font-size:15px;font-family:'Inter';cursor:pointer;}
-.name-suggest .ns-opt:last-child{border-top:none;}
+.name-suggest .ns-opt:first-child{border-top:none;}
 .name-suggest .ns-opt:active{background:var(--hl);}
 .cselect-panel{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:70;background:var(--pop-bg);border:1.5px solid var(--pop-line);border-radius:10px;max-height:280px;overflow-y:auto;box-shadow:0 12px 30px rgba(0,0,0,0.5);}
 .cselect-panel.tall{max-height:none;}
@@ -3064,7 +3034,6 @@ html.desk .tag-drop-search{border-top:none;border-bottom:2px solid var(--pop-lin
 /* ---- the deck page: its tabs and tools under the title row ---- */
 html.desk .app > main > .builder-tabs{top:var(--top-h);bottom:auto;left:var(--dl);right:auto;width:330px;height:50px;padding:6px 0;border-top:none;border-bottom:2px solid var(--line);background:var(--ink);z-index:41;}
 html.desk .deck-dock{top:var(--top-h);bottom:auto;left:calc(var(--dl) + 330px);right:var(--dl);width:auto;transform:none;max-width:none;box-shadow:none;height:50px;box-sizing:border-box;border-top:none;border-bottom:2px solid var(--line);background:var(--ink);justify-content:flex-end;gap:8px;}
-html.desk main.has-dock, html.desk main.has-dock:has(#builderBody), html.desk main.has-dock:has(#dlPanelBox .panel-card){padding-top:calc(var(--top-h) + 66px) !important;padding-bottom:48px !important;}
 html.desk .deck-dock .menu-pop{top:54px;bottom:auto;left:auto;right:0;}
 html.desk .deck-dock .dk-tool, html.desk .deck-dock #menuBtn{width:auto;height:36px;padding:0 10px 0 8px;gap:6px;display:inline-flex;align-items:center;flex:0 0 auto;}
 html.desk .deck-dock .dk-tool::after, html.desk .deck-dock #menuBtn::after{content:attr(title);font-size:13px;font-weight:600;white-space:nowrap;}
@@ -3248,6 +3217,8 @@ html[data-main="R"] :is(.sr-tile, .pair-cell) .st-meta-row .add-btn-rm{--pm-bg:#
 .ms-prod{height:22px;}
 .ms-prod-n b{font-family:'Inter',sans-serif;font-size:13px;font-weight:800;color:#fff;background:rgba(14,11,8,0.88);border:1px solid rgba(255,255,255,0.6);border-radius:999px;padding:0 8px;line-height:16px;text-shadow:none;font-variant-numeric:tabular-nums;}
 </style>
+<link rel="stylesheet" href="navigation.css">
+<link rel="stylesheet" href="layout.css">
 </head>
 <body>
 <!-- Feedback (Netlify Forms): detected at deploy time; the app posts to it
@@ -3718,7 +3689,7 @@ function cselectHtml(id, options, value, placeholder, o){
           if(rd0) artPick[x.art] = tileArtPick(rd0, usedArts);
         });
       }
-      const opts = (o.tiles ? options.slice().reverse() : options).map(x=>{
+      const opts = options.map(x=>{
         const selCls = String(x.v)===String(value ?? '')?'sel':'';
         if(o.tiles){
           // Art keys can carry Scryfall clauses with double quotes
@@ -3750,22 +3721,7 @@ function cselectHtml(id, options, value, placeholder, o){
    above the nav and leaving a strip of page showing through. Measured live,
    because the stack is one bar on some pages and two on others. */
 function csFitSheetFoot(){
-  try{
-    document.querySelectorAll('.adv-panel, #colAdvBox').forEach(sheet=>{
-      if(getComputedStyle(sheet).position !== 'fixed') return;
-      // desk: the side panel runs from the cap to the window's foot
-      if(isDesk()){ sheet.style.bottom = ''; return; }
-      const m = sheet.closest('main') || document;
-      // Everything that is pinned to the foot below the sheet.
-      const bars = Array.from(m.querySelectorAll('.searchbar, .adv-toggle, div:has(> #colAdvToggle), div:has(> #deckFilter)'))
-        .filter(el=>el !== sheet && !sheet.contains(el) && getComputedStyle(el).position === 'sticky' || getComputedStyle(el).position === 'fixed');
-      let top = null;
-      bars.forEach(el=>{ const t = el.getBoundingClientRect().top; if(t > 0 && (top === null || t < top)) top = t; });
-      if(top === null) return;
-      const gap = Math.max(0, Math.round(innerHeight - top));
-      sheet.style.bottom = gap + 'px';
-    });
-  }catch(e){}
+  // Compatibility hook: filter panels now follow their search bar in flow.
 }
 function csFitBrowsePanel(){
   try{
@@ -3775,41 +3731,16 @@ function csFitBrowsePanel(){
     if(!p) return;
     const host = p.closest('.cselect');
     if(!host) return;
-    if(isDesk()){
-      const hb = host.getBoundingClientRect().bottom;
-      p.style.bottom = 'auto'; p.style.top = 'calc(100% + 4px)';
-      p.style.maxHeight = Math.max(200, Math.floor(window.innerHeight - hb - 20)) + 'px';
-      return;
-    }
-    // De VLOER: de bovenkant van de laagste keuzebalk op de pagina. Elke
-    // drop-up rust daarop, welke balk je ook opent -- anders houden de
-    // hoger staande balken nauwelijks hoogte over, want de pagina scrolt
-    // niet meer zolang er een sheet openstaat. De stapel staat in
-    // column-reverse, dus de laagste zoeken we op plek, niet op volgorde.
-    let vloer = 0;
-    wrap.querySelectorAll('.cselect .cselect-btn').forEach(b=>{
-      const r = b.getBoundingClientRect();
-      if(r.height > 0 && r.top > vloer) vloer = r.top;
-    });
-    if(!vloer) return;
-    const cap = document.querySelector('.page-cap');
-    const capB = cap ? cap.getBoundingClientRect().bottom : 0;
-    const hostB = host.getBoundingClientRect().bottom;
-    // `bottom` telt vanaf de onderkant van de eigen .cselect -- omrekenen.
-    p.style.bottom = Math.round(hostB - (vloer - 4)) + 'px';
-    const avail = Math.floor(vloer - 4 - capB - 12);
-    if(avail > 160){
-      p.style.maxHeight = avail + 'px';
-      const sc = p.querySelector('.cs-artscroll');
-      if(sc) sc.scrollTop = sc.scrollHeight;   // bottom-up: stay at the foot
-    }
+    const hb = host.getBoundingClientRect().bottom;
+    p.style.bottom = 'auto'; p.style.top = 'calc(100% + 4px)';
+    p.style.maxHeight = Math.max(160, Math.floor(window.innerHeight - hb - 100)) + 'px';
   }catch(e){}
 }
 const CS_SHEETS = '.adv-panel, #colAdvBox';
 function csRerender(){
   // Opening or closing a dropdown re-renders the whole page — without this,
   // the browser would snap the scroll back to the top every time.
-  const y = window.scrollY;
+  const y = pageScroller().scrollTop;
   // On Inspiration the page behind a drop-up is taken OUT of the layout,
   // so the scroll collapses to nothing. Remember where the feed stood when
   // the sheet opened and put it back when it closes.
@@ -3817,19 +3748,16 @@ function csRerender(){
   if(csHides){
     if(state.openCSelect){ if(state._csPageY == null) state._csPageY = y; }
   }
-  // A filter sheet is bottom-anchored: whatever a dropdown adds must push
-  // the TOP up, never the foot down. Distance to the bottom of the content
-  // is the quantity that has to survive the re-render.
-  const feet = Array.from(document.querySelectorAll(CS_SHEETS)).map(el=>el.scrollHeight - el.scrollTop);
+  const offsets = Array.from(document.querySelectorAll(CS_SHEETS)).map(el=>el.scrollTop);
   render();
-  window.scrollTo(0, y);
+  pageScroller().scrollTo(0, y);
   if(csHides && !state.openCSelect && state._csPageY != null){
     const back = state._csPageY; state._csPageY = null;
-    requestAnimationFrame(()=>{ try{ window.scrollTo(0, back); }catch(e){} });
+    requestAnimationFrame(()=>{ try{ pageScroller().scrollTo(0, back); }catch(e){} });
   }
   Array.from(document.querySelectorAll(CS_SHEETS)).forEach((el, i)=>{
-    if(feet[i] == null) return;
-    el.scrollTop = Math.max(0, el.scrollHeight - feet[i]);
+    if(offsets[i] == null) return;
+    el.scrollTop = offsets[i];
   });
   // Dropdowns now live inside the reco overlay too; the page render above
   // never touches overlays, so refresh the reco body when it's up (outside
@@ -3899,14 +3827,14 @@ function wireCsSearchRows(root){
       });
       const nr = panel.querySelector('.cs-noresults');
       if(nr) nr.style.display = visibleOpts().length ? 'none' : '';
-      if(panel.classList.contains('cs-artgrid')){ const sc = panel.querySelector('.cs-artscroll') || panel; sc.scrollTop = sc.scrollHeight; }
+      if(panel.classList.contains('cs-artgrid')){ const sc = panel.querySelector('.cs-artscroll') || panel; sc.scrollTop = 0; }
     });
     inp.addEventListener('keydown', e=>{
       if(e.key !== 'Enter') return;
       e.preventDefault();
       const vis = visibleOpts().filter(b=>!b.classList.contains('opt-disabled'));
       // Bottom-up tile panels put the most popular option at the FOOT.
-      const first = panel.classList.contains('cs-artgrid') ? vis[vis.length-1] : vis[0];
+      const first = vis[0];
       if(first) first.click();
     });
   });
@@ -4155,7 +4083,7 @@ document.addEventListener('click', (e)=>{
         const bar = top && top.closest ? top.closest('header, .topbar, .page-cap, .app-top, [class*="cap"]') : null;
         const br = bar ? bar.getBoundingClientRect().bottom : 0;
         const off = (br > 20 && br < 200 ? br : 90) + 8;
-        window.scrollBy(0, bw.getBoundingClientRect().top - off);
+        pageScroller().scrollBy(0, bw.getBoundingClientRect().top - off);
       }catch(err){}
     });
     return;
@@ -4355,13 +4283,10 @@ function openNselMenu(btn){
   // column-reverse, so the FIRST option sits at the foot, right above the field.
   pop.style.left = Math.max(8, r.left) + 'px';
   pop.style.width = Math.min(window.innerWidth - 16, Math.max(r.width, 200)) + 'px';
-  if(isDesk()){
-    // desk: a drop-DOWN under the field, first option at the top
+  {
+    // A dropdown under the field, first option at the top.
     pop.style.top = Math.round(r.bottom + 4) + 'px'; pop.style.bottom = 'auto';
     pop.style.maxHeight = Math.max(160, window.innerHeight - r.bottom - 16) + 'px';
-  } else {
-  pop.style.bottom = (window.innerHeight - r.top + 4) + 'px';
-  pop.style.maxHeight = Math.max(160, r.top - 60) + 'px';
   }
   Array.from(sel.options).forEach((o, i)=>{
     const b = document.createElement('button');
@@ -4382,7 +4307,7 @@ function openNselMenu(btn){
   });
   document.body.appendChild(shield);
   document.body.appendChild(pop);
-  pop.scrollTop = isDesk() ? 0 : pop.scrollHeight;   // the first options in view
+  pop.scrollTop = 0;
 }
 try{
   let _enhQ = false;
@@ -4432,14 +4357,6 @@ document.addEventListener('click', (e)=>{
     if(t) t.innerHTML = 'Advanced filter ' + foldIcoHtml(false);
     const cv = document.getElementById('colChev');
     if(cv) cv.textContent = '▾';
-  }
-  if(state.spAdvOpen && state.screen==='spoilers' &&
-     !(e.target.closest && (e.target.closest('#spAdvBox') || e.target.closest('#spAdvToggle')))){
-    state.spAdvOpen = false;
-    const sbox = document.getElementById('spAdvBox');
-    if(sbox) sbox.style.display = 'none';
-    const st = document.getElementById('spAdvToggle');
-    if(st) st.innerHTML = 'Advanced filter ' + foldIcoHtml(false);
   }
 });
 
@@ -4554,7 +4471,7 @@ function _cmdrBansTouchUi(){
   // list, or the open deck's legality box, cap count and red rims.
   // Extras: never redraw the whole page -- that folded every open list shut
   // the moment a ban list finished loading. An open list fills itself.
-  if(state.screen === 'settings') return;
+  if(state.screen === 'menu') return;
   if(state.screen === 'collection' && colLegalFmt(state.colFilter)){ try{ csRerender(); }catch(e){} return; }
   if(state.screen === 'decklist'){
     try{
@@ -4710,6 +4627,7 @@ function markSpoilerAnnounced(code){
 }
 function saveAutoSets(){ try{ localStorage.setItem(LS_PREFIX+'autoSets', JSON.stringify(autoSets)); }catch(e){} }
 async function checkForNewSets(force){
+  if(window.DECKHAND_CONFIG?.selfHosted && !force) return;
   try{
     if(!force && Date.now() - (autoSets.lastCheck||0) < 20*3600*1000) return;
     await resolveLegalSets(force);
@@ -6028,7 +5946,17 @@ function allDeckTags(d){
 
 /* ========================= SCRYFALL ========================= */
 
-const SF_BASE = 'https://api.scryfall.com';
+const SF_BASE = window.DECKHAND_CONFIG?.scryfallBase
+  ? location.origin + window.DECKHAND_CONFIG.scryfallBase : 'https://api.scryfall.com';
+function hasLocalDataFile(name){
+  const files = window.DECKHAND_CONFIG?.dataFiles;
+  return !Array.isArray(files) || files.includes(name);
+}
+function sfRequestUrl(url){
+  const u = new URL(url, location.href);
+  return window.DECKHAND_CONFIG?.scryfallBase && u.hostname === 'api.scryfall.com'
+    ? SF_BASE + u.pathname + u.search : u.href;
+}
 
 /* Every Scryfall request goes through here: spaced out and auto-retried with
    exponential backoff on 429/5xx, so bulk operations (which fire many
@@ -6045,14 +5973,15 @@ let _nextSfSlot = 0;
    3. Retries rejoin the FRONT of their own lane after backoff. */
 const _sfQ = { hi: [], lo: [] };
 let _sfWorking = false, _sfGen = 0, _sfBeat = 0;
-/* Scryfall asks for 50-100ms between requests. The queue normally runs at 80ms,
+/* Requests start at least 250ms apart, with a shared backend queue as well.
    which is inside that, but a burst of deck pricing still managed to trip their
    limiter -- and a refused request comes back as a fast network error, not a
    429, because the refusal carries no CORS headers. So the queue watches for
    the signature (several sub-100ms failures in a row, or a real 429) and eases
    off for a minute before returning to full speed. Still one request at a time:
    only the spacing changes. */
-const SF_GAP = 80, SF_GAP_EASY = 250, SF_COOL_MS = 60000;
+const SF_GAP = 250, SF_GAP_EASY = 1000, SF_COOL_MS = 60000;
+let _sfRetryAt = 0;
 let _sfCoolUntil = 0, _sfFastFails = 0;
 function _sfCooling(){ return Date.now() < _sfCoolUntil; }
 function _sfNoteRefusal(ms, status){
@@ -6143,14 +6072,18 @@ async function _netConfirmDown(){
 /* The offline notice lives in the page-name bar: one short chip on the left,
    rebuilt by every render and kept in sync the moment the network flips. */
 function netChipHtml(){
-  return _netDown ? `<span class="net-chip" id="netChip" title="${appLang()==='nl' ? 'Geen verbinding \u2014 je ziet de opgeslagen versie, dit herstelt vanzelf' : 'No connection \u2014 showing cached data, recovers by itself'}">\u26a1 Offline</span>` : '';
+  const local = window.DECKHAND_CONFIG?.selfHosted && navigator.onLine !== false;
+  const title = local
+    ? (appLang()==='nl' ? 'De lokale Deckhand-server is niet bereikbaar. Start de server opnieuw.' : 'The local Deckhand server is unavailable. Start the server again.')
+    : (appLang()==='nl' ? 'Geen verbinding — je ziet de opgeslagen versie' : 'No connection — showing cached data');
+  return _netDown ? `<span class="net-chip" id="netChip" title="${title}">⚡ ${local ? 'Server offline' : 'Offline'}</span>` : '';
 }
 function _netChipSync(){
   try{
     const cap = document.querySelector('.page-cap');
     const chip = document.getElementById('netChip');
     if(_netDown){
-      if(!chip && cap) cap.insertAdjacentHTML('afterbegin', netChipHtml());
+      if(!chip && cap) (cap.querySelector('.cap-tools') || cap).insertAdjacentHTML('afterbegin', netChipHtml());
     } else if(chip){ chip.remove(); }
   }catch(e){}
 }
@@ -6165,9 +6098,9 @@ function _netSetDown(down){
       try{
         const pc = new AbortController();
         const pt = setTimeout(()=>{ try{ pc.abort(); }catch(e){} }, 6000);
-        const r = await fetch(SF_BASE + '/catalog/keyword-abilities', {cache:'no-store', signal: pc.signal});
+        const r = await fetch(window.DECKHAND_CONFIG?.selfHosted ? '/api/health' : SF_BASE + '/catalog/keyword-abilities', {cache:'no-store', signal: pc.signal});
         clearTimeout(pt);
-        if(r) _netNote(true);
+        if(r?.ok) _netNote(true);
       }catch(e){}
     }, 12000);
   }
@@ -6206,9 +6139,10 @@ async function _bulkNamedServe(url){
   }catch(e){ return null; }
 }
 function sfFetch(url, attempt, bg, fresh, front){
+  url = sfRequestUrl(url);
   // OFFLINE FAST PATH: while the banner is up, name lookups answer straight
   // from the local database -- no queueing behind a dead network.
-  if(_netDown && /\/cards\/named\?/.test(String(url))){
+  if((_netDown || (window.DECKHAND_CONFIG?.selfHosted && !fresh)) && /\/cards\/named\?/.test(String(url))){
     return _bulkNamedServe(url).then(r=>{
       if(r){ try{ sfJournal('BULK 200 (offline) ' + String(url).replace(/^https?:\/\/[^/]*/, '').slice(0, 70)); }catch(e){} return r; }
       return _sfEnqueue(url, attempt, bg, fresh, front);
@@ -6216,7 +6150,13 @@ function sfFetch(url, attempt, bg, fresh, front){
   }
   return _sfEnqueue(url, attempt, bg, fresh, front);
 }
+function localServerUnavailable(){
+  return new Response(JSON.stringify({object:'error',code:'local_server_unavailable',details:'The local Deckhand server is unavailable.'}),
+    {status:503,headers:{'content-type':'application/json'}});
+}
 function _sfEnqueue(url, attempt, bg, fresh, front){
+  if(window.DECKHAND_CONFIG?.selfHosted && _netDown) return Promise.resolve(localServerUnavailable());
+  if(Date.now() < _sfRetryAt) return Promise.resolve(new Response(JSON.stringify({object:'error', code:'rate_limited', details:'Scryfall is cooling down.'}), {status:429, headers:{'content-type':'application/json'}}));
   // `front` puts the job at the head of its lane: still strictly one request
   // at a time at the same 80ms cadence — only the ORDER changes. Used for
   // what the person is looking at right now (the open card sheet's rulings
@@ -6253,9 +6193,7 @@ async function _sfPump(){
   if(_sfWorking) return;
   _sfWorking = true;
   const myGen = ++_sfGen;
-  // This loop is byte-for-byte the cadence measured as fast in the field —
-  // one request at a time, 80ms apart. Do not add concurrency here again;
-  // it trips rate limits and ends up slower.
+  // Interactive jobs precede background jobs. A rate limit pauses both lanes.
   try{
     while(_sfQ.hi.length || _sfQ.lo.length){
       if(myGen !== _sfGen) return;   // the watchdog started a fresh pump — stand down
@@ -6263,13 +6201,22 @@ async function _sfPump(){
       // Network down? HOLD the lane instead of grinding doomed retries --
       // the probe or the browser's online event releases it.
       let _held = 0;
-      while(_netDown && _held < 6){        // ~7s at most, never an endless hold
+      while(_netDown && !window.DECKHAND_CONFIG?.selfHosted && _held < 6){
         _sfBeat = Date.now();
         await new Promise(r=>setTimeout(r, 1200));
         _held++;
         if(myGen !== _sfGen) return;
       }
       const job = _sfQ.hi.length ? _sfQ.hi.shift() : _sfQ.lo.shift();
+      if(window.DECKHAND_CONFIG?.selfHosted && _netDown){
+        const cached = /\/cards\/named\?/.test(String(job.url)) ? await _bulkNamedServe(job.url) : null;
+        job.resolve(cached || localServerUnavailable());
+        continue;
+      }
+      if(Date.now() < _sfRetryAt){
+        job.resolve(new Response(JSON.stringify({object:'error', code:'rate_limited'}), {status:429}));
+        continue;
+      }
       if(Date.now() - job.born > 90000){
         const served = /\/cards\/named\?/.test(String(job.url)) ? await _bulkNamedServe(job.url) : null;
         if(served) job.resolve(served); else job.reject(new Error('request expired in queue'));
@@ -6294,15 +6241,23 @@ async function _sfPump(){
       // nothing either way, so it is deliberately not counted.
       const _verdict = res ? 'ok' : _netClassify(err);
       if(_verdict === 'ok') _netNote(true);
-      else if(_verdict === 'dead') _netNoteFail(job.url);
+      else if(_verdict === 'dead'){
+        if(window.DECKHAND_CONFIG?.selfHosted) _netSetDown(true);
+        else _netNoteFail(job.url);
+      }
       // A refusal is fast; a genuinely slow line is not. Only the fast kind,
       // and a real 429, mean "you are asking too often".
-      if(res && res.status === 429) _sfNoteRefusal(null, 429);
+      if(res && res.status === 429){
+        _sfNoteRefusal(null, 429);
+        _sfRetryAt = Date.now() + Math.max(60000, (Number(res.headers?.get('retry-after')) || 0) * 1000);
+        for(const lane of [_sfQ.hi, _sfQ.lo]){
+          while(lane.length) lane.shift().resolve(new Response(JSON.stringify({object:'error',code:'rate_limited'}), {status:429}));
+        }
+      }
       else if(_verdict === 'dead') _sfNoteRefusal(Date.now() - t0, null);
       else if(res && res.ok) _sfNoteOk();
-      const retryable = err || (res && (res.status === 429 || res.status >= 500));
-      if(res && res.status === 429){ await new Promise(r=>setTimeout(r, 1600)); }   // let the limit breathe
-      const _maxTries = _netDown ? 0 : (_sfCooling() ? 2 : 6);
+      const retryable = err || (res && res.status >= 500);
+      const _maxTries = _netDown ? 0 : 1;
       if(retryable && job.attempt < _maxTries){
         if(res) console.warn('Scryfall ' + res.status + ', retrying (attempt ' + (job.attempt+1) + ')', job.url);
         job.attempt++;
@@ -6313,6 +6268,7 @@ async function _sfPump(){
         // local database instead of failing its caller.
         const served = /\/cards\/named\?/.test(String(job.url)) ? await _bulkNamedServe(job.url) : null;
         if(served){ try{ sfJournal('BULK 200 (net-fail) ' + String(job.url).replace(/^https?:\/\/[^/]*/, '').slice(0, 70)); }catch(e){} job.resolve(served); }
+        else if(window.DECKHAND_CONFIG?.selfHosted) job.resolve(localServerUnavailable());
         else job.reject(err);
       } else {
         job.resolve(res);
@@ -6344,6 +6300,7 @@ async function resolveLegalSets(force){
   if(state.setsResolved && !force) return;
   try{
     const res = await sfFetch(SF_BASE + '/sets', 0, false, !!force);
+    if(!res.ok) return;
     const data = await res.json();
     const all = data.data || [];
     const byNorm = new Map();
@@ -6376,7 +6333,10 @@ async function resolveLegalSets(force){
     state.allSetsRaw.forEach(x=>{ if(x.icon) state.setIconMap[x.code] = x.icon; });
     try{ localStorage.setItem(LS_PREFIX+'setIcons', JSON.stringify(state.setIconMap)); }catch(e){}
     state.setsResolved = true;
-  }catch(e){ console.error('resolveLegalSets failed', e); }
+  }catch(e){
+    if(window.DECKHAND_CONFIG?.selfHosted && _netDown) sfJournal('sets: local server unavailable');
+    else console.error('resolveLegalSets failed', e);
+  }
 }
 function ubSetCodeSet(){
   return new Set((state.legalSetCodesUB||[]).concat(autoSets.ubCodes||[]));
@@ -6943,7 +6903,7 @@ function isDesk(){ return document.documentElement.classList.contains('desk'); }
     const mq = window.matchMedia('(min-width: 1000px)');
     const set = ()=>document.documentElement.classList.toggle('desk', mq.matches);
     set();
-    mq.addEventListener('change', ()=>{ set(); try{ render(); window.scrollTo(0, 0); }catch(e){} });
+    mq.addEventListener('change', ()=>{ set(); try{ render(); pageScroller().scrollTo(0, 0); }catch(e){} });
   }catch(e){}
 })();
 const LS_PREFIX = 'admiral_app:';
@@ -7006,15 +6966,12 @@ const CHANGELOG_HISTORY = [
   { v: '1.43', d: '2026-10-31',
     en: ['Added cards use your own printing'],
     nl: ['Toegevoegde kaart krijgt jouw printing'] },
-  { v: '1.42', d: '2026-10-31',
-    en: ['Packages show their cards as pictures', 'Package editor: search to add cards', 'Add to a package from Search', 'Gold + makes a new package'],
-    nl: ['Pakketten tonen kaarten als plaatjes', 'Pakket bewerken: zoek en voeg toe', 'Vanuit Zoeken toevoegen aan pakket', 'Gouden + maakt een nieuw pakket'] },
   { v: '1.41', d: '2026-10-31',
     en: ['Price and salt pills look like buttons', 'Deck and collection totals too', 'Title bars no longer grow'],
     nl: ['Prijs- en saltpil lijken knoppen', 'Ook bij deck- en collectietotaal', 'Titelbalken worden niet hoger'] },
   { v: '1.40', d: '2026-10-31',
-    en: ['Card packages: make your own', 'Packages in Inspiration and Search', 'Add: pick amount, deck or collection', 'Select: collection & maybe buttons', 'Jump opens a folded Maybeboard', 'Smart: you choose to block or not', 'Show everything on top in filters', 'Extras tiles rearranged'],
-    nl: ['Kaartpakketten: maak je eigen', 'Pakketten bij Inspiratie en Zoeken', 'Add: aantal, deck of collectie', 'Selectie: collectie- en maybeknop', 'Springen opent een dichte Maybeboard', 'Smart: jij kiest blokken of niet', 'Show everything bovenaan in filters', 'Tegels bij Extra\u2019s herschikt'] },
+    en: ['Add: pick amount, deck or collection', 'Select: collection & maybe buttons', 'Jump opens a folded Maybeboard', 'Smart: you choose to block or not', 'Show everything on top in filters', 'Extras tiles rearranged'],
+    nl: ['Add: aantal, deck of collectie', 'Selectie: collectie- en maybeknop', 'Springen opent een dichte Maybeboard', 'Smart: jij kiest blokken of niet', 'Show everything bovenaan in filters', 'Tegels bij Extra\u2019s herschikt'] },
   { v: '1.39', d: '2026-10-31',
     en: ['Playtest: Smart opponents switch', 'Playtest: drag cards to any zone', 'Playtest: graveyard beside commander', 'Playtest: battlefield sorts itself', 'Playtest: new draws on the left', 'Swipe: shorter drag, quick flick', 'Trackpad swipe steps through cards', 'Price pill looks like a button', 'Land AI removed'],
     nl: ['Speeltest: Smart-tegenstanders', 'Speeltest: sleep kaarten naar zones', 'Speeltest: graveyard naast commander', 'Speeltest: slagveld sorteert zichzelf', 'Speeltest: nieuwe kaart links in hand', 'Swipe: kortere veeg, snelle flick', 'Trackpad-swipe bladert door kaarten', 'Prijsknop ziet eruit als knop', 'Land-AI verwijderd'] },
@@ -7202,8 +7159,8 @@ function tourSteps(){
             : P('Paste or load a list: every deck files itself into its <strong>format</strong> folder.') },
     { k:'decklist', need:'deck', go:()=>{ const d = d0(); if(d){ state.activeDeckId = d.id; state.builderTab = 'list'; switchPage('decklist'); } }, sel:['#dockInspire'],
       t: '✦ Inspiration',
-      b: NL ? P('Alle <strong>EDHREC</strong>-tips voor je commander die je nog niet speelt, plus landbases en je eigen pakketten.')
-            : P('Every <strong>EDHREC</strong> pick for your commander you don’t run yet, plus land bases and your own packages.') },
+      b: NL ? P('Alle <strong>EDHREC</strong>-tips voor je commander die je nog niet speelt, plus landbases.')
+            : P('Every <strong>EDHREC</strong> pick for your commander you don’t run yet, plus land bases.') },
     { k:'card', need:'deck', go:()=>{ const d = d0(); const c = d && (d.admiral || (d.cards || [])[0]); if(c){ try{ openCardInfo(c); }catch(e){} } }, sel:['#ciSimilar', '#csSimilar'],
       t: NL ? 'Similar cards' : 'Similar cards',
       b: NL ? P('Kaarten die <strong>hetzelfde doen</strong>, op tags gerangschikt. Budget vindt goedkopere.')
@@ -7220,7 +7177,7 @@ function tourSteps(){
       t: '✦ Inspiration',
       b: NL ? P('<strong>Top-commanders</strong>, staples en <strong>meta-decks</strong> voor elk format.')
             : P('<strong>Top commanders</strong>, staples and <strong>meta decks</strong> for every format.') },
-    { k:'extras', go:()=>switchPage('settings'), sel:['#crRow'],
+    { k:'extras', go:()=>switchPage('menu'), sel:['#crRow'],
       t: NL ? 'Vraag de AI-judge' : 'Ask the AI judge',
       b: NL ? P('Regelvraag aan tafel? Tag de kaarten met @ en krijg antwoord mét de officiële regels. Life Counter en Draft tools staan ernaast.')
             : P('Rules question at the table? Tag the cards with @ and get an answer with the official rules. Life Counter and Draft tools sit beside it.') }
@@ -7465,8 +7422,7 @@ function maybeShowFormatChanges(){
     document.getElementById('formatChangeOk').addEventListener('click', ()=>{
       done();
       if(dest === 'spoilers'){ switchPage('spoilers'); }
-      else if(dest === 'bans'){ state.settingsBanOpen = true; switchPage('settings'); }
-      else { state.settingsRulesOpen = true; switchPage('settings'); }
+      else { switchPage('menu'); document.getElementById(dest === 'bans' ? 'banListsRow' : 'fmtRulesRow')?.click(); }
     });
     // Tapping beside the note still just dismisses it — no forced voyage.
     el.addEventListener('click', e=>{ if(e.target===el) done(); });
@@ -8135,8 +8091,8 @@ const ICONS = {
   ban: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M6 6l12 12"/></svg>`,
   info: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5"/><circle cx="12" cy="7.8" r="0.7" fill="currentColor"/></svg>`,
   tag: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z"/><circle cx="8" cy="8" r="1.6"/></svg>`,
-  decks: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="9.5" rx="1.6"/><path d="M7 10.5V6.5h5v4"/><path d="M11 10.5V8.2h5.5v2.3"/></svg>`,
-  binder: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3.5" width="14" height="17" rx="1.8"/><path d="M8.6 3.5v17"/><circle cx="6.8" cy="8" r="0.9"/><circle cx="6.8" cy="12" r="0.9"/><circle cx="6.8" cy="16" r="0.9"/><rect x="11.2" y="7" width="5.2" height="4.6" rx="0.8"/></svg>`,
+  decks: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 5V4a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-1"/><path d="M3 8V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-1"/><rect x="1" y="8" width="14" height="14" rx="2"/><path d="m8 11 3 4-3 4-3-4z"/></svg>`,
+  binder: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5C9 3 5 3 2 4v15c3-1 7-1 10 1 3-2 7-2 10-1V4c-3-1-7-1-10 1Z"/><path d="M12 5v15"/><rect x="5" y="7" width="4" height="4" rx=".6"/><rect x="15" y="7" width="4" height="4" rx=".6"/><path d="M5 14h4m6 0h4"/></svg>`,
   collection: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="7" width="13" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-1"/></svg>`,
   coins: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="6.5" rx="7" ry="3"/><path d="M5 6.5v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5M5 11.5v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5"/></svg>`,
   spark: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l2.2 6.1L20 12l-5.8 2.9L12 21l-2.2-6.1L4 12l5.8-2.9z"/></svg>`,
@@ -8175,6 +8131,7 @@ const ICONS = {
   inspire: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"/></svg>`,
   settings: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>`,
   back: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>`,
+  filter: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16l-6 7v7l-4 2v-9z"/></svg>`,
   dots: `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>`,
   share: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.4 10.8l7.2-4.5M8.4 13.2l7.2 4.5"/></svg>`,
   reco: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l2 7 7 2-7 2-2 7-2-7-7-2 7-2z"/></svg>`,
@@ -8287,19 +8244,15 @@ function switchPage(p, topnav){
   render();
   scrollToPageFoot();
 }
+function pageScroller(){
+  return document.querySelector('.app .tab-viewport[data-screen]') || document.scrollingElement || document.documentElement;
+}
 function scrollToPageFoot(){
-  if(isDesk()){
-    // desk: a page opens at its TOP; the bottom-up "show the foot" nudges rest
-    if(state._deskTop){ state._deskTop = false; requestAnimationFrame(()=>{ try{ window.scrollTo(0, 0); }catch(e){} }); }
-    return;
-  }
-  // Pages OPEN at the bottom now — controls live there, so every landing
-  // starts at the foot and scrolling UP reveals the rest: the complete
-  // mirror of the old top-down orientation. Double rAF lets layout settle
-  // first; the browser's scroll anchoring then keeps the foot pinned while
-  // late content (images, results) grows above.
+  // Compatibility name retained for existing callers; all pages now open at the top.
+  state._deskTop = false;
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    try{ window.scrollTo(0, Math.max(0, document.documentElement.scrollHeight || 0)); }catch(e){}
+    window.scrollTo(0, 0);
+    document.querySelector('.app .tab-viewport[data-screen]')?.scrollTo(0, 0);
   }));
 }
 /* Back is the app's own ladder (overlays, panels, pages) -- the browser must
@@ -8374,17 +8327,18 @@ function placeNameSuggest(){
   if(!el) return;
   if(!inp || !inp.isConnected){ closeNameSuggest(); return; }
   const r = inp.getBoundingClientRect();
-  const vh = window.innerHeight || 700;
+  const viewport = window.visualViewport;
+  const nav = document.querySelector('.app > .app-navigation');
+  const visibleBottom = Math.min(window.innerHeight,
+    viewport ? viewport.offsetTop + viewport.height : Infinity,
+    nav ? nav.getBoundingClientRect().top : Infinity);
+  const top = Math.round(r.bottom + 6);
+  const available = Math.max(0, Math.floor(visibleBottom - top - 8));
   el.style.left = Math.round(r.left) + 'px';
   el.style.width = Math.round(r.width) + 'px';
-  if(isDesk()){
-    el.style.top = Math.round(r.bottom + 6) + 'px'; el.style.bottom = 'auto';
-    el.style.maxHeight = Math.round(Math.max(110, Math.min(vh * 0.6, vh - r.bottom - 20))) + 'px';
-    return;
-  }
-  el.style.top = 'auto';
-  el.style.bottom = Math.round(vh - r.top + 6) + 'px';
-  el.style.maxHeight = Math.round(Math.max(110, Math.min(vh * 0.45, r.top - 64))) + 'px';
+  el.style.top = top + 'px'; el.style.bottom = 'auto';
+  el.style.maxHeight = Math.min(320, available) + 'px';
+  el.style.visibility = available > 0 ? 'visible' : 'hidden';
 }
 function showNameSuggest(input, list, onPick){
   if(!list.length){ closeNameSuggest(); return; }
@@ -8399,7 +8353,7 @@ function showNameSuggest(input, list, onPick){
     _sug.el = el;
   }
   _sug.input = input;
-  // DOM-first = the foot of this column-reverse list: best match lowest.
+  // Best matches lead the dropdown directly below the input.
   el.innerHTML = list.map((n, i)=>`<button type="button" class="ns-opt" data-i="${i}">${escapeHtml(n)}</button>`).join('');
   el.querySelectorAll('.ns-opt').forEach(b=>b.addEventListener('click', ()=>{
     const n = list[+b.dataset.i];
@@ -8407,32 +8361,15 @@ function showNameSuggest(input, list, onPick){
     try{ onPick(n); }catch(e){}
   }));
   placeNameSuggest();
-  el.scrollTop = 0;   // a column-reverse scroller: 0 is the foot
+  el.scrollTop = 0;
   state._localCsClose = closeNameSuggest;
 }
 window.addEventListener('resize', ()=>{ try{ placeNameSuggest(); }catch(e){} });
-/* The keyboard shrinks the window. A page that sat on its foot stays on its
-   foot -- the cards nearest the search bar stay in view above it instead of
-   sliding under the keyboard. "At the foot" is only measured while the
-   window keeps its size, so the resize's own scroll jolt can't fool it. */
-(function(){
-  let lastH = window.innerHeight, atFoot = true;
-  const gap = ()=>document.documentElement.scrollHeight - (window.scrollY + window.innerHeight);
-  window.addEventListener('scroll', ()=>{ if(window.innerHeight === lastH) atFoot = gap() < 60; }, {passive:true});
-  const onResize = ()=>{
-    const h = window.innerHeight;
-    if(h === lastH) return;
-    const keep = atFoot;
-    lastH = h;
-    if(keep){
-      const pin = ()=>{ try{ window.scrollTo(0, document.documentElement.scrollHeight); }catch(e){} };
-      pin(); requestAnimationFrame(pin); setTimeout(pin, 180);
-      atFoot = true;
-    }
-  };
-  window.addEventListener('resize', onResize);
-  if(window.visualViewport) window.visualViewport.addEventListener('resize', onResize);
-})();
+window.addEventListener('scroll', ()=>{ try{ placeNameSuggest(); }catch(e){} }, {capture:true, passive:true});
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', ()=>{ try{ placeNameSuggest(); }catch(e){} });
+  window.visualViewport.addEventListener('scroll', ()=>{ try{ placeNameSuggest(); }catch(e){} });
+}
 /* getNames(q) may return an array or a promise of one. */
 function wireNameSuggest(input, getNames, onPick){
   if(!input || input._nsWired) return;
@@ -8516,7 +8453,7 @@ function pushOverlay(id, closeFn, defer){
    Home · My Decks · Search · Inspiration · Extras. Deliberately strict —
    a clearly horizontal, decisive swipe only — so vertical scrolling, grids,
    dropdowns and controls are never hijacked. */
-const PAGE_STRIP = ['home','decks','collection','search','browse','settings'];
+const PAGE_STRIP = ['decks','collection','search','browse','life'];
 // My Collection lives under My Stuff, so it rides the strip at the 'decks'
 // position — swiping there works like My Stuff, and swiping back returns to
 // My Stuff rather than the collection.
@@ -8717,6 +8654,8 @@ function dismissAllOverlays(){
    the swipe strip uses it to paint the NEIGHBOR page while your finger
    drags, launcher-style. */
 function pageBodyHtml(screen){
+  if(screen==='menu') return menuPageHtml();
+  if(screen==='life') return lifePageHtml();
   if(screen==='home') return homePageHtml();
   if(screen==='decks') return homeHtml();
   if(screen==='decklist') return decklistPageHtml();
@@ -8754,7 +8693,7 @@ function render(){
   // network. ensureCmdrBans throttles itself via its 24h freshness stamp.
   if(state.screen === 'decklist'){ try{ ensureCmdrBans(false); }catch(err){} }
   if(state.screen === 'collection'){ try{ repriceCollectionDaily(); }catch(err){} }
-  if(state.screen === 'settings' && state._newPrevScreen !== 'settings'){ try{ newAdmiralTick(); }catch(err){} }
+  if(state.screen === 'menu' && state._newPrevScreen !== 'menu'){ try{ newAdmiralTick(); }catch(err){} }
   if(state.screen === 'decks' && state._newPrevScreen !== 'decks'){ try{ newAdmiralTick('newAdmiralDecks'); }catch(err){} }
   state._newPrevScreen = state.screen;
   if(!state._ladderBack){
@@ -8807,16 +8746,54 @@ function render(){
     }catch(e){ appReady(); }
   }
 }
+const headerObserver = new ResizeObserver(entries=>{
+  for(const entry of entries) document.documentElement.style.setProperty('--app-header-h', `${entry.target.getBoundingClientRect().height}px`);
+});
+function layoutPageViewport(page){
+  if(!page || page.classList.contains('search-page')) return;
+  if(page.classList.contains('has-dock')){
+    const controls=document.createElement('section');
+    controls.className='deck-controls'; controls.setAttribute('aria-label','Deck controls');
+    for(const child of page.querySelectorAll(':scope > .builder-tabs, :scope > .deck-dock')) controls.appendChild(child);
+    page.prepend(controls);
+  }
+  page.classList.add('page-frame');
+  const content=document.createElement('div');
+  content.className='page-content tab-viewport'; content.dataset.screen=state.screen;
+  const bars='.searchbar, .browse-selects, .reco-themes, .deck-controls, .sp-jump, .adv-toggle, #colAdvBox, #spAdvBox, #spAdvToggle';
+  for(const child of [...page.children]){
+    const controls=child.matches(bars) || child.querySelector(':scope > #deckFilter, :scope > #colAdvToggle');
+    const floating=child.matches('#advSlot, #spAdvSlot, .deck-fab, .reco-fab');
+    if(controls) child.classList.add('page-controls');
+    else if(!floating) content.appendChild(child);
+  }
+  page.appendChild(content);
+}
 function renderInner(){
   const root = document.getElementById('root');
+  const previousViewport = root.querySelector('.tab-viewport');
+  const tabScroll = previousViewport?.dataset.screen === state.screen ? previousViewport.scrollTop : 0;
+  const advancedScroll = document.getElementById('advancedSearchBody')?.scrollTop || 0;
+  const advancedFocus = document.getElementById('advancedSearchScreen')?.contains(document.activeElement) ? document.activeElement.id : null;
   state._capNote = '';                        // pages may set it while building
   state._capCount = null;
   let body = pageBodyHtml(state.screen);
   const nav = navHtml();
   root.innerHTML = `<div class="app">${nav}${body}</div>`;
-
+  const page = root.querySelector('.app > main');
+  layoutPageViewport(page);
+  const viewport = root.querySelector('.tab-viewport');
+  if(viewport) viewport.dataset.restoreScroll = String(tabScroll);
+  headerObserver.disconnect();
+  const header = root.querySelector('.app-header');
+  if(header){
+    document.documentElement.style.setProperty('--app-header-h', `${header.getBoundingClientRect().height}px`);
+    headerObserver.observe(header);
+  }
   try{
     if(state.screen==='home') wireHomePage();
+    else if(state.screen==='menu') wireMenuPage();
+    else if(state.screen==='life') wireLifePage();
     else if(state.screen==='decks') wireHome();
     else if(state.screen==='decklist') wireDecklistPage();
     else if(state.screen==='search') wireSearchPage();
@@ -8832,6 +8809,18 @@ function renderInner(){
   renderModal();
   renderPreview();
   renderLifeOverlay();
+  if(viewport){
+    viewport.scrollTop = tabScroll;
+    requestAnimationFrame(()=>{
+      if(viewport.isConnected) viewport.scrollTop = tabScroll;
+      delete viewport.dataset.restoreScroll;
+    });
+  }
+  if(state.advOpen || state.spAdvOpen){
+    const scroller = document.getElementById('advancedSearchBody');
+    if(scroller) scroller.scrollTop = advancedScroll;
+    if(advancedFocus) document.getElementById(advancedFocus)?.focus({preventScroll:true});
+  }
 }
 /* Sub-pages (Similar, Recommendations, Printings, Combos, Saltiest) carry
    the REAL app navigation: same banner, back in its cross-fleet colors. The
@@ -8839,23 +8828,22 @@ function renderInner(){
    right above it and no padding arithmetic is needed. The top bar keeps
    only the page name, styled like every main page word. */
 function overlayCapHtml(title, extra){
-  return `<div class="topbar ov-cap"><div class="brand-txt two-line ov-title">${escapeHtml(title)}</div>${extra || ''}</div>`;
+  return `<div class="topbar ov-cap app-overlay-header"><button type="button" class="header-menu" data-app-menu aria-label="Open menu"><img src="icon-192.png" alt="" width="36" height="36"></button><button type="button" class="brand-txt two-line ov-title" data-app-home aria-label="Go to home">${escapeHtml(title)}</button>${extra || ''}</div>`;
 }
-function overlayNavHtml(){
-  const items = [
+function primaryNavItems(){
+  return [
     {k:'decks', l:'Decks', i:ICONS.decks},
     {k:'collection', l:'Collection', i:ICONS.binder},
     {k:'search', l:'Search', i:ICONS.search},
     {k:'browse', l:'Inspiration', i:ICONS.inspire},
-    {k:'settings', l:'Extras', i:ICONS.settings}
+    {k:'life', l:'Life', i:ICONS.heart}
   ];
-  const activeKey = state.screen === 'decklist' ? 'decks' : (state.screen === 'trade') ? 'collection' : (state.screen === 'draft') ? 'settings' : state.screen;
-  return `<div class="brand-banner ov-nav">
-    <div class="compass" data-ovnav="home" title="Home">${compassSvg()}</div>
-    <button class="banner-tab ov-back" data-ovnav="back" aria-label="Back" title="Back">${ICONS.back}</button>
-    <div class="spacer"></div>
-    <div class="banner-tabs">${items.map(it=>`<button class="banner-tab ${activeKey===it.k?'active':''}" data-ovnav="page:${it.k}" title="${it.l}" aria-label="${it.l}">${it.i}</button>`).join('')}</div>
-  </div>`;
+}
+function activeNavKey(){
+  return state.screen === 'decklist' ? 'decks' : state.screen === 'trade' ? 'collection' : state.screen === 'inspiration' ? 'browse' : state.screen;
+}
+function overlayNavHtml(){
+  return `<nav class="brand-banner ov-nav app-navigation" aria-label="Main navigation"><div class="banner-tabs">${primaryNavItems().map(it=>`<button type="button" class="banner-tab ${activeNavKey()===it.k?'active':''}" data-ovnav="page:${it.k}" title="${it.l}" aria-label="${it.l}"${activeNavKey()===it.k?' aria-current="page"':''}>${it.i}<span class="tab-label">${it.l}</span></button>`).join('')}</div></nav>`;
 }
 function wireOverlayNav(el){
   el.querySelectorAll('[data-ovnav]').forEach(b=>b.addEventListener('click', ()=>{
@@ -8910,14 +8898,8 @@ function inspirationCapTitle(){
   }catch(e){ return ''; }
 }
 function navHtml(){
-  const items = [
-    {k:'decks', l:'Decks', i:ICONS.decks},
-    {k:'collection', l:'Collection', i:ICONS.binder},
-    {k:'search', l:'Search', i:ICONS.search},
-    {k:'browse', l:'Inspiration', i:ICONS.inspire},
-    {k:'settings', l:'Extras', i:ICONS.settings}
-  ];
-  const titles = { home: 'NEWS', decks:'MY DECKS', search:'SEARCH', browse:'INSPIRATION', inspiration:'INSPIRATION', settings:'EXTRAS', spoilers:'SPOILERS', trade:'TRADE', draft:'DRAFT', collection:'MY COLLECTION' };
+  const items = primaryNavItems();
+  const titles = { home: 'DECKHAND', menu:'MENU', life:'LIFE TRACKER', decks:'MY DECKS', search:'SEARCH', browse:'INSPIRATION', inspiration:'INSPIRATION', settings:'SETTINGS', spoilers:'SPOILERS', trade:'TRADE', draft:'DRAFT', collection:'MY COLLECTION' };
   let title = titles[state.screen] || 'ADMIRAL';
   if(state.screen === 'decks' && state.folderNav){
     const _p = isFmtFolder(state.folderNav) ? [{name: fmtLabelOf(fmtOfFolder(state.folderNav))}] : folderPath(state.folderNav);
@@ -8936,25 +8918,27 @@ function navHtml(){
     // Inside a binder the page word IS the binder: its name in the top-left,
     // prefixed with a chevron that (like the hardware back button) returns
     // to the binder overview.
-    title = '‹ ' + (state.colFilter.binder==='__wants__' ? trS('Wants') : state.colFilter.binder==='__all__' ? trS('All cards') : (binderName(state.colFilter.binder) || 'Binder'));
+    title = (state.colFilter.binder==='__wants__' ? trS('Wants') : state.colFilter.binder==='__all__' ? trS('All cards') : (binderName(state.colFilter.binder) || 'Binder'));
   }
   let capInner = escapeHtml(title);
   if(state.screen === 'browse'){ const _cs = browseCapSelHtml(); if(_cs) capInner = _cs; }
-  const activeKey = state.screen === 'decklist' ? 'decks' : (state.screen === 'trade') ? 'collection' : (state.screen === 'draft') ? 'settings' : state.screen;
-  return `<div class="page-cap">
-    ${netChipHtml()}
+  const activeKey = activeNavKey();
+  return `<header class="page-cap app-header">
+    <button type="button" class="header-menu ${state.screen==='menu'||state.screen==='settings'?'active':''}" id="homeBtn" data-app-menu aria-label="Open menu" title="Menu"><img src="icon-192.png" alt="" width="36" height="36"></button>
+    <button type="button" class="brand-txt two-line" id="brandTitle" data-app-home aria-label="Go to home" title="Go to home"><span id="brandTitleInner">${capInner}</span></button>
+    <div class="cap-tools">${netChipHtml()}
+    ${state.screen === 'search' ? '<button type="button" id="spoilersBtn" title="Spoilers from upcoming sets" aria-label="Spoilers">🔮</button>' : ''}
+    ${state.screen === 'spoilers' ? `<button type="button" id="spAdvToggle" class="header-filter" aria-label="Advanced spoiler filters" title="${trS('Advanced filters')}" aria-haspopup="dialog" aria-expanded="${state.spAdvOpen}">${ICONS.filter}</button>` : ''}
     ${(()=>{ if(state.screen!=='decklist') return ''; const dd = getDeck(state.activeDeckId); if(!dd) return '';
       const issues = checkDeckLegality(dd);
       return `<span id="capDeckCount" title="Tap to see the deck's legality check" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;font-family:'JetBrains Mono',monospace;color:${deckCountColor(deckCountState(dd, issues))};white-space:nowrap;cursor:pointer;padding:8px 6px 8px 0;">${deckCountLabel(dd)}${issues.length?' ⚠':''}</span>`; })()}
     ${state.screen === 'collection' && state._capCount != null ? `<span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;font-family:'JetBrains Mono',monospace;color:var(--sub-text);">${state._capCount}</span>` : ''}
-    <div class="brand-txt ${editable?'editable':''} two-line" id="brandTitle" ${editable?'title="Tap to rename this deck"':''}><span id="brandTitleInner">${capInner}</span></div>
+    ${editable ? `<button type="button" class="icon-btn" id="renameDeckBtn" aria-label="Rename deck" title="Rename deck">${ICONS.edit || inlIco('edit', 18)}</button>` : ''}
     ${state._capNote ? `<span class="cap-note${(state.screen === 'collection' || state.screen === 'decklist') ? ' cap-tap' : ''}" id="capNoteBtn"${state.screen === 'decklist' ? ' role="button"' : ''}>${state._capNote}</span>` : ''}
-  </div><div class="brand-banner">
-    <div class="compass ${state.screen==='home'?'active':''}" id="homeBtn" title="Home">${compassSvg()}</div>
-    <button class="banner-tab" id="capBack" aria-label="Back" title="Back">${ICONS.back}</button>
-    <div class="spacer"></div>
-    <div class="banner-tabs">${items.map(it=>`<button class="banner-tab ${activeKey===it.k?'active':''}" data-page="${it.k}" title="${it.l}" aria-label="${it.l}">${it.i}</button>`).join('')}</div>
-  </div>`;
+    </div>
+  </header><nav class="brand-banner app-navigation" aria-label="Main navigation">
+    <div class="banner-tabs">${items.map(it=>`<button type="button" class="banner-tab ${activeKey===it.k?'active':''}" data-page="${it.k}" title="${it.l}" aria-label="${it.l}"${activeKey===it.k?' aria-current="page"':''}>${it.i}<span class="tab-label">${it.l}</span></button>`).join('')}</div>
+  </nav>`;
 }
 /* The page word / deck name shrinks its font (down to a floor) until it fits,
    only ellipsizing for truly enormous deck names. Re-measured after the
@@ -9026,7 +9010,8 @@ function fitBrandTitle(){
 if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>fitBrandTitle());
 window.addEventListener('resize', fitBrandTitle);
 document.addEventListener('click', (e)=>{
-  if(e.target && e.target.closest && e.target.closest('#capBack')){ try{ history.back(); }catch(_){} }
+  if(e.target.closest?.('[data-app-menu]')){ switchPage('menu', true); return; }
+  if(e.target.closest?.('[data-app-home]')){ switchPage('home', true); return; }
   // The compact €✕ badge explains itself on tap, anywhere in the app.
   if(e.target && e.target.closest && e.target.closest('.nopr')){ toast(trS('Price not listed yet')); }
   // The count in the cap ("100/100 \u26a0") answers when tapped with a
@@ -9085,16 +9070,10 @@ function wireNav(){
   const hb = document.getElementById('homeBtn');
   if(hb){
     hb.addEventListener('contextmenu', e=>e.preventDefault());
-    hb.addEventListener('click', ()=>switchPage('home'));
   }
-  // Inside a binder, the chevroned page word steps back to the binder overview.
-  if(state.screen === 'collection' && state.colFilter && state.colFilter.binder){
-    const bt2 = document.getElementById('brandTitle');
-    if(bt2){ bt2.style.pointerEvents='auto'; bt2.style.cursor='pointer'; bt2.addEventListener('click', ()=>history.back()); }
-  }
-  // The page word is plain text — only on the decklist is it tappable, to rename the deck.
+  // Titles always return home; renaming has its own action.
   if(state.screen === 'decklist'){
-    document.getElementById('brandTitle')?.addEventListener('click', ()=>{
+    document.getElementById('renameDeckBtn')?.addEventListener('click', ()=>{
       const d = getDeck(state.activeDeckId);
       if(!d) return;
       openInAppPrompt('Rename this deck', 'Deck name', d.name, (name)=>{
@@ -9107,6 +9086,66 @@ function wireNav(){
   }
 }
 function needDeckHtml(msg){ return `<div class="need-deck"><div class="anchor">${modeGlyph()}</div><p>${msg}</p><button id="goDecksBtn">Go to My Decks</button></div>`; }
+function menuPageHtml(){
+  return `<main class="hub-page menu-page">
+    <section class="hub-intro"><span class="hub-eyebrow">YOUR COMPANION AT THE TABLE</span><h1>Make it yours.</h1><p>A place for your preferences, tools, and everything behind the cards.</p></section>
+    ${menuToolsHtml()}
+    <section class="hub-actions menu-settings" aria-label="Settings">
+      <button type="button" class="hub-card" id="menuSettings"><span class="hub-icon">${ICONS.settings}</span><span><strong>Settings</strong><small>Preferences, sync &amp; backups</small></span><span class="hub-arrow" aria-hidden="true">›</span></button>
+    </section>
+    <p class="hub-footnote">Deckhand · Built for your next game.</p>
+  </main>`;
+}
+function wireMenuPage(){
+  document.getElementById('menuSettings')?.addEventListener('click', ()=>switchPage('settings'));
+  const credits = document.getElementById('appFootNote');
+  const cell = document.getElementById('appFootCell');
+  if(credits && cell){document.querySelector('.menu-page .hub-footnote')?.before(credits);cell.remove();}
+  wirePreferenceCards();
+  wireMenuTools();
+}
+function wirePreferenceCards(){
+  const tools = document.querySelector('.menu-tools');
+  for(const group of tools.querySelectorAll(':scope > .settings-section')){
+    const card = group.querySelector(':scope > .hub-card');
+    if(card) group.prepend(card);
+  }
+  const syncCards = ()=>{
+    for(const group of tools.querySelectorAll(':scope > .settings-section')){
+      const card=group.querySelector(':scope > .hub-card');
+      const body=group.querySelector(':scope > .xt-body, :scope > .menu-tool-body');
+      if(card && body){card.setAttribute('aria-controls',body.id);card.setAttribute('aria-expanded',String(!body.hidden));}
+    }
+  };
+  syncCards();
+  new MutationObserver(syncCards).observe(tools,{subtree:true,attributes:true,attributeFilter:['hidden']});
+  const language = document.getElementById('languageBody');
+  document.getElementById('langRow')?.addEventListener('click', ()=>foldToggle(language,null,document.getElementById('langRow')));
+}
+function settingsPageHtml(){
+  return `<main class="hub-page settings-page"><section class="hub-intro"><span class="hub-eyebrow">YOUR PREFERENCES</span><h1>Make it yours.</h1><p>Choose your preferences, manage your data, and keep everything backed up and in sync.</p></section>${menuToolsHtml(true)}</main>`;
+}
+function wireSettingsPage(){wirePreferenceCards();wirePreferences();}
+function menuCardHtml(id, icon, title, detail, extra){
+  return `<button type="button" class="hub-card" id="${id}"><span class="hub-icon">${icon}</span><span class="hub-copy"><strong>${title}</strong><small class="l2">${detail || ''}</small>${extra || ''}</span><span class="hub-arrow" aria-hidden="true">›</span></button>`;
+}
+function lifePageHtml(){
+  const playing = state.life.setupDone && state.life.players?.length;
+  return `<main class="hub-page life-page">
+    <section class="hub-intro"><span class="hub-eyebrow">READY WHEN YOU ARE</span><h1>Gather your table.</h1><p>Choose your seats, track every turn, and keep your focus on the game.</p></section>
+    <section class="hub-actions" aria-label="Life tracker">
+      ${playing ? `<button type="button" class="hub-card" id="lifeResume"><span class="hub-icon">${ICONS.heart}</span><span><strong>Resume game</strong><small>${state.life.players.length} players · Turn ${state.life.turnNum || 1}</small></span><span class="hub-arrow" aria-hidden="true">›</span></button>` : ''}
+      <button type="button" class="hub-card hub-primary" id="lifeNewGame"><span class="hub-icon">${ICONS.heart}</span><span><strong>New game</strong><small>Pick a format and a table layout</small></span><span class="hub-arrow" aria-hidden="true">›</span></button>
+      <button type="button" class="hub-card" id="lifeSavedGames"><span class="hub-icon">${inlIco('save', 24)}</span><span><strong>Saved games</strong><small>Restore one of your last ten games</small></span><span class="hub-arrow" aria-hidden="true">›</span></button>
+    </section>
+    <p class="hub-footnote">Life totals stay with you. Games save as you play.</p>
+  </main>`;
+}
+function wireLifePage(){
+  document.getElementById('lifeResume')?.addEventListener('click', openLifeOverlay);
+  document.getElementById('lifeNewGame')?.addEventListener('click', ()=>{ const playing = state.life.setupDone; openLifeOverlay(); if(playing) restartLife(); });
+  document.getElementById('lifeSavedGames')?.addEventListener('click', openLifeRestore);
+}
 function wireNeedDeck(){ document.getElementById('goDecksBtn')?.addEventListener('click', ()=>switchPage('decks')); }
 
 /* ---------------- HOME / MY DECKS ---------------- */
@@ -9524,13 +9563,13 @@ function openCROverlay(startMode){
   const arm = ()=>{ if(!state._crqArmed){ state._crqArmed = true; pushOverlay('crq', crClearStep); } };
   // 1.38: the page under the judge keeps its place -- back on Extras you are
   // exactly where you left it (the root is locked while the judge is open)
-  const keepY = window.scrollY, keepScreen = state.screen;
+  const keepY = pageScroller().scrollTop, keepScreen = state.screen;
   pushOverlay('cr', ()=>{
     state._crqArmed = false;
     document.getElementById('crOverlay')?.remove();
     if(state.screen === keepScreen){
-      try{ window.scrollTo({ top: keepY, behavior: 'instant' }); }catch(e){ window.scrollTo(0, keepY); }
-      requestAnimationFrame(()=>{ if(state.screen === keepScreen && Math.abs(window.scrollY - keepY) > 1) window.scrollTo(0, keepY); });
+      try{ pageScroller().scrollTo({ top: keepY, behavior: 'instant' }); }catch(e){ pageScroller().scrollTo(0, keepY); }
+      requestAnimationFrame(()=>{ if(state.screen === keepScreen && Math.abs(pageScroller().scrollTop - keepY) > 1) pageScroller().scrollTo(0, keepY); });
     }
   });
   // 1.38: examples that have a real answer -- the card is tagged, so its text
@@ -9816,12 +9855,10 @@ function wireHomePage(){
   state._crossLanded = false;   // landing animation classes were baked into this render; don't repeat
   document.getElementById('homeStartBtn')?.addEventListener('click', ()=>switchPage('browse'));
   document.getElementById('homeReadRules')?.addEventListener('click', ()=>{
-    state.settingsRulesOpen = true;
-    state.settingsFullRulesOpen = true;
-    switchPage('settings');
+    switchPage('menu');
+    document.getElementById('fmtRulesRow')?.click();
   });
   document.getElementById('homeModeLogo')?.addEventListener('click', openHomeAbout);
-  refreshInstallPill();
   const nb = document.getElementById('homeNews');
   if(nb) loadMtgNews(nb);
   requestAnimationFrame(fitHomeNews);
@@ -9830,40 +9867,6 @@ function wireHomePage(){
     window._homeNewsRs = true;
     window.addEventListener('resize', ()=>{ if(state.screen === 'home') fitHomeNews(); });
   }
-}
-/* Install nudge on Home. Shown only while a real install is on offer: in a
-   browser tab or from a bookmark shortcut (both report display-mode browser),
-   never once the app is properly installed. Dismissed choice is remembered. */
-function refreshInstallPill(){
-  try{
-    const main = document.querySelector('main.home-page');
-    const news = document.getElementById('homeNews');
-    const old = document.getElementById('installPill');
-    const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-    let hidden = false;
-    try{ hidden = !!localStorage.getItem(LS_PREFIX + 'installPillOff'); }catch(e){}
-    const want = !!(main && news && state._installEvt && !standalone && !hidden);
-    if(!want){ if(old) { old.remove(); fitHomeNews(); } return; }
-    if(old) return;
-    const el = document.createElement('div');
-    el.className = 'install-pill';
-    el.id = 'installPill';
-    el.innerHTML = `<button type="button" class="ip-go">⬇ ${escapeHtml(trS('Install as an app'))}</button><button type="button" class="ip-x" title="Dismiss">✕</button>`;
-    // Home is a normal column (not reversed), so inserting before the news
-    // box puts the pill directly above it, under the slogan.
-    main.insertBefore(el, news);
-    el.querySelector('.ip-go').addEventListener('click', async ()=>{
-      const evt = state._installEvt; if(!evt) return;
-      state._installEvt = null;
-      try{ evt.prompt(); await evt.userChoice; }catch(e){}
-      refreshInstallPill();
-    });
-    el.querySelector('.ip-x').addEventListener('click', ()=>{
-      try{ localStorage.setItem(LS_PREFIX + 'installPillOff', '1'); }catch(e){}
-      el.remove(); fitHomeNews();
-    });
-    fitHomeNews();
-  }catch(e){}
 }
 /* The news box takes exactly the room between its own top and the nav bar
    — no dead strip beneath it on any screen height. */
@@ -10565,20 +10568,11 @@ function openTileMenu(anchorEl, items){
   document.body.appendChild(pop);
   const r = anchorEl.getBoundingClientRect();
   pop.style.position='fixed';
-  // Drop-up FIRST, like every menu in this bottom-anchored app: open above
-  // the anchor whenever the menu fits there. Short menus used to drop DOWN
-  // over the bottom nav because only overflowing ones flipped up. Below is
-  // the fallback for anchors near the top; the last resort pins high and
-  // scrolls.
   const below = r.bottom + 4;
-  const above = r.top - 6 - pop.offsetHeight;
-  let up = true;
-  if(above >= 8){ pop.style.top = above + 'px'; }
-  else if(below + pop.offsetHeight <= window.innerHeight - 10){ pop.style.top = below + 'px'; up = false; }
-  else { pop.style.top = Math.max(8, above) + 'px'; }
-  // §10a viewport rule: a drop-up that overflows opens showing its FOOT —
-  // the entries nearest the thumb are where reading starts.
-  if(up) pop.scrollTop = pop.scrollHeight;
+  const room = window.innerHeight - below - 90;
+  pop.style.top = (room >= 120 ? below : Math.max(72, r.top - pop.offsetHeight - 4)) + 'px';
+  pop.style.maxHeight = Math.max(120, room) + 'px';
+  pop.scrollTop = 0;
   pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth-8-pop.offsetWidth))+'px';
   pop.style.zIndex=200;
   items.forEach((it,i)=>pop.querySelector(`[data-i="${i}"]`).addEventListener('click', ()=>{ pop.remove(); it.fn(); }));
@@ -11806,7 +11800,7 @@ function wireCollectionPage(){
   let t=null;
   fq?.addEventListener('input', ()=>{ clearTimeout(t); t=setTimeout(()=>{
     state.colFilter.q = fq.value;
-    const y = window.scrollY; render(); window.scrollTo(0,y);
+    const y = pageScroller().scrollTop; render(); pageScroller().scrollTo(0,y);
     const el = document.getElementById('colFq');
     if(el){ el.focus(); const v=el.value; el.value=''; el.value=v; }
   }, 380); });
@@ -11814,7 +11808,7 @@ function wireCollectionPage(){
   let tt=null;
   ftype?.addEventListener('input', ()=>{ clearTimeout(tt); tt=setTimeout(()=>{
     state.colFilter.type = ftype.value;
-    const y = window.scrollY; render(); window.scrollTo(0,y);
+    const y = pageScroller().scrollTop; render(); pageScroller().scrollTo(0,y);
     const el = document.getElementById('colTypeText');
     if(el){ el.focus(); const v=el.value; el.value=''; el.value=v; }
   }, 380); });
@@ -11846,7 +11840,7 @@ function wireCollectionPage(){
     let cqT = null;
     const applyColQ = ()=>{
       state.colFilter.q = colQ ? colQ.value : '';
-      const y = window.scrollY; render(); window.scrollTo(0, y);
+      const y = pageScroller().scrollTop; render(); pageScroller().scrollTo(0, y);
       const el = document.getElementById('colSearchQ');
       if(el){ el.focus(); const v = el.value; el.value = ''; el.value = v; }
     };
@@ -11936,7 +11930,7 @@ function wireCollectionPage(){
     openTileMenu(anchor, [
       {label:'☑ '+trS('Select all'), fn:()=>{
         state.colSel = new Set(Array.from(document.querySelectorAll('.col-tile[data-ci]')).map(t=>+t.dataset.ci));
-        const y = window.scrollY; render(); window.scrollTo(0, y);
+        const y = pageScroller().scrollTop; render(); pageScroller().scrollTo(0, y);
       }},
       {label:mIco('folder') + trS('Move to binder…'), fn:()=>{
         openBindersPop(anchor, (bid)=>{
@@ -13503,6 +13497,7 @@ async function dailyPricesReady(){
 }
 
 async function dailyPricesCheck(force){
+  if(!hasLocalDataFile('prices-meta.json')) return;
   try{
     if(!('DecompressionStream' in window)) return;
     if(!force && (navigator.onLine === false || document.hidden)) return;
@@ -14070,6 +14065,11 @@ function spFilterActive(){
   return !!(f.q || f.type
     || Object.values(f.colors||{}).some(Boolean) || Object.values(f.rarity||{}).some(Boolean));
 }
+function resetSpoilerFilters(){
+  state.spoilerSetFilter = null;
+  state.spFilter = {q:'', type:'', colors:{W:false,U:false,B:false,R:false,G:false,C:false},
+    colorMode:'all', rarity:{common:false,uncommon:false,rare:false,mythic:false}};
+}
 /* True while the page still has to fetch the fresh set list. Until then
    "no sets are previewing" would be a guess, not a fact -- opening the page
    from a push showed exactly that wrong message for a moment. */
@@ -14091,29 +14091,30 @@ function spoilersPageHtml(){
     ${sets.length ? `<div id="spBody"><div class="status"><div class="spinner"></div></div></div>`
       : spSetsPending() ? `<div class="status" style="margin-top:24px;"><div class="spinner"></div></div>`
       : `<div class="empty-note" style="margin-top:24px;">No sets are previewing right now.<br>Spoiler season returns in the weeks before each release.</div>`}
-    ${sets.length ? (()=>{
-      const sf = state.spFilter;
-      const setOpts = [{v:'', l:'All sets'}].concat(sets.map(x=>({v:x.code, l:x.name, icons:setIconHtml(x.code)})));
-      const colorOrder = ['W','U','B','R','G','C'];
-      return `<button class="adv-toggle" id="spAdvToggle">Advanced filter ${foldIcoHtml(state.spAdvOpen)}</button>
-      <div class="adv-panel" id="spAdvBox" style="${state.spAdvOpen?'':'display:none;'}">
-        ${advGoHtml('spGo')}
-        <div class="adv-row"><label>Name</label><input id="spFq" class="col-filter-input" placeholder="Card name\u2026" value="${escapeHtml(sf.q)}"></div>
-        <div class="adv-row"><label>Set</label>${cselectHtml('spSet', setOpts, active||'', 'All sets')}</div>
-        <div class="adv-row"><label>Type</label><input id="spTypeText" class="col-filter-input" placeholder="e.g. Dragon, Equipment" value="${escapeHtml(sf.type)}"></div>
-        <div class="adv-row"><label>Colors</label><div class="color-check-row">${colorOrder.map(c=>`<label class="ccheck"><input type="checkbox" data-spcolor="${c}" ${sf.colors[c]?'checked':''}><span class="mana-check">${manaIconSvg(c, 26)}</span></label>`).join('')}</div>
-          <div class="adv-sub" style="max-width:220px;">${cselectHtml('spCM', [
-            {v:'all', l:'Must have all selected'},
-            {v:'exact', l:'Exactly these colors'},
-            {v:'atmost', l:'At most these colors'}
-          ], sf.colorMode, 'Match mode')}</div>
-        </div>
-        <div class="adv-row"><label>Rarity</label><div class="rarity-row">
-          ${[['common','Common'],['uncommon','Uncommon'],['rare','Rare'],['mythic','Mythic']].map(([v,l])=>`<label class="rcheck"><input type="checkbox" data-sprarity="${v}" ${sf.rarity[v]?'checked':''}><span class="rpill r-${v}">${l}</span></label>`).join('')}
-        </div></div>
-      </div>`;
-    })() : ''}
+    <div id="spAdvSlot">${state.spAdvOpen ? advancedSearchScreenHtml() : ''}</div>
   </main>`;
+}
+function spoilerAdvancedPanelHtml(){
+  const sets = currentPreviewSets();
+  const active = state.spoilerSetFilter;
+  const sf = state.spFilter;
+  const setOpts = [{v:'', l:'All sets'}].concat(sets.map(x=>({v:x.code, l:x.name, icons:setIconHtml(x.code)})));
+  const colorOrder = ['W','U','B','R','G','C'];
+  return `<div class="adv-panel" id="spAdvBox">
+    <div class="adv-row"><label>Name</label><input id="spFq" class="col-filter-input" placeholder="Card name\u2026" value="${escapeHtml(sf.q)}"></div>
+    <div class="adv-row"><label>Set</label>${cselectHtml('spSet', setOpts, active||'', 'All sets')}</div>
+    <div class="adv-row"><label>Type</label><input id="spTypeText" class="col-filter-input" placeholder="e.g. Dragon, Equipment" value="${escapeHtml(sf.type)}"></div>
+    <div class="adv-row"><label>Colors</label><div class="color-check-row">${colorOrder.map(c=>`<label class="ccheck"><input type="checkbox" data-spcolor="${c}" ${sf.colors[c]?'checked':''}><span class="mana-check">${manaIconSvg(c, 26)}</span></label>`).join('')}</div>
+      <div class="adv-sub" style="max-width:220px;">${cselectHtml('spCM', [
+        {v:'all', l:'Must have all selected'},
+        {v:'exact', l:'Exactly these colors'},
+        {v:'atmost', l:'At most these colors'}
+      ], sf.colorMode, 'Match mode')}</div>
+    </div>
+    <div class="adv-row"><label>Rarity</label><div class="rarity-row">
+      ${[['common','Common'],['uncommon','Uncommon'],['rare','Rare'],['mythic','Mythic']].map(([v,l])=>`<label class="rcheck"><input type="checkbox" data-sprarity="${v}" ${sf.rarity[v]?'checked':''}><span class="rpill r-${v}">${l}</span></label>`).join('')}
+    </div></div>
+  </div>`;
 }
 /* Colour bucket for the single-set view: W, U, B, R, G, colourless,
    multicolour, lands — front face decides. */
@@ -14158,12 +14159,12 @@ function renderSpoilerBody(loaded, failed){
   // survives the rebuild, so the same tile can be found again.
   const _box0 = document.getElementById('spBody');
   let _anker = null, _voor = 0;
-  // Standing at the foot? Then the foot pin (startSpFootPin) holds the page
-  // by its bottom edge and a tile anchor on top of that would fight it.
-  if(!state._spAtFoot) try{
+  // Keep the first visible card in place as more previews arrive.
+  try{
+    const viewport = _box0?.closest('.tab-viewport')?.getBoundingClientRect();
     for(const t of (_box0 ? _box0.querySelectorAll('.sc-tile') : [])){
       const r = t.getBoundingClientRect();
-      if(r.height > 0 && r.bottom > 0 && r.top < window.innerHeight){
+      if(r.height > 0 && r.bottom > (viewport?.top || 0) && r.top < (viewport?.bottom || window.innerHeight)){
         _anker = (t.dataset.spn || '') + '\u0000' + (t.dataset.spset || '');
         _voor = r.top;
         break;
@@ -14180,7 +14181,7 @@ function renderSpoilerBody(loaded, failed){
           if(((t.dataset.spn || '') + '\u0000' + (t.dataset.spset || '')) === _anker){ weer = t; break; }
         }
         if(weer){
-          const sc = scrollParentOf(weer) || document.scrollingElement || document.documentElement;
+          const sc = scrollParentOf(weer) || pageScroller();
           const schuif = weer.getBoundingClientRect().top - _voor;
           if(Math.abs(schuif) > 0.5) sc.scrollTop += schuif;
         }
@@ -14300,9 +14301,6 @@ function _renderSpoilerBodyCore(loaded, failed){
   // Set view: the shelf (set name, release date, preview count) sits at the
   // FOOT, under the cards — release dates live at the bottom everywhere now.
   box.innerHTML = active ? (gridHtml + headHtml) : (headHtml + gridHtml);
-  // Pin the foot once per visit - streamed repaints rely on the scroll
-  // compensation instead of re-jumping, which was the residual flicker.
-  if(state.screen === 'spoilers' && !box.dataset.footPinned){ box.dataset.footPinned = '1'; scrollToPageFoot(); }
   reportSpoilersSeen(cards);
   // 1.19: long-press selects (gold tick), like Search and Inspiration; with a
   // selection, a tap adds or removes; the gold button adds them all.
@@ -14362,40 +14360,9 @@ function spSelClear(){
   document.querySelectorAll('#spMainPage .sc-tile.selected').forEach(t=>t.classList.remove('selected'));
   paintSpPickFab();
 }
-/* The spoiler page is bottom-anchored: you land at the foot, and while the
-   sets stream in, the feed must grow UPWARD, away from you. The old anchor
-   held the TOP tile in place -- so everything that grew between that tile
-   and the foot (new cards, the set-chip row rebuilding) shoved the foot
-   down and out of sight. This pin watches the page every frame: while you
-   stand at (or within a thumb of) the foot, the distance to the bottom edge
-   is what survives any change in height. Scroll up to read and the pin
-   lets go; come back down and it takes hold again. */
-let _spPinOn = false;
-function startSpFootPin(){
-  if(_spPinOn) return;
-  _spPinOn = true;
-  const sc = document.scrollingElement || document.documentElement;
-  let lastH = -1, gap = 0;
-  const tick = ()=>{
-    if(state.screen !== 'spoilers' || !document.getElementById('spMainPage')){
-      _spPinOn = false; state._spAtFoot = false; return;
-    }
-    const h = sc.scrollHeight, ch = sc.clientHeight;
-    if(lastH === -1){ sc.scrollTop = Math.max(0, h - ch); gap = 0; lastH = h; }
-    else if(h !== lastH){
-      if(gap <= 48) sc.scrollTop = Math.max(0, h - ch - gap);
-      lastH = h;
-    } else {
-      gap = Math.max(0, h - ch - sc.scrollTop);   // only the reader moves it
-    }
-    state._spAtFoot = gap <= 48;
-    requestAnimationFrame(tick);
-  };
-  state._spAtFoot = true;
-  requestAnimationFrame(tick);
-}
 async function wireSpoilersPage(){
-  startSpFootPin();
+  document.getElementById('spAdvToggle')?.addEventListener('click', ()=>openAdvancedSearch('spoilers'));
+  if(state.spAdvOpen) wireAdvancedPanel();
   // First visit of the session: force a fresh pull so the page is never behind
   // Scryfall, without the user having to remember the refresh button.
   if(!state._spoilerAutoFresh || Date.now() - state._spoilerAutoFresh > 3*3600*1000){
@@ -14444,13 +14411,6 @@ async function wireSpoilersPage(){
   // changes repaint the body from the remembered streamed data -- the
   // panel itself is untouched, so typing never loses focus.
   const spRepaint = ()=>{ try{ if(state._spLoaded) renderSpoilerBody(state._spLoaded, state._spFailed || new Set()); }catch(e){} };
-  document.getElementById('spAdvToggle')?.addEventListener('click', ()=>{
-    state.spAdvOpen = !state.spAdvOpen;
-    const abox = document.getElementById('spAdvBox');
-    if(abox) abox.style.display = state.spAdvOpen ? '' : 'none';
-    const t = document.getElementById('spAdvToggle');
-    if(t) t.innerHTML = 'Advanced filter ' + foldIcoHtml(state.spAdvOpen);
-  });
   _csHandlers['spSet'] = v=>{ state.spoilerSetFilter = v || null; render(); };
   _csHandlers['spCM'] = v=>{ state.spFilter.colorMode = v; csRerender(); };
   wireCSelects();
@@ -14460,24 +14420,8 @@ async function wireSpoilersPage(){
   document.querySelectorAll('[data-sprarity]').forEach(chk=>chk.addEventListener('change', ()=>{
     state.spFilter.rarity[chk.dataset.sprarity] = chk.checked; spRepaint();
   }));
-  const spFq = document.getElementById('spFq');
-  let spQT = null;
-  spFq?.addEventListener('input', ()=>{ clearTimeout(spQT); spQT = setTimeout(()=>{ state.spFilter.q = spFq.value; spRepaint(); }, 300); });
-  const spTy = document.getElementById('spTypeText');
-  let spTT = null;
-  spTy?.addEventListener('input', ()=>{ clearTimeout(spTT); spTT = setTimeout(()=>{ state.spFilter.type = spTy.value; spRepaint(); }, 300); });
-  document.getElementById('spGo')?.addEventListener('click', (e)=>{
-    e.preventDefault(); e.stopPropagation();
-    clearTimeout(spQT); clearTimeout(spTT);
-    if(spFq) state.spFilter.q = spFq.value;
-    if(spTy) state.spFilter.type = spTy.value;
-    try{ document.activeElement && document.activeElement.blur && document.activeElement.blur(); }catch(err){}
-    state.spAdvOpen = false;
-    const abox = document.getElementById('spAdvBox'); if(abox) abox.style.display = 'none';
-    const t = document.getElementById('spAdvToggle'); if(t) t.innerHTML = 'Advanced filter ' + foldIcoHtml(false);
-    spRepaint();
-    scrollToPageFoot();
-  });
+  document.getElementById('spFq')?.addEventListener('input', e=>{state.spFilter.q = e.target.value;spRepaint();});
+  document.getElementById('spTypeText')?.addEventListener('input', e=>{state.spFilter.type = e.target.value;spRepaint();});
   const freshPull = !!state._spoilerFresh;
   state._spoilerFresh = false;
   const loaded = {}, failed = new Set();
@@ -15476,7 +15420,7 @@ function cardTileHtml(card, idx, loc, qty){
 function statKeepPlace(anchor, fn){
   const t0 = anchor ? anchor.getBoundingClientRect().top : null;
   fn();
-  if(anchor && t0 != null){ const dy = anchor.getBoundingClientRect().top - t0; if(Math.abs(dy) > 1) window.scrollBy(0, dy); }
+  if(anchor && t0 != null){ const dy = anchor.getBoundingClientRect().top - t0; if(Math.abs(dy) > 1) pageScroller().scrollBy(0, dy); }
 }
 /* ---- Cast-ability of the whole deck ----
    Same model as the single-card picker: by a card's own turn you have seen
@@ -16469,7 +16413,7 @@ function scrollParentOf(el){
     if(/(auto|scroll)/.test(cs.overflowY) && p.scrollHeight > p.clientHeight + 4) return p;
     p = p.parentElement;
   }
-  return document.scrollingElement || document.documentElement;
+  return pageScroller();
 }
 function keepAnchored(anchorEl, redraw, findAgain){
   let before = 0;
@@ -16489,14 +16433,11 @@ function keepAnchored(anchorEl, redraw, findAgain){
 }
 function refreshDecklistBox(d){
   const box = document.getElementById('decklistBox');
-  // Bottom-up: the view holds its distance to the FOOT. A removed card's
-  // gap is filled by its neighbour sliding in; nothing below it moves and
-  // the page doesn't jump a row (the page itself has no scroll anchoring).
-  const se = document.scrollingElement || document.documentElement;
-  const fromFoot = se.scrollHeight - se.scrollTop;
+  const se = pageScroller();
+  const fromTop = se.scrollTop;
   if(box){ box.innerHTML = categorizedListHtml(d); wireDecklistInteractions(d); }
   if(box && state.screen === 'decklist'){
-    const want = Math.max(0, se.scrollHeight - fromFoot);
+    const want = fromTop;
     if(Math.abs(se.scrollTop - want) > 1) se.scrollTop = want;
   }
   updateDeckMeter(d);   // the dock's Main x/y and Maybe counts follow every refresh
@@ -18040,14 +17981,16 @@ async function retryFailedCards(d, names, reportElId, admiralForColorCheck){
 function searchPageHtml(){
   const pinned = state.searchPinnedDeckId ? getDeck(state.searchPinnedDeckId) : null;
   return `
-  <main>
+  <main class="search-page">
+    <div class="searchbar"><input id="searchName" enterkeyhint="search" placeholder="Card name…" value="${escapeHtml(state.searchName)}"><button type="button" class="ghost-btn search-tool" id="qChev" title="${trS('Advanced filters')}" aria-label="Advanced search" aria-haspopup="dialog" aria-expanded="${state.advOpen}">${ICONS.filter}</button><button id="srSortBtn" class="ghost-btn${state.searchSort !== 'name' ? ' active' : ''}" title="${trS('Sort')}" style="padding:0 11px;flex:none;">${SORT_ICON}</button><button id="srSelFab" class="sel-fab" title="${trS('Add to deck…')}"${state.searchSel && state.searchSel.size ? '' : ' hidden'}>${selFabLabel(state.searchSel ? state.searchSel.size : 0)}</button></div>
+    <div id="advSlot">${state.advOpen ? advancedSearchScreenHtml() : ''}</div>
+    <div class="search-content tab-viewport" data-screen="search">
     ${pinned
       ? `<div class="pin-pill"><span class="pp-txt">Adding straight to <strong>${escapeHtml(pinned.name)}</strong></span><button id="unpinBtn" title="Stop adding to this deck">✕</button></div>`
       : ''}
-    <div class="searchbar"><input id="searchName" enterkeyhint="search" placeholder="Card name…" value="${escapeHtml(state.searchName)}" style="padding-right:36px;"><button class="in-chev" id="qChev" title="${trS('Advanced filters')}">${state.advOpen?'▴':'▾'}</button><button id="srSortBtn" class="ghost-btn${state.searchSort !== 'name' ? ' active' : ''}" title="${trS('Sort')}" style="padding:0 11px;flex:none;">${SORT_ICON}</button><button id="spoilersBtn" class="ghost-btn" title="Spoilers from upcoming sets" style="padding:0 13px;font-size:17px;flex:none;"${state.searchSel && state.searchSel.size ? ' hidden' : ''}>🔮</button><button id="srSelFab" class="sel-fab" title="${trS('Add to deck…')}"${state.searchSel && state.searchSel.size ? '' : ' hidden'}>${selFabLabel(state.searchSel ? state.searchSel.size : 0)}</button></div>
-    <div id="advSlot">${state.advOpen ? advancedPanelHtml() : ''}</div>
     <div id="searchResultsBox"></div>
     <div class="cotd" id="cotdBox" ${(state.searchRan || state.advOpen)?'style="display:none;"':''}></div>
+    </div>
   </main>`;
 }
 /* The gold loupe in every advanced-filter drop-up: picking from a list (a
@@ -18089,6 +18032,44 @@ function opSelectHtml(id, val){
   const ops = [{v:'',l:'Any'},{v:'=',l:'Equals'},{v:'<',l:'<'},{v:'<=',l:'≤'},{v:'>',l:'>'},{v:'>=',l:'≥'}];
   return cselectHtml(id, ops, val, 'Any', {cls:'cs-op'});
 }
+let advancedApplyOnClose = false;
+function advancedSearchScreenHtml(){
+  const spoilers = state.screen === 'spoilers';
+  const title = spoilers ? (appLang()==='nl'?'Spoilerfilters':'Spoiler filters') : (appLang()==='nl'?'Uitgebreid zoeken':'Advanced search');
+  const back = spoilers ? (appLang()==='nl'?'Terug naar spoilers':'Back to spoilers') : (appLang()==='nl'?'Terug naar zoeken':'Back to search');
+  return `<section id="advancedSearchScreen" role="dialog" aria-modal="true" aria-labelledby="advancedSearchTitle">
+    <header class="advanced-search-header"><button type="button" id="advancedSearchClose" aria-label="${back}" title="${trS('Back')}">${ICONS.back}</button><h1 id="advancedSearchTitle">${title}</h1><button type="button" id="advancedSearchReset" aria-label="${appLang()==='nl'?'Zoekfilters wissen':'Reset search filters'}" title="${appLang()==='nl'?'Wissen':'Reset'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2.6 8.4M3 4v6h6"/></svg></button></header>
+    <div id="advancedSearchBody">${spoilers ? spoilerAdvancedPanelHtml() : `<div class="adv-row"><label for="advName">${trS('Name')}</label><input id="advName" type="text" value="${escapeHtml(state.searchName)}" placeholder="Card name…"></div>${advancedPanelHtml()}`}</div>
+    <button type="button" id="advGo" aria-label="${appLang()==='nl'?'Zoek kaarten':'Search cards'}" title="${appLang()==='nl'?'Zoek kaarten':'Search cards'}">${ICONS.search}</button>
+  </section>`;
+}
+function openAdvancedSearch(mode){
+  const spoilers = mode === 'spoilers';
+  if(spoilers) state.spAdvOpen = true;
+  else state.advOpen = true;
+  advancedApplyOnClose = false;
+  pushOverlay(spoilers ? 'spoilerFilters' : 'advancedSearch', ()=>{
+    const apply = advancedApplyOnClose;
+    advancedApplyOnClose = false;
+    if(spoilers) state.spAdvOpen = false;
+    else state.advOpen = false;
+    state.openCSelect = null;
+    render();
+    document.getElementById(spoilers ? 'spAdvToggle' : 'qChev')?.focus({preventScroll:true});
+    if(apply && !spoilers) runAdvancedSearch();
+  });
+  render();
+  const screen = document.getElementById('advancedSearchScreen');
+  screen?.classList.add('entering');
+  screen?.addEventListener('animationend', ()=>screen.classList.remove('entering'), {once:true});
+  document.getElementById('advancedSearchClose')?.focus({preventScroll:true});
+}
+function applyAdvancedSearch(){
+  document.activeElement?.blur();
+  state.openCSelect = null;
+  advancedApplyOnClose = true;
+  closeTopOverlay();
+}
 function advancedPanelHtml(){
   const s = state;
   const colorOrder = ['W','U','B','R','G','C'];
@@ -18116,28 +18097,27 @@ function advancedPanelHtml(){
     });
   }catch(e){}
   const colorChecks = (attr, stateObj) => `<div class="color-check-row">${colorOrder.map(c=>`<label class="ccheck"><input type="checkbox" ${attr}="${c}" ${stateObj[c]?'checked':''}><span class="mana-check">${manaIconSvg(c, 26)}</span></label>`).join('')}</div>`;
-  return `<div class="adv-panel" style="display:flex;flex-direction:column-reverse;">
-    ${advGoHtml('advGo', (()=>{ const pk = pkgAll().filter(p=>p.cards.length); return pk.length ? `<div class="adv-go-pkg"><select id="advPkgSel"><option value="">${appLang() === 'nl' ? 'Pakketten' : 'Packages'}</option>${pk.map(p=>`<option value="${p.id}">${pkgLabel(p)}</option>`).join('')}</select></div>` : ''; })())}
+  return `<div class="adv-panel" style="display:flex;flex-direction:column;">
     <div class="adv-row"><label>Format</label>
       ${cselectHtml('fmtSel', [{v:'',l:'Any format'}].concat(SEARCH_FORMATS.map(([v,l])=>({v, l}))), s.searchFormat, 'Any format', {cls:'cs-up'})}
     </div>
-    <div class="adv-row"><label>Oracle Text${advInfo('oracle')}</label><input id="oracleText" type="text" placeholder="Any text, e.g. draw a card" value="${escapeHtml(s.searchOracleText)}">
+    <div class="adv-row"><label>Oracle Text</label><input id="oracleText" type="text" placeholder="Any text, e.g. draw a card" value="${escapeHtml(s.searchOracleText)}">
     </div>
     <div class="adv-row"><label>Card Type</label><input id="typeText" type="text" placeholder="e.g. Dragon, Equipment" value="${escapeHtml(s.searchTypeText)}"></div>
-    <div class="adv-row"><label>Tags${advInfo('tags')}</label><div class="otag-wrap">
+    <div class="adv-row"><label>Tags</label><div class="otag-wrap">
       <input id="otagText" type="text" placeholder="e.g. removal, ramp, tutor" value="" autocomplete="off" autocapitalize="off">
       <div id="otagPop" class="otag-pop" hidden></div>
       <div class="otag-chips" id="otagChips"></div>
     </div>
     </div>
-    <div class="adv-row"><label>Colors${advInfo('colors')}</label>${colorChecks('data-ccolor', s.searchCardColors)}
+    <div class="adv-row"><label>Colors</label>${colorChecks('data-ccolor', s.searchCardColors)}
       <div class="adv-sub" style="max-width:220px;">${cselectHtml('ccmSel', [
         {v:'all', l:'Must have all selected'},
         {v:'exact', l:'Exactly these colors'},
         {v:'atmost', l:'At most these colors'}
       ], s.searchCardColorMode, 'Match mode')}</div>
     </div>
-    <div class="adv-row"><label>Color Identity${advInfo('ident')}</label>${colorChecks('data-color', s.searchColors)}
+    <div class="adv-row"><label>Color Identity</label>${colorChecks('data-color', s.searchColors)}
       <div class="adv-sub" style="max-width:220px;">${cselectHtml('cmSel', [
         {v:'atmost', l:'At most these colors'},
         {v:'exact', l:'Exactly these colors'},
@@ -18152,7 +18132,7 @@ function advancedPanelHtml(){
       ${opSelectHtml('cmcOp', s.searchCmcOp)}
       <input id="cmcVal" type="number" min="0" placeholder="" value="${s.searchCmcVal}">
     </div></div>
-    <div class="adv-row"><label>Mana Cost${advInfo('cost')}</label><input id="manaCost" type="text" placeholder="(e.g., {2}{G})" value="${escapeHtml(s.searchManaCost)}"></div>
+    <div class="adv-row"><label>Mana Cost</label><input id="manaCost" type="text" placeholder="(e.g., {2}{G})" value="${escapeHtml(s.searchManaCost)}"></div>
     <div class="adv-row"><label>Power</label><div class="cmc-row">
       ${opSelectHtml('powOp', s.searchPowOp)}
       <input id="powVal" type="text" placeholder="" value="${escapeHtml(s.searchPowVal)}">
@@ -18168,11 +18148,11 @@ function advancedPanelHtml(){
     <div class="adv-row"><label>Rarity</label><div class="rarity-row">
       ${[['common','Common'],['uncommon','Uncommon'],['rare','Rare'],['mythic','Mythic']].map(([v,l])=>`<label class="rcheck"><input type="checkbox" data-rarity="${v}" ${s.searchRarity[v]?'checked':''}><span class="rpill r-${v}">${l}</span></label>`).join('')}
     </div></div>
-    <div class="adv-row"><label>Price${advInfo('price')}</label>${priceSliderHtml('srchPr', s.searchEurMin, s.searchEurMax)}
+    <div class="adv-row"><label>Price</label>${priceSliderHtml('srchPr', s.searchEurMin, s.searchEurMax)}
     </div>
     <div class="adv-row"><label>Flavor Text</label><input id="flavText" type="text" placeholder="e.g. dragon" value="${escapeHtml(s.searchFlavorText)}"></div>
     <div class="adv-row"><label>Artist</label><input id="artistText" type="text" placeholder="e.g. Rebecca Guay" value="${escapeHtml(s.searchArtist)}"></div>
-    ${(state.searchPinnedDeckId && getDeck(state.searchPinnedDeckId)) || (s.searchFormat && s.searchFormat !== 'any') ? `<div class="adv-row adv-showall-top"><label>${trS('Show everything')}${advInfo((state.searchPinnedDeckId && getDeck(state.searchPinnedDeckId)) ? 'allDeck' : 'allFmt')}</label><div style="display:flex;justify-content:flex-end;"><label class="toggle-switch"><input type="checkbox" id="advOffColor" ${s.searchShowOffColor?'checked':''}><span class="track"></span><span class="knob"></span></label></div></div>` : ''}
+    ${(state.searchPinnedDeckId && getDeck(state.searchPinnedDeckId)) || (s.searchFormat && s.searchFormat !== 'any') ? `<div class="adv-row adv-showall-top"><label>${trS('Show everything')}</label><div style="display:flex;justify-content:flex-end;"><label class="toggle-switch"><input type="checkbox" id="advOffColor" ${s.searchShowOffColor?'checked':''}><span class="track"></span><span class="knob"></span></label></div></div>` : ''}
   </div>`;
 }
 function wireSearchPage(){
@@ -18207,25 +18187,11 @@ function wireSearchPage(){
   });
   document.getElementById('spoilersBtn')?.addEventListener('click', ()=>switchPage('spoilers'));
   document.getElementById('srSortBtn')?.addEventListener('click', (e)=>{ e.stopPropagation(); openSearchSortMenu(e.currentTarget); });
-  document.getElementById('qChev')?.addEventListener('click', ()=>{
-    // In-place toggle — the old full re-render rebuilt the whole page
-    // mid-tap, which was the shift-and-blink.
-    state.advOpen = !state.advOpen;
-    const chev = document.getElementById('qChev');
-    if(chev) chev.textContent = state.advOpen ? '▴' : '▾';
-    const slot = document.getElementById('advSlot');
-    if(!slot) return;
-    slot.innerHTML = state.advOpen ? advancedPanelHtml() : '';
-    if(state.advOpen){ wireAdvancedPanel(); scrollToPageFoot(); }   // open showing the BOTTOM of the menu
-    try{ csFitSheetFoot(); }catch(e){}
-    // The Random Card steps aside while the filter menu is open, so the
-    // menu sits right at the page foot by the search bar.
-    const cotd = document.getElementById('cotdBox');
-    if(cotd) cotd.style.display = (state.advOpen || state.searchRan) ? 'none' : '';
-  });
+  document.getElementById('qChev')?.addEventListener('click', openAdvancedSearch);
   if(state.advOpen) wireAdvancedPanel();
   if(state.searchRan) renderSearchResultsBox();
   loadCardOfTheDay();
+  wireRandomCardRefresh();
 }
 function setCotdVisible(v){
   const box = document.getElementById('cotdBox');
@@ -18235,16 +18201,25 @@ function setCotdVisible(v){
 /* ---------------- RANDOM CARD ----------------
    One random Admiral-legal, non-banned, nonland card per app session, plus a
    reroll button for another draw any time. */
-async function fetchRandomCotd(bg){
+async function fetchRandomCotd(bg, excludeName){
+  if(window.DECKHAND_CONFIG?.selfHosted){
+    const ix = await bulkIndexReady();
+    const legal = ix?.cards?.filter(c=>c.lg === 'legal');
+    if(legal?.length){
+      const alternatives = legal.filter(c=>c.n !== excludeName);
+      const pool = alternatives.length ? alternatives : legal;
+      return bulkToCardish(pool[Math.floor(Math.random() * pool.length)]);
+    }
+  }
   let card = null;
   {
     // The random card rolls across EVERY Commander-legal card ever printed.
     for(let attempt=0; attempt<5 && !card; attempt++){
       try{
         const res = await sfFetch(`${SF_BASE}/cards/random?q=${encodeURIComponent('game:paper -is:digital legal:commander')}`, 0, !!bg);
-        if(!res.ok) continue;
+        if(!res.ok) break;
         const c = await res.json();
-        if(c && c.name && !isBanned(c, 'commander')) card = c;
+        if(c && c.name && c.name !== excludeName && !isBanned(c, 'commander')) card = c;
       }catch(e){}
     }
   }
@@ -18253,18 +18228,25 @@ async function fetchRandomCotd(bg){
 /* Draw the session's random card quietly at launch, so arriving on the Search
    page finds it already waiting instead of a spinner. */
 function preloadCotd(){
+  if(window.DECKHAND_CONFIG?.selfHosted) return;
   if(state.cotd && state.cotd.card) return;
   fetchRandomCotd(true).then(card=>{ if(card && !(state.cotd && state.cotd.card)) state.cotd = {card}; }).catch(()=>{});
 }
+let cotdLoading = false;
 async function loadCardOfTheDay(force){
   const box = document.getElementById('cotdBox');
   if(!box) return;
   if(state.cotd && state.cotd.card && !force){ renderCotd(state.cotd.card); return; }
+  if(cotdLoading) return;
+  cotdLoading = true;
   box.innerHTML = `<div class="status"><div class="spinner"></div></div>`;
-  const card = await fetchRandomCotd(false);
+  let card;
+  try{ card = await fetchRandomCotd(false, force ? state.cotd?.card?.name : null); }
+  catch(e){}
+  finally{ cotdLoading = false; }
   const live = document.getElementById('cotdBox');
   if(!live) return;   // user navigated away or ran a search
-  if(!card){ live.innerHTML=''; return; }
+  if(!card){ if(state.cotd?.card) renderCotd(state.cotd.card); else live.innerHTML=''; return; }
   state.cotd = {card};
   renderCotd(card);
 }
@@ -18272,37 +18254,100 @@ function renderCotd(card){
   const box = document.getElementById('cotdBox');
   if(!box) return;
   box.innerHTML = `
-    <button class="cotd-h cotd-h-btn" id="cotdReroll">↻ Random Card</button>
-    <img class="${wbClass(card)}" src="${cardImageLarge(card) || cardImage(card)}" alt="${escapeHtml(card.name)}" id="cotdImg">`;
+    <div class="cotd-refresh-status" role="status" aria-live="polite" hidden></div>
+    <img class="${wbClass(card)}" src="${cardImageLarge(card) || cardImage(card)}" alt="${escapeHtml(card.name)}" id="cotdImg">
+    <button type="button" class="cotd-h cotd-h-btn" id="cotdReroll">↻ Random Card</button>`;
   document.getElementById('cotdImg').addEventListener('click', ()=>openCardInfo(card));
   document.getElementById('cotdReroll').addEventListener('click', ()=>loadCardOfTheDay(true));
 }
+function wireRandomCardRefresh(){
+  const main = document.querySelector('.app > main');
+  if(!main) return;
+  const scroller = main.querySelector('.tab-viewport') || main;
+  let start = null, distance = 0;
+  const eligible = ()=>{
+    const box = document.getElementById('cotdBox');
+    return state.screen === 'search' && !state.searchRan && !state.advOpen && !cotdLoading
+      && !state.overlayStack.length && !document.getElementById('nameSuggest')
+      && box?.getClientRects().length && getComputedStyle(box).display !== 'none'
+      && document.getElementById('cotdImg') && scroller.scrollTop <= 0;
+  };
+  const clear = ()=>{
+    start = null; distance = 0;
+    const status = document.querySelector('#cotdBox .cotd-refresh-status');
+    if(status) status.hidden = true;
+  };
+  main.addEventListener('touchstart', e=>{
+    clear();
+    if(e.touches.length !== 1 || !eligible() || e.target.closest('button,input,select,textarea')) return;
+    start = {x:e.touches[0].clientX, y:e.touches[0].clientY};
+  }, {passive:true});
+  main.addEventListener('touchmove', e=>{
+    if(!start) return;
+    if(e.touches.length !== 1 || !eligible()){clear(); return;}
+    const dx = e.touches[0].clientX - start.x, dy = e.touches[0].clientY - start.y;
+    if(dy < 0 || Math.abs(dx) > Math.max(12, dy)){clear(); return;}
+    distance = dy;
+    if(dy < 10) return;
+    e.preventDefault();
+    const status = document.querySelector('#cotdBox .cotd-refresh-status');
+    if(status){
+      status.hidden = false;
+      status.textContent = dy >= 80
+        ? (appLang()==='nl'?'Loslaten om te vernieuwen':'Release to refresh')
+        : (appLang()==='nl'?'Trek omlaag om te vernieuwen':'Pull to refresh');
+    }
+  }, {passive:false});
+  main.addEventListener('touchend', e=>{
+    const refresh = start && distance >= 80 && eligible();
+    if(start && distance >= 10) e.preventDefault();
+    clear();
+    if(refresh) loadCardOfTheDay(true);
+  }, {passive:false});
+  main.addEventListener('touchcancel', clear, {passive:true});
+}
 function wireAdvancedPanel(){
+  const screen = document.getElementById('advancedSearchScreen');
+  document.querySelectorAll('.app > .app-header, .app > .app-navigation, .app > main > :not(#advSlot):not(#spAdvSlot)').forEach(el=>{ el.inert = true; });
+  document.getElementById('advancedSearchClose')?.addEventListener('click', ()=>closeTopOverlay());
+  document.getElementById('advancedSearchReset')?.addEventListener('click', ()=>{
+    if(state.screen === 'spoilers') resetSpoilerFilters();
+    else { resetSearchFilters(); state.searchName = ''; }
+    state.openCSelect = null; render();
+    document.getElementById('advancedSearchReset')?.focus({preventScroll:true});
+  });
+  screen?.addEventListener('keydown', e=>{
+    if(e.key==='Escape'){
+      e.preventDefault(); e.stopPropagation();
+      if(state.openCSelect){ state.openCSelect = null; render(); document.getElementById('advancedSearchClose')?.focus(); }
+      else closeTopOverlay();
+    }
+    if(e.key==='Tab'){
+      const controls = [...screen.querySelectorAll('button, input, select, [tabindex="0"]')].filter(el=>!el.disabled && el.getClientRects().length);
+      const first = controls[0], last = controls.at(-1);
+      if(e.shiftKey && document.activeElement===first){e.preventDefault(); last?.focus();}
+      else if(!e.shiftKey && document.activeElement===last){e.preventDefault(); first?.focus();}
+    }
+  });
   document.getElementById('advGo')?.addEventListener('click', (e)=>{
     e.preventDefault(); e.stopPropagation();
     try{ document.activeElement && document.activeElement.blur && document.activeElement.blur(); }catch(err){}   // a pending 'change' lands first
-    state.openCSelect = null;
-    state.advOpen = false; render(); runAdvancedSearch();
+    applyAdvancedSearch();
   });
+  if(state.screen === 'spoilers'){
+    screen?.querySelectorAll('input:not([type]), input[type="text"]').forEach(inp=>{
+      inp.addEventListener('keydown', e=>{if(e.key==='Enter'){e.preventDefault();applyAdvancedSearch();}});
+    });
+    return;
+  }
   document.getElementById('advName')?.addEventListener('input', e=>{
     state.searchName = e.target.value;
     const top = document.getElementById('searchName');
     if(top) top.value = e.target.value;   // keep the top search box in step
   });
-  document.querySelectorAll('.adv-panel input[type="text"], .adv-panel input:not([type])').forEach(inp=>{
-    inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); state.advOpen = false; render(); runAdvancedSearch(); } });
-  });
-  // 1.40: a package as the search: its cards are the results
-  document.getElementById('advPkgSel')?.addEventListener('change', async (e)=>{
-    const p = pkgAll().find(x=>x.id === e.target.value);
-    if(!p) return;
-    state.advOpen = false; state.searchRan = true; state.searching = true; render();
-    let got = [];
-    try{ got = await resolveEdhrecNames(p.cards, ()=>true); }catch(err){}
-    state.searching = false;
-    state.searchResults = searchSortList(got.filter(isRealCard));
-    renderSearchResultsBox();
-    toast(pkgLabel(p).replace(/&[^;]+;/g, ' ') + ' \u00b7 ' + got.length);
+  document.querySelectorAll('#advancedSearchBody input[type="text"], #advancedSearchBody input:not([type]), #advancedSearchBody input[type="number"]').forEach(inp=>{
+    if(inp.id === 'otagText') return;
+    inp.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); applyAdvancedSearch(); } });
   });
   document.getElementById('advOffColor')?.addEventListener('change', (e)=>{
     state.searchShowOffColor = e.target.checked;
@@ -18887,9 +18932,8 @@ function wireSearchSelect(box, pool){
 }
 function updateSearchSelFab(){
   const n = state.searchSel ? state.searchSel.size : 0;
-  const fab = document.getElementById('srSelFab'), sp = document.getElementById('spoilersBtn');
+  const fab = document.getElementById('srSelFab');
   if(fab){ fab.hidden = !n; fab.innerHTML = selFabLabel(n); }
-  if(sp) sp.hidden = !!n;
 }
 function openSearchSelMenu(anchor){
   const cards = state.searchSel ? Array.from(state.searchSel.values()) : [];
@@ -18939,9 +18983,9 @@ function openSearchSortMenu(anchor){
   if(pop){
     pop.querySelectorAll('button').forEach(b=>{ b.style.whiteSpace = 'nowrap'; });
     const r = anchor.getBoundingClientRect();
-    pop.style.top = Math.max(8, r.top - 6 - pop.offsetHeight) + 'px';
+    pop.style.top = Math.min(r.bottom + 6, window.innerHeight - 16 - pop.offsetHeight) + 'px';
     pop.style.left = Math.max(8, Math.min(r.right - pop.offsetWidth, window.innerWidth - 8 - pop.offsetWidth)) + 'px';
-    pop.scrollTop = pop.scrollHeight;
+    pop.scrollTop = 0;
   }
 }
 function applySearchSort(k, dir){
@@ -19029,7 +19073,8 @@ function renderSearchResultsBox(){
   // shrank, the browser clamped the scroll, and the view jumped somewhere
   // else. Re-render to the previous depth and put the scroll right back.
   const prevShown = box.querySelectorAll('.sr-tile').length;
-  const y = window.scrollY;
+  const scroller = box.closest('.tab-viewport') || window;
+  const y = scroller === window ? pageScroller().scrollTop : scroller.scrollTop || Number(scroller.dataset.restoreScroll) || 0;
   box.innerHTML = '';
   pagedGrid(box, srPool,
     (c)=>searchRowHtml(c, d, {showAdmiralBtn:true}),
@@ -19039,12 +19084,10 @@ function renderSearchResultsBox(){
     // went nowhere. Every other grid already passes its live pool.
     (chunk, shown)=>{ wireResultButtons(srPool, d, searchGridRefresh); wireSearchSelect(box, srPool); loadTilePrices(chunk); },
     { initial: prevShown });
-  if(prevShown) window.scrollTo(0, y);
+  if(prevShown || y > 0) scroller.scrollTo(0, y);
   else {
-    // A fresh result set lands at the foot — but images and prices inflate
-    // the page AFTER the first paint, dragging the foot away from under the
-    // first anchor. Re-anchor as the layout settles — UNLESS the person has
-    // started scrolling, whose hand always wins over the settle.
+    // Fresh results open at the top. Keep that position as images settle,
+    // unless the user has already started scrolling.
     const _t0 = Date.now();
     scrollToPageFoot();
     const _reanchor = ()=>{ if((state._userScrollAt||0) > _t0) return; scrollToPageFoot(); };
@@ -19283,7 +19326,6 @@ function openDeckPickPopup(card, mode, refreshFn, pairWith, withCollection){
       ${withCollection ? `<button class="dp-row" data-tocollection="1"><div class="dp-txt"><span class="ib">${ICONS.collection}</span>${trS('Collection')}<div class="dp-meta">${trS('Add to collection')}</div></div></button>` : ''}
       ${mode!=='reco' ? `<button class="dp-row" data-newdeck="1"><div class="dp-txt">＋ New deck<div class="dp-meta">Create a fresh deck and add ${escapeHtml(nm)} to it</div></div></button>` : ''}
       ${mode!=='reco' ? deckPickRowsHtml() : ''}
-      ${mode==='main' && !pairWith ? pkgAll().map(p=>`<button class="dp-row" data-topkg="${p.id}"><div class="dp-txt"><span class="ib">${ICONS.collection}</span>${escapeHtml(p.name)}<div class="dp-meta">${appLang() === 'nl' ? 'Pakket' : 'Package'}${p.fn ? ' \u00b7 ' + escapeHtml(p.fn) : ''} \u00b7 ${p.cards.length}</div></div></button>`).join('') : ''}
     </div>
     <button class="dp-cancel" id="dpCancel">Cancel</button>
   </div>`;
@@ -19294,7 +19336,6 @@ function openDeckPickPopup(card, mode, refreshFn, pairWith, withCollection){
     closeDeckPickPopup();
     openAddToCollection(card);
   });
-  el.querySelectorAll('[data-topkg]').forEach(b=>b.addEventListener('click', ()=>{ closeDeckPickPopup(); pkgAddCard(b.dataset.topkg, card); }));   // 1.42
   // Recommendations pick their COLORS here with the Inspiration page's own
   // dropdowns: a count select, then a combination select with the app's mana
   // symbols. Only combinations that can actually HOLD this card are offered —
@@ -20182,7 +20223,7 @@ function pagedGrid(box, items, tileHtml, afterChunk, opts){
     // in wrap-reverse grids) and give back exactly the shift the new chunk
     // caused, into whichever ancestor actually scrolls. In normal grids the
     // anchor doesn't move and this is a no-op.
-    const _sc = (()=>{ let n = grid.parentElement; while(n && n !== document.body){ let cs; try{ cs = getComputedStyle(n); }catch(e){ break; } if(/(auto|scroll)/.test(cs.overflowY) && n.scrollHeight > n.clientHeight) return n; n = n.parentElement; } return document.scrollingElement || document.documentElement; })();
+    const _sc = (()=>{ let n = grid.parentElement; while(n && n !== document.body){ let cs; try{ cs = getComputedStyle(n); }catch(e){ break; } if(/(auto|scroll)/.test(cs.overflowY) && n.scrollHeight > n.clientHeight) return n; n = n.parentElement; } return pageScroller(); })();
     const _anchor = grid.firstElementChild;
     const _y0 = _anchor ? _anchor.getBoundingClientRect().top : null;
     grid.insertAdjacentHTML('beforeend', chunk.map((it,k)=>tileHtml(it, shown+k)).join(''));
@@ -22125,176 +22166,6 @@ function landKinScore(src, cand){
   p += Math.min(6, same * 2);
   return p - Math.min(12, miss * 4);
 }
-/* ===== 1.40 CARD PACKAGES =====
-   Ready groups of cards for one job (ramp, draw, removal...): built in
-   Extras -> Packages, offered on a deck's Inspiration page (grouped by
-   package, recommendation style) and in Search (the drop-up beside the
-   gold button). Stored as admiral_app:packages, synced like tags. */
-const PKG_KEY = 'packages';
-const PKG_SEED = [
-  { name: 'Ramp staples', fn: 'Ramp', cards: ['Sol Ring', 'Arcane Signet', 'Fellwar Stone', 'Mind Stone', 'Thought Vessel', "Commander's Sphere", "Wayfarer's Bauble", 'Cultivate', "Kodama's Reach", 'Rampant Growth', "Nature's Lore", 'Three Visits', 'Farseek', 'Skyshroud Claim'] },
-  { name: 'Card draw', fn: 'Draw', cards: ['Rhystic Study', 'Mystic Remora', 'Phyrexian Arena', 'Skullclamp', 'Guardian Project', 'Beast Whisperer', 'Harmonize', 'Sign in Blood', "Night's Whisper", 'Read the Bones', 'Fact or Fiction', 'Brainstorm', 'Ponder'] },
-  { name: 'Spot removal', fn: 'Removal', cards: ['Swords to Plowshares', 'Path to Exile', 'Generous Gift', 'Beast Within', 'Chaos Warp', 'Infernal Grasp', 'Go for the Throat', 'Pongify', 'Rapid Hybridization', "Nature's Claim", "Assassin's Trophy", 'Anguished Unmaking', 'Despark'] },
-  { name: 'Board wipes', fn: 'Wipe', cards: ['Wrath of God', 'Damnation', 'Blasphemous Act', 'Toxic Deluge', 'Farewell', 'Austere Command', 'Cyclonic Rift', 'Evacuation', 'Vanquish the Horde'] },
-  { name: 'Protection', fn: 'Protection', cards: ['Heroic Intervention', "Teferi's Protection", 'Lightning Greaves', 'Swiftfoot Boots', 'Flawless Maneuver', 'Deflecting Swat', 'Boros Charm'] }
-];
-function pkgAll(){
-  let a = null;
-  try{ a = JSON.parse(localStorage.getItem(LS_PREFIX + PKG_KEY) || 'null'); }catch(e){}
-  if(!Array.isArray(a)){
-    a = PKG_SEED.map((p, i)=>Object.assign({ id: 'pk' + (i + 1) }, p, { cards: p.cards.slice() }));
-    pkgSave(a);
-  }
-  return a.filter(p=>p && p.id && Array.isArray(p.cards));
-}
-function pkgSave(a){ try{ localStorage.setItem(LS_PREFIX + PKG_KEY, JSON.stringify(a)); }catch(e){} }
-function pkgLabel(p){ return escapeHtml(p.name) + (p.fn ? ' \u00b7 ' + escapeHtml(p.fn) : ''); }
-/* Extras -> Packages (1.42: visual). The list shows every package with its
-   cards as pictures; a package opens in an editor with a name search like
-   Search's, the cards as a grid with a x each. Bottom-up: the gold + and
-   the explanation sit at the foot, the first package right above them. */
-const _pkgCardCache = new Map();
-async function pkgCards(names){
-  const need = names.filter(n=>!_pkgCardCache.has(n.toLowerCase()));
-  if(need.length){
-    try{ (await resolveEdhrecNames(need, ()=>true)).forEach(c=>_pkgCardCache.set(String(c.name).toLowerCase(), c)); }catch(e){}
-  }
-  return names.map(n=>_pkgCardCache.get(n.toLowerCase()) || { name: n, _missing: true });
-}
-function pkgTileHtml(c, rm){
-  const img = c._missing ? '' : cardImageMed(c);
-  return `<div class="vg-card pkg-card" data-name="${encodeURIComponent(c.name)}">${img ? `<img class="${wbClass(c)}" src="${img}" alt="${escapeHtml(c.name)}" loading="lazy">` : `<div class="pkg-noimg">${escapeHtml(c.name)}</div>`}${rm ? `<button type="button" class="pkg-rm" data-pkrm="${encodeURIComponent(c.name)}" aria-label="Remove">✕</button>` : ''}</div>`;
-}
-function openPackagesEditor(){
-  const nl = appLang() === 'nl', T = (a, b)=>nl ? a : b;
-  pushOverlay('pkgEdit', ()=>{ document.getElementById('pkgEditOverlay')?.remove(); });
-  let el = document.getElementById('pkgEditOverlay');
-  if(!el){ el = document.createElement('div'); el.className = 'overlay'; el.id = 'pkgEditOverlay'; }
-  document.body.appendChild(el);
-  const shell = (title, body)=>{
-    el.innerHTML = `<div class="overlay-inner">${overlayCapHtml(title)}<main class="pkg-main"><div class="pkg-stack">${body}</div></main>${overlayNavHtml()}</div>`;
-    wireOverlayNav(el);
-  };
-  const toFoot = ()=>requestAnimationFrame(()=>{ const mn = el.querySelector('main'); if(mn) mn.scrollTop = mn.scrollHeight; });
-  const preview = (c)=>{ if(!c._missing) openCardInfo(c); };
-  const list = async ()=>{
-    const all = pkgAll();
-    // column-reverse: DOM-first = the foot
-    shell(T('Kaartpakketten', 'Card packages'), `
-      <div class="pkg-foot"><p class="pkg-hint">${T('Groepen kaarten voor één taak. Ze verschijnen bij Inspiratie van een deck en bij Zoeken.', 'Groups of cards for one job. They show up on a deck’s Inspiration page and in Search.')}</p><button type="button" class="adv-go pkg-fab" id="pkgNew" title="${T('Nieuw pakket', 'New package')}" aria-label="${T('Nieuw pakket', 'New package')}">${ICONS.plus}</button></div>
-      ${all.map(p=>`<div class="panel-card pkg-row" data-pk="${p.id}">
-        <div class="pkg-grid visual-grid" data-pkg="${p.id}"><div class="status" style="flex:1 1 100%;"><div class="spinner"></div></div></div>
-        <div class="pkg-row-h"><div class="pkg-row-t"><b>${escapeHtml(p.name)}</b><span>${p.fn ? escapeHtml(p.fn) + ' · ' : ''}${p.cards.length} ${T('kaarten', 'cards')}</span></div><button type="button" class="ghost-btn pkg-edit" data-pkedit="${p.id}"><span class="ib">${ICONS.edit || ''}</span>${T('Bewerken', 'Edit')}</button></div>
-      </div>`).join('')}`);
-    el.querySelector('#pkgNew').addEventListener('click', ()=>form(null));
-    el.querySelectorAll('[data-pkedit]').forEach(b=>b.addEventListener('click', ()=>form(b.dataset.pkedit)));
-    toFoot();
-    for(const p of all){
-      const cards = await pkgCards(p.cards);
-      const g = el.querySelector(`[data-pkg="${p.id}"]`); if(!g) return;
-      g.innerHTML = cards.length ? cards.map(c=>pkgTileHtml(c, false)).join('') : `<div class="empty-note" style="flex:1 1 100%;padding:6px 0;">${T('Nog leeg.', 'Empty so far.')}</div>`;
-      g.querySelectorAll('.pkg-card').forEach(t=>t.addEventListener('click', ()=>{ const c = cards.find(x=>x.name === decodeURIComponent(t.dataset.name)); if(c) preview(c); }));
-      toFoot();
-    }
-  };
-  const form = (id)=>{
-    const p0 = id ? pkgAll().find(x=>x.id === id) : null;
-    const p = p0 ? { id: p0.id, name: p0.name, fn: p0.fn || '', cards: p0.cards.slice() } : { id: null, name: '', fn: '', cards: [] };
-    shell(id ? T('Pakket bewerken', 'Edit package') : T('Nieuw pakket', 'New package'), `
-      <div class="pkg-foot pkg-actions">
-        ${id ? `<button type="button" class="ghost-btn" id="pkDel" style="color:var(--danger);border-color:var(--danger);">${T('Verwijderen', 'Delete')}</button>` : ''}
-        <button type="button" class="ghost-btn" id="pkCancel">${T('Annuleren', 'Cancel')}</button>
-        <button type="button" class="primary-btn" id="pkSave">${T('Opslaan', 'Save')}</button>
-      </div>
-      <div class="pkg-find"><span class="tds-ico">${ICONS.search}</span><input id="pkFind" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${T('Zoek een kaart om toe te voegen…', 'Find a card to add…')}"></div>
-      <div class="panel-card"><div class="pkg-grid visual-grid" id="pkGrid"></div><div class="pkg-count" id="pkCount"></div></div>
-      <div class="panel-card pkg-form">
-        <div class="adv-row"><label>${T('Naam', 'Name')}</label><input id="pkName" type="text" maxlength="40" value="${escapeHtml(p.name)}" placeholder="${T('bijv. Ramp-basis', 'e.g. Ramp staples')}"></div>
-        <div class="adv-row"><label>${T('Functie', 'Function')}</label><input id="pkFn" type="text" maxlength="24" value="${escapeHtml(p.fn)}" placeholder="${T('bijv. Ramp', 'e.g. Ramp')}"></div>
-      </div>`);
-    const paintGrid = async ()=>{
-      const g = el.querySelector('#pkGrid'); if(!g) return;
-      const cards = await pkgCards(p.cards);
-      el.querySelector('#pkCount').textContent = `${p.cards.length} ${T('kaarten', 'cards')}`;
-      g.innerHTML = cards.length ? cards.map(c=>pkgTileHtml(c, true)).join('') : `<div class="empty-note" style="flex:1 1 100%;padding:6px 0;">${T('Zoek hieronder kaarten om toe te voegen.', 'Find cards below to add them.')}</div>`;
-      g.querySelectorAll('[data-pkrm]').forEach(b=>b.addEventListener('click', (e)=>{
-        e.stopPropagation();
-        const n = decodeURIComponent(b.dataset.pkrm);
-        p.cards = p.cards.filter(x=>x.toLowerCase() !== n.toLowerCase());
-        paintGrid();
-      }));
-      g.querySelectorAll('.pkg-card').forEach(t=>t.addEventListener('click', ()=>{ const c = cards.find(x=>x.name === decodeURIComponent(t.dataset.name)); if(c) preview(c); }));
-    };
-    const addName = (n)=>{
-      n = String(n || '').trim(); if(!n) return;
-      if(p.cards.some(x=>x.toLowerCase() === n.toLowerCase())){ toast(T('Die zit er al in.', 'Already in the package.')); return; }
-      p.cards.push(n); paintGrid();
-    };
-    const find = el.querySelector('#pkFind');
-    wireNameSuggest(find, allCardNamesFor, (name)=>{ addName(name); find.value = ''; });
-    find.addEventListener('keydown', (e)=>{ if(e.key === 'Enter'){ e.preventDefault(); addName(find.value); find.value = ''; } });
-    el.querySelector('#pkCancel').addEventListener('click', list);
-    el.querySelector('#pkDel')?.addEventListener('click', ()=>{
-      openInAppConfirm(T(`Pakket “${p.name}” verwijderen?`, `Delete the package “${p.name}”?`), (ok)=>{ if(!ok) return; pkgSave(pkgAll().filter(x=>x.id !== id)); list(); });
-    });
-    el.querySelector('#pkSave').addEventListener('click', ()=>{
-      const name = el.querySelector('#pkName').value.trim();
-      if(!name){ toast(T('Geef het pakket een naam.', 'Give the package a name.')); return; }
-      const all = pkgAll();
-      const rec = { id: id || ('pk' + Date.now().toString(36)), name, fn: el.querySelector('#pkFn').value.trim(),
-        cards: p.cards.map(n=>{ const c = _pkgCardCache.get(n.toLowerCase()); return c ? c.name : n; }) };
-      const at = all.findIndex(x=>x.id === rec.id);
-      if(at >= 0) all[at] = rec; else all.push(rec);
-      pkgSave(all);
-      list();
-    });
-    paintGrid();
-    toFoot();
-  };
-  list();
-}
-/* 1.42: put a card into a package (from any "Add to…" popup). */
-function pkgAddCard(id, card){
-  const all = pkgAll(); const p = all.find(x=>x.id === id); if(!p) return;
-  const nl = appLang() === 'nl';
-  if(p.cards.some(n=>n.toLowerCase() === String(card.name).toLowerCase())){ toast(nl ? `${card.name} zit al in ${p.name}.` : `${card.name} is already in ${p.name}.`); return; }
-  p.cards.push(card.name); pkgSave(all);
-  _pkgCardCache.set(String(card.name).toLowerCase(), card);
-  toast(nl ? `${card.name} toegevoegd aan ${p.name}.` : `${card.name} added to ${p.name}.`);
-}
-/* A deck's packages page: every package, its cards that fit this deck,
-   grouped under the package's name -- the recommendation layout. */
-async function openDeckPackages(d){
-  const nl = appLang() === 'nl', T = (a, b)=>nl ? a : b;
-  pushOverlay('pkgDeck', ()=>{ document.getElementById('pkgDeckOverlay')?.remove(); });
-  let el = document.getElementById('pkgDeckOverlay');
-  if(!el){ el = document.createElement('div'); el.className = 'overlay'; el.id = 'pkgDeckOverlay'; }
-  document.body.appendChild(el);
-  el.innerHTML = `<div class="overlay-inner">${overlayCapHtml(T('Pakketten', 'Packages') + ' \u00b7 ' + d.name)}<main><div id="pkgDeckBody"><div class="status"><div class="spinner"></div></div></div></main>${overlayNavHtml()}</div>`;
-  wireOverlayNav(el);
-  const a = pkgAll().filter(p=>p.cards.length);
-  const box = ()=>document.getElementById('pkgDeckBody');
-  if(!a.length){ box().innerHTML = `<div class="empty-note">${T('Nog geen pakketten — maak ze bij Extra\u2019s \u2192 Pakketten.', 'No packages yet — make them in Extras \u2192 Packages.')}</div>`; return; }
-  const names = []; a.forEach(p=>p.cards.forEach(n=>{ if(names.indexOf(n) < 0) names.push(n); }));
-  let got = [];
-  try{ got = await resolveEdhrecNames(names, (c)=>!isBanned(c) && (deckIsConstructed(d) ? !deckBlockReason(c, d) : colorIdentityOkDeck(c, d))); }catch(e){}
-  if(!box()) return;
-  const byLow = new Map(got.map(c=>[String(c.name).toLowerCase(), c]));
-  const groups = a.map(p=>({ p, cards: p.cards.map(n=>byLow.get(n.toLowerCase())).filter(Boolean) })).filter(g=>g.cards.length);
-  if(!groups.length){ box().innerHTML = `<div class="empty-note">${T('Geen pakketkaarten passen bij dit deck.', 'No package cards fit this deck.')}</div>`; return; }
-  const pool = [].concat(...groups.map(g=>g.cards));
-  const paint = ()=>{
-    const b = box(); if(!b) return;
-    // bottom-up: the first package lands at the foot (DOM-last)
-    b.innerHTML = groups.slice().reverse().map(g=>`<div class="edh-sec"><div class="section-label" style="margin-top:14px;">${pkgLabel(g.p)}</div><div class="sr-grid">${g.cards.map(c=>searchRowHtml(c, d)).join('')}</div></div>`).join('');
-    wireResultButtons(pool, d, paint);
-    wireOverlayPick(el, b, pool, (nm)=>{ const i = pool.findIndex(x=>x.name === nm); if(i >= 0) openCardInfo(pool[i], { pool, poolIdx: i }); });
-    loadTilePrices(pool);
-    // bottom-up: open on the foot, where the first package sits
-    requestAnimationFrame(()=>{ const mn = el.querySelector('.overlay-inner > main'); if(mn) mn.scrollTop = mn.scrollHeight; });
-  };
-  paint();
-}
 function phraseFeats(card){
   const faces = (card.card_faces && card.card_faces.length) ? card.card_faces : [card];
   const t = faces.map(f=>f.oracle_text||'').join(' ').toLowerCase().replace(/\u2019/g, "'");
@@ -22689,7 +22560,7 @@ function inspirationPageHtml(){
     <div class="browse-selects">
       ${sel.theme && !both ? '' : `<div class="bs-row">${cselectHtml('inspKindred', [{v:'',l:trS('Kindred — none'), gen:'🐾'}].concat(kinList.map(t=>({v:t.slug, l:escapeHtml(t.label), art: inspSlugArt(t.slug, d)}))), sel.kindred||'', trS('Kindred — none'), {search:true, tiles:true})}</div>`}
       ${sel.kindred && !both ? '' : `<div class="bs-row">${cselectHtml('inspTheme', [{v:'',l:trS('Theme — none'), gen:'📜'}].concat(thList.map(t=>({v:t.slug, l:escapeHtml(t.label), art: inspSlugArt(t.slug, d)}))), sel.theme||'', trS('Theme — none'), {search:true, tiles:true})}</div>`}
-      <div class="bs-row insp-land-row">${deckKind(d) !== 'admiral' ? `<button type="button" class="ghost-btn" id="inspLandBase">\u26f0 ${appLang() === 'nl' ? 'Landbase' : 'Land base'}</button>` : ''}<button type="button" class="ghost-btn" id="inspPackages"><span class="ib">${ICONS.collection}</span>${appLang() === 'nl' ? 'Pakketten' : 'Packages'}</button></div>
+      <div class="bs-row insp-land-row">${deckKind(d) !== 'admiral' ? `<button type="button" class="ghost-btn" id="inspLandBase">\u26f0 ${appLang() === 'nl' ? 'Landbase' : 'Land base'}</button>` : ''}</div>
     </div>
     <div id="inspireResults"></div>
   </main>`;
@@ -22721,7 +22592,6 @@ function wireInspirationPage(){
   document.getElementById('goDecklistBtn')?.addEventListener('click', ()=>{ state.activeDeckId = d.id; switchPage('decklist'); });
   // 1.37: lands for THIS deck (its commander's EDHREC landbase, its own pips)
   document.getElementById('inspLandBase')?.addEventListener('click', ()=>openLandSuggest(d));
-  document.getElementById('inspPackages')?.addEventListener('click', ()=>openDeckPackages(d));   // 1.40
   if(deckIsConstructed(d)){ loadDeckMeta(d); return; }
   if(!d.admiral) return;
   // Drop-up tiles: pull every stored art into the sync ready-map before a
@@ -22848,9 +22718,9 @@ function inspThemesArrived(key){
   if(state.openCSelect) return;
   if(document.querySelector('#inspKindred, [data-cs="inspKindred"]') && state._inspMenusFor === key) return;
   state._inspMenusFor = key;
-  const y = document.documentElement.scrollHeight - window.scrollY;
+  const y = pageScroller().scrollTop;
   render();
-  window.scrollTo(0, document.documentElement.scrollHeight - y);
+  pageScroller().scrollTo(0, y);
 }
 function inspPaintIfCurrent(key, slug){
   const d = getDeck(state.inspireDeckId);
@@ -22949,7 +22819,7 @@ function bindInspJump(){
   _inspJumpBound = true;
   let raf = 0;
   const go = ()=>{ if(raf) return; raf = requestAnimationFrame(()=>{ raf = 0; placeInspJump(); }); };
-  window.addEventListener('scroll', go, { passive:true });
+  window.addEventListener('scroll', go, { passive:true, capture:true });
   window.addEventListener('resize', go);
 }
 /* ── Cuts ─ the deck holds more cards than its format allows: which can go?
@@ -23494,10 +23364,10 @@ function paintCuts(d){
     plan.aiWait = true;
   }
   if(aiSt && aiSt.busy) plan.aiWait = true;
-  const fromFoot = document.documentElement.scrollHeight - window.scrollY;
+  const fromFoot = pageScroller().scrollTop;
   slot.innerHTML = cutsBlockHtml(d, plan);
   wireCutsBlock(d, plan);
-  window.scrollTo(0, document.documentElement.scrollHeight - fromFoot);
+  pageScroller().scrollTo(0, fromFoot);
   placeInspJump();
 }
 function wireCutsBlock(d, plan){
@@ -23543,7 +23413,7 @@ function renderInspEdh(d, entry, keepScroll, partial, okSet){
   if(!box) return;
   if(okSet) entry._ok = okSet;
   const pool = inspEdhFilter(d, entry.pool, entry._ok || null);
-  const fromFoot = document.documentElement.scrollHeight - window.scrollY;
+  const fromFoot = pageScroller().scrollTop;
   state._inspRepaint = ()=>renderInspEdh(d, entry, true, partial);
   paintCuts(d);
   if(!pool.length){
@@ -23585,7 +23455,7 @@ function renderInspEdh(d, entry, keepScroll, partial, okSet){
   // first-60 cut left exactly those on "…" forever. Filling prices is a
   // lookup in what is already known (no network), so no cap is needed.
   loadTilePrices(shown);
-  if(keepScroll) window.scrollTo(0, document.documentElement.scrollHeight - fromFoot);
+  if(keepScroll) pageScroller().scrollTo(0, fromFoot);
   else scrollToPageFoot();
 }
 /* Card-type + theme clauses combine, all inside the Admiral's color identity. */
@@ -24771,7 +24641,7 @@ function renderEdhrecSections(box, key, S, keepScroll){
       const ng = wrap.querySelector('.sr-grid');
       if(ng && ng.firstElementChild){
         const _dy = ng.firstElementChild.getBoundingClientRect().top - _a0;
-        if(_dy){ const _se = document.scrollingElement || document.documentElement; _se.scrollTop += _dy; }
+        if(_dy){ const _se = pageScroller(); _se.scrollTop += _dy; }
       }
     }
     if(next >= p.cards.length) btn.remove();
@@ -25077,6 +24947,7 @@ async function hydrateTileArtReady(){
   }catch(e){ return false; }
 }
 function preloadBrowseTileArt(){
+  if(window.DECKHAND_CONFIG?.selfHosted) return;
   try{
     const keys = new Set();
     FMT_ORDER.forEach(f=>keys.add(FMT_ICON_CARDS[f] ? 'nm|'+FMT_ICON_CARDS[f] : 'sf|'+artFmtParam(f)+'|'+leaderArtClause(f)));
@@ -25123,7 +24994,7 @@ function preloadBrowseTileArt(){
 function wireArtTiles(root){
   (root||document).querySelectorAll('.cselect-panel.cs-artgrid').forEach(panel=>{
     const sc = panel.querySelector('.cs-artscroll') || panel;
-    sc.scrollTop = sc.scrollHeight;   // bottom-up: open at the foot
+    sc.scrollTop = 0;
     const io = new IntersectionObserver((entries)=>{
       entries.forEach(en=>{
         if(!en.isIntersecting) return;
@@ -25228,7 +25099,7 @@ async function loadMetaData(force){
     try{ disk = await qdbGet('meta.json'); }catch(e){}
     if(disk && disk.v && disk.v.formats) _metaData = disk.v;
     // A week between builds; look for a newer file a few times a day.
-    if(force || !_metaData || (Date.now() - ((disk && disk.t) || 0)) > 6*60*60*1000){
+    if(hasLocalDataFile('meta.json') && (force || !_metaData || (Date.now() - ((disk && disk.t) || 0)) > 6*60*60*1000)){
       try{
         const r = await fetch('./meta.json', { cache: 'no-cache' });
         if(r.ok){
@@ -25676,7 +25547,7 @@ async function loadInspFeed(){
   if(state.screen !== 'browse' || _inspFeedWin !== win || (state.browseFormat || 'commander') !== bf) return;
   const grid = box.querySelector(`.sr-grid[data-ifgrid="${bf}"]`);
   if(!grid || !grid.isConnected) return;
-  const _se = document.scrollingElement || document.documentElement;
+  const _se = pageScroller();
   // The selects sit BELOW the feed: pin them and the page foot cannot move,
   // so new tiles stack upward out of view instead of shoving the page up.
   const _anchor = document.querySelector('.browse-selects') || box.lastElementChild;
@@ -26110,47 +25981,33 @@ async function loadColorStaples(key, combo){
   state.browseCache[sk] = (res.staples.length || res.mana.length) ? res : false;
   if(key === browseKey() && state.browseCache[key]) renderBrowseResults(key, true);
 }
-/* 1.31: hold the reader's view while the page grows above them. Prices,
-   deck counts and pictures arrive late and make tiles taller; on a page that
-   is read from the foot upward, every taller tile ABOVE the reader pushed
-   the view (the page jumped to Mana Staples). The browser's own scroll
-   anchoring is off app-wide, so this page keeps its own: the lowest tile in
-   view is the anchor, and after every change in size it is put back exactly
-   where it was. */
+/* Keep visible Inspiration cards in place while streamed content grows. */
 function holdBrowseView(box){
   if(!box || box._holdView || !window.ResizeObserver) return;
   box._holdView = true;
-  const se = ()=>document.scrollingElement || document.documentElement;
-  let anc = null, top = 0, raf = 0, pickY = 0, atFoot = false;
-  const footGap = ()=>se().scrollHeight - (se().scrollTop + window.innerHeight);
+  const sc = box.closest('.tab-viewport') || pageScroller();
+  let anchor = null, top = 0, position = 0, frame = 0;
   const pick = ()=>{
-    const vh = window.innerHeight;
-    pickY = se().scrollTop;
-    atFoot = footGap() <= 4;
-    let best = null, bestB = -Infinity;
-    box.querySelectorAll('.sr-grid > *, .section-label').forEach(el=>{
+    const bounds = sc.getBoundingClientRect();
+    position = sc.scrollTop;
+    anchor = [...box.querySelectorAll('.sr-grid > *, .section-label')].find(el=>{
       const r = el.getBoundingClientRect();
-      if(r.height > 0 && r.bottom > 0 && r.top < vh && r.bottom > bestB){ best = el; bestB = r.bottom; }
-    });
-    anc = best; top = best ? best.getBoundingClientRect().top : 0;
+      return r.height > 0 && r.bottom > bounds.top && r.top < bounds.bottom;
+    }) || null;
+    top = anchor ? anchor.getBoundingClientRect().top : 0;
   };
-  const onScroll = ()=>{ if(raf) return; raf = requestAnimationFrame(()=>{ raf = 0; pick(); }); };
-  const ro = new ResizeObserver(()=>{
-    if(!box.isConnected){ ro.disconnect(); window.removeEventListener('scroll', onScroll); return; }
-    // 1.2: the page was scrolled since the anchor was taken (the jump to the
-    // foot after loading, or the reader): the old anchor is stale -- putting
-    // it back is what threw the page to Mana Staples halfway up.
-    if(Math.abs(se().scrollTop - pickY) > 1){ pick(); return; }
-    // bottom-up: a reader at the foot stays at the foot while the page grows above
-    if(atFoot){ const g = footGap(); if(g > 0.5) se().scrollTop += g; pick(); return; }
-    if(anc && anc.isConnected){
-      const dy = anc.getBoundingClientRect().top - top;
-      if(Math.abs(dy) > 0.5) se().scrollTop += dy;
+  const onScroll = ()=>{if(!frame) frame=requestAnimationFrame(()=>{frame=0;pick();});};
+  const observer = new ResizeObserver(()=>{
+    if(!box.isConnected){observer.disconnect();sc.removeEventListener('scroll',onScroll);return;}
+    if(Math.abs(sc.scrollTop-position)>1){pick();return;}
+    if(anchor?.isConnected){
+      const delta=anchor.getBoundingClientRect().top-top;
+      if(Math.abs(delta)>0.5) sc.scrollTop+=delta;
     }
     pick();
   });
-  ro.observe(box);
-  window.addEventListener('scroll', onScroll, { passive: true });
+  observer.observe(box);
+  sc.addEventListener('scroll',onScroll,{passive:true});
   pick();
 }
 /* cmd = { items, tile(it, idx) -> html, after(chunk) } for the commanders. */
@@ -26190,7 +26047,7 @@ function renderColorBrowse(box, key, cmd, keepScroll){
   secs.forEach(sx=>{ const n = nOf(sx); sx.after(sx.items.slice(0, n), sx.items.slice(0, n)); });
   if(y0 !== null){
     const now = box.querySelector('.edh-sec[data-csk="cmd"]');
-    if(now){ const dy = now.getBoundingClientRect().bottom - y0; if(dy){ const se = document.scrollingElement || document.documentElement; se.scrollTop += dy; } }
+    if(now){ const dy = now.getBoundingClientRect().bottom - y0; if(dy){ const se = pageScroller(); se.scrollTop += dy; } }
   }
   // More: the next ten, ABOVE the ones already there; the reader's cards stay put
   box.querySelectorAll('.edh-more[data-csk]').forEach(btn=>btn.addEventListener('click', ()=>{
@@ -26205,7 +26062,7 @@ function renderColorBrowse(box, key, cmd, keepScroll){
     if(g) g.innerHTML = sx.html(sx.items.slice(0, next));
     if(a0 !== null && g && g.firstElementChild){
       const dy = g.firstElementChild.getBoundingClientRect().top - a0;
-      if(dy){ const se = document.scrollingElement || document.documentElement; se.scrollTop += dy; }
+      if(dy){ const se = pageScroller(); se.scrollTop += dy; }
     }
     if(next >= sx.items.length) btn.remove();
     sx.after(sx.items.slice(already, next), sx.items.slice(0, next));
@@ -26225,7 +26082,7 @@ function renderColorBrowse(box, key, cmd, keepScroll){
   if(!keepScroll){
     // 1.2: straight to the foot in this very frame -- waiting for the next
     // frames flashed the top of the list first
-    try{ const se = document.scrollingElement || document.documentElement; se.scrollTop = se.scrollHeight; }catch(e){}
+    try{ const se = pageScroller(); se.scrollTop = 0; }catch(e){}
     scrollToPageFoot();
   }
 }
@@ -28383,7 +28240,7 @@ function renderRecoBody(){
           const _dy = gr.firstElementChild.getBoundingClientRect().top - _a0;
           if(_dy){
             const _m = btn.closest('main');
-            const _sc = (_m && _m.scrollHeight > _m.clientHeight) ? _m : (document.scrollingElement || document.documentElement);
+            const _sc = (_m && _m.scrollHeight > _m.clientHeight) ? _m : (pageScroller());
             _sc.scrollTop += _dy;
           }
         }
@@ -28520,7 +28377,7 @@ function createDeckFromReco(){
    their preview card (og-image.png) from the first link in a message. The APK
    link installs straight on Android; iPhone gets the web app via Safari. Always
    the public site -- inside the APK, location is not the website. */
-const DECKHAND_SITE = 'https://deckhandcompanion.netlify.app/';
+const DECKHAND_SITE = /^https?:$/.test(location.protocol) ? location.origin + '/' : 'https://deckhandcompanion.netlify.app/';
 /* ---- Feedback (1.0) ----
    A short message and up to three screenshots, mailed to the maker through
    Netlify Forms (the form "feedback" in the page; Netlify mails each
@@ -28554,6 +28411,7 @@ function fbMailto(text){
   return 'mailto:' + to + '?subject=' + encodeURIComponent('Deckhand feedback') + '&body=' + encodeURIComponent(text || '');
 }
 function openFeedbackSheet(){
+  if(window.DECKHAND_CONFIG?.selfHosted){ toast(appLang() === 'nl' ? 'Feedback versturen staat uit op deze server.' : 'Feedback submission is disabled on this server.'); return; }
   const NL = appLang() === 'nl', T = (a, b)=>NL ? a : b;
   document.getElementById('fbSheet')?.remove();
   const opened = Date.now(), shots = [null, null, null];
@@ -28731,6 +28589,7 @@ function apkUpdateCheck(){
   }catch(e){}
 }
 function shareAppText(lang){
+  if(window.DECKHAND_CONFIG?.selfHosted) return 'Deckhand — ' + DECKHAND_SITE;
   // ?v=<version>: every release is a link WhatsApp has never seen, so it
   // fetches the preview card (og-image.png) fresh instead of reusing an old
   // cached one -- shares within one version still reuse the good card.
@@ -28925,54 +28784,31 @@ function dropReveal(row){
       const br = bar ? bar.getBoundingClientRect().bottom : 0;
       const off = (br > 20 && br < 200 ? br : 90) + 8;
       const r = row.getBoundingClientRect();
-      window.scrollBy(0, r.top - off);
+      pageScroller().scrollBy(0, r.top - off);
     }catch(err){}
   });
 }
 /* Admiral first (the app's own format), then the commander family, then
    the 60-card formats. */
 const EXTRAS_FMT_ORDER = ['admiral', 'commander', 'paupercommander', 'duel', 'predh', 'standard', 'pauper', 'modern', 'legacy', 'vintage', 'premodern'];
-function settingsPageHtml(){
+function menuToolsHtml(preferences = false){
   const NL = appLang() === 'nl', T = (a, b)=>NL ? a : b;
-  // A tile: icon + title, nothing else -- the title says what it does.
-  const tile = (id, ico, title, extra)=>`<div class="settings-row xt-tile" id="${id}"><span class="xt-ico">${ico}</span><div class="l1">${title}</div>${extra || ''}</div>`;
+  const hints = {lifeRow:'Start or resume a game',draftRow:'Seats, timers, pairings and standings',crRow:'Look up rules and ask a question',
+    langRow:'Choose your interface and card language',dataSourcesRow:'Local library, catalogues and refresh controls',guildRow:'Pick your colors',
+    fmtRulesRow:'Read the rules for each format',banListsRow:'Check banned and restricted cards',syncRow:'Keep your devices in sync',
+    backupRow:'Save, restore and recover your decks',apkBtn:'Get the Android app'};
+  const tile = (id, ico, title, extra)=>menuCardHtml(id,ico,title,hints[id],extra);
   const g = GUILDS.find(x=>x.k===state.guild) || GUILDS[0];
   const browser = !(window.matchMedia('(display-mode: standalone)').matches || inAndroidApp());
-  const _pp = pushPrefs();
-  // 1.40: two columns, wrap-reverse -- the first tile in the markup is
-  // bottom-left, by the thumb, and each pair is one row: Packages|Life,
-  // Draft|Judge, Language|Format rules, Ban lists|Notifications,
-  // Colour|Sync, Share|Backup, (Install|Android app), credits|About.
-  // A tile's fold floats over the tiles (xtSync), nothing is pushed aside.
-  return `
-  <main class="settings-main xt-tiles">
-    <div class="settings-section">${tile('pkgRow', ICONS.collection, T('Pakketten', 'Packages'))}</div>
-    <div class="settings-section">${tile('lifeRow', ICONS.heart, 'Life Counter')}</div>
-    <div class="settings-section">${tile('draftRow', ICONS.draft, 'Draft tools')}</div>
-    <div class="settings-section">${tile('crRow', ICONS.gavel, T('Vraag de AI-judge', 'Ask AI judge'))}</div>
-    <div class="settings-section">${tile('langRow', ICONS.globe, T('Taal', 'Language'), `<div class="seg seg-inline">${APP_LANGS.map(L=>`<button data-lang-choice="${L.code}" class="${appLang()===L.code?'active':''}">${L.code.toUpperCase()}</button>`).join('')}</div>`)}</div>
-    <div class="settings-section">
-      ${tile('fmtRulesRow', ICONS.library, T('Format&shy;regels', 'Format rules') + newAdmiralPill())}
-      <div id="fmtRulesBody" class="acc-down xt-body" hidden style="padding:0 12px 6px;"></div>
-    </div>
-    <div class="settings-section">
-      ${tile('banListsRow', ICONS.ban, T('Banlijsten', 'Ban lists'))}
-      <div id="banListsBody" class="acc-down xt-body" hidden style="padding:0 12px 6px;"></div>
-    </div>
-    <div class="settings-section">
-      <div id="notifBody" class="acc-up xt-body" hidden style="padding:4px 12px 0;">${!nativeNotify()
-        ? `<div class="l2" style="padding:6px 2px 10px;">${T('Meldingen komen via de Android-app, tussen 09:00 en 21:00.', 'Notifications come through the Android app, between 09:00 and 21:00.')}</div>`
-        : `<div class="settings-row"><div class="l1">Spoilers</div><div class="otag-wrap" id="pushSpoilWrap"><button type="button" id="pushSpoilBtn" class="col-filter-input">${escapeHtml(spoilEveryLabel(_pp.spoilerEvery))} <span style="float:right;opacity:0.6;">▾</span></button><div id="pushSpoilPop" class="otag-pop" hidden>${SPOIL_EVERY_CHOICES.map(v=>`<button type="button" data-spoilevery="${v}">${escapeHtml(spoilEveryLabel(v))}</button>`).join('')}</div></div></div>
-      <div class="settings-row" style="border-top:2px solid var(--line);"><div class="l1">${T('App-updates', 'App updates')}</div><label class="toggle-switch"><input type="checkbox" id="pushUpdToggle" ${_pp.updates?'checked':''}><span class="track"></span><span class="knob"></span></label></div>
-      <div class="settings-body" style="padding:10px 2px;"><div style="font-size:12px;color:var(--sub-text);">${T('Meldingen komen tussen 09:00 en 21:00.', 'Notifications arrive between 09:00 and 21:00.')}</div><div style="font-size:12px;color:var(--sub-text);margin-top:4px;" id="pushStatus"></div></div>`}</div>
-      ${tile('notifRow', ICONS.bell, T('Meldingen', 'Notifications'))}
-    </div>
+  if(preferences) return `
+  <section class="menu-tools hub-actions" aria-label="Preferences">
+    <div class="settings-section">${tile('langRow', ICONS.globe, T('Taal', 'Language'))}<div id="languageBody" class="menu-tool-body" hidden><div class="seg seg-inline">${APP_LANGS.map(L=>`<button data-lang-choice="${L.code}" class="${appLang()===L.code?'active':''}">${L.code.toUpperCase()}</button>`).join('')}</div></div></div>
+    <div class="settings-section">${tile('dataSourcesRow', ICONS.library, T('Gegevensbronnen','Data sources'))}<div id="dataSourcesBody" class="menu-tool-body" hidden>${dataSourcesHtml()}</div></div>
     <div class="settings-section">
       <div id="guildBody" class="guild-list xt-body" hidden>${GUILDS.map(x=>`<button type="button" class="guild-opt ${x.k===state.guild?'sel':''}" data-guild="${x.k}"><span class="guild-swatch" style="--gm:${GUILD_SWATCH[x.main][0]};--gs:${GUILD_SWATCH[x.side][1]};"></span>${manaIconSvg(x.main,16)}${manaIconSvg(x.side,16)}<span>${x.n}</span></button>`).join('')}</div>
-      <div class="settings-row xt-tile" id="guildRow"><span class="xt-ico" id="guildCur">${manaIconSvg(g.main,22)}${manaIconSvg(g.side,22)}</span><div class="l1">${T('Kleuren&shy;schema', 'Color scheme')}</div></div>
+      ${tile('guildRow', `<span id="guildCur">${manaIconSvg(g.main,22)}${manaIconSvg(g.side,22)}</span>`, T('Kleurenschema', 'Color scheme'))}
     </div>
     <div class="settings-section">${tile('syncRow', SYNC_ICON, 'Sync', `<div class="l2">${syncState() ? T('Gekoppeld', 'Linked') : T('Meerdere apparaten', 'Several devices')}</div>`)}</div>
-    <div class="settings-section">${tile('shareAppRow', ICONS.share, T('Deel de app', 'Share the app'))}</div>
     <div class="settings-section">
       <div id="backupBody" class="acc-up xt-body" hidden style="padding:4px 14px 2px;">
         <div class="l2">${T('Decks, collectie en instellingen in één bestand — bewaar het in je eigen cloud.', 'Decks, collection and settings in one file — keep it in your own cloud.')}</div>
@@ -28991,20 +28827,24 @@ function settingsPageHtml(){
       </div>
       ${tile('backupRow', ICONS.shield, T('Back-up', 'Backup'))}
     </div>
-    ${browser ? `<div class="settings-section">${tile('installAppRow', ICONS.imp, T('Installeer als app', 'Install as an app'))}</div>` : ''}
-    ${browser && /Android/i.test(navigator.userAgent) ? `<div class="settings-section" id="apkRow">${tile('apkBtn', ICONS.phone, T('Android-app', 'Android app'), '<div class="l2" id="apkNote"></div>')}</div>` : ''}
-    ${((browser ? 1 : 0) + (browser && /Android/i.test(navigator.userAgent) ? 1 : 0)) % 2 === 1 ? '<div class="xt-spacer" aria-hidden="true"></div>' : ''}
-    <div class="settings-section xt-note" id="appFootCell">
-    <p class="hint" id="appFootNote" style="text-align:center;line-height:1.45;font-size:11px;">Deckhand v${APP_VERSION} · ${T('kaarten', 'cards')} <a href="https://scryfall.com" target="_blank" rel="noopener" style="color:var(--head-ink);">Scryfall</a> · ${T('thema’s', 'themes')} <a href="https://edhrec.com" target="_blank" rel="noopener" style="color:var(--head-ink);">EDHREC</a> · ${T('prijzen', 'prices')} Cardmarket<br>Unofficial Fan Content under the Fan Content Policy. Not approved/endorsed by Wizards. © Wizards of the Coast LLC.</p>
-      ${CHANGELOG_HISTORY.length ? `<button type="button" class="xt-mini" id="changelogBtn">${inlIco('spark', 14)}${T('Wat is nieuw', 'What\u2019s new')}</button>
-      <div id="changelogBody" class="acc-down xt-body cl-month" data-xt-title="${T('Wat is nieuw', 'What\u2019s new')}" hidden></div>` : ''}
-      <button type="button" class="xt-mini" id="footFeedbackBtn" data-feedback>${inlIco('edit', 14)}${T('Stuur feedback', 'Send feedback')}</button>
+  </section>`;
+  return `
+  <section class="menu-tools hub-actions" aria-label="Tools">
+    <div class="settings-section">${tile('draftRow', ICONS.draft, 'Draft tools')}</div>
+    <div class="settings-section">${tile('crRow', ICONS.gavel, T('Vraag de AI-judge', 'Ask AI judge'))}</div>
+    <div class="settings-section">
+      ${tile('fmtRulesRow', ICONS.library, T('Format&shy;regels', 'Format rules') + newAdmiralPill())}
+      <div id="fmtRulesBody" class="acc-down xt-body" hidden style="padding:0 12px 6px;"></div>
     </div>
     <div class="settings-section">
-      <div class="settings-row xt-tile" id="aboutRow" style="cursor:pointer;"><span class="xt-ico">${ICONS.info}</span><div class="l1">${T('Over Deckhand', 'About Deckhand')}</div></div>
-      <div id="aboutBody" class="acc-down xt-body" hidden style="padding:0 14px 4px;">${aboutHtml()}</div>
+      ${tile('banListsRow', ICONS.ban, T('Banlijsten', 'Ban lists'))}
+      <div id="banListsBody" class="acc-down xt-body" hidden style="padding:0 12px 6px;"></div>
     </div>
-  </main>`;
+    ${browser && !window.DECKHAND_CONFIG?.selfHosted && /Android/i.test(navigator.userAgent) ? `<div class="settings-section" id="apkRow">${tile('apkBtn', ICONS.phone, T('Android-app', 'Android app'), '<div class="l2" id="apkNote"></div>')}</div>` : ''}
+    <div class="settings-section" id="appFootCell">
+    <p class="hint" id="appFootNote" style="text-align:center;line-height:1.45;font-size:11px;">Deckhand v${APP_VERSION} · ${T('kaarten', 'cards')} <a href="https://scryfall.com" target="_blank" rel="noopener" style="color:var(--head-ink);">Scryfall</a> · ${T('thema’s', 'themes')} <a href="https://edhrec.com" target="_blank" rel="noopener" style="color:var(--head-ink);">EDHREC</a> · ${T('prijzen', 'prices')} Cardmarket<br>Unofficial Fan Content under the Fan Content Policy. Not approved/endorsed by Wizards. © Wizards of the Coast LLC.</p>
+    </div>
+  </section>`;
 }
 function commanderQuickRulesHtml(){
   return `<div class="rules-text">
@@ -29148,7 +28988,7 @@ function banPillarsHtml(){
    device last changed it; the newest change wins, piece by piece.
    A probe every few minutes costs a few bytes; data only moves when
    something changed. Caches, prices and device-only switches never sync. */
-const SYNC_KEYS = new Set(['packages', 'collection', 'folders', 'globalTags', 'printPrefs', 'printPrefsPlaced', 'trade', 'priceWatch', 'draftNames', 'authorName', 'lang', 'settings:app', 'budgetFloor', 'lifeFmt']);
+const SYNC_KEYS = new Set(['collection', 'folders', 'globalTags', 'printPrefs', 'printPrefsPlaced', 'trade', 'priceWatch', 'draftNames', 'authorName', 'lang', 'settings:app', 'budgetFloor', 'lifeFmt']);
 const SYNC_URL = '/.netlify/functions/sync';
 let _syncQuiet = 0, _syncTimer = null, _syncBusy = false, _syncMetaT = null;
 const _lsSetRaw = Storage.prototype.setItem, _lsDelRaw = Storage.prototype.removeItem;
@@ -29222,6 +29062,7 @@ function syncPending(){
   if(!st) return out;
   const sent = st.sent || {};
   Object.keys(m).forEach(k=>{
+    if(!k.startsWith('deck:') && !SYNC_KEYS.has(k)) return;
     if(!(m[k].t > (sent[k] || 0))) return;
     const v = m[k].d ? null : syncValueOf(k);
     out[k] = v == null ? { t: m[k].t, del: 1 } : { t: m[k].t, v };
@@ -29376,8 +29217,8 @@ function openSyncSheet(){
       <button type="button" class="ghost-btn" id="syncOff">${nl ? 'Ontkoppel dit apparaat' : 'Unlink this device'}</button>
     </div>
     <div class="bk-hint">${nl
-      ? 'Vul deze code in op je andere apparaat: Extra’s → Sync → <b>Ik heb al een code</b>. Houd hem voor jezelf: wie de code heeft, ziet je decks en collectie.'
-      : 'Enter this code on your other device: Extras → Sync → <b>I already have a code</b>. Keep it to yourself: whoever has it sees your decks and collection.'}</div>
+      ? 'Vul deze code in op je andere apparaat: Menu → Settings → Sync → <b>Ik heb al een code</b>. Houd hem voor jezelf: wie de code heeft, ziet je decks en collectie.'
+      : 'Enter this code on your other device: Menu → Settings → Sync → <b>I already have a code</b>. Keep it to yourself: whoever has it sees your decks and collection.'}</div>
     <div class="sync-code" id="syncCodeTxt">${escapeHtml(syncNiceCode(st.code))}</div>
     <div class="br-title"><b>☁ ${nl ? 'Gekoppeld' : 'Linked'}</b><span id="syncLastLine">${escapeHtml(syncLastLabel())}</span></div>`
   : `
@@ -29543,8 +29384,8 @@ function openBackupSheet(){
       <button type="button" class="ghost-btn" id="bkSave">⬇ ${nl ? 'Opslaan in Downloads' : 'Save to Downloads'}</button>
     </div>
     <div class="bk-hint">${nl
-      ? 'Kies in het deelmenu bijvoorbeeld <b>Google Drive</b>, <b>Nextcloud</b>, <b>Dropbox</b> of je <b>mail</b>. Terugzetten: Extra’s → Terugzetten, en kies het bestand — ook rechtstreeks uit je cloud.'
-      : 'In the share menu pick, for example, <b>Google Drive</b>, <b>Nextcloud</b>, <b>Dropbox</b> or your <b>mail</b>. To restore: Extras → Restore, and pick the file — straight from your cloud too.'}</div>
+      ? 'Kies in het deelmenu bijvoorbeeld <b>Google Drive</b>, <b>Nextcloud</b>, <b>Dropbox</b> of je <b>mail</b>. Terugzetten: Menu → Instellingen → Back-up → Terugzetten, en kies het bestand — ook rechtstreeks uit je cloud.'
+      : 'In the share menu pick, for example, <b>Google Drive</b>, <b>Nextcloud</b>, <b>Dropbox</b> or your <b>mail</b>. To restore: Menu → Settings → Backup → Restore, and pick the file — straight from your cloud too.'}</div>
     <div class="br-title"><b>${inlIco('save', 16)}${nl ? 'Back-up maken' : 'Make a backup'}</b><span>${nl
       ? `${bkN(st.nDecks, 'deck', 'decks')}, ${bkN(st.nCards, 'kaart', 'kaarten')} in je collectie, mappen, Gezocht, tags en instellingen — alles in één bestand.`
       : `${bkN(st.nDecks, 'deck', 'decks')}, ${bkN(st.nCards, 'card', 'cards')} in your collection, binders, Wants, tags and settings — all in one file.`}</span><span>${escapeHtml(backupAgeLabel())}</span></div>
@@ -29635,10 +29476,46 @@ async function restoreFromFile(file){
   toast(`Restored ${valid.length} deck${valid.length>1?'s':''}.`);
   switchPage('decks');
 }
-function wireSettingsPage(){
+function wirePreferences(){
+  wireBackupAndSync();
   wireDataSources();
-  { const main = document.querySelector('main.xt-tiles');
-    if(main){ new MutationObserver(()=>{ try{ xtSync(); }catch(e){} }).observe(main, { subtree: true, attributes: true, attributeFilter: ['hidden'] }); xtSync(); } }
+  document.querySelectorAll('[data-lang-choice]').forEach(b=>b.addEventListener('click', ()=>{
+    const code = b.dataset.langChoice;
+    if(code === appLang()) return;
+    setAppLang(code);
+    state._langImgCache = {};   // re-resolve card data in the new language
+    if(code === 'en'){ disableI18n(); render(); }
+    else { render(); enableI18n(); try{ translateTree(document.body); }catch(err){} }
+    toast(code === 'nl' ? 'Taal opgeslagen.' : 'Language saved.');
+  }));
+  document.querySelectorAll('[data-theme-choice]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      state.theme = b.dataset.themeChoice;
+      applyTheme(); persistSettings();
+      document.querySelectorAll('[data-theme-choice]').forEach(x=>x.classList.toggle('active', x===b));
+    });
+  });
+}
+function wireBackupAndSync(){
+  document.getElementById('backupBtn').addEventListener('click', ()=>openBackupSheet());
+  document.getElementById('restoreBtn').addEventListener('click', ()=>document.getElementById('restoreFile').click());
+  document.getElementById('restoreFile').addEventListener('change', e=>{
+    const f = e.target.files && e.target.files[0];
+    if(f) restoreFromFile(f);
+    e.target.value = '';   // let the same file be picked again
+  });
+  [['backupRow', 'backupBody']].forEach(([r, b])=>{
+    const row = document.getElementById(r), body = document.getElementById(b);
+    if(row && body) row.addEventListener('click', (e)=>{
+      const control = e.target.closest('button, input, label, select');
+      if(control && control !== row) return;
+      keepAnchored(row, ()=>foldToggle(body, null, row), ()=>row.isConnected ? row : null);
+    });
+  });
+  document.getElementById('syncRow')?.addEventListener('click', ()=>openSyncSheet());
+  document.getElementById('deletedDecksBtn')?.addEventListener('click', (e)=>{ e.stopPropagation(); openDeckVersions(null); });
+}
+function wireMenuTools(){
   // A long press on the credits copies the diagnostics (no button needed).
   { const fn = document.getElementById('appFootNote');
     if(fn) wireTapHold(fn, ()=>{}, ()=>{ copyDiagnostics(); }, 900); }
@@ -29655,87 +29532,10 @@ function wireSettingsPage(){
       toast(trS('Could not copy — select the text above instead.'));
     }
   });
-  document.querySelectorAll('[data-lang-choice]').forEach(b=>b.addEventListener('click', ()=>{
-    const code = b.dataset.langChoice;
-    if(code === appLang()) return;
-    setAppLang(code);
-    state._langImgCache = {};   // re-resolve card data in the new language
-    if(code === 'en'){ disableI18n(); render(); }
-    else { render(); enableI18n(); try{ translateTree(document.body); }catch(err){} }
-    toast(code === 'nl' ? 'Taal opgeslagen.' : 'Language saved.');
-  }));
   ensureCmdrBans(!((state.cmdrBans||{}).names||[]).length);
-  document.getElementById('backupBtn').addEventListener('click', ()=>openBackupSheet());
   document.getElementById('apkUpdBtn')?.addEventListener('click', ()=>openApkUpdateSheet());
-  document.getElementById('restoreBtn').addEventListener('click', ()=>document.getElementById('restoreFile').click());
-  document.getElementById('restoreFile').addEventListener('change', e=>{
-    const f = e.target.files && e.target.files[0];
-    if(f) restoreFromFile(f);
-    e.target.value = '';   // let the same file be picked again
-  });
-  document.querySelectorAll('[data-theme-choice]').forEach(b=>{
-    b.addEventListener('click', ()=>{
-      state.theme = b.dataset.themeChoice;
-      applyTheme(); persistSettings();
-      document.querySelectorAll('[data-theme-choice]').forEach(x=>x.classList.toggle('active', x===b));
-    });
-  });
-  [['notifRow', 'notifBody'], ['backupRow', 'backupBody']].forEach(([r, b])=>{
-    const row = document.getElementById(r), body = document.getElementById(b);
-    if(row && body) row.addEventListener('click', (e)=>{
-      if(e.target.closest('button, input, label, select')) return;
-      keepAnchored(row, ()=>foldToggle(body, null, row), ()=>row.isConnected ? row : null);
-    });
-  });
-  // 1.41: What's new -- the past month, each release folded
-  { const cb = document.getElementById('changelogBtn'), body = document.getElementById('changelogBody');
-    if(cb && body){
-      cb.addEventListener('click', (e)=>{
-        e.stopPropagation();
-        if(!body.innerHTML.trim()) body.innerHTML = `<div data-notr>${changelogListHtml(changelogMonth(), appLang() === 'nl', true)}</div>`;
-        foldToggle(body, null, cb);
-      });
-      body.addEventListener('click', (e)=>{
-        const h = e.target.closest('[data-clv]'); if(!h) return;
-        const ul = h.nextElementSibling; if(!ul) return;
-        foldToggle(ul, (open)=>{ const ic = h.querySelector('.fold-ico'); if(ic) ic.textContent = open ? '\u25B4' : '\u25BE'; }, h);
-        if(!ul.hidden) dropReveal(h);
-      });
-    } }
-  document.getElementById('lifeRow').addEventListener('click', openLifeOverlay);
   document.getElementById('draftRow')?.addEventListener('click', ()=>switchPage('draft'));
   document.getElementById('tourRow')?.addEventListener('click', startAppTour);
-  const _pushChanged = (every)=>{
-    const nu = pushPrefs();
-    const p = { spoilerEvery: normSpoilEvery(every != null ? every : nu.spoilerEvery),
-                updates: !!document.getElementById('pushUpdToggle')?.checked };
-    p.spoilers = p.spoilerEvery > 0;
-    if(nativeNotify()){
-      savePushPrefs(p);
-      applyNativePrefs(p);
-      return;
-    }
-    syncPushPrefs(p);
-  };
-  {
-    const sb = document.getElementById('pushSpoilBtn');
-    const sp = document.getElementById('pushSpoilPop');
-    if(sb && sp){
-      sb.addEventListener('click', (ev)=>{ ev.stopPropagation(); sp.hidden = !sp.hidden; });
-      sp.querySelectorAll('[data-spoilevery]').forEach(o=>o.addEventListener('click', (ev)=>{
-        ev.preventDefault(); ev.stopPropagation();
-        const v = normSpoilEvery(o.dataset.spoilevery);
-        sb.innerHTML = `${escapeHtml(spoilEveryLabel(v))} <span style="float:right;opacity:0.6;">▾</span>`;
-        sp.hidden = true;
-        _pushChanged(v);
-      }));
-      document.addEventListener('pointerdown', (ev)=>{
-        if(!sp.hidden && ev.target.closest && !ev.target.closest('#pushSpoilWrap')) sp.hidden = true;
-      }, true);
-    }
-  }
-  document.getElementById('pushUpdToggle')?.addEventListener('change', ()=>_pushChanged());
-  paintPushAvailability();
   document.getElementById('crRow')?.addEventListener('click', openCROverlay);
   document.getElementById('fullRulesToggle')?.addEventListener('click', ()=>{
     state.settingsFullRulesOpen = !state.settingsFullRulesOpen;
@@ -29789,57 +29589,6 @@ function wireSettingsPage(){
     const a = document.createElement('a');
     a.href = './Deckhand.apk'; a.download = 'Deckhand.apk';
     document.body.appendChild(a); a.click(); a.remove();
-  });
-  document.getElementById('installAppRow')?.addEventListener('click', async ()=>{
-    if(window.matchMedia('(display-mode: standalone)').matches){ toast('Already installed — you\'re in the app right now.'); return; }
-    if(state._installEvt){
-      const evt = state._installEvt; state._installEvt = null;
-      try{ evt.prompt(); await evt.userChoice; }catch(e){}
-      return;
-    }
-    // No install prompt available — diagnose WHY, piece by piece.
-    const l2 = document.querySelector('#installAppRow .l2');
-    if(l2) l2.textContent = 'Checking…';
-    const probs = [];
-    if(!/^https:/.test(location.protocol)) probs.push('not on https (open the hosted link)');
-    const check = async (file)=>{ try{ const r = await fetch(file, {cache:'no-store'}); return r.ok; }catch(e){ return false; } };
-    if(!await check('manifest.json')) probs.push('manifest.json MISSING from the site');
-    if(!await check('icon-192.png')) probs.push('icon-192.png MISSING from the site');
-    if(!await check('icon-512.png')) probs.push('icon-512.png MISSING from the site');
-    if(!await check('sw.js')) probs.push('sw.js MISSING from the site');
-    else if(navigator.serviceWorker && !(await navigator.serviceWorker.getRegistration())) probs.push('service worker not registered yet (reload once)');
-    const qDepth = _sfQ.hi.length + _sfQ.lo.length;
-    if(qDepth) probs.push(`Scryfall queue: ${qDepth} request${qDepth===1?'':'s'} waiting${_sfWorking && Date.now()-_sfBeat>10000 ? ', pump quiet '+Math.round((Date.now()-_sfBeat)/1000)+'s (watchdog will clear it)' : ''}`);
-    if(l2){
-      if(probs.length){
-        l2.textContent = '⚠ ' + probs.join(' · ') + ' — re-upload the COMPLETE deploy folder (all files), then reload.';
-      } else {
-        // Per-browser truth: only Chrome mints a real Android app (WebAPK).
-        const ua = navigator.userAgent;
-        l2.textContent = /iPhone|iPad|iPod/.test(ua)
-          ? 'All checks pass ✓ — in Safari: Share → Add to Home Screen (iPhone has no app-store-free installs beyond this).'
-          : /SamsungBrowser/i.test(ua)
-          ? 'Samsung Internet only makes a bare shortcut that can vanish. Open this link ONCE in Chrome and install there: ⋮ → Install app.'
-          : /Firefox/i.test(ua)
-          ? 'Firefox on Android cannot install the real app. Open this link in Chrome and pick ⋮ → Install app.'
-          : /Ecosia|Brave|DuckDuckGo|EdgA|OPR|Vivaldi/i.test(ua)
-          ? 'This browser only makes a bare shortcut — on Android only CHROME can install the real app. Open this link once in Chrome and install there.'
-          : 'All checks pass ✓ — Chrome ⋮ → Install app (NOT "Add to Home screen"). A real install shows in Android Settings → Apps and survives a reboot. If Chrome only offers a shortcut: remove the old icon, reload twice, retry.';
-      }
-    }
-  });
-  document.getElementById('syncRow')?.addEventListener('click', ()=>openSyncSheet());
-  document.getElementById('deletedDecksBtn')?.addEventListener('click', (e)=>{ e.stopPropagation(); openDeckVersions(null); });
-  document.getElementById('shareAppRow')?.addEventListener('click', async ()=>{
-    const text = shareAppText(appLang());
-    // Text only: the links live IN the message. A separate url field made
-    // Android paste the link a second time underneath.
-    if(navigator.share){
-      try{ await navigator.share({ title: brandTitle(), text }); return; }
-      catch(e){ if(e && e.name==='AbortError') return; }
-    }
-    try{ await navigator.clipboard.writeText(text); toast(trS('Invite copied — paste it anywhere.')); }
-    catch(e){ toast(trS('Could not open sharing on this device.')); }
   });
 }
 
@@ -31195,7 +30944,7 @@ function openLifeRestore(){
       const top = state.overlayStack[state.overlayStack.length - 1];
       if(top && top.id === 'lifeSet') closeTopOverlay();
       L.settingsOpen = false;
-      renderLifeOverlay();
+      if(!state.lifeOpen) openLifeOverlay(); else renderLifeOverlay();
       toast(nl ? 'Potje hersteld.' : 'Game restored.');
     }, 0);
   });
@@ -31707,7 +31456,6 @@ function renderHistoryPanel(){
   if(!state.life.historyOpen){ box.innerHTML=''; return; }
   box.innerHTML = `<div class="life-panel"><h4>History</h4><div class="history-list">${state.life.history.length ? state.life.history.map(h=>`<div>${escapeHtml(h)}</div>`).join('') : '<div>No events yet.</div>'}</div></div>`;
 }
-document.addEventListener('click', (e)=>{ const t = e.target && e.target.closest && e.target.closest('#pkgRow'); if(t) openPackagesEditor(); });   // 1.40
 /* 1.45 desk: measure the free strip of the top bar (between Back and the
    page buttons) so the page's name can sit in it. */
 function deskCapFit(){
@@ -32649,6 +32397,7 @@ function _pushOnMsg(p){
    but "this wrapper can't, the browser version can". */
 function _pushUnavailableMsg(){
   const NL = appLang() === 'nl';
+  if(window.DECKHAND_CONFIG?.selfHosted) return NL ? 'Pushmeldingen staan uit op deze server.' : 'Push notifications are disabled on this server.';
   if(nativeNotify()){
     return NL ? '' : '';
   }
@@ -32758,7 +32507,7 @@ function paintPushAvailability(){
     _pushStatus((every > 0 || upd) ? _nativeOnMsg() : '');
     return;
   }
-  if(!('serviceWorker' in navigator) || !('PushManager' in window)){
+  if(window.DECKHAND_CONFIG?.webPushEnabled === false || !('serviceWorker' in navigator) || !('PushManager' in window)){
     if(sb){ sb.disabled = true; sb.closest('.settings-row')?.style.setProperty('opacity', '0.75'); }
     if(up){ up.checked = false; up.disabled = true;
       up.closest('.settings-row')?.style.setProperty('opacity', '0.75'); }
@@ -32773,6 +32522,7 @@ function paintPushAvailability(){
   if(p.spoilers || p.updates) _pushStatus(_pushOnMsg(p));
 }
 async function syncPushPrefs(p){
+  if(window.DECKHAND_CONFIG?.webPushEnabled === false){ _pushStatus(_pushUnavailableMsg()); return; }
   const NL = appLang() === 'nl';
   p = Object.assign({}, p, { spoilerEvery: normSpoilEvery(p.spoilerEvery) });
   p.spoilers = p.spoilerEvery > 0;
@@ -33409,7 +33159,7 @@ function appBackStep(viaHistory){
   }
   // On Extras, every fold the user opened consumes one back press before
   // navigation does — the most recently opened first, one fold per press.
-  if(state.screen === 'settings' && !state.openCSelect && closeLastFold()){
+  if((state.screen === 'menu' || state.screen === 'settings') && !state.openCSelect && closeLastFold()){
     rearm({screen: state.screen, folder: state.folderNav||null}, '#'+state.screen);
     return true;
   }
@@ -33715,8 +33465,8 @@ async function bulkSyncCheck(force){
     const need = {
       oracle:  !local || !(local.cardChunks  > 0) || lp.oracle  !== bulkPartStamp(remote, 'oracle'),
       rulings: !local || !(local.rulChunks   > 0) || lp.rulings !== bulkPartStamp(remote, 'rulings'),
-      tags:    !local || lp.tags   !== bulkPartStamp(remote, 'tags')   || (!(local.tagChunks   > 0) && newBuild),
-      combos:  !local || lp.combos !== bulkPartStamp(remote, 'combos') || (!(local.comboChunks > 0) && newBuild)
+      tags:    hasLocalDataFile('tags-slim.jsonl.gz') && remote.tags != null && (!local || lp.tags !== bulkPartStamp(remote, 'tags') || (!(local.tagChunks > 0) && newBuild)),
+      combos:  hasLocalDataFile('combos-slim.jsonl.gz') && remote.combos != null && (!local || lp.combos !== bulkPartStamp(remote, 'combos') || (!(local.comboChunks > 0) && newBuild))
     };
     if(!need.oracle && !need.rulings && !need.tags && !need.combos){
       if(force) toast(trS('Database already current') + ' \u2014 ' + (local.cards || 0) + ' cards, ' + (local.combos || 0) + ' combos.');
@@ -33777,8 +33527,8 @@ async function bulkSyncCheck(force){
     }catch(e){ /* keep whatever we already had */ }
     // The ban seed is derived from the card file, so it is only redone when
     // that file came down.
-    if(cards) await bulkKvSet('bannedCommander', { t: Date.parse(remote.built) || 0, names: bulkBannedNamesFrom(cards) });
-    await bulkKvSet('meta', { built: remote.built, cardChunks: ci, rulChunks: ri, tagChunks: ti, comboChunks: ki, cards: cardCount, rulingCards, tagCards: tagCount, combos: comboCount, comboRetryBuilt: remote.built, savedAt: Date.now(),
+    if(cards && !remote.sample) await bulkKvSet('bannedCommander', { t: Date.parse(remote.built) || 0, names: bulkBannedNamesFrom(cards) });
+    await bulkKvSet('meta', { built: remote.built, sample: !!remote.sample, cardChunks: ci, rulChunks: ri, tagChunks: ti, comboChunks: ki, cards: cardCount, rulingCards, tagCards: tagCount, combos: comboCount, comboRetryBuilt: remote.built, savedAt: Date.now(),
       parts: { oracle: bulkPartStamp(remote, 'oracle'), rulings: bulkPartStamp(remote, 'rulings'), tags: bulkPartStamp(remote, 'tags'), combos: bulkPartStamp(remote, 'combos') } });
     _bulkIdx = null; _bulkLoadP = null;         // rebuilt lazily from the new data
     state._bulkMetaCache = null;                // Data Sources re-reads the new meta
@@ -33835,7 +33585,7 @@ function bulkIndexReady(){
         await _bulkYield();
       }
     }
-    _bulkIdx = { built: meta.built, byName, rulByOid, cards: cardsArr, tagByOid, hasLx };
+    _bulkIdx = { built: meta.built, sample: !!meta.sample, byName, rulByOid, cards: cardsArr, tagByOid, hasLx };
     return _bulkIdx;
   })();
   return _bulkLoadP;
@@ -33890,6 +33640,7 @@ async function bulkCardByName(name){
    live API" (no database, or a card newer than the weekly file). */
 function _bulkRulingsDecide(ix, card){
   if(!ix || !card) return undefined;
+  if(ix.sample) return undefined; // Sample data has no rulings; ask the live API.
   const nameKey = card.name ? String(card.name).toLowerCase() : null;
   if(card.oracle_id){
     if(ix.rulByOid.has(card.oracle_id)) return ix.rulByOid.get(card.oracle_id);
@@ -34016,7 +33767,12 @@ window.addEventListener('load', ()=>{ setTimeout(startImageWarmer, 8000); });
 // Register the service worker for offline/app-like behavior — only when
 // hosted (service workers don't exist for file:// pages, and the app must
 // keep working when shared as a bare file).
-if('serviceWorker' in navigator && /^https:/.test(location.protocol)){
+async function updateServiceWorker(reg){
+  if(navigator.onLine === false) return false;
+  try{ await reg.update(); return true; }
+  catch(e){ sfJournal('SW update deferred: ' + String(e.message || e).slice(0,100)); return false; }
+}
+if('serviceWorker' in navigator && window.isSecureContext){
   // No reload when a new service worker takes control: index.html is served
   // network-first, so the page that just booted IS the freshly deployed one —
   // the old reload only produced the double startup (splash, home, splash
@@ -34024,7 +33780,6 @@ if('serviceWorker' in navigator && /^https:/.test(location.protocol)){
   window.addEventListener('load', ()=>{
     navigator.serviceWorker.register('sw.js').then(reg=>{
       const promote = w => { if(w) w.postMessage({type:'SKIP_WAITING'}); };
-      try{ reg.update(); }catch(e){}
       if(reg.waiting && navigator.serviceWorker.controller) promote(reg.waiting);
       reg.addEventListener('updatefound', ()=>{
         const nw = reg.installing;
@@ -34033,15 +33788,13 @@ if('serviceWorker' in navigator && /^https:/.test(location.protocol)){
         });
       });
       // Catch updates that land while the app is open
-      setInterval(()=>{ try{ reg.update(); }catch(e){} }, 60*60*1000);
+      setInterval(()=>updateServiceWorker(reg), 60*60*1000);
+      window.addEventListener('online', ()=>updateServiceWorker(reg));
     }).catch(e=>console.warn('SW registration failed', e));
   });
 }
 // Ask the browser to protect our storage from automatic eviction, so decks
 // aren't silently cleared when the device runs low on space.
-// Capture the browser's install prompt so Extras can offer a real install
-window.addEventListener('beforeinstallprompt', (e)=>{ e.preventDefault(); state._installEvt = e; try{ if(state.screen === 'home') refreshInstallPill(); }catch(err){} });
-window.addEventListener('appinstalled', ()=>{ state._installEvt = null; try{ refreshInstallPill(); }catch(e){} });
 
 /* Onderdeel A: ask Android to PROTECT this origin's storage (decks,
    collection, caches survive storage pressure). The verdict lands in
@@ -34340,6 +34093,11 @@ function netBackRefresh(){
   clearTimeout(_netBackT);
   // A moment's grace: the first request after a handover often still fails.
   _netBackT = setTimeout(()=>{
+    if(window.DECKHAND_CONFIG?.selfHosted && !state.setsResolved){
+      resolveLegalSets().then(()=>{
+        if(state.advOpen || state.spAdvOpen || state.screen === 'spoilers') render();
+      }).catch(()=>{});
+    }
     try{ retryMissingArt(); }catch(e){}
     try{
       const R = state.reco;
@@ -34426,7 +34184,7 @@ qdbPrune();
 // queue is idle -- by the time Inspiration opens, the grids are dressed.
 setTimeout(()=>{ try{ hydrateTileArtReady(); }catch(e){} }, 1500);
 setTimeout(()=>{ try{ preloadBrowseTileArt(); }catch(e){} }, 6000);
-loadFormatFile().then(()=>resolveLegalSets()).then(()=>checkForNewSets()).then(()=>{ maybeShowFormatChanges(); classifyUBBans(); });
+loadFormatFile().then(()=>resolveLegalSets()).then(()=>checkForNewSets()).then(()=>{ maybeShowFormatChanges(); if(!window.DECKHAND_CONFIG?.selfHosted) classifyUBBans(); });
 loadDecksIndex().then(async ()=>{
   if(state.screen==='decks') render();
   // A share link keeps the splash up until the deck page itself is drawn —

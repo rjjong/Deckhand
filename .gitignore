@@ -1,0 +1,17 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.netlify/
+var/
+data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+*.db
+*.db-shm
+*.db-wal
+*.log
+.DS_Store
+test-results/
+playwright-report/

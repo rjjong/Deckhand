@@ -1,0 +1,9 @@
+# One-shot container check for the development tools, not a web app deployment.
+# First run `npm ci` on the host so the existing dependencies are available.
+services:
+  toolbox:
+    image: node:24.22.2-bookworm-slim
+    working_dir: /workspace
+    volumes:
+      - .:/workspace:ro
+    command: ["npm", "run", "env:check"]

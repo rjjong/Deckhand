@@ -24,12 +24,12 @@ const UA = {
 };
 
 async function getJson(url) {
-  const r = await fetch(url, UA);
+  const r = await fetch(url, { ...UA, signal: AbortSignal.timeout(15000) });
   if (!r.ok) throw new Error('HTTP ' + r.status);
   return r.json();
 }
 async function getText(url) {
-  const r = await fetch(url, UA);
+  const r = await fetch(url, { ...UA, signal: AbortSignal.timeout(15000) });
   if (!r.ok) throw new Error('HTTP ' + r.status);
   return r.text();
 }

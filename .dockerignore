@@ -1,0 +1,11 @@
+.git
+node_modules
+.env
+.env.*
+var
+data
+*.sqlite*
+*.db*
+*.log
+Deckhand.apk
+deckhand-android.zip

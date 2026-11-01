@@ -50,6 +50,7 @@ async function writeDoc(store, id, doc, etag){
   let res;
   try{ res = await store.setJSON(id, doc, opts); }
   catch(e){
+    if(store.supportsConditionalWrites) throw e;
     // An older blobs library without conditional writes: plain write.
     res = await store.setJSON(id, doc, { metadata: { rev: doc.rev } });
   }
@@ -88,6 +89,7 @@ export async function handle(body, ctx){
     const newRev = (doc.rev || 0) + 1;
     for(const k of Object.keys(incoming)){
       if(typeof k !== 'string' || !k || k.length > MAX_KEY) continue;
+      if(k === '__proto__' || k === 'constructor' || k === 'prototype') continue;
       const c = incoming[k];
       if(!c || typeof c.t !== 'number' || !isFinite(c.t)) continue;
       const cur = doc.keys[k];
