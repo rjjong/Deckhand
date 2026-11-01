@@ -1,8 +1,4 @@
 {
-  "version": "1.46",
-  "date": "2026-11-01",
-  "notes": {
-    "en": ["Life counter: Monarch with a crown", "Life counter: track every Dungeon", "Life counter: AI judge as a popup", "Life counter: restore an earlier game"],
-    "nl": ["Life counter: Monarch met kroon", "Life counter: alle Dungeons bijhouden", "Life counter: AI-judge als popup", "Life counter: eerder potje herstellen"]
-  }
+  "version": "1.48",
+  "date": "2026-11-01"
 }
