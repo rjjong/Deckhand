@@ -19,7 +19,7 @@ const STATIC = new Map([
   ['/navigation.css', 'navigation.css'],
   ['/layout.css', 'layout.css'],
   ['/manifest.json', 'manifest.json'], ['/version.json', 'version.json'],
-  ['/format.txt', 'format.txt'], ['/favicon.ico', 'icon-192.png'],
+  ['/favicon.ico', 'icon-192.png'],
   ...['icon-192.png', 'icon-512.png', 'icon-512-maskable.png', 'apple-touch-icon.png',
     'og-image.png', 'badge-d.png', 'screenshot-decklist.png', 'screenshot-inspiration.png',
     'screenshot-life.png'].map(name => ['/' + name, name])

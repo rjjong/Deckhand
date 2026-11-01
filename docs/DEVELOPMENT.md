@@ -100,10 +100,19 @@ Its fields scroll beneath a centered title and borderless back/reset icons.
 A round yellow search button stays fixed at the bottom right; the final fields
 can scroll clear of it. Property info buttons are omitted. Back returns to
 Search and retains the filters; Reset clears them.
+Format Rules and Ban Lists open dedicated pages from Menu.
 All main pages, including Menu and Settings, scroll within a content viewport
 ending above the bottom tabs. Search, sort, set-selection, and deck controls
 stay below the title bar; the viewport starts beneath the lowest visible
-control bar. Opening Collection filters resizes the remaining content area.
+control bar. Decks and Collection have full-width search bars within their
+scrolling content.
+Collection filters use the shared full-screen panel that slides in from the
+right, with reset/back controls and a floating search button. Collection's
+Trade action is a title-bar icon; its value stays beside the search input and
+follows the active filters, quantities, and binder scope. The Collection Value
+page keeps filtered snapshots separate from the whole collection's history.
+Backup reminders live in Menu and put an exclamation badge on the logo until
+the reminder is snoozed or a backup is saved.
 The document stays still. Opening controls and refreshing lists preserve the
 content position.
 The smaller reset glyph balances the back chevron. Spoilers is a borderless

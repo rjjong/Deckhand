@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* ============================================================
-   Weekly Scryfall bulk trimmer — Admirals & Commanders MTG
+   Weekly Scryfall bulk trimmer — Deckhand MTG
    ============================================================
    Runs on GitHub Actions (see .github/workflows/bulk-data.yml).
    Downloads the official Oracle Cards and Rulings bulk files,
@@ -348,7 +348,7 @@ async function writeJsonlGz(path, lines){
    Card data and combos change with every set, so they run weekly. Rulings and
    the function tags barely move, and the tags alone cost ~150 polite searches
    at Scryfall -- by far the longest part of the job. Those run monthly.
-   Legality is not in this list at all: it comes from format.txt, from the
+   Legality is not in this list at all: it comes from the
    official ban list the app fetches itself every 24 hours, and from the
    legality field inside the card file. It never waited on this build. */
 const MONTHLY_DAYS = 28;

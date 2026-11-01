@@ -1,5 +1,9 @@
 # Deckhand: personal self-hosted fork
 
+Build decks for Commander, Pauper Commander, PreDH, Duel Commander, Standard,
+Pauper, Modern, Legacy, and Vintage. Unsupported saved formats fall back to
+Commander while keeping their cards, commanders, and folders.
+
 Run the web app locally with Node.js 24 and SQLite:
 
 ```sh
@@ -21,10 +25,17 @@ record per distinct supported card, not every printing or all card images.
 
 The mobile shell has five labeled bottom tabs: Decks, Collection, Search,
 Inspiration, and Life. The logo opens Menu, with cards for tools and Settings.
+Format Rules and Ban Lists open dedicated pages from Menu.
 Settings is the last menu card; the life counter is available from Life.
 Settings contains Language, Data sources, Color scheme, Sync, and Backup.
-The title returns home. Every page scrolls below its fixed title and any
-search, sort, or filter bars, ending above the bottom tabs.
+The title returns home. Content scrolls above the bottom tabs and below its
+fixed title and toolbars. Decks and Collection have full-width search bars
+that scroll with their pages.
+Their add buttons share the same size and fixed bottom-right position.
+Backup reminders appear in Menu and add an exclamation badge to the menu logo.
+Collection has a Trade icon in its title bar, a filtered value beside its search field,
+and the same full-screen sliding filters as Search.
+Trade has two card lists with Add card actions and no separate page search.
 Life opens a game menu with new, resume, and saved-game actions.
 Run `npm run test:mobile` for mobile and desktop browser checks.
 

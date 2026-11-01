@@ -9,11 +9,18 @@ html .app > .app-header.page-cap {
   z-index:86; box-shadow:0 3px 20px rgb(0 0 0 / .12) !important;
 }
 .header-menu {
+  position:relative;
   display:flex; align-items:center; justify-content:center; width:44px; height:44px;
   border:1px solid transparent; padding:3px; border-radius:13px;
   background:transparent; cursor:pointer; flex-shrink:0;
 }
 .header-menu img { display:block; width:36px; height:36px; object-fit:contain; border-radius:9px; }
+.header-menu .menu-alert {
+  position:absolute; top:-2px; right:-2px; z-index:1; display:flex;
+  align-items:center; justify-content:center; width:18px; height:18px;
+  border:2px solid var(--ink); border-radius:50%; background:var(--gold); color:#241A04;
+  font:800 12px/1 'Inter',system-ui,sans-serif; pointer-events:none;
+}
 .header-menu:hover, .header-menu.active { background:var(--brass-glow); border-color:var(--line); }
 html .app-header > .brand-txt, .app-overlay-header > .brand-txt {
   display:block; pointer-events:auto; cursor:pointer; border:0; background:transparent;

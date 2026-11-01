@@ -50,7 +50,7 @@ export function clean(body){
   const kind = body.kind === 'lands' ? 'lands' : 'cuts';
   const lang = body.lang === 'nl' ? 'nl' : 'en';
   const dk = body.deck || {};
-  const fmt = ['commander', 'admiral', 'paupercommander', 'predh', 'duel'].includes(dk.format) ? dk.format : 'commander';
+  const fmt = ['commander', 'paupercommander', 'predh', 'duel'].includes(dk.format) ? dk.format : 'commander';
   const leaders = (Array.isArray(dk.leaders) ? dk.leaders : []).slice(0, 2).map(c=>({
     name: s(c && c.name, 150), type: s(c && c.type, 150), oracle: s(c && c.oracle, 900),
     cost: s(c && c.cost, 60), colors: String(c && c.colors || '').toUpperCase().replace(/[^WUBRG]/g, '').slice(0, 5)
@@ -93,7 +93,6 @@ const FMT_TXT = {
   paupercommander: 'Pauper Commander (100-card singleton of commons led by an uncommon creature, 30 life).',
   predh: 'PreDH (Commander with cards up to 2011).',
   duel: 'Duel Commander (1-versus-1 Commander, 20 life, faster games).',
-  admiral: 'Admiral, a house format: exactly 60 cards including the leader (the "Admiral"), singleton, NO lands in the deck (players share a Landing Zone of basics), 30 life. Never suggest lands for it.'
 };
 
 export function systemPrompt(c){
@@ -137,9 +136,9 @@ export function userMessage(c){
   if(d.theme || d.kindred) L.push('', 'CHOSEN PLAN: ' + [d.kindred && ('Kindred ' + d.kindred), d.theme && ('Theme ' + d.theme)].filter(Boolean).join(' + '));
   L.push('', 'DECK NUMBERS:');
   L.push(`cards ${d.size} of ${d.limit}` + (d.over ? ` (${d.over} too many)` : ''));
-  if(d.format !== 'admiral') L.push(`lands ${d.landCount}` + (d.landGoal ? ` (player's goal ${d.landGoal})` : ''));
+  L.push(`lands ${d.landCount}` + (d.landGoal ? ` (player's goal ${d.landGoal})` : ''));
   L.push(`roles: ramp ${d.roles.ramp}, card draw ${d.roles.draw}, removal ${d.roles.removal}, board wipes ${d.roles.wipe}` +
-    ` (common guide: ${d.format === 'admiral' ? '' : 'lands ' + d.guide.land + ', '}ramp ${d.guide.ramp}, draw ${d.guide.draw}, removal ${d.guide.removal}, wipes ${d.guide.wipe})`);
+    ` (common guide: lands ${d.guide.land}, ramp ${d.guide.ramp}, draw ${d.guide.draw}, removal ${d.guide.removal}, wipes ${d.guide.wipe})`);
   if(d.curve.length) L.push('curve (nonland cards at mana value 0,1,2,3,4,5,6,7+): ' + d.curve.join(', ') + (d.avgMv ? ` — average ${d.avgMv}` : ''));
   if(c.kind === 'lands'){
     L.push('colour identity: ' + (d.colors || 'colourless'));
@@ -283,7 +282,7 @@ export async function askProviders(env, fetchImpl, c){
   return { error: last, tried };
 }
 
-export const DECKAI_V = '1.17';
+export const DECKAI_V = '1.18';
 const today = ()=>new Date().toISOString().slice(0, 10);
 const sha = (x)=>crypto.createHash('sha256').update(x).digest('hex');
 
@@ -292,7 +291,6 @@ export async function handle(body, deps){
   const env = deps.env || {};
   const c = clean(body);
   if(!c.deck.leaders.length || c.cands.length < 2) return { status: 400, json: { ok: false, error: 'empty' } };
-  if(c.kind === 'lands' && c.deck.format === 'admiral') return { status: 400, json: { ok: false, error: 'nolands' } };
   const dev = sha(String(body && body.device || '') + '|' + (deps.ip || '')).slice(0, 24);
   const cacheKey = sha(JSON.stringify(['d2', c.kind, c.lang, c.want, c.deck.format, c.deck.leaders.map(k=>k.name), c.deck.theme, c.deck.kindred,
     c.deck.landGoal, c.deck.over, c.deck.others.slice().sort(), c.cands.map(k=>k.name + (k.inDeck ? '*' : '')).sort()]));
