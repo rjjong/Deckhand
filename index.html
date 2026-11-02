@@ -20,18 +20,14 @@
       property="og:description"
       content="Deck building, EDHREC built in, card search, collection, gameplay tools and more. No ads, works offline."
     />
-    <meta property="og:url" content="https://deckhandcompanion.netlify.app/" />
-    <meta property="og:image" content="https://deckhandcompanion.netlify.app/og-image.png" />
-    <meta
-      property="og:image:secure_url"
-      content="https://deckhandcompanion.netlify.app/og-image.png"
-    />
+    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:image:secure_url" content="/og-image.png" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Deckhand: a deck of cards floating above an open hand" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content="https://deckhandcompanion.netlify.app/og-image.png" />
+    <meta name="twitter:image" content="/og-image.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -48,23 +44,6 @@
     <script defer src="assets/app.js"></script>
   </head>
   <body>
-    <!-- Feedback (Netlify Forms): detected at deploy time; the app posts to it
-     with fetch from the About sheet. Never shown. -->
-    <form
-      name="feedback"
-      method="POST"
-      data-netlify="true"
-      netlify-honeypot="bot-field"
-      enctype="multipart/form-data"
-      hidden
-    >
-      <input type="text" name="bot-field" /><textarea name="message"></textarea
-      ><input type="email" name="email" /><input type="text" name="context" />
-      <input type="file" name="screenshot1" /><input type="file" name="screenshot2" /><input
-        type="file"
-        name="screenshot3"
-      />
-    </form>
     <div id="root"></div>
     <div class="toast" id="toast"></div>
   </body>

@@ -24,7 +24,7 @@ for (const theme of ['dark', 'light'])
       });
       await page.route('**/*', (route) => {
         const url = new URL(route.request().url());
-        if (url.pathname === '/.netlify/functions/news')
+        if (url.pathname === '/api/news')
           return route.fulfill({ json: { items: [] } });
         if (url.pathname.startsWith('/api/scryfall/'))
           return route.fulfill({ json: { object: 'list', data: [], has_more: false } });

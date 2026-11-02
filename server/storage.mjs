@@ -29,7 +29,6 @@ export function openStorage(path) {
   const list = db.prepare('SELECT key FROM blobs WHERE store = ? ORDER BY key');
   function store(name) {
     return {
-      supportsConditionalWrites: true,
       async get(key) {
         const row = read.get(name, key);
         return row ? JSON.parse(row.value) : null;

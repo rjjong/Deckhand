@@ -7,7 +7,7 @@ import { gzipSync, gunzipSync } from 'node:zlib';
 import { openStorage } from '../server/storage.mjs';
 import { createApp } from '../server/app.mjs';
 import { createDataCache } from '../server/data.mjs';
-import { handle as sync } from '../netlify/functions/sync.mjs';
+import { handle as sync } from '../server/services/sync.mjs';
 import { downloadSample, SAMPLE_NAMES } from '../scripts/download-data.mjs';
 
 const code = 'TEST1234567890123456';
@@ -94,7 +94,7 @@ test('sample download is bounded and local data requests never download bulk fil
   await assert.rejects(downloadSample({ directory, fetchImpl: async () => new Response('x'.repeat(512 * 1024 + 1)) }), /download limit/);
 });
 
-test('HTTP serves the frontend, protects source/secrets, and supports legacy and new API routes', async t => {
+test('HTTP serves the frontend, protects source/secrets, and supports local API routes', async t => {
   const directory = await temporary(t);
   const compressed = gzipSync('{"name":"Test Card"}\n');
   await writeFile(join(directory, 'oracle-slim.jsonl.gz'), compressed);
@@ -144,14 +144,14 @@ test('HTTP serves the frontend, protects source/secrets, and supports legacy and
   assert.equal((await post('/api/sync', null)).status, 400);
   assert.equal((await post('/api/sync', { code, op: 'probe' }, { origin: 'https://another.invalid' })).status, 403);
   assert.equal((await post('/api/sync', { op: 'probe', code: 'short' })).status, 400);
-  let response = await post('/.netlify/functions/sync', { op: 'sync', code, changes: { deck: { t: 1, v: 'saved' } } });
+  let response = await post('/api/sync', { op: 'sync', code, changes: { deck: { t: 1, v: 'saved' } } });
   assert.equal(response.status, 200);
   response = await post('/api/sync', { op: 'sync', code, since: 0 });
   assert.deepEqual((await response.json()).changes.deck, { t: 1, v: 'saved' });
   response = await post('/api/judge', { q: 'Can this card attack?' });
   assert.equal(response.status, 503);
   assert.equal((await response.json()).error, 'nokey');
-  assert.equal((await post('/api/push-subscribe', {})).status, 501);
+  assert.equal((await post('/api/push-subscribe', {})).status, 404);
   response = await fetch(base + '/oracle-slim.jsonl.gz');
   assert.equal(response.headers.get('content-type'), 'application/gzip');
   assert.equal(response.headers.get('content-encoding'), null);

@@ -4,7 +4,7 @@ test.beforeEach(async ({ page }) => {
   // Keep a new installation independent of external services and card downloads.
   await page.route('**/*', (route) => {
     const url = new URL(route.request().url());
-    if (url.pathname === '/.netlify/functions/news') return route.fulfill({ json: { items: [] } });
+    if (url.pathname === '/api/news') return route.fulfill({ json: { items: [] } });
     if (url.pathname.startsWith('/api/scryfall/'))
       return route.fulfill({ json: { object: 'list', data: [], has_more: false } });
     if (url.origin === 'http://127.0.0.1:3100') return route.continue();

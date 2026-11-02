@@ -3,7 +3,6 @@ public/
 .env
 .env.*
 !.env.example
-.netlify/
 var/
 data/
 *.sqlite

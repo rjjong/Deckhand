@@ -4,6 +4,9 @@ Build decks for Commander, Pauper Commander, PreDH, Duel Commander, Standard,
 Pauper, Modern, Legacy, and Vintage. Unsupported saved formats fall back to
 Commander while keeping their cards, commanders, and folders.
 
+The Node.js server handles sync, AI requests, news, and Scryfall through `/api/`.
+Sync data and AI caches stay in SQLite; AI provider keys are optional.
+
 Run the web app locally with Node.js 24 and SQLite:
 
 ```sh
@@ -54,7 +57,8 @@ title bar; dropdowns read from the top. Scryfall requests use the local
 cache across browser tabs. Optional data files are requested only when present.
 
 Device sync and AI caches use SQLite. AI features need optional provider keys
-in `.env`. Feedback, upstream APK distribution, and push alerts are disabled.
+in `.env`. The old feedback form, bundled Android APK, and web push service
+have been removed. Install the web app through your browser.
 
 See [the development guide](docs/DEVELOPMENT.md) for LAN testing, Docker,
 backups, and deployment to your own machine. Run `npm test` for backend tests.

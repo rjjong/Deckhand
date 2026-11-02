@@ -8,7 +8,7 @@ test.beforeEach(async ({ page }) => {
   // Exercise local UI without making background requests to external APIs.
   await page.route('**/*', route => {
     const url = new URL(route.request().url());
-    if (url.pathname === '/.netlify/functions/news') return route.fulfill({ json: { items: [] } });
+    if (url.pathname === '/api/news') return route.fulfill({ json: { items: [] } });
     if (url.pathname.startsWith('/api/scryfall/')) return route.fulfill({ json: { object: 'list', data: [], has_more: false } });
     if (url.origin === 'http://127.0.0.1:3100') return route.continue();
     if (url.hostname === 'api.scryfall.com') return route.fulfill({ json: { object: 'list', data: [], has_more: false } });
@@ -590,7 +590,7 @@ test('Startup preference validates saved pages, survives color changes, and resp
 test('Ask AI Judge keeps its question above navigation and reads answers from the top', async ({page},info)=>{
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
-  await page.route('**/.netlify/functions/judge',route=>route.fulfill({json:{
+  await page.route('**/api/judge',route=>route.fulfill({json:{
     ok:true,answer:'The creature dies.\n'+Array.from({length:45},(_,i)=>`Answer detail ${i+1}.`).join('\n'),
     reasoning:'State-based actions check toughness.',cites:['704.5f','702.12b'],confident:true,left:19
   }}));
@@ -671,7 +671,7 @@ test('Ask AI Judge keeps its question above navigation and reads answers from th
 test('Judge header logo opens Menu from questions, answers and rules, while its title opens Home', async ({page})=>{
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
-  await page.route('**/.netlify/functions/judge',route=>route.fulfill({json:{
+  await page.route('**/api/judge',route=>route.fulfill({json:{
     ok:true,answer:'The creature dies.',reasoning:'State-based actions check toughness.',
     cites:['704.5f'],confident:true,left:19
   }}));
@@ -2245,7 +2245,7 @@ test('Packages has no settings, search, card action, or inspiration entry and is
 test('idle startup skips unpublished files and speculative set searches', async ({ page }) => {
   const requests = [];
   await page.route('**/runtime-config.js', route => route.fulfill({ contentType: 'text/javascript',
-    body: 'window.DECKHAND_CONFIG = {selfHosted:true,webPushEnabled:false,scryfallBase:"/api/scryfall",dataFiles:["bulk-meta.json","oracle-slim.jsonl.gz","rulings-slim.jsonl.gz"]};' }));
+    body: 'window.DECKHAND_CONFIG = {selfHosted:true,scryfallBase:"/api/scryfall",dataFiles:["bulk-meta.json","oracle-slim.jsonl.gz","rulings-slim.jsonl.gz"]};' }));
   page.on('request', request => requests.push(new URL(request.url())));
   await page.reload();
   await page.evaluate(async () => { await checkForNewSets(); preloadBrowseTileArt(); await bulkSyncCheck(true); await dailyPricesCheck(); });

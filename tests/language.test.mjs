@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { clean as cleanJudge, systemPrompt as judgePrompt } from '../netlify/functions/judge.mjs';
-import { clean as cleanDeck, systemPrompt as deckPrompt } from '../netlify/functions/deckai.mjs';
+import { clean as cleanJudge, systemPrompt as judgePrompt } from '../server/services/judge.mjs';
+import { clean as cleanDeck, systemPrompt as deckPrompt } from '../server/services/deckai.mjs';
 
 test('AI endpoints normalize obsolete language choices to English', () => {
   for (const lang of [undefined, 'en', 'nl']) {

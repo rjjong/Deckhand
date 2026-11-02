@@ -79,7 +79,6 @@ export async function buildFrontend() {
     ...staticFiles.map(async (file) =>
       writeChanged(resolve(root, 'public', file), await readFile(resolve(root, file))),
     ),
-    writeChanged(resolve(root, 'public/runtime-config.js'), 'window.DECKHAND_CONFIG ??= {};\n'),
   ]);
   return {
     scripts: scripts.length,

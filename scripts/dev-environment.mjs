@@ -31,9 +31,6 @@ async function main() {
     } finally {
       db.close();
     }
-    await import('@netlify/blobs');
-    await import('web-push');
-    console.log('Existing project dependencies: OK');
     console.log('Environment check passed. Start Deckhand with npm run dev.');
     return;
   }

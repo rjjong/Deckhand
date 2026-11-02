@@ -108,13 +108,6 @@ function retireWebPush() {
       .then(async (sub) => {
         if (!sub) return;
         try {
-          await fetch('/.netlify/functions/push-subscribe', {
-            method: 'DELETE',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ endpoint: sub.endpoint }),
-          });
-        } catch (e) {}
-        try {
           await sub.unsubscribe();
         } catch (e) {}
         try {

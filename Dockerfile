@@ -3,12 +3,11 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
 COPY --chown=node:node server ./server
-COPY --chown=node:node netlify/functions ./netlify/functions
 COPY --chown=node:node scripts ./scripts
 COPY --chown=node:node src ./src
 COPY --chown=node:node styles ./styles
 COPY --chown=node:node assets ./assets
-COPY --chown=node:node index.html sw.js manifest.json version.json _redirects ./
+COPY --chown=node:node index.html sw.js manifest.json version.json ./
 COPY --chown=node:node *.png ./
 RUN npm run build && chown -R node:node /app/public
 RUN mkdir -p /app/var && chown node:node /app/var

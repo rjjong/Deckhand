@@ -9,8 +9,8 @@
 #
 # The files live on the "data" branch, which has no history: every run
 # replaces it with one fresh commit (scripts/data-branch.sh), so the repo
-# does not grow by a few MB every week. The site serves them at the same
-# addresses as before through _redirects.
+# does not grow by a few MB every week. Copy generated files into the
+# self-hosted server's DATA_DIR to serve them.
 #
 # Scryfall sees ONE download per week, from GitHub's machines. The job
 # refuses to publish when the outputs look broken (the script's sanity

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { clean, systemPrompt, userMessage } from '../netlify/functions/deckai.mjs';
+import { clean, systemPrompt, userMessage } from '../server/services/deckai.mjs';
 
 test('deck advice uses supported format rules and includes lands for legacy requests', () => {
   for (const format of ['commander', 'paupercommander', 'predh', 'duel', 'admiral']) {

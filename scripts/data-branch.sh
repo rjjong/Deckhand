@@ -10,13 +10,10 @@
 #          very first time, from the copies still in main),
 #   ...    the build reads and writes ./data (OUT_DIR=data),
 #   push   replaces the data branch with ONE fresh commit holding ./data --
-#          force-pushed, so the branch never grows -- and, once the site
-#          passes the files through (_redirects), takes the old copies out
-#          of main.
+#          force-pushed, so the branch never grows.
 #
-# The site keeps serving the same addresses (/prices-slim.tsv.gz, ...):
-# Netlify passes them through to raw.githubusercontent.com/<repo>/data/...,
-# see _redirects. The app and the Android app need no change.
+# Copy generated files into the self-hosted server's DATA_DIR to serve them
+# at their usual addresses (/prices-slim.tsv.gz, ...).
 #
 # All workflows share the concurrency group "bulk-data", so two of them never
 # pull and push the branch at the same time.
@@ -81,22 +78,6 @@ case "${1:-}" in
       echo "Data branch replaced: $(ls "$DATA_DIR" | wc -l) files, one commit."
     fi
 
-    # Once the site passes the files through, the old copies leave main.
-    if grep -q "raw.githubusercontent.com" _redirects 2>/dev/null; then
-      branch="${GITHUB_REF_NAME:-main}"
-      for attempt in 1 2 3 4 5; do
-        present=""
-        for f in $FILES; do git ls-files --error-unmatch "$f" >/dev/null 2>&1 && present="$present $f"; done
-        [ -z "$present" ] && { echo "Main holds no data files."; break; }
-        git rm -q --cached $present
-        git commit -q -m "Data files moved to the data branch (no more history)"
-        if git push --quiet origin "HEAD:$branch"; then echo "Removed from main:$present"; break; fi
-        echo "Main moved on; trying again ($attempt/5)."
-        git fetch --quiet --depth=1 origin "$branch"
-        git reset -q --hard FETCH_HEAD
-        sleep $((attempt * 5))
-      done
-    fi
     ;;
 
   *)

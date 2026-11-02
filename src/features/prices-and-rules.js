@@ -762,8 +762,7 @@ function banInfoHtml(fmt) {
   </div>`;
 }
 
-/* Magic news: served by this site's own Netlify Function (see
-   netlify/functions/news.js in the repo), which aggregates EDHREC's
+/* Magic news: served by /api/news (server/services/news.mjs), which aggregates EDHREC's
    WordPress JSON and MTGGoldfish's RSS server-side — same origin, no CORS.
    Served from a 3h qdb cache first; the function itself also caches. */
 let _newsItems = [];
@@ -866,7 +865,7 @@ async function loadMtgNews(box) {
     if (!data) {
       const ctl = new AbortController();
       const tm = setTimeout(() => ctl.abort(), 9000);
-      const r = await fetch('/.netlify/functions/news', { signal: ctl.signal });
+      const r = await fetch('/api/news', { signal: ctl.signal });
       clearTimeout(tm);
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const j = await r.json();

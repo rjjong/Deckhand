@@ -4,14 +4,13 @@ import { stat } from 'node:fs/promises';
 import { pipeline } from 'node:stream/promises';
 import { fileURLToPath } from 'node:url';
 import { resolve, join } from 'node:path';
-import { createRequire } from 'node:module';
 import { openStorage } from './storage.mjs';
 import { createDataCache, DATA_FILES } from './data.mjs';
 import { createScryfallClient } from './scryfall.mjs';
-import { handle as sync } from '../netlify/functions/sync.mjs';
-import { handle as judge } from '../netlify/functions/judge.mjs';
-import { handle as deckai, DECKAI_V } from '../netlify/functions/deckai.mjs';
-const { handler: news } = createRequire(import.meta.url)('../netlify/functions/news.js');
+import { handle as sync } from './services/sync.mjs';
+import { handle as judge } from './services/judge.mjs';
+import { handle as deckai, DECKAI_V } from './services/deckai.mjs';
+import { handle as news } from './services/news.mjs';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const STATIC = new Map([
@@ -63,9 +62,7 @@ export function createApp({ databasePath = resolve('./var/deckhand.dev.sqlite'),
   const server = createServer(async (req, res) => {
     try {
       const path = new URL(req.url, 'http://localhost').pathname;
-      const api = path.startsWith('/.netlify/functions/')
-        ? path.slice('/.netlify/functions/'.length)
-        : path.startsWith('/api/') ? path.slice('/api/'.length) : null;
+      const api = path.startsWith('/api/') ? path.slice('/api/'.length) : null;
       if (req.headers.origin) {
         let sameOrigin = false;
         try { sameOrigin = new URL(req.headers.origin).host === req.headers.host; } catch {}
@@ -86,17 +83,12 @@ export function createApp({ databasePath = resolve('./var/deckhand.dev.sqlite'),
         }
         if (api === 'news' && req.method === 'GET') {
           if (!newsCache || newsCache.expires < Date.now()) {
-            if (!newsPending) newsPending = news().then(value => {
+            if (!newsPending) newsPending = news({ fetchImpl }).then(value => {
               newsCache = { value, expires: Date.now() + 30 * 60_000 };
             }).finally(() => { newsPending = null; });
             await newsPending;
           }
-          const result = newsCache.value;
-          res.writeHead(result.statusCode, { 'content-type': MIME.json, 'cache-control': 'public, max-age=1800' });
-          return res.end(result.body);
-        }
-        if (api === 'push-subscribe' || api === 'push-check') {
-          return json(res, 501, { ok: false, error: 'disabled', message: 'Push notifications are disabled on this server.' });
+          return json(res, 200, newsCache.value, { 'cache-control': 'public, max-age=1800' });
         }
         const handler = { sync, judge, deckai }[api];
         if (!Object.hasOwn({ sync, judge, deckai }, api)) return json(res, 404, { ok: false, error: 'not_found' });
@@ -119,7 +111,7 @@ export function createApp({ databasePath = resolve('./var/deckhand.dev.sqlite'),
         }
         res.writeHead(200, { 'content-type': MIME.js, 'cache-control': 'no-store' });
         return res.end(req.method === 'HEAD' ? undefined :
-          'window.DECKHAND_CONFIG = ' + JSON.stringify({ selfHosted: true, webPushEnabled: false,
+          'window.DECKHAND_CONFIG = ' + JSON.stringify({ selfHosted: true,
             scryfallBase: '/api/scryfall', dataFiles }) + ';');
       }
       const name = path.slice(1);

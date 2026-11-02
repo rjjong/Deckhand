@@ -5,7 +5,7 @@
    Runs on GitHub Actions (see .github/workflows/bulk-data.yml).
    Downloads the official Oracle Cards and Rulings bulk files,
    keeps only the fields the app uses, and writes three files
-   into the repo root (deployed by Netlify next to index.html):
+   into OUT_DIR (copy these into the server's DATA_DIR):
 
      oracle-slim.jsonl.gz    one trimmed card per line
      rulings-slim.jsonl.gz   one {o, r:[{d,c}]} line per oracle_id
@@ -54,7 +54,7 @@ import { pipeline } from 'node:stream/promises';
 import readline from 'node:readline';
 import { StringDecoder } from 'node:string_decoder';
 
-const UA = { headers: { 'User-Agent': 'Deckhand-bulk/1.1 (+https://deckhandcompanion.netlify.app)', 'Accept': '*/*' } };
+const UA = { headers: { 'User-Agent': 'Deckhand-bulk/1.1 (self-hosted)', 'Accept': '*/*' } };
 const OUT_DIR = process.env.OUT_DIR || '.';
 
 /* ---- the official index tells us today's download URLs ---- */

@@ -32,7 +32,7 @@ const OUT_DIR = process.env.OUT_DIR || '.';
 const BUDGET = parseInt(process.env.ARTHASH_BUDGET || '40000', 10);
 const PARALLEL = parseInt(process.env.ARTHASH_PARALLEL || '6', 10);
 const INDEX_URL = process.env.ARTHASH_INDEX_URL || 'https://api.scryfall.com/bulk-data';
-const UA = { headers: { 'User-Agent': 'Deckhand-arthash/1.0 (+https://deckhandcompanion.netlify.app)', 'Accept': '*/*' } };
+const UA = { headers: { 'User-Agent': 'Deckhand-arthash/1.0 (self-hosted)', 'Accept': '*/*' } };
 
 /* ---- the hash (same as index.html) ---- */
 export const AH_REGION = [0.12, 0.14, 0.88, 0.52];

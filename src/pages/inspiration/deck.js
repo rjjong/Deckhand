@@ -1021,7 +1021,7 @@ async function deckAiAsk(payload) {
     } catch (e) {}
   }, 58000);
   try {
-    const res = await fetch('/.netlify/functions/deckai', {
+    const res = await fetch('/api/deckai', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(payload),

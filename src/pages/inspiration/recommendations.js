@@ -288,8 +288,7 @@ const SWR_FRESH = 2 * 24 * 3600 * 1000;
 const _edhRevalidating = new Set();
 
 async function edhrecFetchNetwork(path) {
-  // Same-origin first: on the deployed site, Netlify's _redirects proxy
-  // fetches EDHREC server-side, so the browser's CORS wall never applies.
+  // Try a same-origin EDHREC proxy when one is configured, then fetch directly.
   const urls = ['/edhrec' + path, 'https://json.edhrec.com' + path];
   for (const u of urls) {
     const ctrl = new AbortController();

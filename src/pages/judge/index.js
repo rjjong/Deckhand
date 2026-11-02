@@ -7,9 +7,8 @@
    cached in IndexedDB for 7 days. Everything after that first fetch is
    local: browsing, rule-number jump, full-text search, and the question
    box — which answers by FINDING and QUOTING the official rules, so it is
-   correct by construction. If the direct API is unreachable, a /crules/
-   path is tried, which works once one line joins _redirects:
-     /crules/*  https://api.academyruins.com/:splat  200          */
+   correct by construction. A /crules/ mirror can be used when one is
+   configured by the host. */
 const CR_TTL = 7 * 24 * 60 * 60 * 1000;
 
 async function ensureCR() {
@@ -202,7 +201,7 @@ function crRuleHtml(r, toks) {
 /* ---- 1.33: Ask the judge ----
    The app does the finding (rules from its own CR search, oracle text and
    rulings of the tagged cards from its own card database); a free AI service
-   behind /.netlify/functions/judge only does the reasoning. Every rule number
+   behind /api/judge only does the reasoning. Every rule number
    it cites is checked against the real CR on the phone. */
 // "@sol ri" at the caret -> the names to offer (local card database)
 function judgeTagMatches(fragment, names, limit) {
@@ -517,7 +516,7 @@ async function judgeAsk(payload) {
     } catch (e) {}
   }, 40000);
   try {
-    const res = await fetch('/.netlify/functions/judge', {
+    const res = await fetch('/api/judge', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(payload),

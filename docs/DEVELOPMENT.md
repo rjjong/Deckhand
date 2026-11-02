@@ -6,10 +6,9 @@
 - A development SQLite database and read/write checks.
 - A Docker Compose command for checking Node and SQLite inside a container.
 
-The self-hosted server reuses the existing handler logic with SQLite storage;
-no Netlify account is required. The old `/.netlify/functions/...` paths remain
-as compatibility routes alongside `/api/...`. Open the hosted address below,
-not `index.html` directly.
+The Node.js server provides `/api/...` routes for sync, AI assistance, news,
+and Scryfall requests. Sync documents and AI caches are stored in SQLite.
+Open the hosted address below, not `index.html` directly.
 
 ## Start the app on this computer
 
@@ -54,6 +53,7 @@ styles/
 assets/images/              Source image assets
 scripts/frontend-sources.mjs Ordered source list and public assets
 scripts/build-frontend.mjs   Frontend build and development watcher
+server/services/            Sync, AI judge, deck advice, and news handlers
 public/                     Generated website, bundles, and source maps
 ```
 
@@ -101,10 +101,8 @@ filenames rather than only the combined assets.
 
 Both normal server startup and the Docker image build generate the frontend.
 The server exposes an explicit allowlist of public assets; backend source,
-`.env`, database files, and arbitrary paths remain inaccessible. Existing
-Netlify deployments use `netlify.toml` to build and publish `public/` with their
-existing function handlers. The self-hosted server still supplies its dynamic
-`runtime-config.js`, API routes, and SQLite storage.
+`.env`, database files, and arbitrary paths remain inaccessible. The Node.js
+server supplies its dynamic `runtime-config.js`, API routes, and SQLite storage.
 
 The browser can still display its cached offline shell when this server stops.
 That does not keep `/api/...` running: `ERR_CONNECTION_REFUSED` at localhost
@@ -235,8 +233,8 @@ tags, combos, and metagame datasets are skipped rather than fetched on startup.
 No placeholder data is generated to pretend these optional datasets exist.
 
 AI features require your own optional keys in `.env`; missing keys produce an
-unavailable response. Feedback submission, the upstream APK download,
-and push notifications are disabled in the self-hosted web app.
+unavailable response. The old feedback form, bundled Android APK, and web push
+service have been removed. Phone installation uses the web app.
 
 ## Reach it from another device
 

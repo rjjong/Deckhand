@@ -5,7 +5,7 @@
    Drive, Nextcloud, Dropbox, mail ...) or to Downloads, and comes back in
    through the file picker, which reaches the same clouds. */
 /* ===================== 1.26 SYNC BETWEEN DEVICES =====================
-   A link code ties devices together; Netlify Blobs (functions/sync.mjs)
+   A link code ties devices together; the local server's SQLite database
    keeps one shared document. Every synced piece -- each deck, the
    collection, folders, tags, printings, settings -- carries the time this
    device last changed it; the newest change wins, piece by piece.
@@ -27,7 +27,7 @@ const SYNC_KEYS = new Set([
   'lifeFmt',
 ]);
 
-const SYNC_URL = '/.netlify/functions/sync';
+const SYNC_URL = '/api/sync';
 
 let _syncQuiet = 0,
   _syncTimer = null,
