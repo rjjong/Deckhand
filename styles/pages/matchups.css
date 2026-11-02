@@ -1,0 +1,418 @@
+/* The 60s' deck header: description left, play log right. */
+
+.dl60-log {
+  gap: 8px;
+}
+
+.dl60-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.dl60-form .glog-res {
+  width: 22px;
+  height: 22px;
+  font-size: 12px;
+  border-radius: 6px;
+}
+
+.dl60-wr {
+  font-size: 14px;
+  color: var(--ink-text);
+}
+
+.dl60-wr b {
+  color: var(--brass);
+}
+
+.dl60-mu {
+  width: 100%;
+  padding: 7px 8px;
+  font-size: 12.5px;
+  text-align: left;
+}
+
+.dl60-logrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 46px 0 0;
+  background: none;
+  border: 0;
+  border-top: 2px solid var(--line);
+  color: var(--ink-text);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.25;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dl60-logrow .dl-mini-add {
+  margin-left: 0;
+  pointer-events: none;
+}
+
+/* Matchups: chips wrap-reverse (best pick bottom-left), rows open upward. */
+
+#muOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.opp-chips {
+  display: flex;
+  flex-wrap: wrap-reverse;
+  gap: 6px;
+}
+
+.opp-chips:empty {
+  display: none;
+}
+
+.opp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--field);
+  border: 1.5px solid var(--field-line);
+  color: var(--ink-text);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12.5px;
+  cursor: pointer;
+  max-width: 100%;
+}
+
+.opp-chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.opp-chip small {
+  color: var(--sub-text);
+  font-size: 11px;
+}
+
+.opp-chip.plan {
+  border-color: var(--brass);
+  font-weight: 600;
+}
+
+.opp-chip svg {
+  flex: none;
+}
+
+.mu-quick-h {
+  font-size: 12px;
+  color: var(--sub-text);
+  margin: 0 0 6px;
+}
+
+#muQuick {
+  margin-bottom: 6px;
+}
+
+.mu-list {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.mu-row {
+  display: flex;
+  flex-direction: column-reverse;
+  border-top: 2px solid var(--line);
+}
+
+.mu-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 2px;
+  cursor: pointer;
+}
+
+.glog-res.mu-rec {
+  width: auto;
+  min-width: 34px;
+  padding: 0 6px;
+  font-size: 13px;
+}
+
+.glog-res.none {
+  background: var(--field);
+  color: var(--sub-text);
+  border: 1px solid var(--field-line);
+}
+
+.mu-name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--ink-text);
+}
+
+.mu-name b {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mu-name small {
+  color: var(--sub-text);
+  font-size: 11.5px;
+  flex: none;
+}
+
+.mu-name svg {
+  flex: none;
+}
+
+.mu-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--sub-text);
+  flex: none;
+}
+
+.mu-chev {
+  color: var(--sub-text);
+  flex: none;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.mu-detail {
+  display: none;
+  padding: 6px 2px 2px;
+}
+
+.mu-row.open .mu-detail {
+  display: block;
+}
+
+/* The open plan and its head read as one block: the plan sits ABOVE its head. */
+
+.mu-row.open {
+  background: color-mix(in srgb, var(--brass) 9%, transparent);
+  border-radius: 10px;
+  padding: 0 8px;
+  margin: 0 -8px;
+}
+
+.mu-sec {
+  margin: 0 0 9px;
+}
+
+.mu-sec-h {
+  font-size: 12px;
+  color: var(--sub-text);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin: 0 0 3px;
+}
+
+.mu-txt {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink-text);
+  overflow-wrap: anywhere;
+}
+
+.mu-sbline,
+.mu-sbtags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.mu-sb {
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-size: 12.5px;
+}
+
+.mu-sb.in {
+  background: rgba(120, 190, 120, 0.13);
+  border: 1px solid rgba(120, 190, 120, 0.4);
+  color: #8fd08f;
+}
+
+.mu-sb.out {
+  background: rgba(200, 90, 90, 0.1);
+  border: 1px solid rgba(200, 90, 90, 0.45);
+  color: #d98c8c;
+}
+
+.mu-btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.mu-btns .danger-ghost {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.mu-ta {
+  font-family: inherit;
+  min-height: 64px;
+  margin-bottom: 0;
+}
+
+.mu-sbh {
+  font-size: 13px;
+  color: var(--sub-text);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-top: 4px;
+}
+
+.mu-sbh .bad {
+  color: var(--danger);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.mu-sbblock {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 6px;
+}
+
+.mu-sbrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mu-sbrow .mu-sbtags {
+  flex: 1;
+  min-width: 0;
+}
+
+.mu-pickbtn {
+  flex: none;
+  padding: 7px 10px;
+  font-size: 12.5px;
+}
+
+.mu-pick {
+  display: flex;
+  flex-direction: column-reverse;
+  max-height: 38vh;
+  overflow-y: auto;
+  border: 1.5px solid var(--field-line);
+  border-radius: 10px;
+  padding: 2px 8px;
+  background: var(--field);
+}
+
+.mu-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  border-top: 1px solid var(--line);
+}
+
+.mu-step-nm {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  color: var(--ink-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mu-step b {
+  min-width: 18px;
+  text-align: center;
+  color: var(--sub-text);
+}
+
+.mu-step.on b,
+.mu-step.on .mu-step-nm {
+  color: var(--ink-text);
+  font-weight: 700;
+}
+
+.mu-step .icon-btn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  flex: none;
+}
+
+/* GEEN background:none hier. De .cotd-h-regel schildert de gouden letter
+   met een gradient ACHTERGROND en een doorzichtige letterkleur; de
+   achtergrond weghalen maakte de knop letterlijk onzichtbaar. */
+
+.cotd-h-btn {
+  border: 1px solid transparent;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 4px 12px;
+  transition: border-color 0.15s;
+}
+
+.cotd-h-btn:active {
+  border-color: var(--brass);
+}
+
+.cotd-h {
+  font-family: 'Cinzel', serif;
+  color: var(--brass);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin-bottom: 10px;
+}
+
+.cotd img {
+  width: min(78%, 280px);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  background: #0006;
+  aspect-ratio: 63/88;
+}
+
+.cotd .cotd-nm {
+  font-size: 14.5px;
+  font-weight: 700;
+  margin-top: 10px;
+}
+
+.cotd .cotd-tl {
+  font-size: 12px;
+  color: var(--sub-text);
+  margin-top: 2px;
+}
+
+.cotd .cotd-add {
+  margin-top: 10px;
+  background: var(--acc-fill);
+  color: var(--on-acc);
+  border: none;
+  border-radius: 8px;
+  padding: 9px 22px;
+  font-weight: 700;
+  font-size: 13.5px;
+  cursor: pointer;
+}

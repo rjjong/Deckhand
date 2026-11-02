@@ -1,0 +1,222 @@
+/* Long-press text selection only where it has a use: card text, rulings,
+   and editable fields. Everywhere else a long-press is never meant as
+   "select this label", so selection is off app-wide by default. */
+
+html,
+body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Nothing in the app is dragged the browser's way. On Android a long-press on
+   a card image could start a system drag; when that drag never finished, no
+   tap reached the app any more (the "frozen after a long-press" bug). */
+
+img,
+a {
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
+input,
+textarea,
+[contenteditable='true'] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.sel-text,
+.sel-text * {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Every card image everywhere — grids, tiles, previews, the detail view —
+   gets the authentic rounded card corner. One rule, keyed on Scryfall's image
+   host, so no component can ever ship square white corners again. The ratio
+   matches a real card's corner (Scryfall's own recommendation). */
+
+img[src*='scryfall.io'] {
+  border-radius: 4.75% / 3.43%;
+  background: #111112;
+}
+
+/* Universes Beyond marker on card views */
+
+.gc-mark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 24px 24px 0 0;
+  border-color: #e07818 transparent transparent transparent;
+  z-index: 2;
+  pointer-events: none;
+  filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.45));
+}
+
+.gc-mark span {
+  position: absolute;
+  top: -22px;
+  left: 1px;
+  transform: rotate(-45deg);
+  transform-origin: center;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+}
+
+.gc-inline {
+  display: inline-block;
+  background: #e07818;
+  color: #fff;
+  border-radius: 3px;
+  padding: 0 4px;
+  font-size: 11px;
+  font-weight: 800;
+  vertical-align: 1px;
+}
+
+.ub-mark {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 2;
+  background: linear-gradient(135deg, #7b5cd6, #4a2f96);
+  color: #fff;
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  padding: 1px 3px;
+  border-radius: 4px;
+  pointer-events: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
+.col-mark {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  z-index: 2;
+  background: linear-gradient(135deg, #1f9a63, #0e5c3a);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 800;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
+*:has(> .col-mark) {
+  position: relative;
+}
+
+.pv-mark {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 2;
+  background: linear-gradient(135deg, #c77b22, #8f5313);
+  color: #fff;
+  font-size: 7.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 1px 3px;
+  border-radius: 4px;
+  pointer-events: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
+*:has(> .pv-mark) {
+  position: relative;
+}
+
+img[src*='cards.scryfall.io'] {
+  border-radius: 4.75% / 3.5%;
+}
+
+img.wb-card {
+  border-radius: 0 !important;
+  background: #fff !important;
+}
+
+*:has(> .ub-mark) {
+  position: relative;
+}
+
+/* Corner ribbons (GC-style): UB folds over the top-left card corner, SPOILER
+   over the top-right — a diagonal sliver instead of a pill, so the card name
+   and the mana cost stay readable underneath. */
+
+.ub-corner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 32px 32px 0 0;
+  border-color: #5b3fb8 transparent transparent transparent;
+  z-index: 2;
+  pointer-events: none;
+  filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.45));
+}
+
+.ub-corner span {
+  position: absolute;
+  top: -29px;
+  left: 2px;
+  transform: rotate(-45deg);
+  transform-origin: center;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+}
+
+*:has(> .ub-corner) {
+  position: relative;
+}
+
+.pv-corner {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 34px 34px 0;
+  border-color: transparent #c77b22 transparent transparent;
+  z-index: 2;
+  pointer-events: none;
+  filter: drop-shadow(-1px 1px 2px rgba(0, 0, 0, 0.45));
+}
+
+.pv-corner span {
+  position: absolute;
+  top: 6px;
+  left: 5px;
+  transform: rotate(45deg);
+  transform-origin: center;
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  white-space: nowrap;
+}
+
+*:has(> .pv-corner) {
+  position: relative;
+}

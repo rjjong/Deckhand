@@ -1,0 +1,190 @@
+/* Foreground accents follow surface brightness; solid gold buttons keep dark ink. */
+html {
+  --accent-ink: #e8be58;
+  --danger-ink: #ffbdc1;
+  --success-ink: #a4deb1;
+}
+
+html[data-main='W'],
+html[data-theme='light'] {
+  --accent-ink: #523700;
+  --danger-ink: #84242a;
+  --success-ink: #164723;
+  --page-shade: 0.08;
+  --sub-text: color-mix(in srgb, var(--page-ink) 94%, var(--ink));
+  --sub-text-2: color-mix(in srgb, var(--page-ink) 90%, var(--ink));
+}
+
+/* Titles and active tabs must use the ink of their own header surface. */
+html .app-header #brandTitleInner {
+  color: var(--main-text);
+  -webkit-text-fill-color: currentColor;
+}
+
+html :is(.header-filter, .life-popup-close, #advancedSearchClose, #advancedSearchReset),
+html #advancedSearchScreen .advanced-search-header button,
+html #crOverlay #crOpenRules,
+html .trade-page .trade-total,
+html .trade-page .trade-verdict .tr-eur {
+  color: var(--accent-ink);
+}
+
+html .app-header #tradeBtn,
+html #capNoteBtn.collection-value {
+  color: var(--main-text) !important;
+  -webkit-text-fill-color: currentColor;
+}
+
+.hub-footnote,
+html #appFootNote {
+  color: var(--main-text);
+  opacity: 1;
+}
+
+html #appFootNote a {
+  color: var(--main-text) !important;
+}
+
+html .pin-pill {
+  color: var(--main-text);
+  background: color-mix(in srgb, var(--main-text) 5%, var(--ink));
+  border-color: color-mix(in srgb, var(--main-text) 30%, transparent);
+}
+
+html .pin-pill button {
+  color: var(--main-text);
+  opacity: 1;
+}
+
+html #backupNow {
+  color: #241a04;
+  background: var(--gold);
+}
+
+/* Selected scheme buttons keep the same readable label as unselected choices. */
+html .guild-opt.sel {
+  color: var(--main-text);
+  -webkit-text-fill-color: currentColor;
+  background: color-mix(in srgb, var(--main-text) 8%, var(--ink));
+  border-color: var(--accent-ink);
+}
+
+html .guild-opt.sel span {
+  color: inherit;
+  -webkit-text-fill-color: currentColor;
+}
+
+/* Opacity previously dimmed an unchecked rarity's label along with its border. */
+html .rcheck .rpill {
+  opacity: 1;
+  color: var(--ink-text);
+}
+
+html .rcheck input:checked + .rpill {
+  background: var(--ink-2);
+  border-color: var(--accent-ink);
+}
+
+html #advancedSearchScreen .adv-hint {
+  color: var(--main-text);
+  opacity: 1;
+}
+
+html :is(input, textarea)::placeholder {
+  color: var(--ink-text);
+  opacity: 1;
+}
+
+/* Metadata belongs to the card tile's surface, rather than the page's accent. */
+html .col-tile-info {
+  --ink-text: var(--main-text);
+  --sub-text: var(--main-text);
+  --sub-text-2: var(--main-text);
+  --brass: var(--main-text);
+  background: var(--ink);
+  color: var(--ink-text);
+}
+
+html .col-tile-info .l1 {
+  color: var(--ink-text);
+}
+
+html .col-tile-info .l2 {
+  color: var(--sub-text);
+}
+
+html[data-theme='light'] .folder-tile {
+  background: var(--ink-2);
+  background-image: none;
+}
+
+html[data-theme='light'] :is(.folder-name, .folder-sub) {
+  background: none;
+  color: var(--main-text);
+  -webkit-text-fill-color: currentColor;
+  opacity: 1;
+}
+
+html[data-side='W'] .folder-sub {
+  color: var(--panel-text);
+  background: var(--panel);
+  border-radius: 4px;
+  opacity: 1;
+}
+
+/* These controls use page-colored surfaces, even inside a side-colored panel. */
+html .card-details-page .cs-actions-grid .ghost-btn {
+  --ink-text: var(--main-text);
+  --brass: var(--accent-ink);
+  --danger: var(--danger-ink);
+  color: var(--ink-text);
+}
+
+html .card-details-page .leg-chip.no {
+  color: var(--main-text);
+}
+
+html .card-details-page .leg-chip.ok {
+  color: var(--success-ink);
+}
+
+html .draft-main :is(.dr-seg button, .dr-step button) {
+  color: var(--main-text);
+  -webkit-text-fill-color: currentColor;
+  background: var(--ink-2);
+  background-image: none;
+}
+
+html .draft-main :is(.dr-seg button.active, .dr-add > .primary-btn) {
+  color: #241a04;
+  -webkit-text-fill-color: currentColor;
+  background: var(--gold);
+  background-image: none;
+}
+
+html .draft-main .dr-steps button.on {
+  color: var(--accent-ink);
+  background: color-mix(in srgb, var(--accent-ink) 8%, transparent);
+  border-color: var(--accent-ink);
+}
+
+html #crCount {
+  color: var(--main-text);
+  opacity: 1;
+}
+
+html .life-radial .lm-opt {
+  color: var(--accent-ink);
+  background: var(--ink);
+  border-color: var(--accent-ink);
+}
+
+html .life-setup-page .llay.on .llay-n {
+  color: var(--main-text);
+  -webkit-text-fill-color: currentColor;
+}
+
+html .app-dialog.dialog-danger .dialog-icon {
+  color: var(--danger-ink);
+  background: color-mix(in srgb, var(--danger-ink) 8%, transparent);
+}

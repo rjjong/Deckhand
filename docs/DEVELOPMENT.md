@@ -1,8 +1,3 @@
-# Local development on CachyOS
-
-This checkout lives at `/home/remodj/Projects/Deckhand`. Setup changes are on
-`chore/development-environment`; nothing has been committed or pushed.
-
 ## What this setup provides
 
 - Node.js 24 and npm, managed per user by fnm.
@@ -30,6 +25,86 @@ Open **http://localhost:3000**. Keep the terminal running; Ctrl+C stops it.
 `npm run dev` restarts the backend when its source changes. Refresh the browser
 after frontend edits. For a process without file watching, use `npm start`.
 The health endpoint is http://localhost:3000/api/health.
+
+### Frontend source organization
+
+The old inline application has been separated into readable source files.
+`index.html` contains metadata, the app root, and references to the built assets.
+Edit the sources below; `public/` contains generated output and is ignored by Git.
+
+```text
+index.html                  HTML shell
+src/
+  app/                      Routing, navigation, history, and startup
+  core/                     Shared state, formats, deck storage, card rules
+  services/                 Scryfall, local card library, sync, translations
+  ui/                       Reusable controls, dialogs, card sheets, icons
+  pages/                    Page markup and event handlers, grouped by tab
+    home/  menu/  settings/  decks/  decklist/  collection/
+    search/  inspiration/  spoilers/  trade/  judge/  draft/  life/
+    references/             Format rules and ban lists
+  features/                 Onboarding, combos, pricing, playtesting, related tools
+  platform/                 PWA, desktop input, native bridge, sharing
+styles/
+  theme.css                 Color tokens and theme palettes
+  pages/                    Base styles for pages and tools
+  navigation.css            Shared title bar, bottom tabs, menu cards
+  overrides/                Current viewport, Judge, Draft/Trade, dialog, Life styling
+  desktop.css               Desktop presentation
+assets/images/              Source image assets
+scripts/frontend-sources.mjs Ordered source list and public assets
+scripts/build-frontend.mjs   Frontend build and development watcher
+public/                     Generated website, bundles, and source maps
+```
+
+For page changes, start with `src/pages/<page>/index.js`. Inspiration is split
+into `browse.js`, `deck.js`, `themes.js`, `metagame.js`, and recommendation files.
+Life has a landing page in `index.js`, its full-screen setup in `setup.js`, menus
+in `menus.js`, counters in `table.js`, and game rules in `model.js`.
+Collection's binder and add-card flows and the deck editor's statistics,
+matchups, and editing actions have their own neighboring files.
+
+Markup stays next to the page handlers as HTML template literals. The
+`/* HTML */` comments let Prettier format those templates. Shared page-card
+markup is in `src/ui/menu-cards.js`; common prompts and confirmations are in
+`src/ui/dialogs.js`. Data access belongs in `src/services/` rather than in a
+new page's markup function.
+
+The build deliberately combines these files into one classic script. Existing
+inline handlers and shared `state` retain their scope, and function declarations
+keep their original hoisting behavior. This is a source-organization refactor,
+not a conversion to isolated ES modules. The order in `frontend-sources.mjs`
+preserves top-level initialization; add new files there and avoid casually
+reordering existing entries. No production bundler or framework dependency is
+required. Only the formatter is a development dependency.
+
+CSS is combined in the same cascade order as before. Base styles come first,
+followed by navigation and the current overrides. For recent mobile layout work,
+start in `styles/overrides/`; keep reusable colors in `styles/theme.css`.
+The source map attached to `assets/app.css` shows the originating stylesheet.
+
+```sh
+npm run dev          # Build, start Node/SQLite, watch frontend and backend
+npm run build        # Generate public/ without starting the server
+npm start            # Build and run without watching
+npm run format       # Format frontend sources
+npm run format:check # Check formatting without rewriting files
+npm test             # Build and run backend/data checks
+npm run test:mobile  # Build and run mobile + desktop browser checks
+```
+
+The dev server rebuilds `src/`, `styles/`, and source image changes without
+restarting SQLite. Refresh the page to see edits. Adding a file to the source
+list restarts the backend through Node's watcher. JavaScript and CSS source maps
+embed the original sources, so browser DevTools can show the actual source
+filenames rather than only the combined assets.
+
+Both normal server startup and the Docker image build generate the frontend.
+The server exposes an explicit allowlist of public assets; backend source,
+`.env`, database files, and arbitrary paths remain inaccessible. Existing
+Netlify deployments use `netlify.toml` to build and publish `public/` with their
+existing function handlers. The self-hosted server still supplies its dynamic
+`runtime-config.js`, API routes, and SQLite storage.
 
 The browser can still display its cached offline shell when this server stops.
 That does not keep `/api/...` running: `ERR_CONNECTION_REFUSED` at localhost

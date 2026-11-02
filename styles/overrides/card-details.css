@@ -1,0 +1,213 @@
+/* Card details use the app header, menu surfaces and a dedicated content viewport. */
+
+html [id^='cardSheetOverlay'].overlay.card-details-page:not(.cs-pop) {
+  inset: 0;
+  height: 100dvh;
+  box-sizing: border-box;
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
+  overflow: hidden;
+  background: var(--page-backdrop);
+  background-attachment: fixed;
+}
+
+html .overlay.card-details-page > .overlay-inner {
+  max-width: none;
+  padding-bottom: 0;
+  overflow: hidden;
+}
+
+html .card-details-page > .overlay-inner > .card-details-header {
+  position: relative !important;
+  inset: auto !important;
+  height: auto !important;
+  width: 100%;
+  flex: none;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  padding: calc(8px + env(safe-area-inset-top)) 14px 8px !important;
+  border-bottom: 1px solid var(--line) !important;
+  background: var(--ink) !important;
+}
+
+.card-details-header > .header-menu {
+  position: relative !important;
+}
+
+html .overlay.card-details-page > .overlay-inner > .app-navigation {
+  width: 100%;
+  height: calc(var(--nav-h) + env(safe-area-inset-bottom));
+  padding: 4px max(6px, env(safe-area-inset-left)) calc(4px + env(safe-area-inset-bottom))
+    max(6px, env(safe-area-inset-right));
+  border-top: 1px solid var(--line);
+  border-bottom: 0;
+  justify-content: center;
+}
+
+.card-details-metrics {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.card-details-metric {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  min-height: 22px;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--ink-text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.card-details-metric:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.card-details-metric-label {
+  color: var(--sub-text);
+  font:
+    600 9px/1.4 'Inter',
+    system-ui,
+    sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.card-details-metric .cp-val {
+  color: var(--ink-text);
+  font:
+    600 12px/1.4 'JetBrains Mono',
+    monospace;
+}
+
+.card-details-metric:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.card-details-subtitle {
+  flex: none;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--line);
+  text-align: center;
+}
+
+.card-details-subtitle .sheet-title {
+  max-width: 900px;
+  margin: 0 auto;
+  color: var(--ink-text);
+  font:
+    600 18px/1.4 'Cinzel',
+    serif;
+  overflow-wrap: anywhere;
+}
+
+html .card-details-page main.card-detail {
+  min-height: 0;
+  padding: 18px 22px 28px;
+  gap: 18px;
+  zoom: 1;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+  overflow-anchor: none;
+}
+
+.card-details-page main.card-detail > * {
+  flex-shrink: 0;
+}
+
+.card-details-page .cd-hero {
+  max-width: 400px;
+}
+
+.card-details-actions,
+.card-details-page .cs-actions-grid {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.card-details-page .cs-actions-grid .ghost-btn {
+  min-height: 44px;
+  padding: 10px 8px;
+  border: 1px solid color-mix(in srgb, var(--ink-text) 18%, transparent);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--ink-text) 5%, var(--ink));
+  color: var(--ink-text);
+  font:
+    600 12px/1.5 'Inter',
+    system-ui,
+    sans-serif;
+  white-space: normal;
+}
+
+.card-details-page :is(#ciTagBox, #csTagBox):empty {
+  display: none;
+}
+
+.card-details-page .detail-sec {
+  margin: 0;
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, var(--ink-text) 18%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--ink-text) 5%, var(--ink));
+  color: var(--ink-text);
+}
+
+.card-details-page .detail-h {
+  order: -1;
+  margin: 0 0 14px;
+  padding: 0;
+  border: 0;
+  color: var(--sub-text);
+  font:
+    700 10px/1.5 'Inter',
+    system-ui,
+    sans-serif;
+  letter-spacing: 0.15em;
+}
+
+.card-details-page .oracle-face {
+  --ink-text: var(--main-text);
+  --sub-text: var(--main-sub);
+  --sub-text-2: var(--main-sub-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-text);
+}
+
+.card-details-page .oracle-face + .oracle-face,
+.card-details-page .ruling + .ruling {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.card-details-page .ruling {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.card-details-page .ruling-text {
+  color: var(--ink-text);
+}
+
+html .card-details-page.cs-pop > .overlay-inner > .card-details-header {
+  padding-top: 8px !important;
+  padding-right: 50px !important;
+}
+
+.overlay.card-details-page.cs-pop > .cs-pop-x {
+  left: auto;
+  right: 8px;
+}

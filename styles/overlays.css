@@ -1,0 +1,798 @@
+/* ---------- overlays / modals ---------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.35) 100%), var(--ink);
+  display: flex;
+  flex-direction: column;
+}
+
+.overlay-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.overlay main {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 24px;
+}
+
+#recoOverlay main,
+#pairPopOverlay main,
+#printOverlay main,
+#colAddSheet main,
+#addCollOverlay main,
+#budgetOverlay main,
+#cardRecoOverlay main,
+#metaDeckOverlay main {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-start;
+}
+
+/* Similar cards read from the source card down through the ranked results. */
+[id^='similarOverlay'] main {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  overflow-anchor: none;
+}
+
+[id^='similarOverlay'] main > * {
+  flex: 0 0 auto;
+}
+
+/* Deck prices: bottom-up like the rest -- the summary with the budgets at the
+   foot, the list above it, most expensive card nearest the thumb. */
+
+#deckPriceOverlay main {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-start;
+  padding: 16px 14px 18px;
+}
+
+#deckPriceOverlay .panel-card {
+  margin: 0 0 12px;
+}
+
+.dpp-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+}
+
+.dpp-k {
+  font-size: 11px;
+  color: var(--sub-text);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dpp-v {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 19px;
+  color: var(--brass);
+  white-space: nowrap;
+}
+
+/* Over budget: a ⚠ in the panel's own ink, never red on the panel (kleurenwet). */
+
+.dpp-v.over::before,
+.dpp-row.over .dpp-eur::before,
+.dpp-note.over::before {
+  content: '\26A0  ';
+  font-weight: 700;
+}
+
+.dpp-row.over .dpp-eur,
+.dpp-note.over {
+  color: var(--ink-text);
+  font-weight: 700;
+}
+
+.dpp-note {
+  font-size: 12px;
+  color: var(--sub-text);
+  min-height: 16px;
+}
+
+.dpp-in {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--field);
+  border: 1.5px solid var(--field-line);
+  border-radius: 8px;
+  color: var(--ink-text);
+  padding: 9px 10px;
+  font-size: 15px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.dpp-in:focus {
+  outline: none;
+  border-color: var(--brass);
+}
+
+.dpp-alt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 11px 8px;
+  font-size: 14px;
+}
+
+.dpp-alt svg {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+
+.dpp-box {
+  max-height: 44vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.dpp-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.dpp-row .dpp-nm {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dpp-row .dpp-q {
+  color: var(--sub-text);
+  margin-right: 4px;
+}
+
+.dpp-eur {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--brass);
+  flex: none;
+}
+
+.dpp-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.dpp-head .dpp-cnt {
+  font-size: 12px;
+  color: var(--sub-text);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+#deckPriceOverlay .pr-slider {
+  margin-top: 10px;
+}
+
+/* Meta-deck tiles: the key card's art, the deck's name, its colours, its
+   share of the metagame and its style. */
+
+.meta-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
+  overflow: hidden;
+  background: var(--panel);
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  font-family: 'Inter';
+  color: var(--panel-text);
+}
+
+.meta-tile:active {
+  transform: scale(0.98);
+}
+
+.meta-tile .mt-art {
+  display: block;
+  aspect-ratio: 626/457;
+  background: rgba(0, 0, 0, 0.35) center/cover no-repeat;
+}
+
+.meta-tile .mt-body {
+  display: block;
+  padding: 7px 9px 9px;
+}
+
+.meta-tile .mt-nm {
+  display: block;
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.2;
+  color: var(--panel-text);
+}
+
+.meta-tile .mt-sub {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--panel-sub);
+  margin-top: 4px;
+}
+
+.meta-tile .mt-share {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--panel-brass);
+}
+
+.meta-tile .mt-extra {
+  display: block;
+  font-size: 11.5px;
+  color: var(--panel-sub);
+  margin-top: 3px;
+}
+
+#mdBody {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 12px;
+}
+
+#mdBody .md-sec .section-label {
+  margin: 0 0 6px;
+}
+
+.md-hero .md-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.md-hero .md-actions .add-btn,
+.md-hero .md-actions .ghost-btn {
+  width: auto;
+  padding: 9px 14px;
+  font-size: 13.5px;
+  text-decoration: none;
+}
+
+.md-missing {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.md-missing span {
+  font-size: 12.5px;
+  padding: 4px 8px;
+  border: 1.5px solid var(--line);
+  border-radius: 6px;
+  color: var(--sub-text);
+}
+
+.dl-fmt-seat {
+  line-height: 1.5;
+  font-size: 13px;
+}
+
+.acc-up:not([hidden]) {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+/* Drop-down folds in Extras: long reading, top to bottom. */
+
+.acc-down[hidden] {
+  display: none;
+}
+
+.acc-down:not([hidden]) {
+  display: block;
+  border-top: 1.5px solid var(--line);
+}
+
+.acc-down [data-fmtruletxt]:not([hidden]),
+.acc-down [data-banbox]:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 6px 0 4px;
+}
+
+.acc-down .ban-sub {
+  font-size: 12px;
+  color: var(--sub-text);
+  margin: 8px 0 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.acc-down .banlist-grid {
+  flex-wrap: wrap;
+}
+
+.acc-down .ub-wrap,
+.acc-down .ub-switches {
+  flex-direction: column;
+}
+
+.acc-down .settings-row {
+  padding-left: 2px;
+  padding-right: 2px;
+}
+
+.acc-down .settings-row + .settings-row {
+  border-top: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+}
+
+.sub-fold {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.sub-fold .fold-ico {
+  margin-left: auto;
+  padding-left: 10px;
+  font-size: 13px;
+  color: var(--sub-text);
+}
+
+.inl-ico {
+  display: inline-flex;
+  vertical-align: -2px;
+  margin-right: 6px;
+}
+
+.ib.ib-t {
+  width: 20px;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 20px;
+}
+
+.cselect-search .cs-mag {
+  display: inline-flex;
+}
+
+.cselect-search .cs-mag svg {
+  width: 16px;
+  height: 16px;
+}
+
+.iac-ico {
+  display: flex;
+  justify-content: center;
+  color: var(--head-ink);
+  margin: 2px 0 8px;
+}
+
+.iac-ico svg {
+  width: 30px;
+  height: 30px;
+}
+
+.big-ico {
+  display: inline-flex;
+}
+
+.big-ico svg {
+  width: 46px;
+  height: 46px;
+}
+
+.tok-ico {
+  display: inline-flex;
+}
+
+.tok-ico svg {
+  width: 1em;
+  height: 1em;
+}
+
+.dk-tool#dlSelDel svg {
+  width: 20px;
+  height: 20px;
+}
+
+.inl-ico svg {
+  width: var(--ii, 15px);
+  height: var(--ii, 15px);
+}
+
+.want-bell svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+
+.want-bell.on svg {
+  margin-right: 4px;
+}
+
+.acc-up [data-fmtrule] > div,
+.acc-up [data-banfmt] > div {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+input,
+textarea,
+[contenteditable] {
+  caret-color: var(--caret, currentColor);
+}
+
+.ub-wrap {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.banwhy-wrap {
+  display: flex;
+  flex-direction: column;
+}
+/* reads top to bottom: the button, then the notes BELOW it */
+
+/* Cover-art picker: first card at the foot-left, the rest climbing (wrap-reverse). */
+
+.cover-grid {
+  display: flex;
+  flex-wrap: wrap-reverse;
+  gap: 8px;
+  max-height: 52vh;
+  overflow-y: auto;
+  padding: 2px;
+}
+
+.cover-opt {
+  flex: 0 0 calc(33.333% - 6px);
+  padding: 0;
+  border: 2.5px solid transparent;
+  border-radius: 9px;
+  background: none;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.cover-opt img {
+  width: 100%;
+  display: block;
+  border-radius: 6px;
+}
+
+.cover-opt.on {
+  border-color: var(--head-ink);
+}
+
+.life-fmt-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin: 0 0 12px;
+}
+
+.life-fmt-row .chip small {
+  display: block;
+  font-size: 10.5px;
+  opacity: 0.75;
+  line-height: 1.1;
+}
+
+.ub-switches {
+  display: flex;
+  flex-direction: column-reverse;
+  margin: 4px 0 8px;
+}
+
+.ub-switches[hidden] {
+  display: none;
+}
+/* bottom-up: its heading at the foot, the first set right above it */
+
+.acc-up [data-fmtruletxt]:not([hidden]),
+.acc-up [data-banbox]:not([hidden]) {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 6px;
+  margin: 0 0 6px;
+}
+
+.acc-up .ban-sub {
+  font-size: 12px;
+  color: var(--sub-text);
+  margin: 8px 0 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dl-fmt-seat b {
+  font-family: 'Cinzel', serif;
+  font-size: 15px;
+  color: var(--head-ink);
+}
+
+.overlay .topbar {
+  position: relative;
+  justify-content: center;
+  padding-left: 54px;
+  padding-right: 54px;
+  box-sizing: border-box;
+  min-height: 50px;
+}
+
+.overlay .topbar > .icon-btn:first-child {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.overlay .topbar > button:not(:first-child) {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.overlay .topbar .brand-txt {
+  flex: 0 1 auto;
+  max-width: 100%;
+  text-align: center;
+}
+
+.overlay .topbar .tb-titles {
+  flex: 0 1 auto;
+  max-width: 100%;
+  text-align: center;
+  align-items: center;
+}
+
+.overlay .topbar .sheet-title {
+  font-size: 18px;
+}
+
+/* Card sheets stop ABOVE the app's own bottom nav: the real navigation —
+   back button in its usual place — stays visible and tappable beneath the
+   sheet, and the card's name caps the sheet up top like any page name.
+   Stacked background sheets (cardSheetOverlay_bg…) get the same window. */
+
+[id^='cardSheetOverlay'] {
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
+}
+
+/* Over another overlay there is no reachable nav bar beneath — the sheet
+   covers the full height so the page below can't peek through at the foot. */
+
+[id^='cardSheetOverlay'].sheet-over-overlay {
+  bottom: 0;
+}
+
+#bgBody {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.budget-trio {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 120;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+@media (min-width: 640px) {
+  .modal-backdrop {
+    align-items: center;
+  }
+}
+
+.modal-sheet {
+  background: var(--ink-3);
+  border: 2px solid var(--line);
+  border-radius: 14px 14px 0 0;
+  width: 100%;
+  max-width: 420px;
+  padding: 18px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+@media (min-width: 640px) {
+  .modal-sheet {
+    border-radius: 14px;
+  }
+}
+
+.modal-sheet h3 {
+  font-family: 'Cinzel', serif;
+  color: var(--brass);
+  font-size: 16px;
+  margin: 0 0 12px;
+}
+
+.modal-sheet input {
+  width: 100%;
+  background: var(--ink-2);
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--ink-text);
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.modal-actions button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.modal-actions .cancel {
+  background: none;
+  border: 2px solid var(--line);
+  color: var(--sub-text);
+}
+
+.modal-actions .confirm {
+  background: var(--brass);
+  border: none;
+  color: var(--on-acc);
+}
+
+.modal-actions .confirm.danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+.menu-pop {
+  position: absolute;
+  top: 52px;
+  right: 14px;
+  background: var(--pop-bg);
+  border: 1.5px solid var(--pop-line);
+  border-radius: 10px;
+  overflow: hidden;
+  z-index: 80;
+  min-width: 170px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.menu-pop button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--ink-text);
+  padding: 11px 14px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.menu-pop button:hover {
+  background: var(--brass-glow);
+}
+
+.menu-pop button.danger {
+  color: var(--danger);
+}
+
+.menu-pop hr {
+  border: none;
+  border-top: 2px solid var(--line);
+  margin: 2px 0;
+}
+
+.toast {
+  position: fixed;
+  bottom: 78px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--panel-2);
+  border: 2px solid var(--brass-dim);
+  color: var(--ink-text);
+  padding: 9px 16px;
+  border-radius: 20px;
+  font-size: 13.5px;
+  z-index: 200;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.25s,
+    transform 0.25s;
+  white-space: pre-line;
+  max-width: min(86vw, 420px);
+  text-align: left;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+.card-preview-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.82);
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+}
+
+/* 1.36: a card opened from the judge page (z 9600) or from a floating
+   Extras panel (z 1201) shows on top of them */
+
+body:has(#crOverlay) .card-preview-backdrop,
+body:has(main.xt-tiles > .xt-scrim) .card-preview-backdrop {
+  z-index: 9700;
+}
+
+.card-preview-backdrop img {
+  max-width: 96vw;
+  max-height: 90vh;
+  border-radius: 4.75% / 3.5%;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+}
+
+.card-preview-backdrop .pv-card {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+
+.card-preview-backdrop .pv-card > img {
+  display: block;
+}
+
+.card-preview-backdrop .dfc-flip {
+  width: 52px;
+  height: 52px;
+}
+
+.card-preview-backdrop .dfc-flip svg {
+  width: 26px;
+  height: 26px;
+}

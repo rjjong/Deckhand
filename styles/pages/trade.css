@@ -1,0 +1,724 @@
+/* Trade calculator */
+
+.trade-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 2px solid var(--line);
+}
+
+.trade-row:last-of-type {
+  border-bottom: none;
+}
+
+.trade-row img {
+  width: 38px;
+  border-radius: 4px;
+  background: #101418;
+  cursor: pointer;
+  flex: none;
+}
+
+.trade-row .tr-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.trade-row .nm {
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trade-row .tl {
+  font-size: 12px;
+  color: var(--sub-text);
+}
+
+.tr-eur {
+  color: var(--brass);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.tr-qty {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+}
+
+.tr-qty button {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: var(--field);
+  border: 1.5px solid var(--field-line);
+  color: var(--ink-text);
+  font-size: 15px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.tr-qty span {
+  font-size: 13px;
+  min-width: 26px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.tr-del {
+  flex: none;
+  color: var(--sub-text);
+}
+
+.iac-msg {
+  font-size: 15px;
+  line-height: 1.5;
+  white-space: pre-line;
+  color: var(--ink-text);
+  text-align: left;
+}
+
+.col-grid .col-tile {
+  content-visibility: auto;
+  contain-intrinsic-size: auto var(--col-tile-h, 330px);
+}
+
+/* The double-faced flip button: a circle on the art, Moxfield-style —
+   right of center, off the name line and the text box. */
+
+.dfc-flip-box {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  aspect-ratio: 63/88;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.dfc-flip {
+  position: absolute;
+  top: 28%;
+  right: 7%;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--brass-dim);
+  background: var(--acc-fill);
+  color: var(--on-acc);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  box-shadow:
+    0 0 0 2px rgba(20, 14, 26, 0.55),
+    0 3px 10px rgba(0, 0, 0, 0.6),
+    0 0 14px rgba(233, 199, 103, 0.35);
+  transition:
+    transform 0.28s ease,
+    background 0.2s,
+    color 0.2s;
+  padding: 0;
+}
+
+.dfc-flip:active {
+  transform: scale(0.9);
+}
+
+.dfc-flip.flipped {
+  transform: rotate(180deg);
+  background: linear-gradient(145deg, #2e4a66, #152a3f);
+  color: var(--brass);
+  border-color: var(--brass-dim);
+  box-shadow:
+    0 0 0 2px rgba(20, 14, 26, 0.55),
+    0 3px 10px rgba(0, 0, 0, 0.6),
+    0 0 14px rgba(46, 74, 102, 0.55);
+}
+
+.dfc-flip.flipped:active {
+  transform: rotate(180deg) scale(0.9);
+}
+
+*:has(> .dfc-flip-box) {
+  position: relative;
+}
+
+.edh-jump-row {
+  position: sticky;
+  top: 6px;
+  z-index: 6;
+  display: flex;
+  justify-content: flex-end;
+  height: 0;
+  pointer-events: none;
+}
+
+.edh-jump {
+  pointer-events: auto;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--field);
+  border: 2.5px solid var(--brass);
+  color: var(--brass);
+  font-size: 17px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edh-sec {
+  scroll-margin-top: 74px;
+}
+
+/* block:'end' landings from the \u2630 jumps: keep the section label clear of
+   the fixed bottom nav (page-level sections only; overlays scroll inside
+   their own port and need no offset). */
+
+.app > main .edh-sec {
+  scroll-margin-bottom: calc(var(--nav-h) + 12px + env(safe-area-inset-bottom));
+}
+
+/* The current section's name rides just below the top bar; the next
+   section's label pushes it out — classic sticky headers, scoped per
+   section. Solid backing so it stays readable over the tiles. */
+
+.edh-sec {
+  display: flex;
+  flex-direction: column;
+}
+
+.edh-sec > .section-label {
+  order: 10;
+  position: static;
+  background: var(--ink);
+  padding: 8px 6px;
+  border-bottom: 2px solid var(--line);
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+  -webkit-text-fill-color: var(--head-ink);
+}
+
+/* Overlays scroll inside <main>, whose top edge already sits under the
+   overlay topbar — the 66px offset above is browse-page tuning (under the
+   app nav) and pins the label mid-screen there. Hug the scrollport instead. */
+
+.overlay main .edh-sec > .section-label {
+  position: sticky;
+  top: auto;
+  bottom: 0;
+  z-index: 5;
+}
+
+#recoOverlay .edh-sec > .section-label {
+  position: sticky;
+  top: auto !important;
+  bottom: 0;
+  z-index: 6;
+  background: var(--ink);
+  margin-bottom: 0;
+  padding: 7px 6px;
+  border-bottom: 2px solid var(--line);
+  -webkit-text-fill-color: var(--head-ink);
+}
+
+#recoOverlay main {
+  padding-bottom: 0;
+}
+
+#recoOverlay .ra-hint {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ink) 97%, transparent),
+    color-mix(in srgb, var(--ink) 92%, transparent)
+  );
+  backdrop-filter: blur(8px);
+  border-top: 2px solid var(--line);
+  margin: 0;
+  padding: 8px 0;
+}
+
+#recoOverlay .edh-jump-row {
+  position: fixed !important;
+  top: auto !important;
+  bottom: calc(52px + var(--nav-h) + env(safe-area-inset-bottom));
+  right: 14px;
+  left: auto;
+  justify-content: flex-end;
+  z-index: 140;
+  height: auto;
+  transition: bottom 0.2s;
+}
+
+/* While the selection + fab is visible, the burger steps up to make room —
+   and steps back down the moment the last selection is dropped. */
+
+#recoOverlay:has(.reco-fab:not([hidden])) .edh-jump-row {
+  bottom: calc(96px + var(--nav-h) + env(safe-area-inset-bottom));
+}
+
+.edh-jump-row {
+  top: 70px;
+}
+
+.reco-fab {
+  position: fixed;
+  right: 16px;
+  bottom: calc(18px + var(--nav-h) + env(safe-area-inset-bottom));
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--acc-fill);
+  color: var(--on-acc);
+  font-size: 26px;
+  font-weight: 800;
+  border: none;
+  z-index: 140;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+}
+
+.reco-theme-banner {
+  width: fit-content;
+  margin: 0 auto 8px;
+  padding: 6px 14px;
+  border: 2.5px solid var(--brass);
+  border-radius: 999px;
+  color: var(--brass);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+#tileMenuPop {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.edh-rel {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 2px 8px;
+  margin-top: 10px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.edh-rel-chip {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  border: 1.5px solid var(--field-line);
+  background: var(--field);
+  color: var(--ink-text);
+  font-size: 13.5px;
+  font-family: Inter;
+}
+
+.edh-rel-chip b {
+  color: var(--brass);
+  font-weight: 700;
+}
+
+.colfold-ico {
+  color: var(--brass);
+}
+
+.colfold-ico svg {
+  width: 46px;
+  height: 46px;
+  display: block;
+}
+
+.col-tile.csel {
+  outline: 2.5px solid var(--brass);
+  outline-offset: -2px;
+}
+
+.csel-mark {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 3;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: #241a04;
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+/* The selection button TAKES the ＋'s place (it used to sit half over it). */
+
+body:has(#colSelFab) #binderFab,
+body:has(#colSelFab) #colFab {
+  display: none !important;
+}
+
+/* Gold selection buttons: ＋ for one pick, the count itself from two up. */
+
+.fp-newsub {
+  display: block;
+  width: 100%;
+  flex: none;
+  min-height: 46px;
+  margin-top: 10px;
+  font-size: 15px;
+  white-space: normal;
+}
+
+.fp-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  align-items: stretch;
+}
+
+.fp-actions > button {
+  margin: 0;
+  min-height: 50px;
+  white-space: normal;
+  line-height: 1.2;
+}
+
+.fp-actions #fpCancel {
+  flex: 1;
+}
+
+.fp-actions #fpHere {
+  flex: 2;
+}
+
+.fab-count {
+  font-family: 'Inter', sans-serif;
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.5px;
+}
+
+.fab-count.long {
+  font-size: 16px;
+}
+
+.searchbar .sel-fab {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  min-height: 0;
+  align-self: center;
+  padding: 0;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 800;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+.searchbar > button[hidden] {
+  display: none !important;
+}
+
+.acm-fan {
+  display: flex;
+  justify-content: center;
+  margin: 6px 0 10px;
+}
+
+.acm-fan img {
+  width: 74px;
+  border-radius: 5px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.acm-fan img + img {
+  margin-left: -44px;
+}
+
+.fw-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 210;
+  pointer-events: none;
+}
+
+.fw-p {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  opacity: 0;
+  box-shadow: 0 0 8px rgba(255, 220, 140, 0.8);
+}
+
+.trade-verdict {
+  font-size: 15.5px;
+  font-weight: 700;
+}
+
+.trade-verdict.even {
+  color: var(--brass);
+}
+
+.ta-tile {
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  font-family: 'Inter';
+  color: var(--ink-text);
+}
+
+.ta-tile .st-body {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.tp-set {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.tp-sub {
+  font-size: 11.5px;
+  color: var(--sub-text);
+  margin: 1px 0 2px;
+}
+
+.glog-cname {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.glog-sheet {
+  width: 100%;
+  max-width: 560px;
+  min-height: min(94vh, 940px);
+  max-height: 94vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background: var(--ink);
+  border: 2px solid var(--line);
+  border-radius: 16px 16px 0 0;
+  padding: 10px 12px 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.glog-form {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 6px;
+}
+
+.glog-frow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.glog-lbl {
+  flex: 0 0 84px;
+  font-size: 13px;
+  color: var(--sub-text);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.glog-frow .seg {
+  flex: 1;
+  display: flex;
+  gap: 6px;
+}
+
+.glog-frow .seg button {
+  flex: 1;
+  background: var(--field);
+  border: 1.5px solid var(--field-line);
+  color: var(--ink-text);
+  border-radius: 8px;
+  padding: 9px 4px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.glog-frow .seg button.active {
+  border-color: var(--brass);
+  color: var(--brass);
+  background: color-mix(in srgb, var(--brass) 8%, transparent);
+}
+
+.glog-sel,
+.glog-num {
+  flex: 1;
+  background: var(--field);
+  border: 1.5px solid var(--field-line);
+  color: var(--ink-text);
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 15px;
+  min-width: 0;
+}
+
+.glog-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.glog-chip {
+  background: var(--field);
+  border: 1.5px solid var(--field-line);
+  border-radius: 10px;
+  padding: 7px 11px;
+  font-size: 12px;
+  color: var(--sub-text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.glog-chip b {
+  font-size: 16px;
+  color: var(--ink-text);
+}
+
+.glog-tally {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.glog-tally-h {
+  font-size: 12px;
+  color: var(--sub-text);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-right: 2px;
+}
+
+.glog-tag {
+  background: color-mix(in srgb, var(--brass) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brass) 40%, transparent);
+  color: var(--brass);
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-size: 13px;
+}
+
+.glog-tag.weak {
+  background: rgba(200, 90, 90, 0.1);
+  border-color: rgba(200, 90, 90, 0.45);
+  color: #d98c8c;
+}
+
+.glog-list {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.glog-row {
+  cursor: pointer;
+}
+
+.glog-detail {
+  display: none;
+  margin-top: 6px;
+  font-size: 13.5px;
+  color: var(--sub-text);
+  line-height: 1.6;
+}
+
+.glog-row.open .glog-detail {
+  display: block;
+}
+
+.glog-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 7px 2px;
+  border-top: 2px solid var(--line);
+}
+
+.glog-res {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.glog-res.w {
+  background: rgba(120, 190, 120, 0.15);
+  color: #8fd08f;
+  border: 1px solid rgba(120, 190, 120, 0.4);
+}
+
+.glog-res.l {
+  background: rgba(200, 90, 90, 0.12);
+  color: #d98c8c;
+  border: 1px solid rgba(200, 90, 90, 0.4);
+}
+
+.glog-mid {
+  flex: 1;
+  min-width: 0;
+}
+
+.glog-line1 {
+  font-size: 13.5px;
+  color: var(--ink-text);
+}
+
+.glog-line2 {
+  font-size: 13px;
+  color: var(--brass);
+  margin-top: 1px;
+}
+
+.glog-note {
+  font-size: 13px;
+  color: var(--sub-text);
+  margin-top: 2px;
+  white-space: pre-wrap;
+}
+
+.glog-del {
+  flex: none;
+  opacity: 0.6;
+}

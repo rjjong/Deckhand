@@ -1,0 +1,442 @@
+/* Shared mobile navigation. Loaded after the legacy styles below. */
+:root {
+  --nav-h: 60px;
+}
+html.desk {
+  --nav-h: 60px;
+  --top-nav: 64px;
+  --cap-h: 0px;
+  --top-h: 64px;
+}
+html .app > .app-header.page-cap {
+  position: fixed;
+  inset: 0 0 auto !important;
+  height: auto !important;
+  min-height: 64px;
+  display: grid !important;
+  grid-template-columns: 44px minmax(0, 1fr) minmax(44px, auto);
+  gap: 10px;
+  padding: calc(env(safe-area-inset-top) + 8px) 14px 8px !important;
+  background: var(--ink) !important;
+  border-bottom: 1px solid var(--line) !important;
+  z-index: 86;
+  box-shadow: 0 3px 20px rgb(0 0 0 / 0.12) !important;
+}
+.header-menu {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid transparent;
+  padding: 3px;
+  border-radius: 13px;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.header-menu img {
+  display: block;
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  border-radius: 9px;
+}
+.header-menu .menu-alert {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--ink);
+  border-radius: 50%;
+  background: var(--gold);
+  color: #241a04;
+  font:
+    800 12px/1 'Inter',
+    system-ui,
+    sans-serif;
+  pointer-events: none;
+}
+.header-menu:hover,
+.header-menu.active {
+  background: var(--brass-glow);
+  border-color: var(--line);
+}
+html .app-header > .brand-txt,
+.app-overlay-header > .brand-txt {
+  display: block;
+  pointer-events: auto;
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+  padding: 8px 0;
+  margin: 0 !important;
+  min-width: 0;
+  max-width: 100% !important;
+  width: 100%;
+  font:
+    800 17px/1.2 'Cinzel',
+    serif;
+  letter-spacing: 0.08em;
+  color: var(--ink-text) !important;
+  -webkit-text-fill-color: currentColor !important;
+  text-align: center;
+  max-height: none;
+  white-space: normal;
+}
+.app-header .cap-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 0;
+}
+.app-header .cap-tools > * {
+  position: static !important;
+  transform: none !important;
+  margin: 0 !important;
+}
+.app-header .cap-tools .net-chip {
+  font-size: 10px;
+}
+.app-header .cap-tools .cap-note {
+  font-size: 11px;
+}
+.app-header #spoilersBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: 22px;
+  cursor: pointer;
+}
+.app-header .header-filter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--gold);
+  cursor: pointer;
+}
+.app-header .header-filter svg {
+  width: 24px;
+  height: 24px;
+}
+.app-header .header-filter:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+html .app > main,
+html.desk .app > main {
+  padding-top: var(--app-header-h) !important;
+}
+html .app > .app-navigation,
+html .overlay .app-navigation {
+  position: fixed !important;
+  inset: auto 0 0 !important;
+  width: 100%;
+  height: calc(var(--nav-h) + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 4px max(6px, env(safe-area-inset-left)) calc(4px + env(safe-area-inset-bottom))
+    max(6px, env(safe-area-inset-right));
+  background: color-mix(in srgb, var(--ink) 97%, transparent);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid var(--line);
+  border-bottom: 0;
+  z-index: 85;
+}
+html .app-navigation .banner-tabs {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  width: 100%;
+  max-width: 560px;
+  gap: 4px;
+  margin: 0 auto;
+}
+html .app-navigation .banner-tab,
+html.desk .app-navigation .banner-tab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
+  min-width: 0;
+  height: 50px;
+  margin: 0;
+  padding: 4px 2px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--sub-text);
+  font:
+    500 10px/1.15 'Inter',
+    system-ui,
+    sans-serif;
+}
+html .app-navigation .banner-tab::after {
+  content: none !important;
+}
+html .app-navigation .banner-tab svg {
+  width: 22px;
+  height: 22px;
+  color: currentColor;
+}
+html .app-navigation .tab-label {
+  display: block;
+  line-height: 1.15;
+  white-space: nowrap;
+  font-size: 10px;
+  letter-spacing: 0.015em;
+}
+html .app-navigation .banner-tab:hover {
+  background: var(--brass-glow);
+}
+html .app-navigation .banner-tab.active {
+  color: var(--accent-ink);
+  background: color-mix(in srgb, var(--accent-ink) 8%, transparent);
+  border-color: color-mix(in srgb, var(--accent-ink) 18%, transparent);
+  box-shadow: none;
+  font-weight: 700;
+}
+html .app-navigation .banner-tab.active svg {
+  color: currentColor;
+}
+html .app-navigation .banner-tab.active::before {
+  content: '';
+  width: 18px;
+  height: 3px;
+  background: currentColor;
+  border-radius: 3px;
+  position: absolute;
+  top: 0;
+}
+.header-menu:focus-visible,
+[data-app-home]:focus-visible,
+.app-navigation button:focus-visible,
+.hub-card:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+.app-overlay-header {
+  display: grid !important;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 8px 14px !important;
+  min-height: 64px;
+}
+/* Keep header buttons in their grid cells instead of the legacy overlay positions. */
+.app-overlay-header > button {
+  position: static !important;
+  transform: none !important;
+}
+.overlay .overlay-inner:has(> .app-navigation) {
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
+}
+html .overlay .overlay-inner:has(> .app-navigation) > .app-overlay-header {
+  position: relative !important;
+  inset: auto !important;
+  width: 100%;
+  height: auto !important;
+  order: -9 !important;
+  background: var(--ink) !important;
+}
+html .app > main.hub-page {
+  justify-content: flex-start !important;
+  gap: 28px;
+  max-width: 680px;
+  width: 100%;
+  margin: 0 auto;
+  padding-left: 22px;
+  padding-right: 22px;
+}
+html .app > main.hub-page::before {
+  display: none;
+}
+.hub-intro {
+  margin-top: 28px;
+}
+.hub-eyebrow {
+  display: block;
+  color: var(--sub-text);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.19em;
+}
+.hub-intro h1 {
+  margin: 13px 0 12px;
+  font:
+    600 clamp(26px, 7vw, 36px)/1.2 'Cinzel',
+    serif;
+  color: var(--ink-text);
+  letter-spacing: -0.025em;
+}
+.hub-intro p {
+  margin: 0;
+  color: var(--sub-text);
+  font-size: 14px;
+  line-height: 1.8;
+  max-width: 36ch;
+}
+.hub-actions {
+  display: grid;
+  gap: 12px;
+}
+.hub-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 20px 16px;
+  border: 1px solid color-mix(in srgb, var(--ink-text) 18%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--ink-text) 5%, var(--ink));
+  color: var(--ink-text);
+  text-align: left;
+  cursor: pointer;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+.hub-card:hover {
+  border-color: var(--brass);
+}
+.hub-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 43px;
+  height: 43px;
+  border-radius: 13px;
+  color: var(--accent-ink);
+  background: color-mix(in srgb, var(--accent-ink) 7%, transparent);
+}
+.hub-icon svg {
+  width: 24px;
+  height: 24px;
+}
+.hub-card strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+}
+.hub-card small {
+  display: block;
+  margin-top: 7px;
+  color: var(--sub-text);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.menu-page .hub-actions {
+  gap: 12px;
+}
+.menu-page .menu-tools + .menu-settings {
+  margin-top: -16px;
+}
+.menu-tools > .settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  overflow: visible;
+  --ink-text: var(--main-text);
+  --sub-text: var(--main-sub);
+  --sub-text-2: var(--main-sub-2);
+  --line: var(--main-field-line);
+  --brass: var(--main-brass);
+}
+.menu-tools .hub-copy {
+  flex: 1;
+  min-width: 0;
+}
+.menu-tools .hub-icon {
+  gap: 2px;
+}
+.menu-tools .hub-icon #guildCur {
+  display: flex;
+}
+.menu-tools .hub-icon #guildCur svg {
+  width: 20px;
+  height: 20px;
+}
+.menu-tools .hub-copy .l2 {
+  color: var(--sub-text);
+  font-size: 11px;
+}
+.menu-tools .guild-list {
+  grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
+}
+.menu-tools .hub-card[aria-expanded='true'] .hub-arrow {
+  transform: rotate(90deg);
+}
+.menu-tools .xt-body:not([hidden]),
+.menu-tools .menu-tool-body:not([hidden]) {
+  position: static;
+  width: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 16px !important;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+.menu-tools [hidden] {
+  display: none !important;
+}
+.menu-tools #appFootCell {
+  order: 99;
+  gap: 12px;
+}
+.menu-tools #appFootNote {
+  order: 99;
+  margin: 12px 0 0;
+}
+.hub-arrow {
+  margin-left: auto;
+  color: var(--sub-text);
+  font-size: 26px;
+}
+.hub-primary {
+  border-color: color-mix(in srgb, var(--brass) 60%, transparent);
+}
+.hub-footnote {
+  margin: 0;
+  color: var(--sub-text-2);
+  font-size: 11px;
+  line-height: 1.7;
+}
+@media (max-width: 359px) {
+  html .app-navigation .tab-label {
+    font-size: 9px;
+  }
+  html .app > .app-header.page-cap {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    gap: 5px;
+  }
+}

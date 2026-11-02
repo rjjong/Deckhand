@@ -1,6 +1,6 @@
 /* Deckhand — service worker
    Strategy:
-   - The page itself: the network gets SHELL_WAIT ms to answer, then the
+   - The page and startup bundles: the network gets SHELL_WAIT ms to answer, then the
      cached copy wins and the download finishes in the background. A quick
      line still serves the newest deploy at once; a slow one no longer holds
      the launch hostage behind a ~430 kB download.
@@ -8,7 +8,7 @@
    - Fonts + Scryfall card images: cache-first (they never change for a given
      URL), keeping repeat browsing fast and cheap.
    - Scryfall API responses are NOT cached — searches and prices stay live. */
-const VERSION = 'deckhand-continuous-fade-details-v30';
+const VERSION = 'deckhand-similar-top-down-v42';
 // Card images and fonts survive app updates: this cache is deliberately
 // NOT version-named, so activating a new version never wipes it.
 const ASSETS = 'admiral-assets-v1';
@@ -16,7 +16,7 @@ const ASSETS = 'admiral-assets-v1';
 // Long enough that a quick connection still serves the newest deploy at once,
 // short enough that a slow one never holds the launcher's icon hostage.
 const SHELL_WAIT = 1200;
-const SHELL = ['./', './index.html', './navigation.css', './layout.css', './runtime-config.js', './manifest.json', './icon-192.png', './icon-512.png', './icon-512-maskable.png'];
+const SHELL = ['./', './index.html', './assets/app.js', './assets/app.css', './assets/images/deckhand-badge.webp', './runtime-config.js', './manifest.json', './icon-192.png', './icon-512.png', './icon-512-maskable.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -99,13 +99,12 @@ self.addEventListener('fetch', (e) => {
   }
 
   // App shell: network-first, fall back to cache when offline.
-  // The PAGE ITSELF races the network against the clock: index.html is ~430 kB
-  // over the wire, and on mobile data that download WAS the startup wait --
-  // nothing can be drawn until it lands. A copy is already in the cache, so
-  // after SHELL_WAIT ms we serve that instead and let the download finish in
-  // the background, where it refreshes the cache for the next launch.
+  // The HTML shell and its separate JS/CSS bundles race the network against
+  // the clock. Cached startup assets keep a slow connection from delaying
+  // launch, while the live request refreshes the next launch in the background.
   if (url.origin === location.origin) {
     const isPage = e.request.mode === 'navigate';
+    const isStartupAsset = /\/assets\/app\.(?:js|css)$/.test(url.pathname);
     e.respondWith(
       (async () => {
         const store = caches.open(VERSION);
@@ -113,9 +112,9 @@ self.addEventListener('fetch', (e) => {
           if (res && res.ok) { const copy = res.clone(); store.then(c => c.put(e.request, copy)); }
           return res;
         });
-        if (isPage) {
+        if (isPage || isStartupAsset) {
           const cached = await caches.match(e.request, { ignoreSearch: true })
-                      || await caches.match('./index.html');
+                      || (isPage ? await caches.match('./index.html') : null);
           if (cached) {
             const waited = await Promise.race([
               live.catch(() => null),

@@ -1,0 +1,1100 @@
+:root {
+  --ink: #0a1a28;
+  --ink-2: #0f2436;
+  --ink-3: #13293d;
+  --panel: #3a1519;
+  --panel-2: #301114;
+  --panel-blue: #123449;
+  --panel-blue-2: #163c53;
+  --brass: #c9a24b;
+  --brass-dim: #8e7735;
+  --brass-glow: color-mix(in srgb, var(--brass) 14%, transparent);
+  --parchment: #efe6d0;
+  --parchment-dim: #dccfaa;
+  --danger: #b5484d;
+  --success: #5c8b6e;
+  --line: color-mix(in srgb, var(--brass) 20%, transparent);
+  --radius: 10px;
+}
+
+:root {
+  --pop-bg: #2a1216;
+  --pop-line: #502a30;
+  --field: #231015;
+  --field-line: #4a2a30;
+  --hl: rgba(170, 62, 70, 0.2);
+}
+/* admiral: commander red fields */
+
+html[data-mode='commander'] {
+  --pop-bg: #0f2739;
+  --pop-line: #2c5070;
+  --field: #102839;
+  --field-line: #2c4e6c;
+  --hl: rgba(64, 118, 168, 0.24);
+  --panel: #123449;
+  --panel-2: #163c53;
+}
+/* commander: admiral blue fields */
+
+html[data-theme='light'] {
+  --pop-bg: #f6e9e7;
+  --pop-line: #d9bdb9;
+  --field: #f7ecea;
+  --field-line: #dcc4c0;
+  --hl: rgba(170, 62, 70, 0.1);
+}
+
+html[data-mode='commander'][data-theme='light'] {
+  --pop-bg: #e8f0f7;
+  --pop-line: #b9cedf;
+  --field: #eaf1f8;
+  --field-line: #bfd2e2;
+  --hl: rgba(64, 118, 168, 0.12);
+  --panel: #edf3f9;
+  --panel-2: #e3edf6;
+}
+
+html[data-mode='commander'] {
+  --ink: #2a1014;
+  --ink-2: #341620;
+  --ink-3: #3e1822;
+  --ink-deep: #1c0d10;
+  --glow: rgba(170, 62, 70, 0.13);
+  --line: color-mix(in srgb, var(--brass) 22%, transparent);
+  --brass: #f0b94a;
+  --brass-glow: color-mix(in srgb, var(--brass) 12%, transparent);
+  --panel-brass: #f0b94a;
+  --panel-brass-dim: #8e7735;
+  --panel-brass-glow: color-mix(in srgb, var(--brass) 12%, transparent);
+  --panel-parchment: #efe6d0;
+  --panel-parchment-dim: #dccfaa;
+  --panel-line: color-mix(in srgb, var(--brass) 22%, transparent);
+}
+
+/* ── Guild palettes ─────────────────────────────────────────────────────
+   Two roles, five Magic colours each. data-main paints the INK: the page
+   background, the deep covers, the body glow and the text tints. data-side
+   paints the SURFACES: panels, fields, pop-ups, highlights. Any colour can
+   take either role, so the ten two-colour guilds are the ten pairings
+   (GUILDS in the script). Izzet — red ink, blue surfaces — is the look the
+   app always had; the base block above is the pre-guild pair, so a page with
+   no data-main/data-side yet paints something close without a flash. Hues
+   ARE the official card colours (symbol colour per Magic colour: U 14,104,171
+   · R 211,32,42 · G 0,115,62; frame tints W 248,231,185 and B's grey
+   166,159,157 over its 21,11,0): the ink is the colour at ~55% brightness,
+   the surfaces at ~75%, lines and highlights the frame tint; black is the
+   near-black itself, its grey tint only in lines. White is the
+   frame cream itself, at full brightness, with DARK text and dark gold —
+   text colour is a property of whichever role (page or surface) the text
+   sits on, see the surface rule below. */
+
+html[data-main='W'] {
+  --ink: #f1e0ac;
+  --ink-2: #ecd8a0;
+  --ink-3: #e7d195;
+  --ink-deep: #e0cb92;
+  --glow: rgba(255, 255, 255, 0.3);
+  --brass: #7a5c18;
+  --brass-dim: #6e5518;
+  --brass-glow: rgba(122, 92, 24, 0.14);
+  --parchment: #171310;
+  --parchment-dim: #3b3429;
+  --line: rgba(122, 92, 24, 0.7);
+}
+
+html[data-main='U'] {
+  --ink: #08395e;
+  --ink-2: #124164;
+  --ink-3: #1c496b;
+  --ink-deep: #062944;
+  --glow: rgba(14, 104, 171, 0.3);
+  --parchment: #f0ebe0;
+  --parchment-dim: #d8d1c3;
+  --line: color-mix(in srgb, var(--brass) 62%, transparent);
+}
+
+html[data-main='B'] {
+  --ink: #15110e;
+  --ink-2: #16110d;
+  --ink-3: #1e1813;
+  --ink-deep: #131110;
+  --glow: rgba(166, 159, 157, 0.1);
+  --parchment: #f0ebe0;
+  --parchment-dim: #d8d1c3;
+  --line: color-mix(in srgb, var(--brass) 62%, transparent);
+}
+
+html[data-main='R'] {
+  --ink: #741217;
+  --ink-2: #7a1b20;
+  --ink-3: #7f2429;
+  --ink-deep: #540d11;
+  --glow: rgba(211, 32, 42, 0.3);
+  --parchment: #f0ebe0;
+  --parchment-dim: #d8d1c3;
+  --line: color-mix(in srgb, var(--brass) 62%, transparent);
+}
+
+html[data-main='G'] {
+  --ink: #003f22;
+  --ink-2: #0a472b;
+  --ink-3: #144e34;
+  --ink-deep: #002d18;
+  --glow: rgba(0, 115, 62, 0.3);
+  --parchment: #f0ebe0;
+  --parchment-dim: #d8d1c3;
+  --line: color-mix(in srgb, var(--brass) 62%, transparent);
+}
+
+html[data-side='W'] {
+  --hl: rgba(122, 92, 24, 0.12);
+  --panel: #eedba5;
+  --panel-2: #e9d499;
+  --panel-brass: #7a5c18;
+  --panel-brass-dim: #6e5518;
+  --panel-brass-glow: rgba(122, 92, 24, 0.14);
+  --panel-parchment: #171310;
+  --panel-parchment-dim: #3b3429;
+  --panel-line: rgba(122, 92, 24, 0.7);
+}
+
+html[data-side='U'] {
+  --hl: rgba(179, 206, 234, 0.25);
+  --panel: #0b4e80;
+  --panel-2: #155586;
+  --panel-brass: #f0b94a;
+  --panel-brass-dim: #8e7735;
+  --panel-brass-glow: color-mix(in srgb, var(--brass) 12%, transparent);
+  --panel-parchment: #f0ebe0;
+  --panel-parchment-dim: #d8d1c3;
+  --panel-line: color-mix(in srgb, var(--brass) 62%, transparent);
+}
+
+html[data-side='B'] {
+  --hl: rgba(166, 159, 157, 0.2);
+  --panel: #1f1b18;
+  --panel-2: #282320;
+  --panel-brass: #f0b94a;
+  --panel-brass-dim: #8e7735;
+  --panel-brass-glow: color-mix(in srgb, var(--brass) 12%, transparent);
+  --panel-parchment: #f0ebe0;
+  --panel-parchment-dim: #d8d1c3;
+  --panel-line: color-mix(in srgb, var(--brass) 62%, transparent);
+}
+
+html[data-side='R'] {
+  --hl: rgba(235, 159, 130, 0.25);
+  --panel: #9e1820;
+  --panel-2: #a32129;
+  --panel-brass: #f0b94a;
+  --panel-brass-dim: #8e7735;
+  --panel-brass-glow: color-mix(in srgb, var(--brass) 12%, transparent);
+  --panel-parchment: #f0ebe0;
+  --panel-parchment-dim: #d8d1c3;
+  --panel-line: color-mix(in srgb, var(--brass) 62%, transparent);
+}
+
+html[data-side='G'] {
+  --hl: rgba(196, 211, 202, 0.25);
+  --panel: #00562f;
+  --panel-2: #0a5d37;
+  --panel-brass: #f0b94a;
+  --panel-brass-dim: #8e7735;
+  --panel-brass-glow: color-mix(in srgb, var(--brass) 12%, transparent);
+  --panel-parchment: #f0ebe0;
+  --panel-parchment-dim: #d8d1c3;
+  --panel-line: color-mix(in srgb, var(--brass) 62%, transparent);
+}
+
+/* Icon tints of the MAIN colour, chosen per plate polarity: light plates
+   (W side) carry the DARK main tint, dark plates carry the LIGHT one. */
+
+html[data-main='W'] {
+  --main-lt: #fff6dc;
+  --main-dk: #3f3722;
+}
+/* was #7A6A42: 4.03:1 on its own page */
+
+html[data-main='U'] {
+  --main-lt: #9cc8ea;
+  --main-dk: #0a2b47;
+}
+
+html[data-main='B'] {
+  --main-lt: #c9c3bc;
+  --main-dk: #14110e;
+}
+
+html[data-main='R'] {
+  --main-lt: #f4beb0;
+  --main-dk: #4a0c10;
+}
+/* was #F0A896: no room to dim */
+
+html[data-main='G'] {
+  --main-lt: #a1cea1;
+  --main-dk: #123a22;
+}
+/* was #9CCB9C: no room to dim */
+
+/* ── Accent system ─ the gold retires. Every accent (metal rims, gilded
+   text, brass headings, hairlines, glows) is now a LIGHTER TINT of the
+   chosen guild's SIDE colour: --m1..--m5 are the five metal-ramp stops,
+   --brass the working accent, --on-acc the engraved text on solid accent.
+   On a cream (W) MAIN the same side gets a DARKER ramp instead, so accents
+   stay readable on the light page. W-side panels keep their dark bronze
+   panel accent for the same reason. */
+
+html[data-side='W'] {
+  --pop-bg: #f3eacf;
+  --pop-line: #cbb98a;
+  --field: #f4f1e3;
+  --field-line: #cbb98a;
+  --sel-rim: var(--panel-brass-dim);
+  --plate-ink: var(--main-dk);
+  --icon-pl: var(--main-dk);
+  --m1: #c9b98a;
+  --m2: #a8925c;
+  --m3: #6e5c34;
+  --m4: #b8a878;
+  --m5: #8a784a;
+  --panel-brass: #efe2b8;
+  --brass: #a8925c;
+  --brass-dim: #6e5c34;
+  --field-line: #8f7842;
+  --pop-line: #8f7842;
+  --panel-line: #8a7440;
+  --panel-brass-dim: #55420f;
+  --brass-glow: color-mix(in srgb, var(--brass) 14%, transparent);
+  --line: color-mix(in srgb, var(--brass) 60%, transparent);
+}
+
+html[data-side='U'] {
+  --pop-bg: #0a4b7b;
+  --pop-line: #3f87be;
+  --field: #0a4978;
+  --field-line: #3f87be;
+  --sel-rim: var(--panel-brass);
+  --plate-ink: color-mix(in srgb, var(--main-lt) 85%, #ffffff);
+  --icon-pl: var(--main-lt);
+  --m1: #4e8cbe;
+  --m2: #2e6390;
+  --m3: #14344e;
+  --m4: #3f7cac;
+  --m5: #1f4e74;
+  --brass: #2e6390;
+  --brass-dim: #1f4666;
+  --brass-glow: color-mix(in srgb, var(--brass) 14%, transparent);
+  --line: color-mix(in srgb, var(--brass) 60%, transparent);
+  --panel-brass: #a6d0ee;
+  --panel-brass-dim: #052236;
+  --panel-brass-glow: color-mix(in srgb, #8fc3e8 14%, transparent);
+  --panel-line: #052236;
+  --field-line: #041d32;
+  --pop-line: #041d32;
+}
+
+html[data-side='B'] {
+  --pop-bg: #1d1915;
+  --pop-line: #4a4441;
+  --field: #1b1714;
+  --field-line: #4a4441;
+  --sel-rim: var(--panel-brass);
+  --plate-ink: color-mix(in srgb, var(--main-lt) 85%, #ffffff);
+  --icon-pl: var(--main-lt);
+  --m1: #7e766e;
+  --m2: #55504a;
+  --m3: #211d19;
+  --m4: #6a645c;
+  --m5: #3a342e;
+  --brass: #55504a;
+  --brass-dim: #35302b;
+  --brass-glow: color-mix(in srgb, var(--brass) 14%, transparent);
+  --line: color-mix(in srgb, var(--brass) 60%, transparent);
+  --panel-brass: #d6d1ca;
+  --panel-brass-dim: #131111;
+  --panel-brass-glow: color-mix(in srgb, #c9c3bc 14%, transparent);
+  --panel-line: #121110;
+  --field-line: #121110;
+  --pop-line: #121110;
+}
+
+/* Dimir (blue page, black side): the black side's GREY accent ramp vanishes on
+   the blue page (Stef, 12 Oct 2026) -- there every accent on the page goes
+   BLACK: rims, pills, banners, "+" buttons, section labels, hairlines. Ink on
+   a black fill stays the light --on-acc. Panels keep their own light accent;
+   Orzhov's cream page keeps the grey (readable there). */
+
+html[data-main='U'][data-side='B'] {
+  --m1: #2a2522;
+  --m2: #0e0a07;
+  --m3: #000000;
+  --m4: #1c1815;
+  --m5: #070605;
+  --brass: #0e0a07;
+  --brass-dim: #000000;
+  --brass-glow: color-mix(in srgb, #000000 22%, transparent);
+  --line: color-mix(in srgb, #0e0a07 75%, transparent);
+}
+
+/* ...but LETTERS in that accent would be as faint in black as in grey on the
+   dark blue: on the page they take the page's own light ink instead. */
+
+html[data-main='U'][data-side='B']
+  :is(
+    .home-rule-star,
+    .home-kicker,
+    .section-label,
+    .pin-pill,
+    .pin-pill > button:not(.bk-now),
+    .sr-tile .st-price,
+    .pair-cell .st-price,
+    .cap-note
+  ) {
+  color: var(--page-ink);
+}
+
+/* 1.6 (Stef, 14 Oct 2026): in Dimir the accent is black -- letters that took
+   it were black on the blue page. On the page (not inside a dark panel, where
+   the accent is light) they take the page's own light ink. Generated from
+   every rule that colours text with the accent; :where keeps it weak, so a
+   component's own stronger colour still wins. */
+
+html[data-main='U'][data-side='B']
+  :where(
+    .page-cap .cap-note,
+    .save-indicator.saving,
+    .tw-row .tw-eur,
+    .banner-tab.active,
+    .salt-meta,
+    .tw-poprow .tw-eur,
+    .tp-val,
+    .legality.warn .lg-head,
+    .cp-val,
+    .detail-h,
+    .oracle-cost,
+    .tag-chip,
+    .tag-chip button,
+    .cmb-res-btn,
+    .tag-drop-h,
+    .home-logo-txt,
+    .home-rule-star,
+    .hfm-k,
+    .home-kicker,
+    .home-callout,
+    .hf-n,
+    .fleet-stat,
+    .tile-fav,
+    .section-label,
+    .folder-crumb button,
+    .fp-crumb,
+    .br-info,
+    .br-h2,
+    .ci-foil-on,
+    .br-title b,
+    .br-h #brPriceLab,
+    .pp-foil,
+    .b-tab.active,
+    .lg-chip.warn,
+    .deck-meter-row .count,
+    .panel-h,
+    .cat-head .t,
+    .cat-price,
+    .dpb-val,
+    .vg-row .vr-p,
+    .want-in .wi-eur,
+    .ls-tile .ls-p,
+    .leg-chip.res,
+    .dk-tool.active,
+    .dl-winrate b,
+    .dl-leader-cat,
+    .dl-bracket,
+    .bkt-mini,
+    .ar-set,
+    .sc-hero-nm,
+    .sc-byline2 strong,
+    .sc-adm-price,
+    .sr-tile .st-price,
+    .pair-cell .st-price,
+    .pr-vals,
+    .hv-mov,
+    .budget-star .bs-pr,
+    .typal-label,
+    .col-tile .col-bnd,
+    .ci-nav-arrow,
+    #nselPop .cselect-opt.on,
+    .cselect-opt.sel,
+    .tag.dupe,
+    .rank-badge,
+    .curve-n,
+    .rules-text h4,
+    .dr-steps span.on,
+    .dr-dir,
+    .dr-clock,
+    .dr-ring-mid .dr-arrow,
+    .dr-lands b,
+    .dr-p.win,
+    .dr-past b,
+    .dr-champ,
+    .xt-mini,
+    .xt-ico,
+    #pasteDeckFileBtn.fb-lead,
+    .dpp-v,
+    .dpp-eur,
+    .modal-sheet h3,
+    .turn-hub .th-arrow,
+    .turn-hub .th-lbl,
+    .deckpick h4,
+    .pin-pill,
+    .pin-pill button,
+    .cr-title,
+    .cj-hero .cj-ico,
+    .cr-num,
+    .cr-jump,
+    .tr-eur,
+    .dfc-flip.flipped,
+    .edh-jump,
+    .reco-theme-banner,
+    .edh-rel-chip b,
+    .colfold-ico,
+    .trade-verdict.even,
+    .glog-frow .seg button.active,
+    .glog-tag,
+    .glog-line2,
+    .dl60-wr b,
+    .cotd-h,
+    .inspire-cta,
+    .back-h
+  ):not(
+    :where(
+        .app > main > .adv-toggle,
+        .app > main > .adv-panel,
+        .app > main > #colAdvBox,
+        .tw-row,
+        .brand-banner #capBack,
+        .brand-banner .ov-back,
+        .oracle-face,
+        .tag-editor,
+        .hfm-chip,
+        .home-fact,
+        .home-hero-banner,
+        .deck-tile,
+        .folder-tile,
+        .ghost-btn,
+        .bulk-textarea,
+        .panel-card,
+        .col-filter-input,
+        .col-select,
+        #bindersPop,
+        #fabMenu,
+        .pd-btn,
+        .pd-panel,
+        .searchbar input,
+        .appoint-sheet,
+        .appoint-row,
+        .pair-btns .add-btn,
+        .sp-jump-btn,
+        .adv-toggle,
+        .cmc-row select,
+        .cmc-row input,
+        .adv-row input[type='text'],
+        .adv-row select,
+        .sc-primer,
+        .sc-list,
+        .sr-tile .st-btns .add-btn,
+        .pr-rail,
+        .cselect-btn,
+        .cselect-panel,
+        .cselect-search,
+        .cselect-search input,
+        .bs-row select,
+        .settings-section,
+        .guild-opt,
+        .menu-pop,
+        .toast,
+        .dp-row,
+        .cr-bar input,
+        .tr-qty button,
+        .edh-jump,
+        .edh-rel-chip,
+        .glog-frow .seg button,
+        .glog-sel,
+        .glog-num,
+        .glog-chip,
+        .inspire-cta,
+        .life-card-v2,
+        .life-panel,
+        .cut-set,
+        .cut-tile,
+        .ls-ai
+      )
+      *
+  ) {
+  color: var(--page-ink);
+}
+
+html[data-side='R'] {
+  --pop-bg: #98171e;
+  --pop-line: #da4644;
+  --field: #94161d;
+  --field-line: #da4644;
+  --sel-rim: var(--panel-brass);
+  --plate-ink: color-mix(in srgb, var(--main-lt) 85%, #ffffff);
+  --icon-pl: var(--main-lt);
+  --m1: #c05840;
+  --m2: #8e2e1e;
+  --m3: #4e140c;
+  --m4: #a64432;
+  --m5: #6e2418;
+  --brass: #8e2e1e;
+  --brass-dim: #641e12;
+  --brass-glow: color-mix(in srgb, var(--brass) 14%, transparent);
+  --line: color-mix(in srgb, var(--brass) 60%, transparent);
+  --panel-brass: #f4b6a2;
+  --panel-brass-dim: #45080b;
+  --panel-brass-glow: color-mix(in srgb, #ee9e86 14%, transparent);
+  --panel-line: #40070a;
+  --field-line: #3c0608;
+  --pop-line: #3c0608;
+}
+
+html[data-side='G'] {
+  --pop-bg: #00532d;
+  --pop-line: #3b9068;
+  --field: #00512b;
+  --field-line: #3b9068;
+  --sel-rim: var(--panel-brass);
+  --plate-ink: color-mix(in srgb, var(--main-lt) 85%, #ffffff);
+  --icon-pl: var(--main-lt);
+  --m1: #4e8a5c;
+  --m2: #2f6e42;
+  --m3: #123a22;
+  --m4: #3f7c50;
+  --m5: #205432;
+  --brass: #2f6e42;
+  --brass-dim: #1f4a2c;
+  --brass-glow: color-mix(in srgb, var(--brass) 14%, transparent);
+  --line: color-mix(in srgb, var(--brass) 60%, transparent);
+  --panel-brass: #b4dab4;
+  --panel-brass-dim: #002814;
+  --panel-brass-glow: color-mix(in srgb, #9ccb9c 14%, transparent);
+  --panel-line: #002412;
+  --field-line: #00200f;
+  --pop-line: #00200f;
+}
+
+html {
+  --gold: #e8be58;
+  --gold-deep: #8a6a1e;
+}
+/* plain flat gold: page names and gold-faced buttons only */
+
+/* Headings/icons wear the OTHER theme color than their surroundings:
+   the side tint on the main ink, the main dark on side panels. */
+
+/* ── THE INK LAW ────────────────────────────────────────────────────────
+   Seven colours exist per guild and no more. Ink is always a variant of
+   MAIN; WHICH variant is decided by the lightness of the surface under it,
+   so a dark tone can never land on a dark tone -- the surface itself makes
+   the choice. Sub's variants dress the surfaces; main's variants carry the
+   ink; gold is for headings.
+   A hierarchy of three needs no eighth colour: the quieter levels are the
+   SAME ink at less than full strength, mixed toward its own ground.
+   The page has room for three levels. A sub plate is a mid tone with less
+   headroom in both directions, so it carries TWO and lets size do the rest
+   -- measured, not guessed: a third level there cannot clear 4.5:1. */
+
+/* An ACCENT is a PAIR of two of the seven, and they always sit opposite.
+   On the page the fill is the darker SUB and the ink the lighter one; on a
+   panel both flip. Naming both halves is what keeps them from colliding. */
+
+html {
+  --acc-fill: var(--panel-brass-dim);
+  --on-acc: var(--panel-brass);
+}
+
+html {
+  --page-ink: var(--main-lt);
+}
+
+html[data-main='W'] {
+  --page-ink: var(--main-dk);
+}
+/* the one light page */
+
+html[data-theme='light'] {
+  --page-ink: var(--main-dk);
+  --plate-ink: var(--main-dk);
+}
+
+html {
+  --ink-text: var(--page-ink);
+  --sub-text: color-mix(in srgb, var(--page-ink) 88%, var(--ink));
+  --sub-text-2: color-mix(in srgb, var(--page-ink) 76%, var(--ink));
+  --panel-text: var(--plate-ink);
+  --panel-sub: color-mix(in srgb, var(--plate-ink) 95%, var(--panel));
+  --panel-sub-2: color-mix(in srgb, var(--plate-ink) 95%, var(--panel));
+}
+
+html {
+  --head-ink: var(--panel-brass, var(--gold));
+}
+
+html[data-main='W'] {
+  --head-ink: var(--m3);
+}
+/* light ink: the side DARK accent carries contrast */
+
+/* Surfaces carry their OWN text. Every element painted with a surface token
+   (panel, field, pop-up — solid or in a gradient) re-points the text and
+   brass variables at the side's set, so a cream panel on a blue page gets
+   dark ink and dark gold while a blue panel on a cream page gets light ink
+   and bright gold — and every descendant that already says var(--ink-text)
+   / var(--sub-text) / var(--brass) / var(--parchment) follows without a
+   single rule of its own changing. The selector list is generated from the
+   stylesheet (every rule whose background uses --panel/--panel-2/--field/
+   --pop-bg, including gradients). */
+
+.app > main > .adv-toggle,
+.app > main > .adv-panel,
+.app > main > #colAdvBox,
+.tw-row,
+.brand-banner #capBack,
+.brand-banner .ov-back,
+.oracle-face,
+.tag-editor,
+.hfm-chip,
+.home-fact,
+.home-hero-banner,
+.deck-tile,
+.folder-tile,
+.ghost-btn,
+.bulk-textarea,
+.panel-card,
+.col-filter-input,
+.col-select,
+#bindersPop,
+#fabMenu,
+.pd-btn,
+.pd-panel,
+.searchbar input,
+.appoint-sheet,
+.appoint-row,
+.pair-btns .add-btn,
+.sp-jump-btn,
+.adv-toggle,
+.cmc-row select,
+.cmc-row input,
+.adv-row input[type='text'],
+.adv-row select,
+.sc-primer,
+.sc-list,
+.sr-tile .st-btns .add-btn,
+.pr-rail,
+.cselect-btn,
+.cselect-panel,
+.cselect-search,
+.cselect-search input,
+.bs-row select,
+.settings-section,
+.guild-opt,
+.menu-pop,
+.toast,
+.dp-row,
+.cr-bar input,
+.tr-qty button,
+.edh-jump,
+.edh-rel-chip,
+.glog-frow .seg button,
+.glog-sel,
+.glog-num,
+.glog-chip,
+.inspire-cta,
+.life-card-v2,
+.life-panel,
+.cut-set,
+.cut-tile,
+.ls-ai {
+  --ink-text: var(--panel-text);
+  --sub-text: var(--panel-sub);
+  --sub-text-2: var(--panel-sub-2);
+  --brass: var(--panel-brass);
+  --brass-dim: var(--panel-brass-dim);
+  --brass-glow: var(--panel-brass-glow);
+  --parchment: var(--panel-parchment);
+  --parchment-dim: var(--panel-parchment-dim);
+  --line: var(--panel-line);
+  --head-ink: var(--plate-ink);
+  --acc-fill: var(--panel-brass);
+  --on-acc: var(--panel-brass-dim);
+}
+
+.app > main > .adv-toggle,
+.app > main > .adv-panel,
+.app > main > #colAdvBox,
+.tw-row,
+.brand-banner #capBack,
+.brand-banner .ov-back,
+.oracle-face,
+.tag-editor,
+.home-fact,
+.home-hero-banner,
+.deck-tile,
+.folder-tile,
+.panel-card,
+#bindersPop,
+#fabMenu,
+.pd-panel,
+.appoint-sheet,
+.sp-jump-btn,
+.sc-primer,
+.sc-list,
+.pr-rail,
+.cselect-panel,
+.cselect-search,
+.settings-section,
+.menu-pop,
+.life-card-v2,
+.life-panel {
+  color: var(--ink-text);
+}
+
+/* Gold, thicker: every Cinzel heading and gold label gets a hairline stroke
+   of its own colour (the loaded weights top out at 700), and gold rims are
+   1.5px instead of 1px. */
+
+.tb-titles .t1,
+.brand-txt,
+.page-cap .cap-note,
+.save-indicator.saving,
+.tw-row .tw-eur,
+.salt-meta,
+.tw-poprow .tw-eur,
+.tp-val,
+.legality.warn .lg-head,
+.lg-item.warn .lg-label::before,
+.cp-val,
+.detail-h,
+.oracle-cost,
+.tag-drop-h,
+.home-logo-txt,
+.home-rule-star,
+.home-points li::before,
+.home-desc strong,
+.hfm-k,
+.home-kicker,
+.home-callout,
+.hf-n,
+.fleet-stat,
+.folder-face,
+.section-label,
+.b-tab.active,
+.deck-meter-row .count,
+.panel-h,
+.cat-head .t,
+.cat-price,
+.dpb-val,
+.ls-tile .ls-p,
+.dl-winrate b,
+.dl-leader-cat,
+.dl-bracket,
+.bkt-mini,
+.ar-set,
+.sc-hero-nm,
+.sc-byline2 strong,
+.sc-adm-price,
+.sr-tile .st-price,
+.pair-cell .st-price,
+.sr-tile .st-btns .add-btn:not(:disabled):hover,
+.pr-vals,
+.hv-mov,
+.budget-star .bs-pr,
+.typal-label,
+.rank-badge,
+.curve-n,
+.rules-text h4,
+.guild-cur,
+.modal-sheet h3,
+.life-toolbar button.active,
+.turn-hub .th-arrow,
+.turn-hub .th-lbl,
+.deckpick h4,
+.cr-title,
+.cr-num,
+.tr-eur,
+.reco-theme-banner,
+.edh-rel-chip b,
+.colfold-ico,
+.trade-verdict.even,
+.glog-line2,
+.cotd-h,
+.back-h,
+.life-panel h4,
+.folder-name,
+.deck-tile .dt-bracket {
+  -webkit-text-stroke: 0;
+  paint-order: stroke fill;
+  background: linear-gradient(var(--head-ink), var(--head-ink));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Gold text that sits on its OWN background (buttons, chips, tiles) cannot
+   take the clipped gradient without erasing that background — it gets the
+   metal read from an embossed shadow pair instead. Both lists are generated
+   from every color:var(--brass) rule in this sheet. */
+
+.icon-btn:hover,
+.banner-tab:hover,
+.banner-tab.active,
+.otag-pop button:hover,
+.searchbar .otag-pop button:hover,
+.tag-chip,
+.tag-chip button,
+.cmb-res-btn,
+.tag-drop button:active,
+.tag-sugg:hover,
+.inline-link,
+.tile-fav,
+.folder-crumb button,
+.fp-crumb,
+.pp-foil,
+.lg-chip.warn,
+.leg-chip.res,
+.dk-tool.active,
+.tile-info:active,
+.ci-nav-arrow,
+.cselect-opt.sel,
+.tag.dupe,
+.add-btn,
+.ban-item:hover,
+.guild-opt.sel,
+.life-toolbar button:hover,
+.pin-pill,
+.pin-pill button,
+.cr-jump,
+.edh-jump,
+.glog-frow .seg button.active,
+.glog-tag,
+.inspire-cta,
+.undo-btn:hover,
+.hist-more {
+  text-shadow:
+    0 1px 0 rgba(90, 55, 10, 0.55),
+    0 -0.5px 0 rgba(255, 244, 205, 0.45);
+}
+
+/* On the cream (white-main) guilds the metallic sheen has nothing to shine
+   against — those pages keep solid dark gold. */
+
+html[data-main='W'] .tb-titles .t1,
+html[data-main='W'] .brand-txt,
+html[data-main='W'] .page-cap .cap-note,
+html[data-main='W'] .save-indicator.saving,
+html[data-main='W'] .tw-row .tw-eur,
+html[data-main='W'] .salt-meta,
+html[data-main='W'] .tw-poprow .tw-eur,
+html[data-main='W'] .tp-val,
+html[data-main='W'] .legality.warn .lg-head,
+html[data-main='W'] .lg-item.warn .lg-label::before,
+html[data-main='W'] .cp-val,
+html[data-main='W'] .detail-h,
+html[data-main='W'] .oracle-cost,
+html[data-main='W'] .tag-drop-h,
+html[data-main='W'] .home-logo-txt,
+html[data-main='W'] .home-rule-star,
+html[data-main='W'] .home-points li::before,
+html[data-main='W'] .home-desc strong,
+html[data-main='W'] .hfm-k,
+html[data-main='W'] .home-kicker,
+html[data-main='W'] .home-callout,
+html[data-main='W'] .hf-n,
+html[data-main='W'] .fleet-stat,
+html[data-main='W'] .folder-face,
+html[data-main='W'] .section-label,
+html[data-main='W'] .b-tab.active,
+html[data-main='W'] .deck-meter-row .count,
+html[data-main='W'] .panel-h,
+html[data-main='W'] .cat-head .t,
+html[data-main='W'] .cat-price,
+html[data-main='W'] .dpb-val,
+html[data-main='W'] .ls-tile .ls-p,
+html[data-main='W'] .dl-winrate b,
+html[data-main='W'] .dl-leader-cat,
+html[data-main='W'] .dl-bracket,
+html[data-main='W'] .bkt-mini,
+html[data-main='W'] .ar-set,
+html[data-main='W'] .sc-hero-nm,
+html[data-main='W'] .sc-byline2 strong,
+html[data-main='W'] .sc-adm-price,
+html[data-main='W'] .sr-tile .st-price,
+html[data-main='W'] .pair-cell .st-price,
+html[data-main='W'] .sr-tile .st-btns .add-btn:not(:disabled):hover,
+html[data-main='W'] .pr-vals,
+html[data-main='W'] .hv-mov,
+html[data-main='W'] .budget-star .bs-pr,
+html[data-main='W'] .typal-label,
+html[data-main='W'] .rank-badge,
+html[data-main='W'] .curve-n,
+html[data-main='W'] .rules-text h4,
+html[data-main='W'] .guild-cur,
+html[data-main='W'] .modal-sheet h3,
+html[data-main='W'] .life-toolbar button.active,
+html[data-main='W'] .turn-hub .th-arrow,
+html[data-main='W'] .turn-hub .th-lbl,
+html[data-main='W'] .deckpick h4,
+html[data-main='W'] .cr-title,
+html[data-main='W'] .cr-num,
+html[data-main='W'] .tr-eur,
+html[data-main='W'] .reco-theme-banner,
+html[data-main='W'] .edh-rel-chip b,
+html[data-main='W'] .colfold-ico,
+html[data-main='W'] .trade-verdict.even,
+html[data-main='W'] .glog-line2,
+html[data-main='W'] .cotd-h,
+html[data-main='W'] .back-h,
+html[data-main='W'] .life-panel h4,
+html[data-main='W'] .folder-name,
+html[data-main='W'] .deck-tile .dt-bracket {
+  background: none;
+  -webkit-text-fill-color: var(--head-ink);
+  -webkit-text-stroke: 0;
+}
+/* light ink: headings wear the side dark accent -- the other theme color */
+
+html[data-mode='commander'][data-theme='light'] {
+  --ink: #fbf3f1;
+  --ink-2: #f3e2de;
+  --line: #dcc0bc;
+}
+
+html[data-theme='light'] {
+  --ink: #f2ecda;
+  --ink-2: #ffffff;
+  --ink-3: #fbf7ea;
+  --panel: #ffffff;
+  --panel-2: #f5efdc;
+  --brass: #93711f;
+  --brass-dim: #6e5518;
+  --brass-glow: rgba(147, 113, 31, 0.12);
+  --parchment: #2a2118;
+  --parchment-dim: #4a3d2c;
+  --danger: #a23a3f;
+  --success: #3d6b4e;
+  --line: rgba(147, 113, 31, 0.3);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  touch-action: pan-x pan-y;
+}
+
+button,
+input,
+select,
+textarea,
+.sr-tile,
+.vg-card,
+.tap-zone,
+.dmg-overlay,
+.chip {
+  touch-action: manipulation;
+}
+
+/* overscroll-behavior-y on BOTH: Chrome grants pull-to-refresh based on the
+   root scroller (html) — the old body-only guard never applied, so a swipe
+   down from the top reloaded the whole app. `none` also kills the glow. */
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--ink);
+  overflow-x: clip;
+  max-width: 100%;
+  overscroll-behavior-y: none;
+  overflow-anchor: none;
+}
+/* clip, not hidden: hidden silently kills position:sticky. overflow-anchor off: the app runs its OWN scroll anchoring for streamed grids -- the browser's native one corrected the same inserts a second time, which was the scroll jolt. */
+
+body {
+  font-family: 'Inter', sans-serif;
+  color: var(--ink-text);
+  background: transparent;
+  min-height: 100vh;
+  overscroll-behavior-y: none;
+  transition: background 0.2s;
+}
+
+html[data-mode='commander'] body {
+  background: transparent;
+}
+
+/* The colour-to-black depth fade lives on a FIXED layer glued to the
+   viewport: scrolling moves the content over it, never the fade itself,
+   so the gradient can't visibly restart anywhere on any page. */
+
+/* The whole palette read a touch too bright on device — a fixed 7% black
+   veil above everything dims every colour uniformly (theme, art, gold)
+   without touching a single token. Its own fixed layer, so no filter-on-
+   body containing-block trap for the fixed bars. */
+
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.12);
+}
+
+html {
+  --page-shade: 0.35;
+  --page-backdrop:
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, var(--page-shade)) 100%),
+    radial-gradient(
+      ellipse at 20% -10%,
+      color-mix(in srgb, var(--brass) 9%, transparent),
+      transparent 45%
+    ),
+    radial-gradient(ellipse at 100% 0%, var(--glow), transparent 40%), var(--ink);
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--page-backdrop);
+}
+
+.app {
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+button {
+  font-family: 'Inter';
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 3px;
+}

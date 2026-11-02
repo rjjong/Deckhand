@@ -16,8 +16,8 @@ const { handler: news } = createRequire(import.meta.url)('../netlify/functions/n
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const STATIC = new Map([
   ['/', 'index.html'], ['/index.html', 'index.html'], ['/sw.js', 'sw.js'],
-  ['/navigation.css', 'navigation.css'],
-  ['/layout.css', 'layout.css'],
+  ...['app.js', 'app.css', 'app.js.map', 'app.css.map', 'images/deckhand-badge.webp']
+    .map(name => ['/assets/' + name, 'public/assets/' + name]),
   ['/manifest.json', 'manifest.json'], ['/version.json', 'version.json'],
   ['/favicon.ico', 'icon-192.png'],
   ...['icon-192.png', 'icon-512.png', 'icon-512-maskable.png', 'apple-touch-icon.png',
@@ -26,7 +26,7 @@ const STATIC = new Map([
 ]);
 const MIME = { html: 'text/html; charset=utf-8', css: 'text/css; charset=utf-8', js: 'text/javascript; charset=utf-8',
   json: 'application/json; charset=utf-8', txt: 'text/plain; charset=utf-8',
-  png: 'image/png', gz: 'application/gzip' };
+  png: 'image/png', webp: 'image/webp', map: 'application/json; charset=utf-8', gz: 'application/gzip' };
 
 function json(res, status, body, headers = {}) {
   res.writeHead(status, { 'content-type': MIME.json, 'cache-control': 'no-store',

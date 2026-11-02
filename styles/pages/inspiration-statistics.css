@@ -1,0 +1,206 @@
+/* ---------- inspiration page ---------- */
+
+.chip-label {
+  font-size: 11px;
+  color: var(--sub-text);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin: 4px 0 6px;
+}
+
+.chip-row {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin-bottom: 6px;
+}
+
+.chip-row::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  flex: 0 0 auto;
+  background: var(--ink-2);
+  border: 2px solid var(--line);
+  color: var(--sub-text);
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.chip.active {
+  background: var(--acc-fill);
+  color: var(--on-acc);
+  border-color: var(--brass);
+  font-weight: 700;
+}
+
+.rank-badge {
+  font-size: 10px;
+  color: var(--brass);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ---------- stats ---------- */
+
+.curve-panel {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 4px;
+  height: 110px;
+}
+
+.curve-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+}
+
+.curve-bar {
+  width: 70%;
+  background: linear-gradient(180deg, var(--brass), var(--brass-dim));
+  border-radius: 3px 3px 0 0;
+  min-height: 2px;
+}
+
+.curve-n {
+  font-size: 11px;
+  color: var(--brass);
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 3px;
+  height: 12px;
+}
+
+.curve-lbl {
+  font-size: 10.5px;
+  color: var(--sub-text);
+  margin-top: 2px;
+}
+
+.color-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cb-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cb-row .lbl {
+  width: 20px;
+}
+
+.cb-row .track {
+  flex: 1;
+  height: 8px;
+  background: var(--ink-2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.cb-row .fill {
+  height: 100%;
+}
+
+.cb-row .n {
+  width: 22px;
+  text-align: right;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--sub-text);
+}
+
+.type-bars .cb-row .lbl {
+  width: 90px;
+  font-size: 12.5px;
+  color: var(--sub-text);
+  flex: 0 0 auto;
+  text-align: left;
+}
+
+/* ---------- primer / rules ---------- */
+
+.rules-text {
+  font-size: 14px;
+  color: var(--parchment-dim);
+  line-height: 1.7;
+}
+
+.rules-text h4 {
+  font-family: 'Cinzel', serif;
+  color: var(--brass);
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin: 16px 0 6px;
+}
+
+.rules-text h4:first-child {
+  margin-top: 0;
+}
+
+.rules-text ul {
+  margin: 4px 0;
+  padding-left: 18px;
+}
+
+.rules-text p {
+  margin: 6px 0;
+}
+
+/* Bottom-up: the first name (A) sits bottom-left, the list climbs upward;
+   each list's heading sits at its foot, nearest the format's name. */
+
+.banlist-grid {
+  display: flex;
+  flex-wrap: wrap-reverse;
+  column-gap: 10px;
+  margin-top: 6px;
+}
+
+.banlist-grid .ban-item {
+  width: calc(50% - 5px);
+  box-sizing: border-box;
+}
+
+.acc-up [data-banbox] > div:has(> .banlist-grid) {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.ban-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--sub-text);
+  font-size: 13px;
+  padding: 4px 6px;
+  margin-bottom: 2px;
+  border-radius: 6px;
+  cursor: pointer;
+  break-inside: avoid;
+  font-family: 'Inter';
+}
+
+.ban-item:hover {
+  background: var(--brass-glow);
+  color: var(--brass);
+}
+
+.ban-item:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

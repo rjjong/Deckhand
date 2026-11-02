@@ -1,0 +1,332 @@
+/* ---------- life counter v2 ---------- */
+
+.player-count {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.player-count button {
+  flex: 1;
+  background: var(--ink-2);
+  border: 2px solid var(--line);
+  color: var(--sub-text);
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.player-count button.active {
+  background: var(--acc-fill);
+  color: var(--on-acc);
+  border-color: var(--brass);
+  font-weight: 700;
+}
+
+.life-toolbar {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+}
+
+.life-toolbar::-webkit-scrollbar {
+  display: none;
+}
+
+.life-toolbar button {
+  flex: 0 0 auto;
+  background: var(--ink-2);
+  border: 2px solid var(--line);
+  color: var(--sub-text);
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.life-toolbar button:hover,
+.life-toolbar button.active {
+  border-color: var(--brass);
+  color: var(--brass);
+}
+
+.life-grid-v2 {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 1fr;
+  gap: 12px;
+  margin-top: 4px;
+  height: calc(100dvh - 118px - var(--nav-h) - env(safe-area-inset-bottom));
+  min-height: 0;
+}
+
+.life-grid-v2.single-col {
+  grid-template-columns: 1fr;
+  min-height: 0;
+}
+
+.life-card-v2.spin-active {
+  box-shadow:
+    0 0 0 3px #fff,
+    0 0 34px 8px rgba(255, 255, 255, 0.55);
+  filter: brightness(1.35);
+  z-index: 5;
+}
+
+.life-card-v2.active-turn {
+  box-shadow:
+    0 0 0 2px var(--brass),
+    0 0 20px 3px color-mix(in srgb, var(--brass) 45%, transparent);
+}
+
+.turn-badge {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  background: var(--acc-fill);
+  color: var(--on-acc);
+  border: none;
+  border-radius: 12px;
+  padding: 3px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.turn-badge:active {
+  filter: brightness(0.9);
+}
+
+.life-cell {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius);
+}
+
+/* central turn hub — a square carved out of the middle of the table */
+
+.life-grid-wrap {
+  position: relative;
+}
+
+.lval-row {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  pointer-events: none;
+}
+
+.ldelta {
+  width: 58px;
+  flex: 0 0 auto;
+  font-size: 26px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  opacity: 0;
+  transition: opacity 0.25s;
+  text-align: center;
+  pointer-events: none;
+}
+
+.ldelta.show {
+  opacity: 0.95;
+}
+
+.ldelta.pop {
+  animation: deltaPop 0.18s ease;
+}
+
+.ldelta.minus {
+  color: #ff9d9d;
+  text-align: right;
+  padding-right: 4px;
+}
+
+.ldelta.plus {
+  color: #a7ecb4;
+  text-align: left;
+  padding-left: 4px;
+}
+
+@keyframes deltaPop {
+  from {
+    transform: scale(0.7);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.turn-hub {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 8;
+  width: 92px;
+  height: 92px;
+  border-radius: 16px;
+  background: linear-gradient(160deg, var(--ink-2), var(--ink-3));
+  border: 2.5px solid var(--brass);
+  box-shadow:
+    0 6px 22px rgba(0, 0, 0, 0.55),
+    inset 0 0 14px color-mix(in srgb, var(--brass) 18%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* Rounded plate behind the hub, in the table's own background color — it sits
+   over the sharp inner corners of the notch cuts so the carved opening reads
+   with the same rounded corners as the player cards themselves. */
+
+.turn-hub::before {
+  content: '';
+  position: absolute;
+  inset: -14px;
+  z-index: -1;
+  background: var(--ink);
+  border-radius: 18px;
+}
+
+.turn-hub:active {
+  filter: brightness(1.15);
+}
+
+.turn-hub .th-arrow {
+  font-size: 24px;
+  line-height: 1;
+  color: var(--brass);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+  transition: transform 0.35s cubic-bezier(0.4, 1.5, 0.5, 1);
+}
+
+.turn-hub .th-num {
+  font-family: 'Cinzel', serif;
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--ink-text);
+  line-height: 1.05;
+}
+
+.turn-hub .th-lbl {
+  font-size: 10.5px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--brass);
+  font-weight: 600;
+}
+
+.turn-hub.idle .th-arrow {
+  color: var(--sub-text-2);
+}
+
+/* square notches cut from the center-facing corner/edge of each player rectangle */
+
+.life-cell.notch-br {
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - 46px),
+    calc(100% - 46px) calc(100% - 46px),
+    calc(100% - 46px) 100%,
+    0 100%
+  );
+}
+
+.life-cell.notch-bl {
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% 100%,
+    46px 100%,
+    46px calc(100% - 46px),
+    0 calc(100% - 46px)
+  );
+}
+
+.life-cell.notch-tr {
+  clip-path: polygon(
+    0 0,
+    calc(100% - 46px) 0,
+    calc(100% - 46px) 46px,
+    100% 46px,
+    100% 100%,
+    0 100%
+  );
+}
+
+.life-cell.notch-tl {
+  clip-path: polygon(46px 0, 100% 0, 100% 100%, 0 100%, 0 46px, 46px 46px);
+}
+
+.life-cell.notch-b {
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% 100%,
+    calc(50% + 46px) 100%,
+    calc(50% + 46px) calc(100% - 42px),
+    calc(50% - 46px) calc(100% - 42px),
+    calc(50% - 46px) 100%,
+    0 100%
+  );
+}
+
+.life-cell.notch-t {
+  clip-path: polygon(
+    0 0,
+    calc(50% - 46px) 0,
+    calc(50% - 46px) 42px,
+    calc(50% + 46px) 42px,
+    calc(50% + 46px) 0,
+    100% 0,
+    100% 100%,
+    0 100%
+  );
+}
+
+.life-cell.notch-r {
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(50% - 46px),
+    calc(100% - 42px) calc(50% - 46px),
+    calc(100% - 42px) calc(50% + 46px),
+    100% calc(50% + 46px),
+    100% 100%,
+    0 100%
+  );
+}
+
+.life-cell.notch-l {
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% 100%,
+    0 100%,
+    0 calc(50% + 46px),
+    42px calc(50% + 46px),
+    42px calc(50% - 46px),
+    0 calc(50% - 46px)
+  );
+}

@@ -1,0 +1,1536 @@
+/* ---------- chrome ---------- */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ink) 97%, transparent),
+    color-mix(in srgb, var(--ink) 92%, transparent)
+  );
+  backdrop-filter: blur(8px);
+  border-bottom: 2px solid var(--line);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+}
+
+.tb-titles {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  min-width: 0;
+  flex: 1;
+}
+
+#printOverlay main > * {
+  flex: 0 0 auto;
+}
+
+#crOverlay .ov-cap {
+  order: 1;
+}
+
+#crOverlay .ov-nav {
+  order: 4;
+  position: static;
+  flex: 0 0 auto;
+}
+
+/* The judge and rules read from the top; only the body scrolls. */
+
+#crOverlay #crBody {
+  order: 2;
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+#crOverlay .cr-toc {
+  flex-direction: column;
+}
+
+#crOverlay #crBody > * {
+  flex: 0 0 auto;
+}
+
+#crOverlay #crBody > .hint:only-child {
+  margin: auto 14px;
+  text-align: center;
+}
+
+#crOverlay .cr-bar {
+  order: 3;
+  border-top: 2px solid var(--line);
+  padding-bottom: 10px;
+}
+
+.tb-titles .t1 {
+  font-family: 'Cinzel Decorative', 'Cinzel', serif;
+  font-size: 15.5px;
+  color: var(--brass);
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tb-titles .t1.name2 {
+  font-size: 14px;
+  line-height: 1.25;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.reco-admiral .ra-hint {
+  font-size: 12.5px;
+  color: var(--sub-text);
+  margin-top: 8px;
+  letter-spacing: 0.3px;
+}
+
+.reco-themes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin: 0 0 10px;
+}
+
+.rt-chip {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid color-mix(in srgb, var(--brass) 35%, transparent);
+  color: var(--ink-text);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.rt-chip.on {
+  background: var(--brass);
+  border-color: var(--brass);
+  color: #1a1208;
+  font-weight: 700;
+}
+
+.tb-titles .t2 {
+  font-size: 11.5px;
+  color: var(--sub-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.icon-btn {
+  background: none;
+  border: 2px solid var(--line);
+  color: var(--plate-ink, var(--main-lt));
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.icon-btn svg {
+  width: 21px;
+  height: 21px;
+}
+
+.dl-mini-add svg {
+  width: 17px;
+  height: 17px;
+}
+
+.dk-tool svg,
+.dk-arr svg {
+  width: 19px;
+  height: 19px;
+}
+
+/* Gold-on-purple buttons: the stroke icons are metallic gold (a light catch
+   above, a bronze shade below) and the purple lives in the button PLATES —
+   every icon button carries the app's deep purple as its ground. */
+
+.dk-tool,
+.dk-arr,
+.dk-count {
+  color: var(--icon-pl);
+}
+
+.compass {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.banner-tab svg,
+.icon-btn svg,
+.dk-tool svg,
+.dl-bridge-btns .bi svg,
+.compass svg,
+#lifeCogBtn svg,
+.home-search-btn svg,
+.in-chev svg {
+  color: var(--brass);
+}
+
+/* Icons grew a quarter, but their LINES did not: the 24-unit icons carry
+   stroke-width="1.8" as an attribute, and 1.8 ÷ 1.25 = 1.44 set from CSS
+   (which outranks the attribute) keeps the drawn weight identical. */
+
+.banner-tab svg *,
+.icon-btn svg *,
+.dk-tool svg *,
+.dl-bridge-btns .bi svg *,
+#lifeCogBtn svg *,
+.home-search-btn svg *,
+.in-chev svg *,
+#dockSearchBtn svg *,
+.ib svg * {
+  stroke-width: 1.44;
+}
+
+.icon-btn:hover {
+  border-color: var(--brass);
+  color: var(--brass);
+}
+
+.compass {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  cursor: pointer;
+  border: 2px solid transparent;
+  border-radius: 11px;
+  padding: 1px;
+  box-sizing: content-box;
+}
+
+.compass.active {
+  background: var(--brass-glow);
+  border-color: var(--brass);
+}
+
+.compass svg {
+  width: 25px;
+  height: 25px;
+  animation: none;
+}
+
+.compass .compass-badge {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 50%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .compass svg {
+    animation: none;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.brand-txt {
+  pointer-events: none;
+  font-family: 'Cinzel Decorative', 'Cinzel', serif;
+  font-size: 15px;
+  letter-spacing: 0.6px;
+  color: var(--brass);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1 1 auto;
+  cursor: default;
+}
+
+.page-cap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ink);
+  border-bottom: 2px solid var(--line);
+  padding: calc(env(safe-area-inset-top) + 6px) 46px 6px;
+  box-sizing: border-box;
+  min-height: 44px;
+}
+
+.page-cap .brand-txt {
+  text-align: center;
+  flex: 0 1 auto;
+  font-size: 18px;
+}
+
+/* Page names are the exception: gold everywhere, and BOLD for legibility. */
+
+.brand-txt {
+  color: var(--gold);
+  font-weight: 800;
+}
+
+html[data-main] .page-cap .brand-txt,
+html[data-main] .ov-cap .brand-txt,
+html[data-main] .overlay .topbar .brand-txt {
+  background: none;
+  -webkit-text-fill-color: var(--gold);
+}
+
+/* A white-ink scheme paints that cap in pale parchment, where flat gold all
+   but disappears — the deep gold keeps the page name legible there. */
+
+html[data-main='W'] .page-cap .brand-txt,
+html[data-main='W'] .ov-cap .brand-txt,
+html[data-main='W'] .overlay .topbar .brand-txt {
+  color: var(--main-dk);
+  -webkit-text-fill-color: var(--main-dk);
+}
+
+/* Back lives on the nav bar now, between Home and the tabs. On very narrow
+   screens the extra button squeezes the row — tighten the gaps so all five
+   tabs stay on screen. */
+
+@media (max-width: 379px) {
+  .brand-banner {
+    gap: 4px;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+  .banner-tabs {
+    gap: 5px;
+  }
+}
+
+.page-cap .cap-note {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11.5px;
+  color: var(--brass);
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+}
+
+.page-cap:has(.cap-note) .brand-txt,
+.ov-cap:has(.cap-note) .brand-txt,
+.overlay .topbar:has(.cap-note) .brand-txt,
+.overlay .topbar:has(#csPrice) .brand-txt {
+  max-width: calc(100% - 170px);
+}
+
+.app > main {
+  padding-top: calc(56px + env(safe-area-inset-top)) !important;
+}
+
+.brand-txt.two-line {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.2;
+  align-self: center;
+  max-height: 44px;
+  word-break: keep-all;
+  overflow-wrap: normal;
+}
+
+.brand-txt.editable {
+  pointer-events: auto;
+  cursor: pointer;
+  text-decoration: underline dotted color-mix(in srgb, var(--brass) 40%, transparent);
+  text-underline-offset: 4px;
+}
+
+.page-cap .brand-txt.swap {
+  animation: brandSwap 0.3s ease;
+}
+
+@keyframes brandSwap {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-cap .brand-txt {
+    animation: none;
+  }
+}
+
+.spacer {
+  flex: 1;
+  min-width: 0;
+}
+
+.save-indicator {
+  font-size: 11px;
+  color: var(--sub-text-2);
+  white-space: nowrap;
+  font-family: 'JetBrains Mono', monospace;
+  flex: 0 0 auto;
+}
+
+.save-indicator.saving {
+  color: var(--brass);
+}
+
+main {
+  flex: 1;
+  padding: 16px 16px calc(var(--nav-h) + 30px + env(safe-area-inset-bottom));
+}
+
+/* ---------- inverted controls: search bars & filter toggles live at the
+   BOTTOM, thumb country — moved by flex ORDER, so the DOM (and all wiring)
+   stays untouched. A zero-height spacer with margin-top:auto pushes the
+   cluster to the screen's bottom edge even on short pages; sticky keeps it
+   pinned above the nav while the results scroll beneath. Overlay sheets
+   keep their own layouts (.app > main only). ---------- */
+
+.app > main {
+  display: flex;
+  flex-direction: column;
+}
+
+/* FULLY REVERSED mains: Extras (credits at the top, Life Counter at the
+   thumb) and My Stuff (collection/fleet on top, folders and decks at the
+   bottom by the filter). The .app>main compound (0-1-1) beat a bare class,
+   which is why the earlier .settings-main flip never rendered — these
+   selectors out-rank it. Reversed mains pack at the bottom natively, so
+   the pusher spacer must NOT apply there (it would float content up). */
+
+.app > main.settings-main,
+.app > main:has(> div > #deckFilter) {
+  flex-direction: column-reverse;
+}
+
+.app > main:not(.settings-main):not(:has(> div > #deckFilter))::before {
+  content: '';
+  order: 97;
+  margin-top: auto;
+}
+
+.app > main > .searchbar,
+.app > main > div:has(> #deckFilter) {
+  order: 100;
+  position: sticky;
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
+  z-index: 36;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ink) 97%, transparent),
+    color-mix(in srgb, var(--ink) 92%, transparent)
+  );
+  backdrop-filter: blur(8px);
+  border-top: 2px solid var(--line);
+  margin: 8px -16px 0 !important;
+  padding: 10px 16px;
+}
+
+.app > main > .adv-toggle,
+.app > main > div:has(> #colAdvToggle) {
+  order: 99;
+  position: sticky;
+  bottom: calc(var(--nav-h) + 64px + env(safe-area-inset-bottom));
+  z-index: 36;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ink) 97%, transparent),
+    color-mix(in srgb, var(--ink) 92%, transparent)
+  );
+  backdrop-filter: blur(8px);
+  border-top: 2px solid var(--line);
+  margin: 0 -16px !important;
+  padding: 8px 16px;
+}
+
+/* The Advanced-filters bar is the BUTTON itself — it keeps its field face
+   (the cross-fleet blue in Commander mode), not the page ink. */
+
+.app > main > .adv-toggle {
+  background: var(--field);
+  border-color: var(--field-line);
+  border-top: 1.5px solid var(--field-line);
+  display: block;
+  width: auto;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  border-radius: 10px;
+}
+
+/* The filter panels are DROP-UP sheets now: fixed above the toggle+search
+   stack, growing upward with their own scroll. Dropdowns INSIDE a sheet
+   expand in flow (a scrolling ancestor would clip absolute panels). */
+
+.app > main > .adv-panel,
+.app > main > #advSlot > .adv-panel,
+.app > main > #colAdvBox {
+  order: 98;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--nav-h) + 120px + env(safe-area-inset-bottom));
+  max-height: 56vh;
+  overflow-y: auto;
+  z-index: 37;
+  display: flex;
+  flex-direction: column-reverse; /* flipped fields AND starts scrolled at the bottom */
+  background: var(--panel);
+  border-top: 2px solid var(--line);
+  box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.5);
+  padding: 12px 16px;
+  margin: 0 !important;
+  border-radius: 14px 14px 0 0;
+}
+
+.adv-panel .cselect,
+#colAdvBox .cselect {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+/* The floating loupe: a real foot row (so at rest it covers nothing), sticky
+   to the bottom edge of the scrolling sheet. The row itself lets taps fall
+   through; only the button catches them. Explicit margins -- no inherited
+   adv-row spacing. */
+
+.adv-go-row {
+  position: sticky;
+  bottom: 0;
+  z-index: 8;
+  flex: 0 0 auto;
+  height: 48px;
+  margin: 0 !important;
+  padding: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  pointer-events: none;
+}
+
+.adv-go {
+  pointer-events: auto;
+  flex: none;
+  width: 46px;
+  height: 46px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-image: linear-gradient(var(--gold), var(--gold));
+  color: #241a04;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+}
+
+.adv-go svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 2.6;
+}
+
+/* The deck filter scrolls with the PAGE, whose foot is under the dock stack. */
+
+.df-compact > .adv-go-row {
+  bottom: calc(var(--nav-h) + 122px + env(safe-area-inset-bottom));
+}
+
+/* 1.35: while typing in a field the gold button stays in its own spot at
+   the foot instead of floating over the labels above the keyboard */
+
+/* 1.37 (phone): the gold button floats at the foot again (Stef: floating
+   over text is fine), and the "Show everything" row stays put beside it --
+   the filters scroll behind both. */
+
+/* 1.35: "Show everything" starts where the fields start, so the gold
+   button rises into the free space beside it (phone, bottom-up) */
+
+.adv-panel > .adv-showall {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) auto;
+  column-gap: 10px;
+}
+
+.adv-panel > .adv-showall > div:first-child {
+  grid-column: 2;
+}
+
+.adv-panel > .adv-showall > .toggle-switch {
+  grid-column: 3;
+}
+
+.adv-row > label .info-i {
+  margin-left: 5px;
+  width: 16px;
+  height: 16px;
+  font-size: 11px;
+}
+
+.adv-panel .cselect-panel,
+#colAdvBox .cselect-panel {
+  position: static;
+  margin: 0 0 4px;
+  max-height: 240px;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.adv-panel .cselect-panel .cselect-opt,
+#colAdvBox .cselect-panel .cselect-opt {
+  flex: 0 0 auto;
+}
+
+.adv-panel .cselect-panel .cselect-search,
+#colAdvBox .cselect-panel .cselect-search {
+  top: auto;
+  bottom: 0;
+  border-bottom: none;
+  border-top: 1.5px solid var(--pop-line);
+}
+
+/* Spoilers: same drop-up filter, but this page has no bottom search bar --
+   the toggle hugs the nav and the sheet rides just above the toggle. */
+
+.app > main > #spAdvToggle {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(var(--nav-h) + 8px + env(safe-area-inset-bottom));
+}
+
+.app > main > #spAdvBox {
+  bottom: calc(var(--nav-h) + 62px + env(safe-area-inset-bottom));
+}
+
+.app > main:has(> #spAdvBox) {
+  padding-bottom: calc(var(--nav-h) + 64px + env(safe-area-inset-bottom));
+}
+/* room for the FIXED filter bar: the set-symbol row ends above it, never beneath */
+
+.net-chip {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: min(34vw, 150px);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  background: var(--panel);
+  color: var(--icon-pl, var(--main-lt));
+  border: 1px solid color-mix(in srgb, var(--panel) 62%, #000);
+  border-radius: 7px;
+  padding: 2px 8px;
+  font-size: 13px;
+  font-weight: 700;
+  text-shadow: none;
+  -webkit-text-fill-color: var(--icon-pl, var(--main-lt));
+}
+
+/* Give the page name the room the chip takes, and step the deck counter aside. */
+
+.page-cap:has(.net-chip) .brand-txt {
+  max-width: calc(100% - 200px);
+}
+
+.page-cap:has(.net-chip) #capDeckCount {
+  left: auto;
+  right: 12px;
+}
+
+/* Inspiration: the dropdown stack rides at the bottom too, and its menus
+   open UPWARD — drop-ups, away from the thumb and the nav. */
+
+.app > main > .browse-selects {
+  order: 99;
+}
+
+/* A drop-up is a sheet, not a hover: while one is open on the Inspiration
+   or Browse page, the feed, the Week/Month/Year row and the commander grid
+   behind it are hidden. They kept showing through the gaps and made the
+   list unreadable. The selects and the search bar stay, so the page still
+   reads as itself. */
+
+.app
+  > main.cs-open:has(> .browse-selects)
+  > *:not(.browse-selects):not(.searchbar):not(.adv-panel):not(#colAdvBox):not(#advSlot) {
+  display: none;
+}
+
+.app > main.cs-open:has(> .browse-selects) > .browse-selects {
+  background: var(--ink);
+}
+
+/* The select you opened takes the bottom slot -- where Commander (or, on a
+   deck's Inspiration, Kindred) normally sits -- so it is plain which menu is
+   open. The others step out until it closes; then the stack is as it was. */
+
+.browse-selects:has(.cselect-panel) > .bs-row:not(:has(.cselect-panel)) {
+  display: none;
+}
+
+.reco-themes:has(.cselect-panel) > .cselect:has(.cselect-panel) {
+  order: 9;
+}
+
+.app > main > #inspireResults {
+  order: 95;
+}
+
+.app > main:has(> #inspireResults) > .hint {
+  order: 98;
+}
+
+.app > main > .browse-hero {
+  order: 98;
+  margin: 10px 0 14px;
+}
+
+/* Room beneath the last card so nothing hides behind the sticky wants bar. */
+
+/* The wants bar lives in a BODY-level portal: the page main carries a
+   transform (swipe machinery), which hijacks fixed-position coordinates for
+   anything inside it — that's why every in-main pin floated. Outside main,
+   fixed means fixed: glued to the nav, no gap. */
+
+/* Bottom-up: the whole trade stack rides the foot cluster, hugging the bar. */
+
+.tw-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--panel);
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.tw-row img {
+  width: 40px;
+  border-radius: 4px;
+  display: block;
+}
+
+.tw-row .tw-nm {
+  flex: 1;
+  min-width: 0;
+  font-size: 14.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tw-row .tw-eur {
+  color: var(--brass);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13.5px;
+  flex: none;
+}
+
+/* Results replace the welcome: once either results box holds anything
+   (spinner included), the hero steps aside and the cards get the room. */
+
+.app > main:has(> #browseResults:not(:empty)) > .browse-hero,
+.app > main:has(> #bsNameResults:not(:empty)) > .browse-hero {
+  display: none;
+}
+
+.app > main:has(> .browse-selects) {
+  padding-bottom: calc(var(--nav-h) + 6px + env(safe-area-inset-bottom));
+}
+
+/* Inspiration: the free room goes ABOVE the results, not between them and
+   the pickers -- one found leader rests right on the selects (bottom-up).
+   The page's pusher spacer moves to the very top for this page. */
+
+.app > main:has(> .browse-selects)::before {
+  order: -1 !important;
+}
+
+.app > main > .browse-selects {
+  margin-top: 10px;
+}
+
+.browse-selects .cselect-panel {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+
+/* The recommendation page's Theme and Kindred lists are drop-ups too --
+   they sit at the foot of the sheet, so a list that opened downward ran
+   straight off the screen. */
+
+#recoOverlay .cselect-panel,
+.overlay .reco-themes .cselect-panel {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+
+.app > main > .pin-pill {
+  order: 96;
+}
+
+/* 1.32: on Search the "Adding straight to" bar rides just above the search
+   bar (where the explanation text used to be): order 99 sits between the
+   results (98) and the bar (100). */
+
+.app > main:has(> #searchResultsBox) > .pin-pill {
+  order: 99;
+  margin: 8px 0 0;
+}
+
+.app > main > .sp-jump {
+  order: 99;
+}
+
+/* (1) Home packs downward — the foot gap closes. */
+
+.app > main.home-page {
+  justify-content: flex-end;
+  padding-bottom: calc(var(--nav-h) - 14px + env(safe-area-inset-bottom));
+}
+
+/* (3/5) My Stuff: tight foot, FAB low, filter shortened clear of it,
+   uniform section rhythm in the reversed column. */
+
+.app > main:has(> div > #deckFilter) {
+  padding-bottom: calc(var(--nav-h) + 8px + env(safe-area-inset-bottom));
+  gap: 12px;
+}
+
+.app > main:has(> div > #deckFilter) > div:has(> #deckFilter) {
+  order: 0;
+  padding-right: 88px;
+}
+
+.app > main:has(> div > #deckFilter) > *:not(.searchbar) {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+/* (4) Collection reversed: automatic folders up top, binders by the thumb;
+   controls stay at the very bottom; row shortened for the low FAB. */
+
+.app > main:has(> #colAdvBox) {
+  flex-direction: column-reverse;
+  padding-bottom: calc(var(--nav-h) + 8px + env(safe-area-inset-bottom));
+}
+
+.app > main:has(> #colAdvBox) > .searchbar {
+  order: 0;
+  padding-right: 88px;
+}
+
+.app > main:has(> #colAdvBox) > div:has(> #colAdvToggle) {
+  order: 0;
+}
+
+/* (6) Search page: explainer just above the random card, RANDOM below it. */
+
+/* The results box hugs the search bar at the foot; the wrap-reverse grid
+   inside already reads bottom-up, so the best match sits nearest the bar. */
+
+/* The foot-anchor spacer sits at order:97 — anything above 97 sinks to
+   the foot cluster. 95 left the results stranded in the top region. */
+
+.app > main > #searchResultsBox {
+  order: 98;
+  min-height: 0;
+}
+
+.app > main > #advSlot {
+  order: 99;
+}
+
+.app > main > .cotd {
+  order: 96;
+}
+
+/* An empty state is content too: it belongs in the foot cluster (below the
+   order:97 pusher), not stranded at the top of an otherwise empty page.
+   Direct children only -- on the reversed mains these live inside a wrapper
+   and pack at the foot by themselves. */
+
+.app > main > .need-deck,
+.app > main > .empty-home {
+  order: 98;
+}
+
+.app > main:has(> #searchResultsBox) {
+  padding-bottom: calc(var(--nav-h) + 8px + env(safe-area-inset-bottom));
+}
+
+#cotdBox {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 8px;
+}
+
+.searchbar > button {
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+/* (7) Inspiration results read upward: most popular at the bottom. */
+
+#browseResults .insp-grid,
+#bsNameResults .insp-grid,
+#browseResults .sr-grid,
+#bsNameResults .sr-grid {
+  display: flex;
+  flex-wrap: wrap-reverse;
+  gap: 10px;
+}
+
+#browseResults .insp-grid > *,
+#bsNameResults .insp-grid > *,
+#browseResults .sr-grid > *,
+#bsNameResults .sr-grid > * {
+  flex: 0 0 calc(50% - 5px);
+  min-width: 0;
+}
+
+/* (8) Spoiler feed reads upward: newest day at the bottom. */
+
+.sp-feed {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+/* Within each day: cards on top, the date shelf UNDER them — dates read at
+   the bottom of their group, newest group already at the page foot. */
+
+.sp-group {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+/* (9) The card sheet flips: rulings on top, oracle beneath it, the card
+   with its chevrons above the buttons, buttons at the thumb. */
+
+.overlay-inner > main.card-detail {
+  display: flex;
+  flex-direction: column;
+}
+
+main.card-detail > .detail-sec:has(#csRulings) {
+  order: 0;
+}
+
+main.card-detail > .detail-sec:has(#sheetOracle) {
+  order: 1;
+}
+
+main.card-detail > div[style*='text-align:center'] {
+  order: 8;
+}
+
+main.card-detail > #csTagBox,
+main.card-detail > #ciTagBox {
+  order: 9;
+}
+
+/* Bottom-anchored, properly. This eats whatever room is left over, so a short
+   card's content rests ON the foot: anything that opens -- the tag box -- then
+   pushes the CARD up instead of shoving the buttons down. The moment the
+   content overflows there is no room left, it collapses to nothing and
+   scrolling is untouched. (justify-content:flex-end was measured first and
+   rejected: it kills the scroll and puts the top out of reach.)
+   Its own class and its own margins on purpose: a spacer that borrows an
+   existing class inherits that class's margins. */
+
+main.card-detail > .sheet-foot-spacer {
+  order: -1;
+  flex: 0 0 auto;
+  height: 0;
+  padding: 0;
+  margin: auto 0 0;
+}
+
+main.card-detail > div:nth-child(2) {
+  order: 10;
+}
+
+/* ---------- the complete flip ---------- */
+
+/* Decklist tabs join the bottom stack, riding just above the dock. */
+
+/* Tabs sit DIRECTLY on the nav; the dock rides on the tabs — fixed with
+   matched heights so the two bars touch and nothing peeks through. */
+
+.app > main > .builder-tabs {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: auto;
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
+  z-index: 41;
+  margin: 0;
+  padding: 5px 14px;
+  height: 44px;
+  box-sizing: border-box;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ink) 97%, transparent),
+    color-mix(in srgb, var(--ink) 92%, transparent)
+  );
+  backdrop-filter: blur(8px);
+  border-top: 2px solid var(--line);
+}
+
+/* Bottom-up: content packs at the FOOT even when a deck search leaves the
+   list nearly empty — the min-height keeps the bridge (and any open tool
+   panel) anchored down by the dock instead of drifting to the top. */
+
+#builderBody {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-start;
+  min-height: calc(100vh - var(--nav-h) - 290px);
+  flex: 1 0 auto;
+}
+
+/* A short deck (only its leader) rests on the dock like a full one: the
+   body fills the free height; the list box takes the room above the
+   leader strip, and the big + sits in its middle. */
+
+#builderBody > #decklistBox:has(> .dl-empty-add) {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+.dl-empty-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.dl-empty-plus.deck-fab {
+  position: static;
+  right: auto;
+  bottom: auto;
+  z-index: auto;
+  flex: none;
+}
+/* exactly the gold ＋ (size, gold, glyph, shadow), just not pinned to the corner */
+
+.dl-empty-plus:active {
+  transform: scale(0.95);
+}
+
+.dl-empty-t {
+  font-family: 'Cinzel', serif;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--ink-text);
+  letter-spacing: 0.04em;
+  margin-top: 4px;
+}
+
+.dl-empty-s {
+  font-size: 13.5px;
+  color: var(--sub-text);
+}
+
+#decklistBox {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+/* ---------- persistent brand banner (symbol + wordmark + tabs), same on every page ---------- */
+
+:root {
+  --nav-h: 66px;
+}
+
+.brand-banner {
+  /* Navigation lives on the BOTTOM edge now — thumb country. Fixed, so DOM
+     order stays untouched and the swipe-preview clone keeps working. */
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: auto;
+  z-index: 60;
+  box-sizing: border-box;
+  height: calc(var(--nav-h) + env(safe-area-inset-bottom));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--ink) 97%, transparent),
+    color-mix(in srgb, var(--ink) 92%, transparent)
+  );
+  backdrop-filter: blur(8px);
+  border-top: 2px solid var(--line);
+  border-bottom: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px env(safe-area-inset-bottom);
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.banner-tabs {
+  display: flex;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.banner-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 2px solid var(--line);
+  color: var(--sub-text);
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.banner-tab:hover {
+  border-color: var(--brass);
+  color: var(--brass);
+}
+
+.banner-tab.active {
+  color: var(--brass);
+  border-color: var(--brass);
+  background: var(--brass-glow);
+}
+
+.banner-tab svg {
+  width: 29px;
+  height: 29px;
+  flex: 0 0 auto;
+}
+
+.banner-tab span {
+  display: inline-block;
+}
+
+.banner-tab.active {
+  color: var(--brass);
+  background: var(--brass-glow);
+  border-color: var(--line);
+}
+
+.brand-banner #capBack,
+.brand-banner .ov-back {
+  background: var(--field);
+  border-color: var(--field-line);
+}
+
+.overlay .ov-nav {
+  position: static;
+  flex: 0 0 auto;
+  z-index: 20;
+}
+
+.overlay .ov-cap {
+  justify-content: center;
+  padding-left: 54px;
+  padding-right: 54px;
+}
+
+.ov-cap .brand-txt {
+  font-size: 17px;
+  flex: 0 1 auto;
+  max-width: 100%;
+  text-align: center;
+}
+
+.salt-grid {
+  display: flex;
+  flex-wrap: wrap-reverse;
+  gap: 12px 10px;
+  padding: 4px 0;
+}
+
+.salt-grid > .salt-tile {
+  width: calc(50% - 5px);
+}
+
+#saltOverlay main {
+  display: flex;
+  flex-direction: column;
+}
+
+#saltOverlay main > .salt-grid {
+  margin-top: auto;
+}
+
+.salt-tile {
+  cursor: pointer;
+}
+
+.salt-tile img {
+  width: 100%;
+  display: block;
+  border-radius: 10px;
+  aspect-ratio: 63/88;
+  object-fit: cover;
+  background: var(--field);
+}
+
+.salt-noimg {
+  border: 1.5px solid var(--pop-line);
+  border-radius: 10px;
+  aspect-ratio: 63/88;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--ink-text);
+}
+
+.salt-meta {
+  text-align: center;
+  color: var(--brass);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13.5px;
+  margin-top: 4px;
+}
+
+.edh-jump-row.insp-jump {
+  position: fixed;
+  right: 14px;
+  bottom: calc(14px + var(--nav-h) + env(safe-area-inset-bottom));
+  left: auto;
+  top: auto;
+  justify-content: flex-end;
+  z-index: 60;
+  height: auto;
+}
+
+/* Deck Inspiration: room between the explanation and the Theme / Kindred
+   menus -- that gap is where the \u2630 rests when the page sits at its foot. */
+
+.app > main:has(> #inspireResults) > .browse-selects {
+  margin-top: 60px;
+}
+
+/* 1.39: the ☰ rides beside the land-base button now -- no strip kept free */
+
+.app > main:has(> #inspireResults) > .browse-selects:has(.insp-land-row) {
+  margin-top: 10px;
+}
+
+/* The base .edh-jump-row is sticky — without !important the burger rode
+   the content and scrolled away. Fixed for real, and lifted above the deck
+   bar + tabs stack. */
+
+.dl-jump {
+  position: fixed !important;
+  top: auto !important;
+  right: 14px;
+  bottom: calc(150px + var(--nav-h) + env(safe-area-inset-bottom));
+  left: auto;
+  justify-content: flex-end;
+  z-index: 45;
+  height: auto;
+}
+
+.pp-imghold {
+  position: relative;
+  display: block;
+}
+
+.pp-own {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #1e8a4c;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.otag-wrap {
+  position: relative;
+}
+
+.otag-pop[hidden] {
+  display: none !important;
+}
+
+.otag-pop {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  background: var(--ink);
+  border: 1.5px solid var(--pop-line);
+  border-radius: 10px;
+  max-height: 190px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column-reverse;
+  padding: 4px;
+  box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.45);
+}
+
+.otag-pop {
+  top: auto;
+  bottom: calc(100% + 4px);
+  display: flex;
+  flex-direction: column-reverse;
+  overflow-y: auto;
+  max-height: min(48vh, 380px);
+  z-index: 40;
+}
+
+.df-compact,
+.df-compact .adv-row,
+#dlPanelBox {
+  overflow: visible;
+}
+
+.df-compact .cselect-panel {
+  top: auto;
+  bottom: calc(100% + 4px);
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.modal-sheet {
+  overflow: visible;
+}
+
+/* Het Nieuw-deck-blad mag zijn drop-ups niet afknippen: de formatlijst
+   hangt vlak boven zijn eigen knop, net als elke andere drop-up. */
+
+.modal-sheet.nd-sheet {
+  overflow: visible !important;
+}
+
+/* De spoilerkeuze is een drop-up; de instellingenkaart knipt normaal alles
+   af wat buiten haar rand valt. */
+
+.settings-section:has(#pushSpoilPop) {
+  overflow: visible;
+}
+
+#pushSpoilWrap {
+  min-width: 132px;
+}
+
+#pushSpoilBtn {
+  width: 100%;
+  text-align: left;
+  white-space: nowrap;
+}
+
+#pushSpoilPop {
+  min-width: 190px;
+  right: 0;
+  left: auto;
+}
+
+#newDeckFmtPop {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: auto;
+  bottom: calc(100% + 4px);
+  max-height: min(48vh, 380px);
+  z-index: 400;
+}
+
+.modal-backdrop {
+  overflow: visible;
+}
+
+.otag-pop button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  color: var(--ink-text);
+  font: inherit;
+  font-size: 13.5px;
+  padding: 7px 9px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.otag-pop button:hover {
+  background: var(--brass-glow);
+  color: var(--brass);
+}
+
+.otag-pop button.on {
+  color: var(--brass);
+  font-weight: 700;
+}
+
+.otag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.otag-chips:empty {
+  display: none;
+}
+
+.otag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: #241a04 !important;
+  -webkit-text-fill-color: #241a04;
+  text-shadow: none;
+  background: linear-gradient(180deg, #f2d37a, #c99a30) !important;
+  border: 1.5px solid rgba(255, 244, 210, 0.75);
+  border-radius: 999px;
+  padding: 4px 10px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+.otag-chip span {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+/* Inside .searchbar the generic button rule paints brass — override back
+   to the app's dark menu rows. */
+
+.searchbar .otag-pop button,
+.tw-poprow {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  background: none !important;
+  color: var(--ink-text) !important;
+  font-weight: 400;
+  border: none;
+  border-radius: 7px;
+  padding: 7px 9px;
+}
+
+.searchbar .otag-pop button:hover {
+  background: var(--brass-glow) !important;
+  color: var(--brass) !important;
+}
+
+.tw-poprow img {
+  width: 30px;
+  height: 42px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex: none;
+}
+
+.tw-poprow .tw-nm {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tw-poprow .tw-eur {
+  color: var(--brass);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  flex: none;
+}
+
+.overlay .topbar {
+  top: 0;
+}
+
+/* ---------- deck selector (used on decklist/search/inspiration) ---------- */
+
+.deck-select-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.deck-select-row label {
+  font-size: 11px;
+  color: var(--sub-text);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex: 0 0 auto;
+}
+
+.deck-select {
+  flex: 1;
+  min-width: 0;
+  background: var(--ink-2);
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink-text);
+  padding: 8px 10px;
+  font-size: 14px;
+}
+
+/* ---------- home / decks grid ---------- */

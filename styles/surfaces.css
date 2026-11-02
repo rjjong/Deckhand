@@ -1,0 +1,774 @@
+/* Depth fade: every solid surface — panels, tiles, fields, pop-ups — runs
+   from its colour at the top into a slight black at its foot, and the page
+   itself does the same (see body). Sits at the END of the stylesheet so its
+   background-image outranks the components' own shorthands; states with
+   higher specificity (hover, .sel) intentionally paint flat. Generated from
+   the same scan as the surface-text rule. */
+
+.app > main > .adv-toggle,
+.app > main > .adv-panel,
+.app > main > #colAdvBox,
+.tw-row,
+.brand-banner #capBack,
+.brand-banner .ov-back,
+.oracle-face,
+.tag-editor,
+.hfm-chip,
+.home-fact,
+.deck-tile,
+.folder-tile,
+.ghost-btn,
+.bulk-textarea,
+.panel-card,
+.col-filter-input,
+.col-select,
+#bindersPop,
+#fabMenu,
+.pd-btn,
+.pd-panel,
+.searchbar input,
+.appoint-sheet,
+.appoint-row,
+.pair-btns .add-btn,
+.sp-jump-btn,
+.adv-toggle,
+.cmc-row select,
+.cmc-row input,
+.adv-row input[type='text'],
+.adv-row select,
+.sc-primer,
+.sc-list,
+.sr-tile .st-btns .add-btn,
+.pr-rail,
+.cselect-btn,
+.cselect-panel,
+.cselect-search,
+.cselect-search input,
+.bs-row select,
+.settings-section,
+.guild-opt,
+.menu-pop,
+.toast,
+.dp-row,
+.cr-bar input,
+.tr-qty button,
+.edh-jump,
+.edh-rel-chip,
+.glog-frow .seg button,
+.glog-sel,
+.glog-num,
+.glog-chip,
+.inspire-cta,
+.life-card-v2,
+.life-panel {
+  background-image: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.25) 100%);
+}
+
+/* Metallic RIMS, take two: the metal gradient is clipped to the border-box,
+   which covers the WHOLE element — so each element repaints its interior
+   opaquely in its own surface token as the middle layer, and the metal
+   survives only in the border ring. Grouped by token, generated from the
+   sheet; elements with translucent or no background keep flat gold borders. */
+
+.tw-row,
+.oracle-face,
+.tag-editor,
+.home-fact,
+.home-hero-banner,
+.deck-tile,
+.panel-card,
+.pair-btns .add-btn,
+.sc-primer,
+.sc-list,
+.sr-tile .st-btns .add-btn,
+.settings-section,
+.dp-row,
+.inspire-cta,
+.life-panel {
+  border-color: transparent;
+  background-image:
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.25) 100%),
+    linear-gradient(var(--panel), var(--panel)), linear-gradient(var(--brass), var(--brass));
+  background-origin: padding-box, padding-box, border-box;
+  background-clip: padding-box, padding-box, border-box;
+}
+
+.deck-select,
+.lg-card,
+.ruling,
+.tag-add-row input,
+.tag-sugg,
+.lg-chip,
+.pair-cell,
+.adv-panel,
+.sr-tile,
+.chip,
+.toggle-switch .track,
+.modal-sheet input,
+.player-count button,
+.life-toolbar button,
+.turn-hub,
+.deckpick {
+  border-color: transparent;
+  background-image:
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.25) 100%),
+    linear-gradient(var(--ink-2), var(--ink-2)), linear-gradient(var(--brass), var(--brass));
+  background-origin: padding-box, padding-box, border-box;
+  background-clip: padding-box, padding-box, border-box;
+}
+
+.rpill,
+.modal-sheet {
+  border-color: transparent;
+  background-image:
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.25) 100%),
+    linear-gradient(var(--ink-3), var(--ink-3)), linear-gradient(var(--brass), var(--brass));
+  background-origin: padding-box, padding-box, border-box;
+  background-clip: padding-box, padding-box, border-box;
+}
+
+.edh-jump {
+  border-color: transparent;
+  background-image:
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.25) 100%),
+    linear-gradient(var(--field), var(--field)), linear-gradient(var(--brass), var(--brass));
+  background-origin: padding-box, padding-box, border-box;
+  background-clip: padding-box, padding-box, border-box;
+}
+
+.glog-sheet {
+  border-color: transparent;
+  background-image:
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.25) 100%),
+    linear-gradient(var(--ink), var(--ink)), linear-gradient(var(--brass), var(--brass));
+  background-origin: padding-box, padding-box, border-box;
+  background-clip: padding-box, padding-box, border-box;
+}
+
+/* Solid accent buttons: one flat, uniform colour — the sheen retired. */
+
+.new-deck-btn,
+.empty-home button,
+.need-deck button,
+.ghost-btn.active,
+.primary-btn,
+.deck-fab,
+.pair-add,
+.searchbar button,
+.seg button.active,
+.reco-create,
+.chip.active,
+.modal-actions .confirm,
+.player-count button.active,
+.reco-fab,
+.cotd .cotd-add,
+.rt-chip.on {
+  background-image: linear-gradient(var(--brass), var(--brass));
+}
+
+/* Purple button plates — at the sheet's END so they outrank every component's
+   own background:none/var() declared above. */
+
+.banner-tab,
+.icon-btn,
+.dk-tool,
+.dk-arr,
+.dk-count,
+#lifeCogBtn,
+.compass,
+.edh-jump,
+.brand-banner #capBack,
+.brand-banner .ov-back,
+.in-chev,
+.home-search-btn {
+  border-color: transparent;
+  background-color: var(--panel);
+  background-image:
+    linear-gradient(var(--panel), var(--panel)),
+    linear-gradient(
+      color-mix(in srgb, var(--panel) 50%, #000),
+      color-mix(in srgb, var(--panel) 50%, #000)
+    );
+  background-origin: padding-box, border-box;
+  background-clip: padding-box, border-box;
+}
+
+.banner-tab.active,
+.icon-btn.active,
+.dk-tool.active,
+.compass.active {
+  background-color: var(--ink);
+  background-image: none;
+  border-color: transparent;
+  box-shadow: inset 0 0 0 2.5px var(--head-ink);
+}
+
+.banner-tab.active svg,
+.icon-btn.active svg,
+.dk-tool.active svg,
+.compass.active svg {
+  color: var(--head-ink);
+}
+
+/* Button ICONS read in plain gold everywhere (the accents stay the dark
+   side tint for rims and fills); the round + fab and the burger jump wear
+   a flat gold face with engraved dark marks. */
+
+/* Button icons wear the MAIN colour of the chosen pairing — main ink on
+   side-coloured plates, the same contrast logic as everywhere else. */
+
+.banner-tab svg,
+.icon-btn svg,
+.dk-tool svg,
+.compass svg {
+  color: var(--icon-pl);
+}
+
+.deck-fab,
+.reco-fab,
+.searchbar .sel-fab {
+  background-image: linear-gradient(var(--gold), var(--gold));
+  color: #241a04;
+}
+
+/* Field faces flip to the MAIN colour when they sit on a SECONDARY surface:
+   a button inside a panel wears the page ink, standing off its card exactly
+   as the secondary plates stand off the main-coloured bars. The main-role
+   aliases are frozen at the html element — custom properties inherit their
+   COMPUTED value, so panel-level re-points can't reach them. */
+
+html {
+  --main-field: var(--ink-2);
+  --main-field-line: var(--line);
+  --main-hl: var(--glow);
+  --main-text: var(--ink-text);
+  --main-sub: var(--sub-text);
+  --main-sub-2: var(--sub-text-2);
+  --main-brass: var(--brass);
+  --main-brass-dim: var(--brass-dim);
+  --main-brass-glow: var(--brass-glow);
+  --main-parchment: var(--parchment);
+  --main-parchment-dim: var(--parchment-dim);
+  --main-acc-fill: var(--acc-fill);
+  --main-on-acc: var(--on-acc);
+}
+
+:is(
+    .panel-card,
+    .settings-section,
+    .adv-panel,
+    #colAdvBox,
+    .dl-cover,
+    .pd-panel,
+    .cselect-panel,
+    .sc-primer,
+    .sc-list,
+    .life-panel,
+    .life-card-v2,
+    .deck-tile,
+    .folder-tile,
+    .pr-rail,
+    .home-fact,
+    .oracle-face,
+    .tag-editor,
+    .appoint-sheet
+  )
+  :is(
+    .ghost-btn,
+    .icon-btn,
+    .dk-tool,
+    .rt-chip,
+    .chip,
+    .col-filter-input,
+    .col-select,
+    .pd-btn,
+    .adv-toggle,
+    .cselect-btn,
+    .cselect-search,
+    .dp-row,
+    .tr-qty button,
+    .edh-rel-chip,
+    .edh-jump,
+    .glog-sel,
+    .glog-num,
+    .glog-chip,
+    .hfm-chip,
+    .sp-jump-btn,
+    .inspire-cta,
+    .appoint-row,
+    .bulk-textarea,
+    select,
+    input,
+    textarea,
+    .seg button,
+    .add-btn
+  ) {
+  --field: var(--main-field);
+  --field-line: var(--main-field-line);
+  --hl: var(--main-hl);
+  --ink-text: var(--main-text);
+  --sub-text: var(--main-sub);
+  --sub-text-2: var(--main-sub-2);
+  --brass: var(--main-brass);
+  --brass-dim: var(--main-brass-dim);
+  --brass-glow: var(--main-brass-glow);
+  --parchment: var(--main-parchment);
+  --parchment-dim: var(--main-parchment-dim);
+  --line: var(--main-field-line);
+  /* a chosen seg / chip / button inside a panel is filled with the PAGE accent,
+     so its letters take the page's ink too (was the panel's dark ink: dark on
+     dark, e.g. the language switch in Extras) */
+  --acc-fill: var(--main-acc-fill);
+  --on-acc: var(--main-on-acc);
+}
+
+/* ...except on a white side: its tan accent reads best with the dark ink */
+
+html[data-side='W'] {
+  --main-on-acc: var(--panel-brass-dim);
+}
+
+:is(
+    .panel-card,
+    .settings-section,
+    .adv-panel,
+    #colAdvBox,
+    .dl-cover,
+    .pd-panel,
+    .cselect-panel,
+    .sc-primer,
+    .sc-list,
+    .life-panel,
+    .life-card-v2,
+    .deck-tile,
+    .folder-tile,
+    .pr-rail,
+    .home-fact,
+    .oracle-face,
+    .tag-editor,
+    .appoint-sheet
+  )
+  :is(.icon-btn, .dk-tool, .banner-tab) {
+  background-color: var(--main-field);
+  background-image:
+    linear-gradient(var(--main-field), var(--main-field)),
+    linear-gradient(var(--brass), var(--brass));
+}
+
+:is(
+    .panel-card,
+    .settings-section,
+    .adv-panel,
+    #colAdvBox,
+    .dl-cover,
+    .pd-panel,
+    .cselect-panel,
+    .sc-primer,
+    .sc-list,
+    .life-panel,
+    .life-card-v2,
+    .deck-tile,
+    .folder-tile,
+    .pr-rail,
+    .home-fact,
+    .oracle-face,
+    .tag-editor,
+    .appoint-sheet
+  )
+  .rt-chip:not(.on) {
+  background: var(--main-field);
+  border-color: var(--main-field-line);
+  color: var(--main-text);
+}
+
+/* The table's centre cog wears flat gold with an engraved dark gear. */
+
+html[data-main='W'] .folder-face,
+html[data-main='W'] .folder-name,
+html[data-main='W'] .deck-tile .dt-bracket,
+html[data-main='W'] .life-panel h4,
+html[data-main='W'] .life-toolbar button.active {
+  -webkit-text-fill-color: var(--gold);
+}
+/* dark tiles under the light theme: gold stays the readable choice */
+
+html[data-main='W'] .dice-opt {
+  color: var(--ink-text);
+}
+/* dice grid rides the light ink there */
+
+#lifeCogBtn {
+  background-color: var(--gold);
+  background-image:
+    linear-gradient(var(--gold), var(--gold)), linear-gradient(var(--main-dk), var(--main-dk));
+  background-origin: padding-box, border-box;
+  background-clip: padding-box, border-box;
+  color: #241a04;
+}
+
+#lifeCogBtn svg,
+#lifeCogBtn svg * {
+  color: #241a04;
+}
+
+#diceShield,
+#lifePanelShield {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  background: transparent;
+}
+
+#dicePop {
+  z-index: 261;
+}
+
+#diceResultPop {
+  width: min(80vw, 320px);
+  text-align: center;
+  z-index: 262;
+  cursor: pointer;
+}
+
+.dice-result {
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: 58px;
+  color: #fff;
+  line-height: 1.15;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.dice-result.small {
+  font-size: 26px;
+}
+
+.dice-result-sub {
+  font-size: 14px;
+  color: var(--sub-text);
+  margin-top: 4px;
+}
+
+.dice-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.dice-opt {
+  background: var(--ink-2);
+  border: 2px solid color-mix(in srgb, var(--ink-2) 45%, #000);
+  border-radius: 12px;
+  color: var(--gold);
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: 16px;
+  padding: 14px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dice-opt:active {
+  transform: translateY(1px);
+}
+
+.home-search-btn svg {
+  color: var(--on-acc);
+}
+
+#lifeOverlay {
+  box-sizing: border-box;
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
+}
+
+/* The table fills main to the pixel: main becomes a flex column and the grid
+   takes flex:1, replacing the old fixed-height calc that guessed the topbar
+   size and left a dead strip above the nav bar. */
+
+#lifeOverlay main {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding-bottom: 10px;
+}
+
+#lifeOverlay .life-grid-v2 {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+}
+
+/* History & Settings float as centred popups over the table (inset+margin
+   auto centres inside any containing block, transformed or not); a huge
+   spread shadow dims the table behind them; long histories scroll. */
+
+.life-panel {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  z-index: 257;
+  width: min(92vw, 520px);
+  height: max-content;
+  max-height: 72vh;
+  overflow-y: auto;
+  box-shadow:
+    0 0 0 100vmax rgba(0, 0, 0, 0.45),
+    0 12px 40px rgba(0, 0, 0, 0.6);
+}
+
+main.card-detail {
+  zoom: 0.9;
+}
+
+/* The card page only ever scrolls up and down. On a phone with a bigger
+   system font something on it could poke out a few pixels, which gave the
+   page a sideways scrollbar -- the "thicker" green line above the nav bar
+   (with a white square where the two scrollbars met). */
+
+.overlay main.card-detail,
+main.card-detail {
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* 1.27 Deck versions: the newest version nearest the thumb. */
+
+.dv-list {
+  display: flex;
+  flex-direction: column-reverse;
+  max-height: 52vh;
+  overflow-y: auto;
+  gap: 6px;
+  margin: 0 0 8px;
+}
+
+.dv-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 4px;
+  border-bottom: 1.5px solid var(--line);
+}
+
+.dv-row .dv-txt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dv-row .dv-txt b {
+  font-size: 14px;
+  color: var(--ink-text);
+}
+
+.dv-row .dv-txt span {
+  font-size: 12px;
+  color: var(--sub-text);
+}
+
+.dv-row .ghost-btn {
+  width: auto;
+  flex: none;
+  padding: 7px 10px;
+  font-size: 12.5px;
+}
+
+/* 1.26 Sync: the link code, big and easy to read off another screen. */
+
+.sync-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: center;
+  padding: 12px 8px;
+  margin: 4px 0 6px;
+  border: 2px dashed var(--brass);
+  border-radius: 10px;
+  color: var(--ink-text);
+  user-select: all;
+}
+
+/* 1.26 Right-click popup (PC): the card page's buttons and text in a small
+   window by the mouse -- no picture; Legality and Rulings folded. */
+
+.overlay.cs-pop {
+  position: fixed;
+  inset: auto;
+  height: auto;
+  z-index: 300;
+  border: 2px solid var(--brass);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.7);
+}
+
+.overlay.cs-pop .overlay-inner {
+  margin: 0 !important;
+  max-width: none !important;
+  min-height: 0;
+}
+
+.overlay.cs-pop .topbar {
+  min-height: 40px;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.overlay.cs-pop .cs-combos-btn {
+  position: absolute;
+  top: 5px;
+  right: 8px;
+}
+
+.overlay.cs-pop main.card-detail {
+  display: flex !important;
+  flex-direction: column;
+  max-width: none;
+  padding: 6px 12px 10px !important;
+  zoom: 0.86;
+}
+
+.overlay.cs-pop main.card-detail > div:nth-child(1),
+.overlay.cs-pop main.card-detail > .sheet-foot-spacer {
+  display: none !important;
+}
+
+.overlay.cs-pop main.card-detail > div:nth-child(2) {
+  max-width: none !important;
+}
+
+.overlay.cs-pop main.card-detail > .detail-sec:not(:has(#sheetOracle)) > .detail-h {
+  cursor: pointer;
+  user-select: none;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  margin: 6px 0 0;
+  padding: 8px 2px;
+  border-top: 1.5px solid var(--line);
+}
+
+.overlay.cs-pop main.card-detail > .detail-sec:not(:has(#sheetOracle)) > .detail-h:hover {
+  color: var(--brass);
+}
+
+.overlay.cs-pop main.card-detail > .detail-sec:not(:has(#sheetOracle)) > .detail-h::after {
+  content: ' \25B8';
+}
+
+.overlay.cs-pop.leg-open
+  main.card-detail
+  > .detail-sec:not(:has(#sheetOracle)):not(:has(#csRulings))
+  > .detail-h::after,
+.overlay.cs-pop.rul-open main.card-detail > .detail-sec:has(#csRulings) > .detail-h::after {
+  content: ' \25BE';
+}
+
+.overlay.cs-pop:not(.leg-open)
+  main.card-detail
+  > .detail-sec:not(:has(#sheetOracle)):not(:has(#csRulings))
+  > :not(.detail-h),
+.overlay.cs-pop:not(.rul-open) main.card-detail > .detail-sec:has(#csRulings) > :not(.detail-h) {
+  display: none !important;
+}
+
+/* 1.25 Tag focus drop-up under the card (Similar cards, card Recommendations). */
+
+.tag-focus-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 340px;
+  margin: 2px auto 10px;
+  flex: 0 0 auto;
+}
+
+.tag-focus-row[hidden] {
+  display: none;
+}
+
+.tag-focus-row .tf-lbl {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--sub-text);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tag-focus-row .nsel-btn {
+  flex: 1 1 auto;
+}
+
+/* The mouse hover preview: a big card beside the pointer, clicks pass through. */
+
+#hoverPrevBox {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 400;
+  display: none;
+  pointer-events: none;
+  border-radius: 4.75% / 3.5%;
+  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.7);
+  overflow: hidden;
+  background: #111;
+}
+
+#hoverPrevBox img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+@media (hover: none) {
+  #hoverPrevBox {
+    display: none !important;
+  }
+}
+
+.nopr {
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Surfaces the heading tint was never meant for ──────────────────────
+   The heading treatment paints text in the page-ink tint. Two places do not
+   sit on page ink: the binder GLYPH is printed over cover ART (only a
+   near-white halo reads on an arbitrary picture), and the guild label sits
+   on a field plate (its panel text colour is the one designed for that).
+   Both need -webkit-text-fill-color to outrank the clip-gradient.
+   The binder NAME is a third case: it sits on the plate BELOW the art, so
+   it takes --plate-ink -- lighter than the page tint on a dark plate,
+   darker on the cream one -- and an ordinary shadow. A halo there only
+   smeared the letters. */
+
+.binder-tile .folder-face,
+.binder-tile .folder-face span {
+  color: var(--icon-pl, var(--main-lt));
+  -webkit-text-fill-color: var(--icon-pl, var(--main-lt));
+  background: none;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+}
+
+.binder-tile .folder-name {
+  color: var(--plate-ink, var(--icon-pl, var(--main-lt)));
+  -webkit-text-fill-color: var(--plate-ink, var(--icon-pl, var(--main-lt)));
+  background: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+.guild-cur,
+.guild-cur svg {
+  color: var(--ink-text);
+  -webkit-text-fill-color: var(--ink-text);
+  background: none;
+}

@@ -1,0 +1,949 @@
+/* ---------- legality ---------- */
+
+.top-price-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 0;
+  border-bottom: 2px solid var(--line);
+  cursor: pointer;
+}
+
+.top-price-row:last-child {
+  border-bottom: none;
+}
+
+.top-price-row img {
+  width: 26px;
+  height: 36px;
+  border-radius: 3px;
+  object-fit: cover;
+  flex: 0 0 auto;
+  background: #0006;
+}
+
+.tp-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tp-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--brass);
+  font-weight: 600;
+  flex: 0 0 auto;
+}
+
+.legality {
+  border-radius: 8px;
+  border: 2px solid var(--line);
+  margin-bottom: 8px;
+  overflow: hidden;
+  font-size: 13.5px;
+  scroll-margin-top: 80px;
+  scroll-margin-bottom: calc(var(--nav-h) + 122px + env(safe-area-inset-bottom));
+}
+
+.legality.ok {
+  background: rgba(92, 139, 110, 0.12);
+  border-color: rgba(92, 139, 110, 0.45);
+  color: var(--success);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+}
+
+.legality.bad {
+  background: rgba(181, 72, 77, 0.1);
+  border-color: rgba(181, 72, 77, 0.45);
+}
+
+.legality.warn {
+  background: var(--brass-glow);
+  border-color: var(--line);
+}
+
+.lg-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  cursor: pointer;
+}
+
+.legality.bad .lg-head {
+  color: var(--danger);
+}
+
+.legality.warn .lg-head {
+  color: var(--brass);
+}
+
+.lg-icon {
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+
+.lg-txt {
+  flex: 1;
+  font-weight: 600;
+}
+
+.lg-car {
+  font-size: 11px;
+  transition: transform 0.2s;
+  opacity: 0.7;
+}
+
+.legality.open .lg-car {
+  transform: rotate(180deg);
+}
+
+.lg-body {
+  display: none;
+  padding: 0 12px 10px;
+}
+
+.legality.open .lg-body {
+  display: block;
+}
+
+.lg-item {
+  padding: 7px 0;
+  border-top: 2px solid var(--line);
+}
+
+.lg-label {
+  font-size: 13px;
+  color: var(--ink-text);
+}
+
+.lg-item.error .lg-label::before {
+  content: '✕ ';
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.lg-item.warn .lg-label::before {
+  content: '⚠ ';
+  color: var(--brass);
+  font-weight: 700;
+}
+
+.lg-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 5px;
+}
+
+.lg-card {
+  font-size: 11.5px;
+  background: var(--ink-2);
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  padding: 2px 8px;
+  color: var(--sub-text);
+}
+
+/* ---------- card detail overlay ---------- */
+
+.card-price {
+  font-size: 13px;
+  color: var(--sub-text-2);
+  margin: 0 0 14px;
+  min-height: 16px;
+}
+
+.cp-val {
+  font-family: 'Cinzel', serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--brass);
+}
+
+.cp-sub {
+  font-size: 11.5px;
+  color: var(--sub-text-2);
+}
+
+.cp-none {
+  font-size: 12.5px;
+  color: var(--sub-text-2);
+  font-style: italic;
+}
+
+.card-detail {
+  max-width: 560px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.detail-sec {
+  margin-top: 10px;
+}
+
+.ms-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px 18px;
+  margin-top: 12px;
+  justify-items: center;
+}
+
+/* Cast-ability summary */
+
+.cast-sum {
+  margin: 0 0 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.cast-score {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.cast-score b {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.cast-score span {
+  font-size: 12.5px;
+  color: var(--sub-text);
+}
+
+.cast-tip {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-text);
+}
+
+.cast-tip svg {
+  vertical-align: -3px;
+}
+
+.cast-tip-k {
+  flex: none;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--on-acc);
+  background: var(--acc-fill);
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-top: 1px;
+}
+
+.cast-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 2px;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--line);
+  color: var(--ink-text);
+  font: inherit;
+  font-size: 13.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cast-row:first-of-type {
+  border-top: none;
+}
+
+.cast-mv {
+  flex: none;
+  width: 18px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--sub-text);
+}
+
+.cast-nm {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cast-pips {
+  flex: none;
+  display: flex;
+  gap: 1px;
+}
+
+.cast-p {
+  flex: none;
+  min-width: 44px;
+  text-align: right;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.cast-p.low {
+  background: var(--field);
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-weight: 700;
+}
+
+/* Stats drill-downs: a full-width row, label at the FOOT (by the tapped
+   symbol or bar), cards above it -- the visual-grid already wraps upward. */
+
+.st-detail {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+}
+
+.st-detail:empty {
+  display: none;
+}
+
+.ms-grid > .st-detail {
+  grid-column: 1 / -1;
+}
+
+.st-detail .chip-label {
+  margin: 0;
+}
+
+#curveDetail.st-detail {
+  margin: 0 0 14px;
+}
+
+.ms-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  max-width: 150px;
+  min-width: 0;
+}
+
+.ms-big {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  filter: drop-shadow(0 2px 7px rgba(0, 0, 0, 0.35));
+}
+
+.ms-big svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.ms-pct {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.ms-pct i {
+  font-style: normal;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: -0.03em;
+  color: #17130c;
+  background: rgba(255, 255, 255, 0.68);
+  border-radius: 9px;
+  padding: 1px 5px;
+  line-height: 1.25;
+}
+
+.ms-prod-lbl {
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  color: var(--sub-text);
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.ms-prod {
+  position: relative;
+  width: 100%;
+  height: 18px;
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.28);
+  border: 2px solid var(--line);
+  overflow: hidden;
+}
+
+.ms-prod-fill {
+  height: 100%;
+  border-radius: 9px;
+}
+
+.ms-prod-n {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+.cb-prod {
+  margin-top: -5px;
+  margin-bottom: 7px;
+}
+
+.track-thin {
+  height: 5px !important;
+}
+
+.cb-prod .fill {
+  opacity: 0.55;
+}
+
+.n-sm {
+  font-size: 11px !important;
+  color: var(--sub-text) !important;
+}
+
+/* Bottom-up on the card page too: each section's content reads first,
+   then its NAME, with the golden stripe closing it off underneath — flex
+   order moves the header without touching any markup. */
+
+.detail-sec {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-h {
+  order: 99;
+  font-family: 'Cinzel', serif;
+  color: var(--brass);
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  margin: 10px 0 0;
+  padding-bottom: 5px;
+  border-bottom: 2px solid var(--line);
+}
+
+.oracle-face {
+  background: var(--panel);
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.oracle-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.oracle-name {
+  font-weight: 700;
+  font-size: 14.5px;
+}
+
+.oracle-cost {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--brass);
+  flex: 0 0 auto;
+}
+
+.oracle-type {
+  font-size: 12px;
+  color: var(--sub-text);
+  margin-top: 2px;
+}
+
+.oracle-text {
+  font-size: 14px;
+  line-height: 1.65;
+  margin-top: 9px;
+  color: var(--ink-text);
+  white-space: pre-wrap;
+}
+
+.oracle-flavor {
+  font-size: 13px;
+  line-height: 1.55;
+  margin-top: 9px;
+  color: var(--sub-text-2);
+  font-style: italic;
+  border-top: 2px solid var(--line);
+  padding-top: 8px;
+}
+
+.ruling {
+  background: var(--ink-2);
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+}
+
+.ruling-date {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  color: var(--sub-text-2);
+  margin-bottom: 4px;
+}
+
+.ruling-text {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--parchment-dim);
+}
+
+/* ---------- tags ---------- */
+
+.tag-editor {
+  background: var(--panel);
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 10px auto 0;
+  max-width: 330px;
+}
+
+.tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.tag-chip.tag-scry {
+  border: 2px solid var(--gold);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+span.tag-chip.tag-scry:not(:has(button)) {
+  padding-right: 10px;
+}
+
+.sort-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sort-tags-row > .ghost-btn {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+}
+
+.sort-scry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  flex: none;
+  cursor: pointer;
+}
+
+.sort-scry-l {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--sub-text);
+  white-space: nowrap;
+}
+
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--brass-glow);
+  border: 2px solid var(--line);
+  color: var(--brass);
+  border-radius: 14px;
+  padding: 4px 6px 4px 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.tag-chip button {
+  background: none;
+  border: none;
+  color: var(--brass);
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0 3px;
+  opacity: 0.7;
+}
+
+.tag-chip button:hover {
+  opacity: 1;
+  color: var(--danger);
+}
+
+.tag-none {
+  font-size: 12.5px;
+  color: var(--sub-text-2);
+}
+
+.tag-add-row {
+  display: flex;
+  gap: 6px;
+}
+
+.tag-add-row input {
+  flex: 1;
+  min-width: 0;
+  background: var(--ink-2);
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink-text);
+  padding: 9px 10px;
+  font-size: 14px;
+}
+
+.tag-add-row input:focus {
+  outline: none;
+  border-color: var(--brass);
+}
+
+.info-i {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: 1px solid var(--sub-text);
+  color: var(--sub-text);
+  background: none;
+  font-size: 12px;
+  font-style: italic;
+  font-family: Georgia, serif;
+  padding: 0;
+  margin-left: 6px;
+  vertical-align: middle;
+  cursor: pointer;
+  flex: none;
+  line-height: 1;
+}
+
+.tag-drop {
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 2px;
+  padding: 6px;
+}
+
+/* An author display rule beats the `hidden` attribute's built-in
+   display:none — without this guard the drop-up never actually hides and
+   squats on top of the tag chips. */
+
+.tag-drop[hidden] {
+  display: none;
+}
+
+.card-link {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  color: #7cb8db;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.cmb-head {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.cmb-names {
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.cmb-res-btn {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--brass);
+  font-size: 13px;
+  padding: 7px 0 0;
+  cursor: pointer;
+  text-align: center;
+  font-family: inherit;
+}
+
+.cmb-search-row {
+  padding: 8px 0 2px;
+}
+
+.cmb-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.cmb-card {
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.cmb-card img {
+  width: 100%;
+  display: block;
+  border-radius: 7px;
+}
+
+.cmb-card-txt {
+  border: 1.5px solid var(--pop-line);
+  border-radius: 7px;
+  min-height: 56px;
+  color: inherit;
+  font-size: 12.5px;
+  padding: 4px;
+}
+
+.cs-combos-btn {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 10px);
+  right: 12px;
+  z-index: 81;
+  width: auto;
+  padding: 7px 11px;
+}
+/* rides ON the page cap: stays above it (cap is 80 now) */
+
+#deckCombosPanel .panel-h svg {
+  width: 12px;
+  height: 12px;
+  vertical-align: -2px;
+  margin-right: 3px;
+}
+
+.overlay[id^='cardSheetOverlay_bg'] .cs-combos-btn {
+  display: none !important;
+}
+
+.tag-drop-h {
+  padding: 3px 10px 7px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brass);
+  pointer-events: none;
+  border-bottom: 1.5px solid var(--pop-line);
+}
+
+/* 1.26: the picker = a scrolling list above its own search field; each
+   group's name is a gold plate under its tags, never mistaken for a tag. */
+
+.tag-drop:has(> .tag-drop-list) {
+  overflow: hidden;
+  padding: 0;
+  gap: 0;
+}
+
+.tag-drop-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 2px;
+  padding: 6px 6px 8px;
+}
+
+.tag-drop-search {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-top: 2px solid var(--pop-line);
+  background: var(--panel);
+}
+
+.tag-drop-search .tds-ico {
+  flex: none;
+  display: flex;
+  opacity: 0.7;
+}
+
+.tag-drop-search .tds-ico svg {
+  width: 18px;
+  height: 18px;
+}
+
+.tag-drop-search input {
+  flex: 1;
+  min-width: 0;
+  background: var(--ink-2);
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink-text);
+  padding: 8px 10px;
+  font-size: 14px;
+}
+
+.tag-drop-search input:focus {
+  outline: none;
+  border-color: var(--brass);
+}
+
+.tag-drop-none {
+  padding: 12px 10px;
+  font-size: 13px;
+  color: var(--sub-text);
+  text-align: center;
+}
+
+html .tag-drop .tag-drop-list > .tag-drop-h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 10px 2px 4px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  background: linear-gradient(var(--gold), var(--gold)) !important;
+  -webkit-background-clip: border-box !important;
+  background-clip: border-box !important;
+  color: #241a04 !important;
+  -webkit-text-fill-color: #241a04 !important;
+  text-shadow: none !important;
+  font-weight: 800;
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+html .tag-drop .tag-drop-list > .tag-drop-h * {
+  font-weight: 800;
+  font-size: 11px;
+  color: #241a04 !important;
+  -webkit-text-fill-color: #241a04 !important;
+  background: none !important;
+  text-shadow: none !important;
+}
+
+html .tag-drop .tag-drop-list > .tag-drop-h b {
+  opacity: 0.75;
+}
+
+.tag-drop-list > .tag-drop-h:first-child {
+  margin-bottom: 0;
+}
+
+@media (hover: hover) {
+  .tag-drop-list button:hover {
+    background: var(--hl);
+  }
+}
+
+/* On deckless card pages the picker is the app's one allowed drop-DOWN:
+   the editor sits under the buttons and the list opens below the input. */
+
+#ciTagBox .tag-drop {
+  bottom: auto;
+  top: calc(100% + 6px);
+}
+
+/* The tag picker rides the screen foot as a POPUP over the bottom
+   buttons and nav -- not clipped inside its box. */
+
+.tag-add-row .tag-drop,
+#ciTagBox .tag-drop {
+  position: fixed;
+  left: 10px;
+  right: 10px;
+  top: auto;
+  bottom: calc(env(safe-area-inset-bottom) + 10px);
+  max-height: 55vh;
+  z-index: 130;
+  box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.55);
+}
+
+.tag-drop button {
+  background: none;
+  border: none;
+  color: var(--ink-text);
+  text-align: left;
+  padding: 8px 10px;
+  font-size: 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.tag-drop button:active {
+  background: var(--brass-glow);
+  color: var(--brass);
+}
+
+.tag-suggest {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+
+.tag-sugg {
+  background: var(--ink-2);
+  border: 1px dashed var(--line);
+  color: var(--sub-text);
+  border-radius: 12px;
+  padding: 3px 9px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.tag-sugg:hover {
+  border-style: solid;
+  border-color: var(--brass);
+  color: var(--brass);
+}

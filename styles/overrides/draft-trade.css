@@ -1,0 +1,297 @@
+/* Draft and Trade use the same surfaces and spacing as the menu. */
+
+html .tools-page .tool-sections {
+  min-width: 0;
+  gap: 12px;
+}
+
+html .tools-page .panel-card {
+  --ink-text: var(--main-text);
+  --sub-text: var(--main-sub);
+  --sub-text-2: var(--main-sub-2);
+  --line: var(--main-field-line);
+  --brass: var(--main-brass);
+  --brass-glow: var(--main-brass-glow);
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+  padding: 20px 16px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--ink-text) 18%, transparent);
+  background: color-mix(in srgb, var(--ink-text) 5%, var(--ink));
+  box-shadow: none;
+  color: var(--ink-text);
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.tool-panel-heading {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 16px;
+}
+
+.tool-heading-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.tool-panel-heading h2 {
+  margin: 0;
+  font:
+    600 15px/1.3 'Inter',
+    system-ui,
+    sans-serif;
+}
+
+.tool-panel-heading p {
+  margin: 7px 0 0;
+  color: var(--sub-text);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.tools-page .hub-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+html .tools-page .panel-h {
+  margin: 0 0 16px;
+  font:
+    600 15px/1.3 'Inter',
+    system-ui,
+    sans-serif;
+}
+
+.tools-page .hint {
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.tools-page .hub-card {
+  min-width: 0;
+}
+
+.draft-main .dr-top {
+  margin: 0;
+  gap: 12px;
+}
+
+.draft-main .dr-steps {
+  justify-content: flex-start;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.draft-main .dr-steps button {
+  min-height: 44px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.draft-main .dr-steps button.on {
+  color: var(--gold);
+  border-color: var(--gold);
+  background: var(--brass-glow);
+  font-weight: 700;
+}
+
+.draft-main .dr-steps button:disabled {
+  color: var(--sub-text);
+  opacity: 0.65;
+  cursor: default;
+}
+
+.draft-main .dr-steps button:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.draft-main .dr-steps i {
+  display: none;
+}
+
+.draft-main .dr-set {
+  gap: 12px;
+  padding: 14px 0;
+}
+
+.draft-main .dr-set > div:first-child {
+  min-width: 0;
+}
+
+.draft-main .dr-set .l2 {
+  line-height: 1.6;
+  margin-top: 5px;
+}
+
+.draft-main .dr-foot {
+  flex-wrap: wrap;
+  margin: 0;
+}
+
+.draft-main .dr-foot > .hub-card {
+  flex: 1 1 100%;
+}
+
+.draft-main .dr-foot > .ghost-btn {
+  min-height: 44px;
+  padding: 12px 16px;
+}
+
+.draft-main .dr-foot button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.draft-main .dr-add {
+  margin-top: 12px;
+}
+
+.draft-main .dr-step button {
+  width: 40px;
+  height: 40px;
+}
+
+.draft-main .dr-ring {
+  width: min(280px, 100%);
+}
+
+.draft-main .dr-stand {
+  display: block;
+  overflow-x: auto;
+}
+
+/* Dimir's dark accent fill needs its matching light text inside Draft cards. */
+
+html[data-main='U'][data-side='B']
+  .draft-main
+  :is(.primary-btn, .seg button.active, .ghost-btn.active) {
+  background: var(--main-acc-fill);
+  color: var(--main-on-acc);
+  text-shadow: none;
+}
+
+html[data-main='U'][data-side='B'] .draft-main .seg button:not(.active) {
+  color: var(--main-text);
+}
+
+html[data-main='U'][data-side='B']
+  .draft-main
+  :is(.dr-dir, .dr-clock, .dr-ring-mid .dr-arrow, .dr-lands b, .dr-p.win, .dr-past b, .dr-champ) {
+  color: var(--main-text);
+}
+
+.trade-page .trade-total {
+  flex: none;
+  color: var(--gold);
+  font:
+    600 16px/1.2 'JetBrains Mono',
+    monospace;
+  white-space: nowrap;
+}
+
+.trade-page .trade-add {
+  margin-top: 16px;
+  padding: 14px 12px;
+}
+
+.trade-page .trade-add .hub-icon {
+  width: 36px;
+  height: 36px;
+}
+
+.trade-page .trade-row {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 44px;
+  gap: 8px 10px;
+  padding: 14px 0;
+}
+
+.trade-page .trade-row img {
+  width: 42px;
+  grid-row: 1 / 3;
+}
+
+.trade-page .trade-row .tr-body {
+  grid-column: 2 / 4;
+}
+
+.trade-page .trade-row .nm {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.4;
+}
+
+.trade-page .trade-row .tl {
+  margin-top: 4px;
+}
+
+.trade-page .tr-qty {
+  grid-column: 2;
+  gap: 8px;
+}
+
+.trade-page .tr-qty button,
+.trade-page .tr-del {
+  width: 36px;
+  height: 36px;
+}
+
+.trade-page .tr-del {
+  grid-column: 3;
+  justify-self: end;
+}
+
+html .app > main.trade-page > .page-content {
+  gap: 16px;
+}
+
+.trade-page .trade-overview {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 16px;
+}
+
+html .trade-page .trade-verdict {
+  color: var(--ink-text);
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: right;
+}
+
+html .trade-page .trade-verdict .tr-eur {
+  color: var(--gold);
+  white-space: nowrap;
+}
+
+html .trade-page :is(.trade-verdict, .trade-verdict .tr-eur) {
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+.app-header .header-filter:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+@media (max-width: 359px) {
+  .draft-main .dr-set {
+    flex-wrap: wrap;
+  }
+  .draft-main .dr-set > div:first-child {
+    flex: 1 1 100%;
+  }
+  .trade-page .tool-panel-heading {
+    flex-wrap: wrap;
+  }
+  .trade-page .trade-total {
+    margin-left: 58px;
+  }
+}

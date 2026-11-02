@@ -1,0 +1,1511 @@
+/* ---------- settings ---------- */
+
+.settings-section {
+  background: var(--panel);
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.settings-main {
+  background: transparent;
+}
+
+/* ---- Draft tools ---- (column-reverse main: first block = foot) */
+
+.dr-row-chev {
+  font-size: 22px;
+  color: var(--sub-text);
+  line-height: 1;
+}
+
+.draft-main .panel-card {
+  margin-bottom: 12px;
+}
+
+.dr-top {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.dr-steps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 6px;
+  font-size: 12px;
+  color: var(--sub-text);
+}
+
+.dr-steps span.on {
+  color: var(--brass);
+  font-weight: 700;
+}
+
+.dr-steps span.done {
+  color: var(--ink-text);
+}
+
+.dr-steps i {
+  font-style: normal;
+  opacity: 0.5;
+}
+
+.dr-new {
+  flex: none;
+  align-self: center;
+  padding: 7px 16px;
+  font-size: 12.5px;
+}
+
+.dr-foot {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.dr-foot .primary-btn {
+  flex: 1;
+  padding: 14px 16px;
+  font-size: 15.5px;
+}
+
+.dr-foot .ghost-btn {
+  flex: 0 0 auto;
+  padding: 0 18px;
+}
+
+.dr-foot .primary-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.dr-center {
+  text-align: center;
+}
+
+.dr-big {
+  font-family: 'Cinzel', serif;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--ink-text);
+  margin: 2px 0 4px;
+}
+
+.dr-sub {
+  color: var(--sub-text);
+  font-size: 13.5px;
+}
+
+.dr-dir {
+  color: var(--brass);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.dr-clock {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 68px;
+  font-weight: 600;
+  color: var(--brass);
+  line-height: 1.05;
+  margin: 6px 0 2px;
+  letter-spacing: -1px;
+}
+
+.dr-clock.low {
+  color: var(--danger);
+}
+
+.dr-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line);
+  overflow: hidden;
+  margin: 6px 0 10px;
+}
+
+.dr-bar i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--brass);
+  transition: width 0.25s linear;
+}
+
+.dr-over {
+  color: var(--danger);
+}
+
+.dr-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.dr-row > .ghost-btn {
+  flex: 1;
+  padding: 11px 6px;
+  font-size: 14px;
+}
+
+.dr-set {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 0;
+  border-top: 1px solid var(--line);
+}
+
+.dr-set:first-of-type {
+  border-top: none;
+}
+
+.dr-set .l1 {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dr-set .l2 {
+  font-size: 11.5px;
+  color: var(--sub-text);
+  margin-top: 1px;
+}
+
+.dr-seg {
+  flex: none;
+  min-width: 116px;
+}
+
+.dr-seg button {
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+.dr-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.dr-step button {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1.5px solid var(--field-line);
+  background: var(--field);
+  color: var(--ink-text);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.dr-step span {
+  min-width: 54px;
+  text-align: center;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13.5px;
+}
+
+.dr-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 2px 0 10px;
+}
+
+.dr-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--field);
+  border: 1.5px solid var(--field-line);
+  color: var(--ink-text);
+  border-radius: 16px;
+  padding: 5px 4px 5px 12px;
+  font-size: 14px;
+}
+
+.dr-chip button {
+  background: none;
+  border: none;
+  color: var(--sub-text);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.dr-chip.recent {
+  padding: 6px 12px;
+  cursor: pointer;
+  color: var(--sub-text);
+  border-style: dashed;
+}
+
+.dr-recent-h {
+  font-size: 11.5px;
+  color: var(--sub-text);
+  margin: 2px 0 4px;
+}
+
+.dr-add {
+  display: flex;
+  gap: 8px;
+}
+
+.dr-add input {
+  flex: 1;
+  min-width: 0;
+  background: var(--field);
+  border: 1.5px solid var(--field-line);
+  color: var(--ink-text);
+  border-radius: 8px;
+  padding: 11px 12px;
+  font-size: 15px;
+}
+
+.dr-add .primary-btn {
+  flex: none;
+  width: auto;
+  padding: 0 16px;
+}
+
+.dr-ring {
+  position: relative;
+  width: min(300px, 78vw);
+  aspect-ratio: 1;
+  margin: 8px auto 14px;
+}
+
+.dr-ring::before {
+  content: '';
+  position: absolute;
+  inset: 20%;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: color-mix(in srgb, var(--brass) 6%, transparent);
+}
+
+.dr-seat {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 84px;
+  text-align: center;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.15;
+  word-break: break-word;
+}
+
+.dr-seat b {
+  display: flex;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  background: var(--acc-fill);
+  color: var(--on-acc);
+  font-size: 12px;
+  margin-bottom: 3px;
+}
+
+.dr-ring-mid {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 11.5px;
+  color: var(--sub-text);
+  pointer-events: none;
+  line-height: 1.35;
+}
+
+.dr-ring-mid .dr-arrow {
+  font-size: 34px;
+  color: var(--brass);
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.dr-pairs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14.5px;
+}
+
+.dr-pairs i {
+  color: var(--sub-text);
+  font-style: normal;
+  font-size: 12px;
+  margin: 0 4px;
+}
+
+.dr-mana {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dr-lands {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--field);
+  border: 1.5px solid var(--field-line);
+  font-size: 14px;
+  text-align: center;
+}
+
+.dr-lands b {
+  color: var(--brass);
+  font-size: 16px;
+}
+
+.dr-match {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+
+.dr-matches .dr-match:first-child {
+  border-top: none;
+}
+
+.dr-tbl {
+  flex: none;
+  width: 22px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--sub-text);
+  font-size: 12px;
+}
+
+.dr-vs {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: var(--field);
+  border: 1.5px solid var(--field-line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: var(--ink-text);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.dr-p {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14.5px;
+}
+
+.dr-p > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dr-p > span:last-child {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+}
+
+.dr-p.win {
+  color: var(--brass);
+  font-weight: 700;
+}
+
+.dr-tap {
+  font-size: 11.5px;
+  color: var(--sub-text);
+}
+
+.dr-life {
+  flex: none;
+  width: 42px;
+  align-self: stretch;
+  border-radius: 8px;
+  border: 1.5px solid var(--field-line);
+  background: var(--field);
+  color: var(--danger);
+  font-size: 19px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.dr-stand {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.dr-stand th,
+.dr-stand td {
+  padding: 7px 3px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.dr-stand th:nth-child(2),
+.dr-stand td:nth-child(2) {
+  text-align: left;
+  white-space: normal;
+}
+
+.dr-stand th {
+  color: var(--sub-text);
+  font-weight: 600;
+  font-size: 10.5px;
+}
+
+.dr-stand tr + tr td {
+  border-top: 1px solid var(--line);
+}
+
+.dr-stand tr[data-dr] {
+  cursor: pointer;
+}
+
+.dr-stand tr.dropped td {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+.dr-past {
+  font-size: 13.5px;
+}
+
+.dr-past > div + div {
+  margin-top: 4px;
+}
+
+.dr-past b {
+  color: var(--brass);
+  margin: 0 4px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.dr-champ {
+  font-family: 'Cinzel', serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--brass);
+  margin: 4px 0;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px;
+  cursor: pointer;
+}
+
+/* 1.35: Extras as tiles, three to a row, read from the foot up (wrap-reverse:
+   the first tile in the markup sits bottom-left). A tile that unfolds (About,
+   Format rules, Ban lists, Color scheme, Notifications, Backup) spans the
+   whole row while open; About always does, as the banner on top. */
+
+.app > main.settings-main.xt-tiles {
+  flex-direction: row;
+  flex-wrap: wrap-reverse;
+  align-content: flex-start;
+  gap: 12px;
+}
+
+/* 1.36: two square tiles to a row; the credits sit loose beside About. */
+
+.xt-tiles > .settings-section {
+  flex: 0 0 calc((100% - 12px) / 2);
+  min-width: 0;
+  margin: 0;
+  aspect-ratio: 1 / 1;
+  display: flex;
+}
+
+/* 1.1: a tile stays square even when the credits cell beside it is taller
+   (credits + What's new + feedback); it no longer stretches to that row */
+
+.xt-tiles > .settings-section:not(.xt-note) {
+  align-self: center;
+}
+
+.xt-tiles > .settings-section > .settings-row.xt-tile {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* 1.41: the credits cell -- no tile, just the text and a small What's new button */
+
+.xt-tiles > .settings-section.xt-note {
+  aspect-ratio: auto;
+  align-self: center;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: none;
+  background-image: none;
+  border: none;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.xt-note > #appFootNote {
+  margin: 0;
+  padding: 0 4px;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.xt-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--brass);
+  background: transparent;
+  color: var(--brass);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* the changelog lists (start-up note and the Extras sheet) */
+
+.cl-scroll {
+  max-height: min(58vh, 520px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  text-align: left;
+  margin: 8px 0 4px;
+}
+
+.cl-entry + .cl-entry {
+  border-top: 1.5px solid var(--line);
+  margin-top: 8px;
+  padding-top: 8px;
+}
+
+.cl-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  color: var(--head-ink);
+  font-size: 14.5px;
+}
+
+button.cl-head {
+  background: none;
+  border: none;
+  padding: 10px 2px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cl-head .cl-date {
+  font-size: 12px;
+  color: var(--sub-text);
+}
+
+.cl-head .fold-ico {
+  margin-left: auto;
+}
+
+.cl-notes {
+  margin: 4px 0 2px;
+  padding-left: 20px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-text);
+}
+
+.cl-notes[hidden] {
+  display: none;
+}
+
+.cl-apk .cl-head {
+  gap: 6px;
+}
+
+/* 1.41: an odd tile above the credits row (Install alone, in a browser) gets
+   an empty half-width partner, so the credits never slide in beside it --
+   zero height, explicit margins, no gap of its own */
+
+.xt-tiles > .xt-spacer {
+  flex: 0 0 calc((100% - 12px) / 2);
+  height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.xt-tiles .settings-row.xt-tile {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 10px;
+  padding: 16px 8px;
+  min-height: 0;
+}
+
+.settings-row.xt-tile .l1 {
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.2;
+  hyphens: manual;
+  overflow-wrap: normal;
+}
+
+.xt-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: auto;
+  min-width: 38px;
+  height: 38px;
+  color: var(--brass);
+}
+
+.xt-ico svg {
+  width: 38px;
+  height: 38px;
+}
+
+/* A tile's fold floats over the tiles (placed by xtSync next to its tile,
+   on the side with the most room); a dimmed scrim behind it closes it. */
+
+.xt-tiles .xt-body:not([hidden]) {
+  position: fixed;
+  z-index: 1201;
+  margin: 0;
+  padding: 0 12px 10px !important;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  background: var(--panel);
+  border: 2px solid var(--brass);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+  box-sizing: border-box;
+}
+
+/* 1.37: the sheet carries its tile's name on top (stays put while it scrolls);
+   in a column-reverse fold the last flex item is the top, in the colour grid
+   the first */
+
+.xt-tiles .xt-body:not([hidden])::before {
+  content: attr(data-xt-title);
+  display: block;
+  order: 99;
+  grid-column: 1 / -1;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: 0 -12px 6px;
+  padding: 12px 14px 9px;
+  background: var(--panel);
+  border-bottom: 1.5px solid var(--line);
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--head-ink);
+}
+
+.xt-tiles .guild-list.xt-body:not([hidden])::before {
+  order: -1;
+}
+
+.xt-tiles .guild-list.xt-body:not([hidden]) {
+  align-content: start;
+}
+
+.xt-tiles > .xt-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(0, 0, 0, 0.45);
+  touch-action: none;
+}
+
+.xt-tile .seg-inline button {
+  padding: 5px 9px;
+  font-size: 12.5px;
+}
+
+.xt-tiles .xt-tile .seg-inline {
+  margin-left: auto;
+  margin-right: auto;
+  align-self: center;
+}
+
+.xt-tile #apkNote:empty {
+  display: none;
+}
+
+.settings-row .l1 {
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.settings-row .l2 {
+  font-size: 12px;
+  color: var(--sub-text);
+  margin-top: 2px;
+}
+
+/* New! -- flat gold, dark ink (kleurenwet: gold is the seventh colour). */
+
+.new-pill {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px 2px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: #241a04;
+  -webkit-text-fill-color: #241a04;
+  font-family: 'Inter', sans-serif;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  line-height: 1.4;
+  vertical-align: 2px;
+  text-transform: none;
+}
+
+.folder-tile .folder-new {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  margin: 0;
+  z-index: 2;
+}
+
+.about-txt {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink-text);
+  padding: 0 2px 12px;
+}
+
+.about-txt p {
+  margin: 0 0 6px;
+}
+
+.about-txt ul {
+  margin: 0 0 12px;
+  padding-left: 18px;
+}
+
+.about-txt li {
+  margin: 5px 0;
+}
+
+.about-txt .about-h {
+  font-family: 'Cinzel', serif;
+  font-size: 13.5px;
+  color: var(--head-ink);
+  margin: 14px 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+#pasteDeckFileBtn.fb-lead {
+  border-color: var(--brass);
+  color: var(--brass);
+  border-width: 2px;
+}
+
+.cut-list {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 6px;
+  margin: 6px 0;
+}
+
+/* Cuts: the top row of the Inspiration menus (above Theme). Bottom-up: the
+   button at the foot, its body opens UPWARD -- settings, then the list. */
+
+.bs-row.cut-slot {
+  display: block;
+}
+
+.bs-row.insp-land-row {
+  padding-right: 56px;
+}
+
+.bs-row.insp-land-row .ghost-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto;
+  margin: 0;
+}
+
+html.desk .bs-row.insp-land-row {
+  padding-right: 0;
+}
+
+.cut-block {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 6px;
+  width: 100%;
+}
+
+.cut-body {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 6px;
+}
+
+.cut-body > .cut-list {
+  margin: 0;
+}
+
+.cut-set {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 6px;
+  background: var(--panel);
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.cut-basis {
+  font-size: 12.5px;
+  color: var(--sub-text);
+  line-height: 1.35;
+}
+
+.cut-lands {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cut-lands-l {
+  flex: 1;
+  font-size: 14px;
+  color: var(--ink-text);
+}
+
+.cut-lands-n {
+  min-width: 26px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--ink-text);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.cut-step {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.cut-lands-h {
+  flex: none;
+  font-size: 12px;
+  color: var(--sub-text);
+}
+
+.cut-reset {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--ink-text);
+  font-family: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.cut-more {
+  width: 100%;
+}
+
+/* 1.13 AI advisor: a gold star badge (gold face, dark ink -- readable on every theme) */
+
+.cut-ai {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 4px;
+}
+
+.ai-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.ai-star {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: #241a04;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.ai-hint {
+  font-size: 12px;
+  color: var(--sub-text);
+  text-align: center;
+}
+
+.ai-err {
+  font-size: 12.5px;
+  color: var(--ink-text);
+  line-height: 1.35;
+  border-left: 3px solid var(--gold);
+  padding-left: 8px;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.ai-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink-text);
+  line-height: 1.35;
+}
+
+.ai-row .ai-txt {
+  flex: 1;
+  min-width: 0;
+}
+
+.ai-via {
+  display: block;
+  font-size: 11.5px;
+  color: var(--sub-text);
+  margin-top: 2px;
+}
+
+.ai-badge {
+  flex: none;
+  display: inline-block;
+  background: var(--gold);
+  color: #241a04;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 2px 6px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.cut-ai-tag {
+  align-self: flex-start;
+}
+
+.ai-spin {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--line);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: sp 0.7s linear infinite;
+}
+
+.cut-grid {
+  display: flex;
+  flex-wrap: wrap-reverse;
+  gap: 10px;
+}
+
+.cut-grid > .cut-tile {
+  flex: 0 0 calc(50% - 5px);
+  min-width: 0;
+}
+
+.cut-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--panel);
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  padding: 6px;
+}
+
+.cut-tile img {
+  width: 100%;
+  display: block;
+  aspect-ratio: 63/88;
+  object-fit: cover;
+  border-radius: 4.75% / 3.5%;
+  background: var(--field);
+  cursor: pointer;
+}
+
+.cut-reason {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 2px 2px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--sub-text);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.35;
+  min-height: calc(3 * 1.35em + 4px);
+}
+
+.cut-reason-t {
+  flex: 1;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.cut-reason-i {
+  flex: none;
+  color: var(--ink-text);
+  font-size: 15px;
+  line-height: 1;
+}
+
+.cut-act {
+  width: 100%;
+  font-size: 13px;
+  padding: 8px 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cut-act .ib {
+  margin-right: 6px;
+}
+
+.cut-why-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cut-why-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border-left: 3px solid var(--line);
+  padding-left: 10px;
+}
+
+.cut-why-list b {
+  font-size: 14px;
+  color: var(--ink-text);
+}
+
+.cut-why-list span {
+  font-size: 13.5px;
+  color: var(--sub-text);
+  line-height: 1.45;
+}
+
+.cut-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--panel);
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  padding: 6px 8px;
+}
+
+.cut-row img {
+  width: 44px;
+  border-radius: 4px;
+  aspect-ratio: 63/88;
+  object-fit: cover;
+  flex: none;
+  cursor: pointer;
+  background: var(--field);
+}
+
+.cut-txt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cut-txt b {
+  font-size: 14px;
+  color: var(--ink-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cut-txt span {
+  font-size: 12px;
+  color: var(--sub-text);
+  line-height: 1.35;
+}
+
+.cut-btn {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cut-btn svg {
+  width: 19px;
+  height: 19px;
+}
+
+.about-txt .about-gh {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+  padding: 10px 8px;
+}
+
+/* 1.0: feedback */
+
+.about-txt .about-fb-hint {
+  font-size: 13px;
+  color: var(--sub-text);
+  margin: 0 0 8px;
+}
+
+.about-txt .about-fb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin: 0 0 10px;
+}
+
+.fb-sheet {
+  gap: 8px;
+}
+
+.fb-sheet h4 {
+  margin: 0;
+}
+
+.fb-sheet .fb-hint {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--sub-text);
+  margin: 0;
+}
+
+.fb-sheet textarea,
+.fb-sheet input[type='email'] {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--field);
+  border: 1.5px solid var(--field-line);
+  border-radius: 8px;
+  color: var(--ink-text);
+  padding: 10px 12px;
+  font-size: 15px;
+  font-family: inherit;
+}
+
+.fb-sheet textarea {
+  resize: none;
+  min-height: 110px;
+}
+
+.fb-shots {
+  display: flex;
+  gap: 8px;
+}
+
+.fb-shot {
+  position: relative;
+  flex: 0 0 74px;
+  height: 96px;
+  border-radius: 8px;
+  border: 1.5px dashed var(--line);
+  background: var(--ink-2);
+  color: var(--sub-text);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 11.5px;
+  font-family: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  padding: 0;
+}
+
+.fb-shot img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fb-shot .fb-x {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 13px;
+  line-height: 22px;
+  text-align: center;
+  z-index: 2;
+}
+
+.fb-sheet .fb-hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.fb-sheet .fb-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.fb-sheet .fb-actions button {
+  flex: 1;
+  margin: 0;
+}
+
+.fb-sheet .fb-count {
+  font-size: 11px;
+  color: var(--sub-text);
+  text-align: right;
+  margin-top: -4px;
+}
+
+.settings-body {
+  padding: 0 14px 14px;
+  border-top: 2px solid var(--line);
+}
+
+.settings-body.collapsed {
+  display: none;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  flex: 0 0 auto;
+}
+
+.toggle-switch input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  cursor: pointer;
+  margin: 0;
+}
+
+.toggle-switch .track {
+  position: absolute;
+  inset: 0;
+  background: var(--ink-2);
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  transition: background 0.2s;
+}
+
+.toggle-switch .knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: var(--sub-text);
+  border-radius: 50%;
+  transition:
+    transform 0.2s,
+    background 0.2s;
+}
+
+.toggle-switch input:checked + .track {
+  background: var(--brass-glow);
+  border-color: var(--brass);
+}
+
+.toggle-switch input:checked + .track + .knob {
+  transform: translateX(18px);
+  background: var(--brass);
+}
+
+.danger-row {
+  color: var(--danger);
+}
+
+.theme-seg {
+  padding: 0 14px 14px;
+}
+
+/* Colour-scheme drop-up: the guild grid sits ABOVE its row in the DOM and on
+   screen, unfolding upward out of the row like every other sheet. */
+
+.guild-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 10px 10px 8px;
+  border-bottom: 2px solid var(--line);
+}
+
+.guild-list[hidden] {
+  display: none;
+}
+
+#guildRow:not(.xt-tile) {
+  justify-content: space-between;
+}
+
+#guildRow .guild-cur {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.guild-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  background: var(--field);
+  border: 1.5px solid var(--field-line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: var(--ink-text);
+  font-family: 'Inter';
+  font-size: 14px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.guild-opt .mana-ic {
+  flex: none;
+}
+
+.guild-opt span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.guild-opt.sel {
+  border-color: var(--brass);
+  background: var(--brass-glow);
+  color: var(--ink-text);
+}
+
+.guild-opt.sel,
+.guild-opt.sel svg {
+  -webkit-text-fill-color: var(--ink-text);
+}
+
+.guild-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  flex: none;
+  background: linear-gradient(135deg, var(--gm) 0 50%, var(--gs) 50% 100%);
+  border: 1px solid rgba(0, 0, 0, 0.4);
+}
+
+.guild-cur {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--head-ink);
+  font-size: 13.5px;
+  flex: none;
+}
+
+.seg-inline {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.seg-inline button {
+  padding: 7px 16px;
+  font-size: 13px;
+}

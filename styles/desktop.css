@@ -1,0 +1,1078 @@
+/* ===================== 1.28 DESK MODE (html.desk, 1000 px and wider) =====================
+   A PC, a laptop or a tablet on its side reads like a web page: navigation
+   at the top, every page opening at its top, lists starting with their best
+   item at the top, menus dropping DOWN, dialogs in the middle with a cross.
+   The width is calmer too: the content stands in a column of at most
+   1240 px (Moxfield-like), and text is a size bigger. The phone keeps its
+   bottom-up design -- nothing here applies below 1000 px. */
+
+html.desk {
+  --nav-h: 0px;
+  --top-nav: 58px;
+  --cap-h: 46px;
+  --top-h: calc(var(--top-nav) + var(--cap-h));
+  --dw: min(1240px, calc(100vw - 48px));
+  --dl: max(16px, calc((100vw - var(--dw)) / 2));
+}
+
+html.desk body {
+  max-width: none;
+  margin: 0;
+  font-size: 15px;
+}
+
+html.desk .app {
+  max-width: var(--dw);
+}
+
+html.desk main {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+html.desk .app > main {
+  padding-top: calc(var(--top-h) + 18px) !important;
+  padding-bottom: 48px !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+}
+
+html.desk .app > main > * {
+  order: 0 !important;
+}
+
+html.desk .app > main::before {
+  display: none !important;
+}
+
+/* ---- the top: navigation row, then the page's title row ---- */
+
+html.desk .brand-banner,
+html.desk .overlay .brand-banner.ov-nav {
+  position: fixed;
+  top: 0;
+  bottom: auto;
+  left: 0;
+  right: 0;
+  width: auto;
+  height: var(--top-nav);
+  max-width: none;
+  margin: 0;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  padding: 0 var(--dl);
+  border-top: none;
+  border-bottom: 2px solid var(--line);
+  z-index: 85;
+  overflow: visible;
+}
+
+html.desk .overlay .brand-banner.ov-nav {
+  position: static;
+  flex: 0 0 auto;
+  order: -10 !important;
+}
+
+html.desk .brand-banner .spacer {
+  flex: 1 1 auto;
+}
+
+html.desk .brand-banner .banner-tabs {
+  flex-direction: row;
+  gap: 8px;
+}
+
+html.desk .brand-banner .banner-tab,
+html.desk .brand-banner .compass {
+  width: auto;
+  height: 40px;
+  padding: 0 14px 0 10px;
+  gap: 8px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+html.desk .brand-banner .banner-tab svg,
+html.desk .brand-banner .compass svg {
+  width: 22px;
+  height: 22px;
+}
+
+html.desk .brand-banner .banner-tab::after,
+html.desk .brand-banner .compass::after {
+  content: attr(title);
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+html.desk .brand-banner .compass {
+  border: 2px solid var(--line);
+  color: var(--sub-text);
+  cursor: pointer;
+}
+
+html.desk .brand-banner .compass.active {
+  color: var(--brass);
+  border-color: var(--brass);
+  background: var(--brass-glow);
+}
+
+html.desk .page-cap {
+  top: var(--top-nav);
+  height: var(--cap-h);
+  left: 0;
+  right: 0;
+  padding: 0 var(--dl);
+}
+
+html.desk .page-cap .brand-txt {
+  font-size: 20px;
+}
+
+html.desk #capDeckCount {
+  left: var(--dl) !important;
+  font-size: 14px !important;
+}
+
+html.desk .page-cap .net-chip {
+  left: var(--dl);
+}
+
+html.desk .page-cap:has(.net-chip) #capDeckCount {
+  left: calc(var(--dl) + 96px) !important;
+}
+
+html.desk .page-cap .cap-note {
+  right: var(--dl);
+  font-size: 13px;
+}
+
+html.desk .page-cap > span[style*='left:12px'] {
+  left: var(--dl) !important;
+}
+
+/* ---- overlays: the nav row on top, then their title, the content in the column ---- */
+
+html.desk .overlay .overlay-inner {
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+html.desk .overlay .ov-cap,
+html.desk .overlay .overlay-inner > .topbar {
+  order: -9 !important;
+}
+
+html.desk .overlay main {
+  width: 100%;
+  max-width: var(--dw);
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+  padding-bottom: 40px;
+}
+
+html.desk [id^='cardSheetOverlay']:not(.sheet-over-overlay):not(.cs-pop) {
+  top: var(--top-nav);
+  bottom: 0;
+  left: 0;
+}
+
+html.desk #crOverlay #crBody {
+  flex-direction: column;
+}
+
+/* ---- every bottom-up list and stack reads top-down ---- */
+
+html.desk
+  :where(
+    #crOverlay .cr-toc,
+    .app > main.settings-main,
+    .app > main:has(> div > #deckFilter),
+    .adv-panel,
+    #colAdvBox,
+    .adv-panel .cselect,
+    #colAdvBox .cselect,
+    .adv-panel .cselect-panel,
+    #colAdvBox .cselect-panel,
+    .app > main:has(> #colAdvBox),
+    #cotdBox,
+    .sp-feed,
+    .sp-group,
+    #builderBody,
+    #decklistBox,
+    .otag-pop,
+    .df-compact .cselect-panel,
+    .st-detail,
+    .tag-drop,
+    .tag-drop-list,
+    .deck-grid.as-list,
+    .scan-list,
+    .br-dd .br-dd-panel,
+    .cat-group,
+    .visual-grid.vg-text,
+    #colAddSheet .col-addlist,
+    .home-news,
+    .name-suggest,
+    .cselect.cs-foot .cselect-panel,
+    .cselect.cs-up > .cselect-panel,
+    .browse-selects .cselect > .cselect-panel,
+    #recoOverlay .cselect > .cselect-panel,
+    .overlay .reco-themes .cselect > .cselect-panel,
+    .df-compact .cselect > .cselect-panel,
+    #logGameOverlay .cselect > .cselect-panel,
+    #nselPop,
+    .browse-selects,
+    .acc-up [data-banbox] > div:has(> .banlist-grid),
+    #recoOverlay main,
+    #similarOverlay main,
+    #pairPopOverlay main,
+    #printOverlay main,
+    #colAddSheet main,
+    #addCollOverlay main,
+    #budgetOverlay main,
+    #cardRecoOverlay main,
+    #metaDeckOverlay main,
+    #deckPriceOverlay main,
+    .dpp-box,
+    #mdBody,
+    .acc-up:not([hidden]),
+    .acc-up [data-fmtrule] > div,
+    .acc-up [data-banfmt] > div,
+    .ub-wrap,
+    .ub-switches,
+    .acc-up [data-fmtruletxt]:not([hidden]),
+    .acc-up [data-banbox]:not([hidden]),
+    #bgBody,
+    .budget-trio,
+    .cj-try,
+    .cr-tagpop,
+    .cselect:has(> .cselect-panel.inline),
+    .cselect-panel.inline,
+    .glog-list,
+    .mu-list,
+    .mu-sbblock,
+    .mu-pick,
+    .history-list,
+    .dv-list,
+    [style*='flex-direction:column-reverse']
+  ) {
+  flex-direction: column !important;
+}
+
+html.desk
+  :where(
+    #browseResults .insp-grid,
+    #bsNameResults .insp-grid,
+    #browseResults .sr-grid,
+    #bsNameResults .sr-grid,
+    .salt-grid,
+    .deck-grid,
+    .fp-grid,
+    .pt-row,
+    .visual-grid,
+    .col-grid,
+    .sp-jump,
+    .sr-grid,
+    .sc-grid,
+    .banlist-grid,
+    .app > main.settings-main.xt-tiles,
+    .cover-grid,
+    .opp-chips,
+    .cut-grid,
+    [style*='flex-wrap:wrap-reverse']
+  ) {
+  flex-wrap: wrap !important;
+}
+
+/* sections the app wrote best-last (for the foot) stand best-first again */
+
+html.desk :has(> .edh-sec) {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+html.desk :has(> .edh-sec) > .hint,
+html.desk :has(> .edh-sec) > p {
+  order: 99;
+}
+
+html.desk .edh-sec > .section-label {
+  order: -1 !important;
+}
+
+html.desk .edh-sec > .edh-more {
+  order: 5;
+  margin: 6px 0 0 !important;
+}
+
+html.desk .overlay main .edh-sec > .section-label,
+html.desk #recoOverlay .edh-sec > .section-label {
+  top: 0 !important;
+  bottom: auto !important;
+}
+
+/* headings above what they head */
+
+html.desk .detail-h {
+  order: -1;
+}
+
+html.desk .sp-group > .sp-shelf,
+html.desk .sp-group > .chip-label {
+  order: -1;
+}
+
+/* ---- search bars and filters at the top ---- */
+
+html.desk .app > main > .searchbar,
+html.desk .app > main > div:has(> #deckFilter) {
+  position: sticky;
+  top: var(--top-h);
+  bottom: auto;
+  margin: 0 -16px 10px !important;
+  padding: 10px 16px;
+  border-top: none;
+  border-bottom: 2px solid var(--line);
+}
+
+html.desk .app > main > .adv-toggle,
+html.desk .app > main > div:has(> #colAdvToggle) {
+  position: static;
+  margin: 0 0 10px !important;
+}
+
+html.desk .app > main > #spAdvToggle {
+  position: static;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  margin: 0 0 10px;
+}
+
+html.desk .adv-go-row {
+  position: sticky;
+  bottom: 0;
+  order: 99 !important;
+}
+
+/* filter panels: a side panel to the right of the results */
+
+html.desk .app > main > .adv-panel,
+html.desk .app > main > #advSlot > .adv-panel,
+html.desk .app > main > #colAdvBox,
+html.desk .app > main > #spAdvBox {
+  position: fixed;
+  left: auto !important;
+  right: 0;
+  top: var(--top-h);
+  bottom: 0;
+  width: 400px;
+  max-height: none;
+  border-radius: 0;
+  border-top: none;
+  border-left: 2px solid var(--line);
+  box-shadow: -12px 0 30px rgba(0, 0, 0, 0.4);
+  box-sizing: border-box;
+}
+
+html.desk .app > main:has(> #advSlot > .adv-panel),
+html.desk .app > main:has(> #colAdvBox),
+html.desk .app > main:has(> #spAdvBox) {
+  padding-right: calc(400px + 16px);
+}
+
+html.desk .browse-selects .cselect-panel,
+html.desk #recoOverlay .cselect-panel,
+html.desk .overlay .reco-themes .cselect-panel,
+html.desk .cselect-panel {
+  top: calc(100% + 4px) !important;
+  bottom: auto !important;
+}
+
+html.desk .otag-pop {
+  top: calc(100% + 4px);
+  bottom: auto;
+}
+
+html.desk
+  .app
+  > main.cs-open:has(> .browse-selects)
+  > *:not(.browse-selects):not(.searchbar):not(.adv-panel):not(#colAdvBox):not(#advSlot) {
+  display: revert;
+}
+
+html.desk
+  .app
+  > main.cs-open:has(> .browse-selects)
+  > :is(#inspireResults, #browseResults, #bsNameResults, .browse-hero) {
+  display: block;
+}
+
+/* the tag picker drops down under its field */
+
+html.desk .tag-add-row .tag-drop,
+html.desk #ciTagBox .tag-drop {
+  position: absolute;
+  top: calc(100% + 6px);
+  bottom: auto;
+  left: 0;
+  right: 0;
+  width: auto;
+  max-height: min(60vh, 520px);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55);
+}
+
+html.desk .tag-drop-search {
+  border-top: none;
+  border-bottom: 2px solid var(--pop-line);
+}
+
+/* ---- the deck page: its tabs and tools under the title row ---- */
+
+html.desk .app > main > .builder-tabs {
+  top: var(--top-h);
+  bottom: auto;
+  left: var(--dl);
+  right: auto;
+  width: 330px;
+  height: 50px;
+  padding: 6px 0;
+  border-top: none;
+  border-bottom: 2px solid var(--line);
+  background: var(--ink);
+  z-index: 41;
+}
+
+html.desk .deck-dock {
+  top: var(--top-h);
+  bottom: auto;
+  left: calc(var(--dl) + 330px);
+  right: var(--dl);
+  width: auto;
+  transform: none;
+  max-width: none;
+  box-shadow: none;
+  height: 50px;
+  box-sizing: border-box;
+  border-top: none;
+  border-bottom: 2px solid var(--line);
+  background: var(--ink);
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+html.desk .deck-dock .menu-pop {
+  top: 54px;
+  bottom: auto;
+  left: auto;
+  right: 0;
+}
+
+html.desk .deck-dock .dk-tool,
+html.desk .deck-dock #menuBtn {
+  width: auto;
+  height: 36px;
+  padding: 0 10px 0 8px;
+  gap: 6px;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+html.desk .deck-dock .dk-tool::after,
+html.desk .deck-dock #menuBtn::after {
+  content: attr(title);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* 1.44: a narrower window keeps the toolbar's icons, drops their words */
+
+@media (max-width: 1320px) {
+  html.desk .deck-dock .dk-tool::after,
+  html.desk .deck-dock #menuBtn::after {
+    content: none;
+  }
+  html.desk .deck-dock .dk-tool,
+  html.desk .deck-dock #menuBtn {
+    padding: 0;
+    width: 36px;
+    justify-content: center;
+  }
+}
+
+/* 1.44: the search / filter bar runs the full page width on PC */
+
+html.desk .app > main > .searchbar {
+  max-width: none;
+  width: auto;
+}
+
+/* ===== 1.45 desk: the page's name sits in the top bar, between Back and
+   the page buttons -- no second bar unless it carries tools (deck tabs).
+   --capL / --capR are measured from the bar itself (deskCapFit). ===== */
+
+html.desk {
+  --cap-h: 0px;
+}
+
+html.desk .page-cap {
+  top: 0 !important;
+  height: var(--top-nav) !important;
+  min-height: 0;
+  left: var(--capL, 280px) !important;
+  right: var(--capR, 680px) !important;
+  padding: 0 !important;
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  z-index: 86;
+}
+
+html.desk .page-cap {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+html.desk .page-cap > * {
+  position: static !important;
+  transform: none !important;
+  flex: 0 0 auto;
+  margin: 0 !important;
+}
+
+html.desk .page-cap > .brand-txt {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: none !important;
+  font-size: 17px;
+  text-align: center;
+  line-height: 1.15;
+}
+
+html.desk .page-cap > .cap-note {
+  order: 9;
+}
+
+html.desk #capDeckCount {
+  padding: 0 !important;
+}
+
+html.desk .overlay-inner:has(> .ov-nav) {
+  position: relative;
+}
+
+html.desk .overlay-inner:has(> .ov-nav) > .ov-cap {
+  position: absolute !important;
+  top: 0;
+  left: var(--capL, 280px);
+  right: var(--capR, 680px);
+  height: var(--top-nav);
+  min-height: 0;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+html.desk .overlay-inner:has(> .ov-nav) > .ov-cap .ov-title {
+  font-size: 17px;
+}
+
+/* a narrower window: the page buttons keep their icons, drop their words */
+
+@media (max-width: 1500px) {
+  html.desk .brand-banner .banner-tab::after {
+    content: none;
+  }
+  html.desk .brand-banner .banner-tabs .banner-tab {
+    padding: 0 10px;
+  }
+}
+
+/* the filter panel opens centred under the search bar, not at the side */
+
+html.desk .app > main > .adv-panel,
+html.desk .app > main > #advSlot > .adv-panel,
+html.desk .app > main > #colAdvBox,
+html.desk .app > main > #spAdvBox {
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%);
+  top: calc(var(--top-h) + 64px) !important;
+  bottom: auto !important;
+  width: min(720px, calc(100vw - 32px)) !important;
+  max-height: calc(100vh - var(--top-h) - 84px) !important;
+  overflow-y: auto;
+  border: 2px solid var(--line) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55) !important;
+}
+
+html.desk .app > main:has(> #advSlot > .adv-panel),
+html.desk .app > main:has(> #colAdvBox),
+html.desk .app > main:has(> #spAdvBox) {
+  padding-right: 16px !important;
+}
+
+/* the gold + sits top-left, at the start of the search bar */
+
+html.desk .deck-fab:not(.col-sel-fab):not(.dl-empty-plus) {
+  position: fixed;
+  top: calc(var(--top-h) + 6px);
+  left: calc(var(--dl) + 10px);
+  right: auto;
+  bottom: auto;
+  width: 46px;
+  height: 46px;
+  font-size: 22px;
+  z-index: 42;
+}
+
+html.desk .app > main:has(> .deck-fab:not(.col-sel-fab):not(.dl-empty-plus)) > .searchbar {
+  padding-left: 70px !important;
+}
+
+html.desk .deck-dock .dk-mid:has(.dk-type) {
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+html.desk #builderBody {
+  min-height: 0;
+  justify-content: flex-start;
+}
+
+html.desk .dl-bridge-desc {
+  justify-content: flex-start;
+}
+
+html.desk .dl-leader-cat {
+  margin-top: 0;
+}
+
+html.desk .dl-bridge:not(.dl-bridge-60) {
+  grid-template-columns: minmax(0, 260px) minmax(0, 620px);
+}
+
+html.desk #decklistBox:has(.vg-stack),
+html.desk #decklistBox:has(.vg-text) {
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 16px 18px;
+}
+
+html.desk #decklistBox:has(.vg-stack) > .cat-group {
+  flex: 0 0 220px;
+  width: 220px;
+  margin: 0;
+}
+
+html.desk #decklistBox:has(.vg-text) > .cat-group {
+  flex: 0 0 290px;
+  width: 290px;
+  margin: 0;
+}
+
+html.desk #decklistBox .cat-group .visual-grid.vg-stack {
+  width: 100%;
+  max-width: none;
+  flex-direction: column !important;
+}
+
+html.desk #decklistBox:has(.vg-stack) > :not(.cat-group),
+html.desk #decklistBox:has(.vg-text) > :not(.cat-group) {
+  flex: 1 0 100%;
+}
+
+html.desk .cat-group > .cat-head {
+  border-bottom: 2px solid var(--line);
+}
+
+html.desk .cat-head .t {
+  font-size: 15px;
+}
+
+html.desk #builderBody:has(> .panel-card) {
+  max-width: 980px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ---- tiles: as many as fit, centred ---- */
+
+html.desk
+  :is(
+    .sr-grid,
+    .sc-grid,
+    .visual-grid:not(.vg-stack):not(.vg-text),
+    .col-grid,
+    .deck-grid:not(.as-list)
+  )
+  > * {
+  flex: 0 0 200px;
+  max-width: 200px;
+}
+
+html.desk :is(.sr-grid, .sc-grid, .visual-grid, .col-grid, .deck-grid) {
+  justify-content: center;
+}
+
+html.desk #spMainPage .sc-grid > * {
+  flex-basis: 200px;
+}
+
+html.desk .pair-grid {
+  grid-template-columns: repeat(auto-fill, 250px);
+  justify-content: center;
+}
+
+/* ---- Extras: four tiles a row; folds drop under the title row ---- */
+
+html.desk .xt-tiles > .settings-section,
+html.desk .xt-tiles > .xt-spacer {
+  flex-basis: calc((100% - 36px) / 4);
+}
+
+html.desk .app > main.settings-main.xt-tiles {
+  flex-direction: row !important;
+  align-content: flex-start;
+}
+
+html.desk .xt-tiles .xt-body:not([hidden])::before {
+  order: -1;
+}
+
+/* ---- Home: logo, then the news, wide and roomy ---- */
+
+html.desk .app > main.home-page {
+  justify-content: flex-start !important;
+}
+
+html.desk .home-news {
+  max-width: 100%;
+  width: 100%;
+  height: auto !important;
+  max-height: none;
+  padding: 6px 20px;
+  margin-top: 18px;
+}
+
+html.desk .home-news .news-item {
+  padding: 14px 4px;
+  gap: 16px;
+}
+
+html.desk .home-news .news-item .nw-img {
+  width: 92px;
+  height: 92px;
+  border-radius: 10px;
+}
+
+html.desk .home-news .news-item .nw-t {
+  font-size: 16.5px;
+  line-height: 1.35;
+}
+
+html.desk .home-news .news-item .nw-m {
+  font-size: 13.5px;
+  margin-top: 4px;
+}
+
+html.desk .home-news.news-grid > .news-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0 26px;
+  border-bottom: 1px solid var(--line);
+}
+
+html.desk .home-news.news-grid > .news-row:last-child {
+  border-bottom: none;
+}
+
+html.desk .home-news.news-grid > .news-row:first-child {
+  border-bottom: 1px solid var(--line);
+}
+
+html.desk .home-news.news-grid .news-item {
+  border-bottom: none;
+}
+
+/* ---- the card page (wide): picture and buttons left, text right, centred ---- */
+
+html.desk .overlay-inner > main.card-detail {
+  display: grid;
+  max-width: 1180px;
+  grid-template-columns: minmax(280px, 400px) minmax(340px, 640px);
+  grid-template-rows: min-content min-content auto min-content min-content;
+  column-gap: 44px;
+  justify-content: center;
+  align-content: safe center;
+}
+
+html.desk main.card-detail > div:nth-child(1) {
+  grid-column: 1;
+  grid-row: 1 / 4;
+  align-self: start;
+}
+
+html.desk main.card-detail > #csTagBox,
+html.desk main.card-detail > #ciTagBox {
+  grid-column: 1;
+  grid-row: 4;
+}
+
+html.desk main.card-detail > div:nth-child(2) {
+  grid-column: 1;
+  grid-row: 5;
+}
+
+html.desk main.card-detail > .detail-sec:has(#sheetOracle) {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: start;
+}
+
+html.desk main.card-detail > .detail-sec:not(:has(#csRulings)):not(:has(#sheetOracle)) {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: start;
+}
+
+html.desk main.card-detail > .detail-sec:has(#csRulings) {
+  grid-column: 2;
+  grid-row: 3 / 6;
+  align-self: start;
+}
+
+html.desk main.card-detail > .sheet-foot-spacer {
+  display: none;
+}
+
+html.desk main.card-detail .cd-hero {
+  max-width: 400px;
+}
+
+/* the card menu by the mouse, top-down: text, buttons, then the folds */
+
+html.desk .overlay.cs-pop main.card-detail {
+  display: flex !important;
+}
+
+html.desk .overlay.cs-pop main.card-detail > .detail-sec:has(#sheetOracle) {
+  order: 1 !important;
+}
+
+html.desk .overlay.cs-pop main.card-detail > div:nth-child(2) {
+  order: 2 !important;
+  margin-top: 10px;
+}
+
+html.desk .overlay.cs-pop main.card-detail > #csTagBox,
+html.desk .overlay.cs-pop main.card-detail > #ciTagBox {
+  order: 3 !important;
+}
+
+html.desk
+  .overlay.cs-pop
+  main.card-detail
+  > .detail-sec:not(:has(#sheetOracle)):not(:has(#csRulings)) {
+  order: 4 !important;
+}
+
+html.desk .overlay.cs-pop main.card-detail > .detail-sec:has(#csRulings) {
+  order: 5 !important;
+}
+
+html.desk .overlay.cs-pop main {
+  max-width: none;
+  margin: 0;
+}
+
+html.desk .overlay.cs-pop .topbar {
+  padding-right: 52px;
+}
+
+/* ---- dialogs in the middle, with a cross ---- */
+
+html.desk .deckpick-scrim {
+  align-items: center !important;
+}
+
+html.desk .deckpick-scrim > .deckpick {
+  border-radius: 14px;
+  max-width: 560px;
+  width: calc(100% - 48px);
+}
+
+.desk-x {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 20;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: var(--panel);
+  color: var(--ink-text);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.desk-x:hover {
+  border-color: var(--brass);
+  color: var(--brass);
+}
+
+.overlay.cs-pop > .cs-pop-x {
+  top: 6px;
+  right: 8px;
+  z-index: 150;
+}
+
+html.desk .toast {
+  bottom: 28px;
+}
+
+/* ---- buttons say what they do ---- */
+
+html.desk .searchbar > button[title]:not(.in-chev):not(.sel-fab) {
+  gap: 7px;
+  padding: 0 13px !important;
+  display: inline-flex;
+  align-items: center;
+}
+
+html.desk .searchbar > button[title]:not(.in-chev):not(.sel-fab)::after {
+  content: attr(title);
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ---- a size bigger to read ---- */
+
+html.desk .hint {
+  font-size: 14px;
+}
+
+html.desk .ghost-btn,
+html.desk .primary-btn {
+  font-size: 15px;
+}
+
+html.desk .panel-h {
+  font-size: 14.5px;
+}
+
+html.desk .menu-pop button,
+html.desk .cselect-opt,
+html.desk #nselPop .cselect-opt,
+html.desk .tag-drop button {
+  font-size: 15px;
+}
+
+html.desk .searchbar input,
+html.desk .col-filter-input,
+html.desk .tag-add-row input {
+  font-size: 15.5px;
+}
+
+html.desk .oracle-text {
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+html.desk .settings-row.xt-tile .l1 {
+  font-size: 18px;
+}
+
+html.desk .sr-tile .st-price {
+  font-size: 14px;
+}
+
+html.desk .dl-desc-text {
+  font-size: 14.5px;
+}
+
+/* ---- the big card on a click ---- */
+
+#cardZoomBox {
+  position: fixed;
+  z-index: 400;
+  display: none;
+  border-radius: 4.75% / 3.5%;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.75);
+  background: #111;
+  cursor: zoom-out;
+}
+
+#cardZoomBox img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  border-radius: 4.75% / 3.5%;
+}
+
+#cardZoomBox .cz-x {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--brass);
+  background: var(--panel);
+  color: var(--ink-text);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+html.desk :is(.sr-tile, .sc-tile, .vg-card, .col-tile) img {
+  cursor: zoom-in;
+}
+
+/* ---- tablet (portrait) news: wider and easier to read ---- */
+
+@media (min-width: 700px) and (max-width: 999px) {
+  .home-news {
+    max-width: 680px;
+  }
+  .home-news .news-item .nw-img {
+    width: 72px;
+    height: 72px;
+  }
+  .home-news .news-item .nw-t {
+    font-size: 15.5px;
+  }
+}

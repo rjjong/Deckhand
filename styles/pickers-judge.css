@@ -1,0 +1,1051 @@
+/* ---------- add-to-deck popup ---------- */
+
+.deckpick-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 120;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/* 1.50 tour: a bubble beside its feature, an arrow and a ring pointing at it */
+
+#tourScrim .tour-bubble {
+  position: absolute;
+  margin: 0;
+  max-width: none;
+  max-height: none;
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  padding: 10px 12px 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+#tourScrim .tour-ring {
+  position: absolute;
+  border: 2.5px solid var(--gold);
+  border-radius: 12px;
+  pointer-events: none;
+  box-shadow: 0 0 16px var(--gold);
+  animation: tourRing 1.4s ease-in-out infinite;
+}
+
+@keyframes tourRing {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+#tourScrim .tour-arrow {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+#tourScrim .tour-arrow path {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 7 6;
+  animation: tourDash 0.8s linear infinite;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+}
+
+#tourScrim .tour-arrow polygon {
+  fill: var(--gold);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+}
+
+@keyframes tourDash {
+  to {
+    stroke-dashoffset: -13;
+  }
+}
+
+.deckpick {
+  width: 100%;
+  max-width: 440px;
+  background: var(--ink-2);
+  border: 2px solid var(--line);
+  border-bottom: none;
+  border-radius: 16px 16px 0 0;
+  padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.deckpick h4 {
+  font-family: 'Cinzel', serif;
+  color: var(--brass);
+  font-size: 14px;
+  margin: 0 0 4px;
+  letter-spacing: 0.5px;
+}
+
+.deckpick .dp-sub {
+  font-size: 12.5px;
+  color: var(--sub-text);
+  margin: 0 0 10px;
+}
+
+.deckpick-list {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dp-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--panel);
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  text-align: left;
+  color: var(--ink-text);
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.dp-row:hover {
+  border-color: var(--brass);
+}
+
+.dp-row .dp-meta {
+  font-size: 11.5px;
+  color: var(--sub-text);
+  font-weight: 400;
+  margin-top: 1px;
+}
+
+.dp-row .dp-txt {
+  flex: 1;
+  min-width: 0;
+}
+
+.dp-row .dp-pips {
+  flex: none;
+  margin-left: auto;
+}
+
+.dp-cancel {
+  margin-top: 10px;
+  background: none;
+  border: 2px solid var(--line);
+  color: var(--sub-text);
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* ---------- pinned-deck pill (search page) ---------- */
+
+.pin-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--brass-glow);
+  border: 2px solid var(--line);
+  border-radius: 20px;
+  padding: 6px 8px 6px 14px;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: var(--brass);
+  font-weight: 600;
+}
+
+.pin-pill .pp-txt {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pin-pill button {
+  background: none;
+  border: none;
+  color: var(--brass);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 6px;
+  opacity: 0.8;
+}
+
+/* ---------- card of the day ---------- */
+
+.cotd {
+  margin-top: 8px;
+  text-align: center;
+}
+
+#crOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9600;
+  background: var(--ink);
+  display: flex;
+  flex-direction: column;
+  max-width: none;
+}
+
+.cr-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px 6px;
+}
+
+.cr-title {
+  font-family: 'Cinzel', serif;
+  font-size: 17px;
+  color: var(--brass);
+  letter-spacing: 0.04em;
+}
+
+.cr-bar {
+  display: flex;
+  gap: 8px;
+  padding: 8px 14px 10px;
+  position: relative;
+}
+
+/* 1.33: the judge */
+
+.cr-bar textarea {
+  flex: 1;
+  min-width: 0;
+  background: var(--field);
+  border: 1.5px solid var(--field-line);
+  border-radius: 8px;
+  color: var(--ink-text);
+  padding: 10px 12px;
+  font-size: 15px;
+  line-height: 1.35;
+  resize: none;
+  font-family: inherit;
+}
+
+/* 1.36: tagged cards underlined IN the field -- a mirror of the text behind
+   the (transparent) field draws only the underlines. */
+
+.cr-qwrap {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  display: flex;
+  background: var(--field);
+  border: 1.5px solid var(--field-line);
+  border-radius: 8px;
+}
+
+.cr-qwrap textarea,
+.cr-qmirror {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 15px;
+  line-height: 1.35;
+  font-family: inherit;
+  letter-spacing: normal;
+  word-spacing: normal;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: normal;
+  box-sizing: border-box;
+}
+
+.cr-bar .cr-qwrap textarea {
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  position: relative;
+  z-index: 1;
+  scrollbar-width: none;
+}
+
+.cr-qwrap textarea::-webkit-scrollbar {
+  display: none;
+}
+
+.cr-qmirror {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  color: transparent;
+  pointer-events: none;
+}
+
+.cr-qmirror .cr-tagu {
+  text-decoration: underline;
+  text-decoration-color: var(--brass);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.cr-count.cr-left {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-text);
+  white-space: nowrap;
+}
+
+/* 1.37: the page behind the judge never scrolls along (no wobble) */
+
+html:has(#crOverlay) {
+  overflow: hidden;
+}
+
+#crOverlay #crBody {
+  overscroll-behavior: contain;
+}
+
+.cj-hero .cj-ico[hidden],
+.cj-try .cj-ex[hidden] {
+  display: none;
+}
+
+.cj-notice {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.cj-notice .deckpick {
+  border-radius: 16px;
+  max-width: 320px;
+  width: 100%;
+  margin: auto;
+  text-align: center;
+}
+
+.cr-tagpop .cr-tagnote {
+  padding: 10px 12px;
+  font-size: 13.5px;
+  font-style: italic;
+  color: var(--sub-text);
+}
+
+.cj-card {
+  text-decoration: underline;
+  text-decoration-color: var(--brass);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.cja-whyt {
+  display: block;
+  margin: 10px 0 0;
+  padding: 8px 0 2px;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-top: 1.5px solid var(--line);
+  color: var(--ink-text);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cja-whyt .fold-ico {
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+.cja .cja-why {
+  margin: 6px 0 0;
+}
+
+.cja .cja-why[hidden] {
+  display: none;
+}
+
+.cr-side {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.cr-judge {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cr-judge svg {
+  width: 28px;
+  height: 28px;
+}
+
+.cr-count {
+  font-size: 11px;
+  color: var(--sub-text);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+#crOverlay.cr-mode-rules .cr-side {
+  display: none;
+}
+
+.cj-hero {
+  text-align: center;
+  padding: 8px 16px 2px;
+}
+
+.cj-hero .cj-ico {
+  display: inline-flex;
+  width: 52px;
+  height: 52px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--brass);
+  border-radius: 50%;
+  color: var(--brass);
+}
+
+.cj-hero .cj-ico svg {
+  width: 28px;
+  height: 28px;
+}
+
+.cj-hero h3 {
+  margin: 8px 0 4px;
+  font-size: 21px;
+  color: var(--head-ink);
+}
+
+.cj-hero p {
+  margin: 3px 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-text);
+}
+
+.cj-hero p.cj-sub {
+  color: var(--sub-text);
+  font-size: 12.5px;
+}
+
+.cj-try {
+  padding: 2px 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cj-try .cj-ex {
+  text-align: left;
+  padding: 8px 12px;
+  border-radius: 14px;
+  border: 1.5px solid var(--line);
+  background: var(--ink-2);
+  color: var(--ink-text);
+  font-family: inherit;
+  font-size: 13.5px;
+  line-height: 1.35;
+  font-style: italic;
+  cursor: pointer;
+}
+
+.cj-try .cj-lab {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sub-text);
+  margin: 2px 2px 0;
+}
+
+.cj-rules {
+  margin: 6px 12px 2px;
+}
+
+.cr-tagpop {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: calc(100% + 4px);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  max-height: 260px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--pop-bg);
+  border: 1.5px solid var(--pop-line);
+  border-radius: 10px;
+  box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.45);
+}
+
+.cr-tagpop[hidden] {
+  display: none;
+}
+
+.cr-tagpop button {
+  flex: none;
+  text-align: left;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--line);
+  color: var(--ink-text);
+  font-family: inherit;
+  font-size: 14.5px;
+  cursor: pointer;
+}
+
+.cr-tagpop button:last-child {
+  border-top: none;
+}
+
+.cja {
+  margin: 8px 8px 4px;
+  padding: 12px 14px;
+  border: 2px solid var(--brass);
+  border-radius: 12px;
+  background: var(--ink-2);
+}
+
+.cja-a {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--ink-text);
+}
+
+.cja-meta {
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--sub-text);
+}
+
+.cja-why {
+  margin: 6px 12px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-text);
+}
+
+.cja-q {
+  margin: 12px 12px 4px;
+  font-size: 13.5px;
+  font-style: italic;
+  color: var(--sub-text);
+}
+
+.cja > .cja-q {
+  margin: 0 0 8px;
+  padding-bottom: 8px;
+  border-bottom: 1.5px solid var(--line);
+  font-size: 14px;
+}
+
+.cja-h {
+  margin: 10px 12px 2px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sub-text);
+}
+
+.cr-bar input {
+  flex: 1;
+  background: var(--field);
+  border: 1.5px solid var(--field-line);
+  border-radius: 8px;
+  color: var(--ink-text);
+  padding: 10px 12px;
+  font-size: 15px;
+  min-width: 0;
+}
+
+#crBody {
+  padding: 0 6px 30px;
+}
+
+.cr-rule {
+  display: flex;
+  gap: 10px;
+  padding: 10px 10px;
+  border-bottom: 2px solid var(--line);
+}
+
+.cr-num {
+  flex: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--brass);
+  min-width: 52px;
+  padding-top: 2px;
+}
+
+.cr-txt {
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--ink-text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.cr-txt mark {
+  background: color-mix(in srgb, var(--brass) 32%, transparent);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 1px;
+}
+
+.cr-jump {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--brass);
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
+.cr-toc {
+  display: flex;
+  flex-direction: column;
+}
+
+.cr-toc-row {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  text-align: left;
+  background: none;
+  border: none;
+  border-bottom: 2px solid var(--line);
+  padding: 11px 10px;
+  color: var(--ink-text);
+  font-size: 14.5px;
+  cursor: pointer;
+}
+
+#logGameOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/* Pickers in the log form are DROP-UPs, options bottom-up. Plain lists
+   reverse via flex; the CARD pickers stay a two-column grid of full images
+   (the id-scoped flex was flattening them into strips) — their bottom-up
+   comes from the options array itself arriving Z→A, so A lands at the
+   grid's foot. The filter field sinks to the panel foot in both. */
+
+#logGameOverlay .cselect-panel {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+
+#logGameOverlay .cselect:not(.cs-cardgrid) .cselect-panel {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-start;
+}
+
+#logGameOverlay .cs-cardgrid .cselect-panel .cselect-search {
+  order: 999;
+  grid-column: 1 / -1;
+}
+
+.cselect:has(> .cselect-panel.inline) {
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.cselect-panel.inline {
+  position: static;
+  max-height: 44vh;
+  overflow-y: auto;
+  margin: 0 0 6px;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.glog-csbox {
+  flex: 1;
+  min-width: 0;
+}
+
+.glog-csbox .cselect {
+  width: 100%;
+}
+
+.glog-copt {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  text-align: left;
+}
+
+.glog-copt img {
+  width: 32px;
+  height: 45px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex: none;
+  background: #101418;
+}
+
+.cs-cardgrid .cselect-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 6px;
+  max-height: 340px;
+}
+
+.cs-cardgrid .cselect-search,
+.cs-cardgrid .cs-noresults {
+  grid-column: 1 / -1;
+}
+
+.cs-cardgrid .cselect-opt {
+  border: none;
+  border-radius: 8px;
+  padding: 0;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cs-cardgrid .cselect-opt.sel {
+  outline: 2.5px solid var(--brass);
+  background: none;
+}
+
+/* ---- Art-tile drop-ups (Inspiration page): every option is a square, two
+   per row -- the most-played leader's art on top, the name in a bar of the
+   app's main color along the foot. ---- */
+
+.cselect-panel.cs-artgrid {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  max-height: min(360px, 48vh);
+  overflow: hidden;
+}
+
+.cs-artscroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-auto-rows: 158px;
+  align-content: start;
+  gap: 8px;
+  padding: 8px;
+}
+
+.cs-artgrid .cselect-search {
+  position: relative;
+  flex: 0 0 auto;
+  top: auto;
+  border-top: 1.5px solid var(--pop-line);
+  border-bottom: none;
+  margin: 0;
+  padding: 10px 12px;
+  box-shadow: 0 -8px 14px rgba(0, 0, 0, 0.45);
+  z-index: 1;
+}
+
+.cs-artgrid .cselect-search,
+.cs-artgrid .cs-noresults {
+  grid-column: 1 / -1;
+}
+
+.cs-artgrid .cselect-opt.art-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-end;
+  height: 158px;
+  padding: 0;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--ink-deep);
+}
+
+.cs-artgrid .cselect-opt.art-tile:last-child {
+  border-bottom: 2px solid var(--line);
+}
+
+.cs-artgrid .cselect-opt.art-tile:hover {
+  background: var(--ink-deep);
+}
+
+.art-tile .at-img {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center 25%;
+  background-repeat: no-repeat;
+  background-color: color-mix(in srgb, var(--ink) 55%, #000);
+}
+
+.art-tile .at-label {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: var(--ink);
+  color: var(--main-text);
+  border-top: 2px solid var(--line);
+  min-height: 42px;
+  padding: 6px 8px;
+  text-shadow: none;
+}
+
+.art-tile .at-label .at-txt {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.art-tile .at-label .co-icons {
+  flex: 0 0 auto;
+}
+
+.art-tile .at-img.at-gen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  align-content: center;
+  gap: 4px;
+  font-size: 56px;
+  opacity: 0.92;
+  padding: 8px 8px 52px;
+}
+
+.mana-pentagon {
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+}
+
+.cs-artgrid .cselect-opt.art-tile.sel {
+  outline: 2.5px solid var(--brass);
+  outline-offset: -2px;
+  background: var(--ink-deep);
+  color: var(--main-text);
+}
+
+/* The engraved brass text-shadow (meant for brass-on-glow rows) doubled the
+   letters on selected tiles -- flat text on the tiles, every scheme. */
+
+.cs-artgrid .cselect-opt.art-tile,
+.cs-artgrid .cselect-opt.art-tile.sel {
+  text-shadow: none;
+}
+
+.glog-cimg {
+  display: block;
+  width: 100%;
+  position: relative;
+}
+
+.glog-cimg img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  background: #101418;
+}
+
+.glog-cimg .glog-cname {
+  display: block;
+  padding: 10px 6px;
+  font-size: 13px;
+  text-align: center;
+}
+
+.cs-vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.dp-sect {
+  margin: 6px 0 0;
+  padding-top: 8px;
+  border-top: 2px solid var(--line);
+  font-size: 11.5px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--sub-text);
+}
+
+/* Bottom-left badge rail — replaces the corner ribbons and the old ✓ dot.
+   Right padding keeps the rail away from the power/toughness corner even
+   with all three badges showing. */
+
+.card-badges {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  aspect-ratio: 63/88;
+  pointer-events: none;
+  z-index: 3;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: 4px;
+  padding: 0 30px 5px 5px;
+  box-sizing: border-box;
+}
+
+.cb {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-family: 'Inter', sans-serif;
+  font-style: normal;
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+}
+
+.cb-ub {
+  background: linear-gradient(135deg, #7b5cd6, #4a2f96);
+  font-size: 9.5px;
+  letter-spacing: 0.02em;
+}
+
+.cb-sp {
+  background: none;
+  box-shadow: none;
+  font-size: 17px;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.85));
+}
+
+.cb-own {
+  background: linear-gradient(135deg, #1f9a63, #0e5c3a);
+  font-size: 13px;
+}
+
+.swipe-ghost {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  margin-left: -34vw;
+  width: 68vw;
+  aspect-ratio: 63/88;
+  object-fit: cover;
+  border-radius: 4.75%/3.5%;
+  z-index: 130;
+  pointer-events: none;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  transform: translate(200vw, -50%);
+  background: #111113;
+}
+
+.edge-flash {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  z-index: 135;
+  background: var(--brass);
+  pointer-events: none;
+  animation: edgeFlash 0.32s ease-out forwards;
+}
+
+.edge-flash.left {
+  left: 0;
+}
+
+.edge-flash.right {
+  right: 0;
+}
+
+@keyframes edgeFlash {
+  from {
+    opacity: 0.85;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.foil-star {
+  position: absolute;
+  left: 8%;
+  bottom: 47%;
+  font-size: 19px;
+  font-style: normal;
+  pointer-events: none;
+  z-index: 2;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.9));
+}
+
+*:has(> .card-badges) {
+  position: relative;
+}
+
+*:has(> .vg-qty) {
+  position: relative;
+}

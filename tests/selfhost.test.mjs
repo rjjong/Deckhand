@@ -111,11 +111,28 @@ test('HTTP serves the frontend, protects source/secrets, and supports legacy and
   });
   const home = await fetch(base);
   assert.equal(home.status, 200);
-  assert.match(await home.text(), /runtime-config.js/);
+  const shell = await home.text();
+  assert.match(shell, /runtime-config.js/);
+  assert.match(shell, /assets\/app.js/);
+  assert.match(shell, /assets\/app.css/);
+  const javascript = await fetch(base + '/assets/app.js');
+  assert.equal(javascript.status, 200);
+  assert.match(javascript.headers.get('content-type'), /javascript/);
+  assert.match(await javascript.text(), /function searchPageHtml/);
+  const stylesheet = await fetch(base + '/assets/app.css');
+  assert.equal(stylesheet.status, 200);
+  assert.match(stylesheet.headers.get('content-type'), /text\/css/);
+  assert.match(await stylesheet.text(), /\.hub-card/);
+  const sourceMap = await (await fetch(base + '/assets/app.js.map')).json();
+  assert.equal(sourceMap.version, 3);
+  assert.ok(sourceMap.sections.some(section => section.map.sources.includes('../../src/pages/life/setup.js')));
+  const badge = await fetch(base + '/assets/images/deckhand-badge.webp');
+  assert.equal(badge.status, 200);
+  assert.equal(badge.headers.get('content-type'), 'image/webp');
   const head = await fetch(base, { method: 'HEAD' });
   assert.equal(head.status, 200);
   assert.equal(await head.text(), '');
-  for (const path of ['/.env', '/.git/config', '/server/storage.mjs', '/package.json', '/var/app.sqlite', '/Deckhand.apk', '/api/constructor']) {
+  for (const path of ['/.env', '/.git/config', '/server/storage.mjs', '/src/core/state.js', '/assets/private.js', '/package.json', '/var/app.sqlite', '/Deckhand.apk', '/api/constructor']) {
     assert.equal((await fetch(base + path)).status, 404, path);
   }
   const runtime = await (await fetch(base + '/runtime-config.js')).text();

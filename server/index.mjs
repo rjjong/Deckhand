@@ -1,5 +1,9 @@
 import { resolve } from 'node:path';
 import { createApp } from './app.mjs';
+import { buildFrontend, watchFrontend } from '../scripts/build-frontend.mjs';
+
+await buildFrontend();
+const frontendWatcher = process.argv.includes('--watch-frontend') ? watchFrontend() : null;
 
 const host = process.env.HOST || '127.0.0.1';
 const port = Number(process.env.PORT || 3000);
@@ -19,6 +23,7 @@ let stopping = false;
 async function stop() {
   if (stopping) return;
   stopping = true;
+  frontendWatcher?.close();
   await app.close();
 }
 process.on('SIGINT', stop);

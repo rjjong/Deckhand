@@ -39,6 +39,14 @@ Trade has two card lists with Add card actions and no separate page search.
 Life opens a game menu with new, resume, and saved-game actions.
 Run `npm run test:mobile` for mobile and desktop browser checks.
 
+Frontend source now lives in `src/` and `styles/`. `index.html` is the small
+HTML shell; page markup and handlers are grouped by tab in `src/pages/`.
+`npm run dev` builds the frontend and watches those folders automatically.
+Refresh the browser after editing. `npm run build` produces the deployable
+`public/` directory, and `npm run format` keeps the source consistently formatted.
+See [the source guide](docs/DEVELOPMENT.md#frontend-source-organization)
+for the folder map, page entry points, CSS order, and debugging instructions.
+
 Pages now open at the top. Search, sorting, and filter controls sit below the
 title bar; dropdowns read from the top. Scryfall requests use the local
 `/api/scryfall/...` adapter, which shares a paced queue and short-lived query

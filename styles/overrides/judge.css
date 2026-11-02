@@ -1,0 +1,285 @@
+/* The judge owns a scrolling body above its question bar and fixed navigation. */
+
+html #crOverlay:not(.cr-popup) {
+  height: 100dvh;
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+html #crOverlay > .app-overlay-header {
+  position: relative !important;
+  inset: auto !important;
+  flex: none;
+  width: 100%;
+  height: auto !important;
+  padding-top: calc(8px + env(safe-area-inset-top)) !important;
+  background: var(--ink);
+}
+
+html #crOverlay #crBody {
+  scrollbar-gutter: stable;
+  overflow-anchor: none;
+}
+
+html #crOverlay .cr-bar {
+  flex: none;
+  margin: 0;
+}
+
+/* The judge and its rules browser share the menu's cards and typography. */
+
+html #crOverlay {
+  background: var(--page-backdrop);
+}
+
+html #crOverlay #crBody {
+  width: 100%;
+  max-width: 680px;
+  align-self: center;
+  padding: 0 22px 24px;
+}
+
+html #crOverlay .hub-intro {
+  margin: 28px 0;
+  padding: 0;
+  text-align: left;
+}
+
+html #crOverlay .hub-intro p {
+  margin: 0;
+  color: var(--sub-text);
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+html #crOverlay .cj-try {
+  padding: 0;
+  gap: 12px;
+}
+
+html #crOverlay .cj-lab,
+html #crOverlay .cja-h {
+  margin: 0 0 4px;
+  color: var(--sub-text);
+  font:
+    700 10px/1.5 'Inter',
+    system-ui,
+    sans-serif;
+  letter-spacing: 0.19em;
+  text-transform: uppercase;
+}
+
+html #crOverlay :is(.cj-ex, .cr-toc-row) {
+  align-items: center;
+  gap: 15px;
+  padding: 20px 16px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--ink-text) 18%, transparent);
+  background: color-mix(in srgb, var(--ink-text) 5%, var(--ink));
+  color: var(--ink-text);
+  font:
+    normal 14px/1.6 'Inter',
+    system-ui,
+    sans-serif;
+}
+
+html #crOverlay .hub-copy {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+html #crOverlay .hub-copy strong {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+html #crOverlay .cr-toc {
+  gap: 12px;
+}
+
+html #crOverlay .cr-num {
+  -webkit-text-fill-color: currentColor;
+}
+
+html #crOverlay .cr-toc-row .cr-num {
+  min-width: 43px;
+  padding: 0;
+  color: var(--gold);
+}
+
+html #crOverlay :is(.cja, .cr-rule) {
+  margin: 16px 0 0;
+  padding: 20px 16px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--ink-text) 18%, transparent);
+  background: color-mix(in srgb, var(--ink-text) 5%, var(--ink));
+}
+
+html #crOverlay .cja-a {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.75;
+}
+
+html #crOverlay .cja-h {
+  margin: 24px 0 0;
+}
+
+html #crOverlay .cr-rule {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+html #crOverlay .cr-rule .cr-num {
+  width: 100%;
+  padding: 0;
+  color: var(--gold);
+}
+
+html #crOverlay .cr-txt {
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+html #crOverlay .cr-jump {
+  color: var(--gold);
+}
+
+html #crOverlay .cr-bar {
+  width: 100%;
+  max-width: 680px;
+  align-self: center;
+  padding: 12px 22px 16px;
+  border-top: 1px solid var(--line);
+  gap: 10px;
+}
+
+html #crOverlay .cr-qwrap {
+  background: var(--main-field);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+html #crOverlay .cr-qwrap:focus-within {
+  border-color: var(--gold);
+}
+
+html #crOverlay #crQ {
+  border-radius: 14px;
+  color: var(--main-text);
+}
+
+html #crOverlay #crJudge {
+  width: 50px;
+  height: 50px;
+  min-height: 50px;
+  margin: 0;
+  border: 0;
+  border-radius: 14px;
+  background: var(--gold);
+  color: #241a04;
+  text-shadow: none;
+}
+
+html #crOverlay #crJudge:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+html #crOverlay #crJudge svg {
+  width: 24px;
+  height: 24px;
+}
+
+html #crOverlay > .app-navigation {
+  width: 100%;
+  height: calc(var(--nav-h) + env(safe-area-inset-bottom));
+  margin: 0;
+  justify-content: center;
+  padding: 4px max(6px, env(safe-area-inset-left)) calc(4px + env(safe-area-inset-bottom))
+    max(6px, env(safe-area-inset-right));
+  border-top: 1px solid var(--line);
+  border-bottom: 0;
+}
+
+#crOverlay #crOpenRules {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--gold);
+  cursor: pointer;
+}
+
+#crOverlay #crOpenRules svg {
+  width: 24px;
+  height: 24px;
+}
+
+#crOverlay #crOpenRules:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+#crOverlay.cr-mode-rules #crOpenRules {
+  visibility: hidden;
+}
+
+.startup-hint {
+  margin: 0 0 12px;
+}
+
+.startup-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.startup-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 48px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--ink-text);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.startup-option:has(input:checked) {
+  border-color: var(--gold);
+  background: var(--brass-glow);
+}
+
+.startup-option input {
+  flex: none;
+  margin: 0;
+  accent-color: var(--gold);
+}
+
+.startup-icon {
+  display: flex;
+  flex: none;
+  color: var(--gold);
+}
+
+.startup-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+@media (max-width: 359px) {
+  .startup-options {
+    grid-template-columns: 1fr;
+  }
+}

@@ -44,6 +44,357 @@ test('five labeled tabs stay centered and each opens its page', async ({ page },
   expect(errors).toEqual([]);
 });
 
+test('Life setup fills the screen, scrolls from the top and starts the chosen format and layout', async ({page},info)=>{
+  const errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  await page.evaluate(()=>{state.guild='dimir';applyTheme();});
+  await page.locator('.app > .app-navigation').getByRole('button',{name:'Life',exact:true}).click();
+  await page.getByRole('button',{name:'New game'}).click();
+  const setup=page.getByRole('dialog',{name:'New game',exact:true});
+  const content=setup.locator('.life-setup-body');
+  await expect(setup.locator('h1')).toHaveText('Set your table.');
+  await expect(setup.locator('[data-setup-lay]')).toHaveCount(12);
+  await expect(setup.locator('[data-lifefmt]')).toHaveCount(4);
+  expect(await content.evaluate(el=>el.scrollTop)).toBe(0);
+  await mkdir('var/previews',{recursive:true});
+  await page.screenshot({path:`var/previews/life-setup-${info.project.name}.png`});
+  const original=page.viewportSize();
+  for(const size of [original,{width:320,height:480}]){
+    await page.setViewportSize(size);
+    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    await expect(setup.locator('.app-overlay-header')).toBeVisible();
+    expect(await setup.boundingBox()).toEqual({x:0,y:0,...size});
+    const header=await setup.locator('.app-overlay-header').boundingBox();
+    const nav=await setup.locator('.app-navigation').boundingBox();
+    const footer=await setup.locator('.life-setup-footer').boundingBox();
+    const bounds=await content.boundingBox();
+    expect(bounds.y).toBeCloseTo(header.y+header.height,0);
+    expect(bounds.y+bounds.height).toBeCloseTo(footer.y,0);
+    expect(footer.y+footer.height).toBeCloseTo(nav.y,0);
+    expect(await content.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+    await content.evaluate(el=>el.scrollTop=el.scrollHeight);
+    expect(await content.evaluate(el=>el.scrollTop)).toBeGreaterThan(0);
+    expect(await setup.locator('.app-overlay-header').boundingBox()).toEqual(header);
+    expect(await setup.locator('.life-setup-footer').boundingBox()).toEqual(footer);
+    await expect(setup.locator('#startGameBtn')).toBeInViewport();
+  }
+  await setup.locator('[data-lifefmt="constructed"]').click();
+  await expect(setup.locator('[data-lifefmt="constructed"]')).toHaveAttribute('aria-pressed','true');
+  await expect(setup.locator('.llay-grid b').first()).toHaveText('20');
+  await setup.locator('[data-setup-lay="2f"]').click();
+  await expect(setup.locator('[data-setup-lay="2f"]')).toHaveAttribute('aria-pressed','true');
+  await page.setViewportSize(original);
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  await expect(setup.locator('[data-setup-lay="2f"]')).toHaveAttribute('aria-pressed','true');
+  await setup.locator('#startGameBtn').click();
+  await expect(setup).toHaveCount(0);
+  await expect(page.locator('#lifeGrid .life-card-v2')).toHaveCount(2);
+  expect(await page.evaluate(()=>state.life.players.map(p=>p.life))).toEqual([20,20]);
+  await expect.poll(()=>page.evaluate(()=>state.life.spinning)).toBe(false);
+  expect(await page.evaluate(()=>state.life.players.filter(p=>p.medal).length)).toBe(1);
+  expect(errors).toEqual([]);
+});
+
+test('Life setup cancellation and navigation return to the app without leaving a table open', async ({page})=>{
+  await page.locator('.app > .app-navigation').getByRole('button',{name:'Life',exact:true}).click();
+  for(const action of ['close','back','navigate']){
+    await page.getByRole('button',{name:'New game'}).click();
+    const setup=page.locator('#lifeSetupScreen');
+    await expect(setup).toBeVisible();
+    if(action==='close') await setup.locator('#lifeSetupCancel').click();
+    else if(action==='back') await page.goBack();
+    else await setup.getByRole('button',{name:'Search',exact:true}).click();
+    await expect(setup).toHaveCount(0);
+    await expect(page.locator('#lifeOverlay')).toHaveCount(0);
+    expect(await page.evaluate(()=>state.lifeOpen)).toBe(false);
+    await expect(page.locator('#brandTitle')).toHaveText(action==='navigate'?'SEARCH':'LIFE TRACKER');
+  }
+});
+
+test('Life table menus keep dice, history, settings and exact life editing usable on small screens', async ({page},info)=>{
+  const errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  await page.evaluate(()=>{
+    state.guild='dimir';applyTheme();switchPage('life');
+    state.life.count=2;state.life.layout='2f';state.life.rotate=false;state.life.setupDone=true;
+    state.life.history=Array.from({length:40},(_,i)=>`Game event ${40-i}`);
+    openLifeOverlay();
+  });
+  await page.locator('[data-setlife="0"]').click();
+  await page.locator('#setLifeInput').fill('37');
+  await page.locator('#setLifeOk').click();
+  expect(await page.evaluate(()=>state.life.players[0].life)).toBe(37);
+  await page.locator('[data-setlife="0"]').click();
+  await page.locator('#setLifeInput').fill('5');
+  await page.keyboard.press('Escape');
+  expect(await page.evaluate(()=>state.life.players[0].life)).toBe(37);
+  await page.locator('#lifeCogBtn').click();
+  const menu=page.getByRole('dialog',{name:'Table menu'});
+  await expect(menu.locator('.lm-opt')).toHaveText(['History','Tools','Settings','Leave']);
+  await mkdir('var/previews',{recursive:true});
+  await page.screenshot({path:`var/previews/life-table-menu-${info.project.name}.png`});
+  await menu.locator('#mTools').click();
+  const tools=page.getByRole('dialog',{name:'Tools',exact:true});
+  await expect(tools.locator('.life-tool')).toHaveText(['Dice','Ask AI Judge','Restore a game','Restart game']);
+  await page.screenshot({path:`var/previews/life-tools-${info.project.name}.png`});
+  await tools.locator('#mDice').click();
+  const dice=page.getByRole('dialog',{name:'Dice',exact:true});
+  await expect(dice.locator('[data-die]')).toHaveCount(8);
+  await dice.locator('[data-die="6"]').click();
+  await expect(dice).toHaveCount(0);
+  await expect(page.locator('#diceResultPop')).toBeVisible();
+  await page.locator('#diceResultPop').click();
+  expect(await page.evaluate(()=>state.life.history[0])).toMatch(/^Rolled a d6: [1-6]$/);
+  await expect(tools).toBeVisible();
+  await tools.locator('[data-life-close]').click();
+  await expect(tools).toHaveCount(0);
+  await page.locator('#lifeCogBtn').click();
+  await page.locator('#mHistory').click();
+  const history=page.getByRole('dialog',{name:'History',exact:true});
+  await expect(history.locator('.life-history-row').first()).toContainText('Rolled a d6:');
+  await page.setViewportSize({width:320,height:480});
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  const header=await history.locator('.life-popup-head').boundingBox();
+  await history.locator('.life-popup-body').evaluate(el=>el.scrollTop=500);
+  expect(await history.locator('.life-popup-body').evaluate(el=>el.scrollTop)).toBeGreaterThan(0);
+  expect(await history.locator('.life-popup-head').boundingBox()).toEqual(header);
+  await history.locator('[data-life-close]').click();
+  await expect(history).toHaveCount(0);
+  await page.locator('#lifeCogBtn').click();
+  await page.locator('#mLifeSettings').click();
+  const settings=page.locator('#lifeSettingsPanel .life-popup');
+  await expect(settings.locator('#lifeJudgeBtn, #lifeRestoreBtn, #restartLifeBtn, #leaveLifeBtn')).toHaveCount(0);
+  await expect(settings.locator('button')).toHaveCount(1);
+  const bounds=await settings.boundingBox();
+  expect(bounds.y).toBeGreaterThanOrEqual(16);
+  expect(bounds.y+bounds.height).toBeLessThanOrEqual(464);
+  expect(await settings.locator('.life-popup-body').evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+  await settings.getByRole('checkbox',{name:'Track Poison',exact:true}).uncheck();
+  expect(await page.evaluate(()=>state.life.settings.poison)).toBe(false);
+  await settings.getByRole('checkbox',{name:'Rotate for Pass-and-Play',exact:true}).check();
+  expect(await page.evaluate(()=>state.life.rotate)).toBe(true);
+  await page.screenshot({path:`var/previews/life-settings-small-${info.project.name}.png`});
+  await settings.locator('[data-life-close]').click();
+  await expect(settings).toHaveCount(0);
+  await page.locator('#lifeCogBtn').click();
+  await page.locator('#mTools').click();
+  await page.locator('#restartLifeBtn').click();
+  await expect(page.locator('#inAppConfirm')).toBeVisible();
+  await page.locator('#iacCancel').click();
+  await expect(page.locator('#lifeMenuPop')).toHaveCount(0);
+  expect(await page.evaluate(()=>state.life.setupDone)).toBe(true);
+  await expect(tools).toBeVisible();
+  await page.locator('#restartLifeBtn').click();
+  await page.locator('#iacOk').click();
+  await expect(page.locator('#lifeSetupScreen')).toBeVisible();
+  await page.locator('[data-setup-lay="3t"]').click();
+  await page.locator('#startGameBtn').click();
+  await expect(page.locator('#lifeGrid .life-card-v2')).toHaveCount(3);
+  await expect(page.locator('#lifeSettingsPanel .life-popup')).toHaveCount(0);
+  expect(await page.evaluate(()=>state.life.players.map(p=>p.life))).toEqual([40,40,40]);
+  await expect.poll(()=>page.evaluate(()=>state.life.spinning)).toBe(false);
+  await page.locator('#lifeCogBtn').click();
+  await page.locator('#leaveLifeBtn').click();
+  await expect(page.locator('#lifeOverlay')).toHaveCount(0);
+  await expect(page.locator('#brandTitle')).toHaveText('LIFE TRACKER');
+  expect(errors).toEqual([]);
+});
+
+test('Life radial controls fit the viewport and Tools opens Judge and restores games without leaving the table', async ({page},info)=>{
+  const errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  await page.locator('.app > .app-navigation').getByRole('button',{name:'Life',exact:true}).click();
+  await page.evaluate(()=>{
+    state.guild='dimir';applyTheme();
+    state.life.count=4;state.life.layout='4q';state.life.rotate=true;state.life.setupDone=true;
+    state._cr=[{n:'100',t:'General rules.'}];
+    localStorage.setItem(LS_PREFIX+'lifeSaves',JSON.stringify([{id:'restore-from-tools',t:Date.now(),d:{
+      count:2,layout:'2f',rotate:true,turnNum:3,turnIdx:0,startIdx:0,history:['Saved game event'],
+      players:[{name:'Restored Alice',life:31,poison:0,dmg:[]},{name:'Restored Bob',life:27,poison:0,dmg:[]}]
+    }}]));
+    openLifeOverlay();
+  });
+  await page.locator('#lifeCogBtn').click();
+  const radial=page.getByRole('dialog',{name:'Table menu'});
+  const original=page.viewportSize();
+  for(const size of [original,{width:320,height:480},{width:844,height:390}]){
+    await page.setViewportSize(size);
+    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    const buttons=await radial.locator('.lm-opt').all();
+    for(const button of buttons){
+      const b=await button.boundingBox();
+      expect(b.x).toBeGreaterThanOrEqual(8);
+      expect(b.y).toBeGreaterThanOrEqual(8);
+      expect(b.x+b.width).toBeLessThanOrEqual(size.width-8);
+      expect(b.y+b.height).toBeLessThanOrEqual(size.height-8);
+    }
+  }
+  await page.setViewportSize(original);
+  await radial.locator('#mTools').click();
+  const tools=page.getByRole('dialog',{name:'Tools',exact:true});
+  await tools.locator('#lifeJudgeBtn').click();
+  await expect(page.locator('#crOverlay.cr-popup')).toBeVisible();
+  await page.locator('#crOverlay').getByRole('button',{name:'Read the Comprehensive Rules'}).click();
+  await expect(page.locator('#crOverlay .ov-title')).toHaveText('Comprehensive Rules');
+  await page.goBack();
+  await expect(page.locator('#crOverlay .ov-title')).toHaveText('Ask AI judge');
+  await page.goBack();
+  await expect(page.locator('#crOverlay, #crScrim')).toHaveCount(0);
+  await expect(tools).toBeVisible();
+  await tools.locator('#lifeRestoreBtn').click();
+  await expect(page.locator('#lifeRestoreSheet')).toBeVisible();
+  await page.locator('#lifeRestoreSheet [data-lr]').filter({hasText:'Restored Alice'}).click();
+  await expect(page.locator('#lifeRestoreSheet')).toHaveCount(0);
+  await expect(tools).toHaveCount(0);
+  expect(await page.evaluate(()=>state.life.players.map(p=>[p.name,p.life]))).toEqual([['Restored Alice',31],['Restored Bob',27]]);
+  await expect(page.locator('#lifeOverlay')).toBeVisible();
+  await page.locator('#lifeCogBtn').click();
+  await page.mouse.click(4,4);
+  await expect(radial).toHaveCount(0);
+  expect(await page.evaluate(()=>state.life.players.map(p=>p.life))).toEqual([31,27]);
+  await page.locator('#lifeCogBtn').click();
+  await page.keyboard.press('Escape');
+  await expect(radial).toHaveCount(0);
+  await expect(page.locator('#lifeOverlay')).toBeVisible();
+  await page.locator('#lifeCogBtn').click();
+  await radial.getByRole('button',{name:'Leave',exact:true}).click();
+  await expect(page.locator('#lifeOverlay')).toHaveCount(0);
+  expect(await page.evaluate(()=>lifeSavesAll().find(g=>g.id==='restore-from-tools').d.players.map(p=>p.life))).toEqual([31,27]);
+  expect(errors).toEqual([]);
+});
+
+test('Life saved-game and dungeon menus restore games and retain room progress', async ({page},info)=>{
+  const errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  await page.evaluate(()=>{
+    localStorage.setItem(LS_PREFIX+'lifeSaves',JSON.stringify([{id:'life-test',t:Date.now(),d:{count:2,layout:'2f',rotate:false,turnNum:3,turnIdx:0,startIdx:0,history:['Saved event'],players:[{name:'Alice',life:31,poison:0,dmg:[]},{name:'Bob',life:27,poison:0,dmg:[]}]}}]));
+    state.guild='dimir';applyTheme();switchPage('life');
+  });
+  await page.locator('#lifeSavedGames').click();
+  const saved=page.getByRole('dialog',{name:'Saved games',exact:true});
+  await expect(saved.locator('[data-lr]')).toHaveCount(1);
+  await saved.locator('[data-life-close]').click();
+  await expect(saved).toHaveCount(0);
+  await page.locator('#lifeSavedGames').click();
+  await saved.locator('[data-lr="0"]').click();
+  await expect(page.locator('#lifeOverlay')).toBeVisible();
+  await expect(page.locator('[data-setlife]')).toHaveText(['31','27']);
+  expect(await page.evaluate(()=>state.life.turnNum)).toBe(3);
+  await page.locator('.submenu-toggle[data-idx="0"]').click();
+  await page.locator('[data-ldungeon="0"]').click();
+  const dungeon=page.getByRole('dialog',{name:'Dungeons',exact:true});
+  await expect(dungeon.locator('.dg-grid .dg-card')).toHaveCount(4);
+  await dungeon.locator('.dg-grid .dg-card').first().click();
+  await dungeon.locator('.dg-spot.next').first().click();
+  expect(await page.evaluate(()=>state.life.players[0].dg?.room)).toBeTruthy();
+  await mkdir('var/previews',{recursive:true});
+  await page.screenshot({path:`var/previews/life-dungeon-${info.project.name}.png`});
+  await page.setViewportSize({width:320,height:480});
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  expect(await dungeon.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+  expect(await dungeon.locator('.life-popup-footer button').evaluateAll(buttons=>buttons.every(b=>b.scrollWidth<=b.clientWidth))).toBe(true);
+  await dungeon.locator('#dgOk').click();
+  await expect(dungeon).toHaveCount(0);
+  expect(await page.evaluate(()=>state.life.players[0].dg?.room)).toBeTruthy();
+  expect(errors).toEqual([]);
+});
+
+test('Life tracks Monarch and Initiative independently with crown and torch badges', async ({page},info)=>{
+  const errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  await page.evaluate(()=>{
+    state.guild='dimir';applyTheme();switchPage('life');
+    state.life.count=4;state.life.layout='4q';state.life.rotate=true;state.life.setupDone=true;
+    openLifeOverlay();
+  });
+  const card=index=>page.locator(`.life-card-v2[data-idx="${index}"]`);
+  const edit=async index=>{
+    await page.locator(`.submenu-toggle[data-idx="${index}"]`).click();
+    await expect(card(index)).toHaveClass(/focused/);
+  };
+  const done=async()=>{
+    await page.locator('.submenu-toggle.done').click();
+    await expect(page.locator('.life-card-v2.focused')).toHaveCount(0);
+  };
+  await edit(0);
+  await card(0).getByRole('button',{name:'Monarch',exact:true}).click();
+  await card(0).getByRole('button',{name:'Initiative',exact:true}).click();
+  await expect(card(0).getByRole('button',{name:'Monarch',exact:true})).toHaveAttribute('aria-pressed','true');
+  await expect(card(0).getByRole('button',{name:'Initiative',exact:true})).toHaveAttribute('aria-pressed','true');
+  await mkdir('var/previews',{recursive:true});
+  await page.screenshot({path:`var/previews/life-role-controls-${info.project.name}.png`});
+  await done();
+  await expect(card(0).getByRole('img',{name:'Monarch',exact:true})).toBeVisible();
+  await expect(card(0).getByRole('img',{name:'Initiative',exact:true})).toBeVisible();
+  const crown=await card(0).locator('.lmonarch').boundingBox(), torch=await card(0).locator('.linitiative').boundingBox();
+  expect(crown.x+crown.width<=torch.x || torch.x+torch.width<=crown.x || crown.y+crown.height<=torch.y || torch.y+torch.height<=crown.y).toBe(true);
+  await edit(1);
+  await card(1).getByRole('button',{name:'Initiative',exact:true}).click();
+  await done();
+  await expect(card(0).locator('.linitiative')).toHaveCount(0);
+  await expect(card(0).locator('.lmonarch')).toBeVisible();
+  await expect(card(1).locator('.linitiative')).toBeVisible();
+  await edit(1);
+  await card(1).getByRole('button',{name:'Monarch',exact:true}).click();
+  await done();
+  await expect(card(0).locator('.lmonarch')).toHaveCount(0);
+  await expect(card(1).locator('.life-role-icon')).toHaveCount(2);
+  await mkdir('var/previews',{recursive:true});
+  await page.screenshot({path:`var/previews/life-crown-torch-${info.project.name}.png`});
+  await expect.poll(()=>page.evaluate(()=>{
+    const saved=lifeSavesAll().find(g=>g.id===state.life.gameId);
+    return saved?.d.players.map(p=>[p.monarch,p.initiative]);
+  })).toEqual([[false,false],[true,true],[false,false],[false,false]]);
+  await page.evaluate(()=>{dismissAllOverlays();render();});
+  await page.locator('#lifeSavedGames').click();
+  await page.locator('[data-lr="0"]').click();
+  await expect(card(1).locator('.life-role-icon')).toHaveCount(2);
+  await edit(1);
+  await card(1).getByRole('button',{name:'Initiative',exact:true}).click();
+  await done();
+  await expect(card(1).locator('.linitiative')).toHaveCount(0);
+  await expect(card(1).locator('.lmonarch')).toBeVisible();
+  await page.locator('#lifeCogBtn').click();
+  await page.locator('#mTools').click();
+  await page.locator('#restartLifeBtn').click();
+  await page.locator('#iacOk').click();
+  await page.locator('#startGameBtn').click();
+  await expect(page.locator('.life-role-icon')).toHaveCount(0);
+  expect(await page.evaluate(()=>state.life.players.every(p=>!p.monarch&&!p.initiative))).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test('Undercity shows its dungeon face, follows room choices and keeps Initiative after completion', async ({page},info)=>{
+  const errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  await page.evaluate(()=>{
+    state.guild='dimir';applyTheme();switchPage('life');
+    state.life.count=2;state.life.layout='2f';state.life.rotate=true;state.life.setupDone=true;
+    openLifeOverlay();
+  });
+  await page.locator('.submenu-toggle[data-idx="0"]').click();
+  await page.locator('[data-linitiative="0"]').click();
+  await page.locator('[data-ldungeon="0"]').click();
+  const dungeon=page.getByRole('dialog',{name:'Dungeons',exact:true});
+  const undercity=dungeon.locator('.dg-grid [data-dgcard="uc"]');
+  await expect(undercity.locator('.dg-card-name')).toHaveText('Undercity');
+  await expect(undercity.locator('img')).toHaveAttribute('src',/cards\.scryfall\.io\/normal\/front\/2\/c\/2c65185b-6cf0-451d-985e-56aa45d9a57d\.jpg/);
+  await undercity.click();
+  await expect(dungeon.locator('h2')).toHaveText('Undercity');
+  await expect(dungeon.locator('.dg-spot.next')).toHaveAttribute('data-room','Secret Entrance');
+  await dungeon.locator('[data-room="Secret Entrance"]').click();
+  expect(await page.evaluate(()=>state.life.players[0].dg)).toEqual({id:'uc',room:'Secret Entrance'});
+  expect(await dungeon.locator('.dg-spot.next').evaluateAll(nodes=>nodes.map(n=>n.dataset.room))).toEqual(['Forge','Lost Well']);
+  await mkdir('var/previews',{recursive:true});
+  await page.screenshot({path:`var/previews/undercity-dungeon-${info.project.name}.png`});
+  for(const room of ['Forge','Trap!','Archives','Throne of the Dead Three']) await dungeon.locator('.dg-spot.next').filter({has:page.locator(`.dg-spot-name`,{hasText:room})}).click();
+  expect(await page.evaluate(()=>({dungeon:state.life.players[0].dg,completed:state.life.players[0].dgDone.uc,initiative:state.life.players[0].initiative}))).toEqual({dungeon:null,completed:1,initiative:true});
+  await dungeon.locator('#dgOk').click();
+  await page.locator('.submenu-toggle.done').click();
+  await expect(page.locator('.life-card-v2[data-idx="0"] .linitiative')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
 test('logo opens menu, settings remains accessible, and the title returns home', async ({ page }, info) => {
   await page.getByRole('button', { name: 'Open menu', exact: true }).click();
   await expect(page.locator('#brandTitle')).toHaveText('MENU');
@@ -251,6 +602,7 @@ test('Ask AI Judge keeps its question above navigation and reads answers from th
     reasoning:'State-based actions check toughness.',cites:['704.5f','702.12b'],confident:true,left:19
   }}));
   await page.evaluate(()=>{
+    state.guild='dimir'; applyTheme();
     state._cr=[{n:'702.12b',t:'Indestructible prevents destruction.'},{n:'704.5f',t:'A creature with toughness 0 or less is put into its graveyard.'}];
   });
   await page.getByRole('button',{name:'Open menu',exact:true}).click();
@@ -265,6 +617,9 @@ test('Ask AI Judge keeps its question above navigation and reads answers from th
   expect(await icon.textContent()).toBe('');
   await expect(icon).toHaveCSS('border-top-width','0px');
   await expect(body.locator('#crOpenRules')).toHaveCount(0);
+  await expect(body.locator('.hub-intro h1')).toHaveText('Ask the AI judge.');
+  await expect(body.locator('.cj-ex.hub-card')).toHaveCount(3);
+  await expect(body.locator('.cj-ex').first()).toHaveCSS('border-radius','18px');
   const original=page.viewportSize();
   for(const size of [original,{width:320,height:480}]){
     await page.setViewportSize(size);
@@ -320,6 +675,42 @@ test('Ask AI Judge keeps its question above navigation and reads answers from th
   expect(errors).toEqual([]);
 });
 
+test('Judge header logo opens Menu from questions, answers and rules, while its title opens Home', async ({page})=>{
+  const errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  await page.route('**/.netlify/functions/judge',route=>route.fulfill({json:{
+    ok:true,answer:'The creature dies.',reasoning:'State-based actions check toughness.',
+    cites:['704.5f'],confident:true,left:19
+  }}));
+  await page.evaluate(()=>{
+    state._cr=[{n:'704.5f',t:'A creature with toughness 0 or less is put into its graveyard.'}];
+  });
+  await page.getByRole('button',{name:'Open menu',exact:true}).click();
+  for(const mode of ['question','answer','rules']){
+    await page.locator('#crRow').click();
+    const overlay=page.locator('#crOverlay');
+    if(mode==='answer'){
+      await overlay.locator('#crQ').fill('Does a creature with zero toughness die?');
+      await overlay.locator('#crJudge').click();
+      await expect(overlay.locator('.cja-a')).toContainText('The creature dies.');
+    } else if(mode==='rules'){
+      await overlay.getByRole('button',{name:'Read the Comprehensive Rules'}).click();
+      await expect(overlay.locator('.ov-title')).toHaveText('Comprehensive Rules');
+    }
+    // Tap the visible logo's coordinates to catch titles overlapping its hit area.
+    const logo=await overlay.locator('[data-app-menu] img').boundingBox();
+    await page.mouse.click(logo.x+logo.width/2,logo.y+logo.height/2);
+    await expect(overlay).toHaveCount(0);
+    await expect(page.locator('#brandTitle')).toHaveText('MENU');
+    await expect(page.locator('.menu-page')).toBeVisible();
+  }
+  await page.locator('#crRow').click();
+  await page.locator('#crOverlay').getByRole('button',{name:'Go to home',exact:true}).click();
+  await expect(page.locator('#crOverlay')).toHaveCount(0);
+  await expect(page.locator('#brandTitle')).toHaveText('DECKHAND');
+  expect(errors).toEqual([]);
+});
+
 test('Comprehensive Rules opens from the judge header and lists sections and matches top to bottom', async ({page},info)=>{
   await page.evaluate(()=>{
     state._cr=Array.from({length:40},(_,i)=>({n:String(100+i),t:`Rules section ${i+1}`}));
@@ -330,6 +721,9 @@ test('Comprehensive Rules opens from the judge header and lists sections and mat
   await overlay.getByRole('button',{name:'Read the Comprehensive Rules'}).click();
   await expect(overlay.locator('.ov-title')).toHaveText('Comprehensive Rules');
   await expect(body.locator('.cr-toc-row')).toHaveCount(40);
+  await expect(body.locator('.hub-intro h1')).toHaveText('Know the rules.');
+  await expect(body.locator('.cr-toc-row').first()).toHaveClass(/hub-card/);
+  await expect(body.locator('.cr-toc-row').first()).toHaveCSS('border-radius','18px');
   expect(await body.evaluate(el=>el.scrollTop)).toBe(0);
   const first=await body.locator('.cr-toc-row').first().boundingBox();
   const second=await body.locator('.cr-toc-row').nth(1).boundingBox();
@@ -552,6 +946,71 @@ test('Trade has no page search and retains its card editing actions', async ({pa
   await expect(page.locator('#tradeAddOverlay')).toHaveCount(0);
   await expect(page.locator('#tradeConfirm, #tradeClear')).toHaveCount(2);
   await expect(page.locator('#tradeBarHost, .app > main .searchbar')).toHaveCount(0);
+  await page.locator('#tradeClear').click();
+  await page.locator('#iacOk').click();
+  await expect(page.locator('.trade-row')).toHaveCount(0);
+  await expect(page.locator('.trade-verdict')).toHaveText('Even trade.');
+  await expect(page.locator('#tradeConfirm')).toBeDisabled();
+  await expect(page.locator('#tradeClear')).toBeDisabled();
+});
+
+test('Trade card search suggests names on both sides and searches the selected card', async ({page},info)=>{
+  const errors=[], queries=[], autocomplete=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  page.on('request',request=>{if(new URL(request.url()).pathname.endsWith('/cards/autocomplete')) autocomplete.push(request.url());});
+  await page.route('**/api/scryfall/cards/search?*',route=>{
+    const query=new URL(route.request().url()).searchParams.get('q');
+    if(!query?.endsWith('game:paper')) return route.fulfill({json:{object:'list',data:[],has_more:false}});
+    queries.push(query);
+    const name=query.startsWith('Lightning')?'Lightning Bolt':'Counterspell';
+    return route.fulfill({json:{object:'list',has_more:false,data:[{id:name,name,type_line:'Instant',layout:'normal',
+      colors:['U'],color_identity:['U'],rarity:'common',set:'tst',collector_number:'1',prices:{},
+      image_uris:{normal:'/icon-192.png',small:'/icon-192.png'}}]}});
+  });
+  await page.evaluate(async()=>{
+    await bulkIndexReady();
+    _bulkIdx={cards:['Lightning Bolt','Counterspell',...Array.from({length:30},(_,i)=>`Lightning Test Card ${i}`)]
+      .map((n,i)=>({n,id:`trade-suggest-${i}`,tl:'Instant',ly:'normal',lg:'legal'}))};
+    switchPage('trade');
+  });
+  for(const side of ['a','b']){
+    await page.locator(`[data-tradeadd="${side}"]`).click();
+    const overlay=page.locator('#tradeAddOverlay'), input=overlay.locator('#taName');
+    await input.fill('Li');
+    await expect(page.locator('#nameSuggest')).toHaveCount(0);
+    await input.fill('Lightning');
+    const suggestions=page.locator('#nameSuggest');
+    await expect(suggestions).toBeVisible();
+    await expect(suggestions.locator('button').first()).toHaveText('Lightning Bolt');
+    expect(queries).toHaveLength(side==='a'?0:2);
+    await page.setViewportSize({width:320,height:480});
+    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    await expect.poll(()=>input.evaluate(el=>document.getElementById('nameSuggest').getBoundingClientRect().top-el.getBoundingClientRect().bottom)).toBeGreaterThanOrEqual(0);
+    const field=await input.boundingBox(), list=await suggestions.boundingBox();
+    const nav=await overlay.locator('.app-navigation').boundingBox();
+    expect(list.y).toBeGreaterThanOrEqual(field.y+field.height);
+    expect(list.x).toBeCloseTo(field.x,0);
+    expect(list.y+list.height).toBeLessThanOrEqual(nav.y);
+    if(side==='b'){
+      await mkdir('var/previews',{recursive:true});
+      await page.screenshot({path:`var/previews/trade-suggestions-${info.project.name}.png`});
+    }
+    await suggestions.getByRole('button',{name:'Lightning Bolt',exact:true}).click();
+    await expect(input).toHaveValue('Lightning Bolt');
+    await expect(suggestions).toHaveCount(0);
+    await expect(overlay.locator('.ta-tile img')).toHaveAttribute('alt','Lightning Bolt');
+    await input.fill('Countersp');
+    await expect(suggestions).toBeVisible();
+    await input.press('Enter');
+    await expect(suggestions).toHaveCount(0);
+    await expect(overlay.locator('.ta-tile img')).toHaveAttribute('alt','Counterspell');
+    await page.goBack();
+    await expect(overlay).toHaveCount(0);
+    await expect(suggestions).toHaveCount(0);
+  }
+  expect(queries).toEqual(['Lightning Bolt game:paper','Countersp game:paper','Lightning Bolt game:paper','Countersp game:paper']);
+  expect(autocomplete).toHaveLength(0);
+  expect(errors).toEqual([]);
 });
 
 test('Draft uses the menu layout and keeps setup, timers, pairings and results working', async ({page},info)=>{
@@ -714,7 +1173,7 @@ test('Dimir Draft keeps button labels, timers and match results readable', async
   await checkContrast('.dr-p.win, #drClock, [data-dr="rt-go"], [data-dr="rt-plus"]');
 });
 
-test('Trade uses menu cards and preserves clear and confirm actions', async ({page},info)=>{
+test('Trade keeps its balance above menu cards and its actions in the title bar', async ({page},info)=>{
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
   await expect.poll(()=>page.evaluate(()=>state.homeLoaded)).toBe(true);
@@ -726,14 +1185,24 @@ test('Trade uses menu cards and preserves clear and confirm actions', async ({pa
   });
   const main=page.locator('.trade-page');
   await expect(main).toHaveClass(/hub-page/);
-  await expect(main.locator('h1')).toHaveText('Find a fair trade.');
+  await expect(main.locator('h1, .trade-summary')).toHaveCount(0);
   await expect(main.locator('.trade-side')).toHaveCount(2);
   await expect(main.locator('.trade-side .tool-heading-copy h2')).toHaveText(['You','Me']);
   await expect(main.locator('.trade-total')).toHaveText(['€5.00','€7.00']);
-  await expect(main.locator('.trade-summary')).toHaveCSS('border-radius','18px');
-  for(const selector of ['[data-tradeadd="a"]','[data-tradeadd="b"]','#tradeConfirm','#tradeClear']){
+  await expect(main.locator('.trade-verdict')).toHaveText('You add €2.00');
+  const verdict=await main.locator('.trade-verdict').boundingBox();
+  const side=await main.locator('.trade-side').first().boundingBox();
+  expect(verdict.y+verdict.height).toBeLessThan(side.y);
+  expect(verdict.x+verdict.width).toBeCloseTo(side.x+side.width,0);
+  for(const selector of ['[data-tradeadd="a"]','[data-tradeadd="b"]']){
     await expect(main.locator(selector)).toHaveClass(/hub-card/);
     await expect(main.locator(`${selector} .hub-icon svg`)).toHaveCount(1);
+  }
+  for(const selector of ['#tradeConfirm','#tradeClear']){
+    await expect(page.locator(`.app-header ${selector}`)).toBeVisible();
+    await expect(page.locator(`.app-header ${selector} svg`)).toHaveCount(1);
+    await expect(page.locator(selector)).toHaveCSS('border-top-width','0px');
+    await expect(main.locator(selector)).toHaveCount(0);
   }
   const original=page.viewportSize();
   await page.setViewportSize({width:320,height:700});
@@ -744,6 +1213,10 @@ test('Trade uses menu cards and preserves clear and confirm actions', async ({pa
   await page.screenshot({path:`var/previews/trade-menu-style-${info.project.name}.png`});
   await page.locator('#tradeClear').click();
   await expect(page.locator('#inAppConfirm')).toContainText('Clear the whole trade?');
+  await expect(page.getByRole('alertdialog',{name:'Clear trade'})).toBeVisible();
+  await expect(page.locator('#iacCancel')).toBeFocused();
+  await mkdir('var/previews',{recursive:true});
+  await page.screenshot({path:`var/previews/trade-clear-dialog-${info.project.name}.png`});
   await page.locator('#iacCancel').click();
   await expect(main.locator('.trade-row')).toHaveCount(2);
   await page.locator('#tradeConfirm').click();
@@ -752,6 +1225,49 @@ test('Trade uses menu cards and preserves clear and confirm actions', async ({pa
   await expect.poll(()=>page.evaluate(()=>state.collection.items.map(it=>it.name))).toEqual(['Incoming fixture']);
   await expect.poll(()=>page.evaluate(()=>state.trade.a.length+state.trade.b.length)).toBe(0);
   expect(errors).toEqual([]);
+});
+
+test('shared dialogs fit small screens, keep keyboard focus and preserve required choices', async ({page},info)=>{
+  await page.evaluate(()=>{state.guild='dimir';applyTheme();});
+  await page.setViewportSize({width:320,height:480});
+  await page.evaluate(()=>{
+    window.dialogResults=[];
+    openInAppConfirm('Clear the whole trade?',value=>dialogResults.push(value),{title:'Clear trade',ok:'Clear trade',danger:true,icon:'trash'});
+  });
+  const dialog=page.getByRole('alertdialog',{name:'Clear trade'});
+  const box=await dialog.boundingBox();
+  expect(box.x).toBeGreaterThanOrEqual(16);
+  expect(box.y).toBeGreaterThanOrEqual(24);
+  expect(box.x+box.width).toBeLessThanOrEqual(304);
+  expect(box.y+box.height).toBeLessThanOrEqual(456);
+  expect(await dialog.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+  await expect(page.locator('#iacCancel')).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(page.locator('#iacOk')).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.locator('#iacCancel')).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  expect(await page.evaluate(()=>dialogResults)).toEqual([false]);
+  await page.evaluate(()=>openInAppConfirm('Choose whether to keep these cards.',value=>dialogResults.push(value),{ok:'Keep cards',must:true}));
+  await page.keyboard.press('Escape');
+  await page.locator('#inAppConfirm').click({position:{x:4,y:4}});
+  await expect(page.locator('#inAppConfirm')).toBeVisible();
+  await page.locator('#iacOk').click();
+  expect(await page.evaluate(()=>dialogResults)).toEqual([false,true]);
+  await page.evaluate(()=>openInAppPrompt('Rename folder','Folder name','Old name',value=>dialogResults.push(value)));
+  const input=page.getByRole('textbox',{name:'Rename folder'});
+  await expect(input).toBeFocused();
+  await input.fill('New name');
+  await mkdir('var/previews',{recursive:true});
+  await page.screenshot({path:`var/previews/prompt-dimir-${info.project.name}.png`});
+  await input.press('Enter');
+  await expect(page.locator('#inAppPrompt')).toHaveCount(0);
+  expect(await page.evaluate(()=>dialogResults)).toEqual([false,true,'New name']);
+  await page.evaluate(()=>openInAppPrompt('Rename folder','Folder name','Old name',value=>dialogResults.push(value)));
+  await expect(input).toBeFocused();
+  await page.keyboard.press('Escape');
+  expect(await page.evaluate(()=>dialogResults)).toEqual([false,true,'New name',null]);
 });
 
 test('Collection value follows name and advanced filters, quantities and binder scope', async ({page})=>{
@@ -1178,6 +1694,200 @@ test('Search uses Collection-style spacing with an integrated bar that stays vis
   await page.screenshot({path:`var/previews/search-integrated-sticky-${info.project.name}.png`});
 });
 
+test('Card Details keeps its title, metrics, subtitle and menu visible above scrolling content', async ({page},info)=>{
+  const errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  await page.evaluate(()=>{
+    state.guild='dimir'; applyTheme();
+    window.detailFixture={id:'details-layout-fixture',name:'A Very Long Card Name, Keeper of the Distant and Forgotten Archives',
+      layout:'normal',type_line:'Legendary Creature — Wizard',colors:['U'],color_identity:['U'],
+      set:'tst',collector_number:'1',prices:{eur:'1234.56'},_salt:2.70,legalities:{commander:'legal'},
+      oracle_text:Array.from({length:40},()=> 'Whenever you draw a card, gain 1 life.').join('\n'),
+      image_uris:{normal:'/icon-192.png',large:'/icon-192.png',small:'/icon-192.png'}};
+    openCardInfo(window.detailFixture);
+  });
+  const sheet=page.locator('#cardSheetOverlay'), details=sheet.locator('main.card-detail');
+  const header=sheet.locator('.card-details-header'), subtitle=sheet.locator('.card-details-subtitle');
+  const title=header.getByRole('button',{name:'Go to home',exact:true});
+  const menu=header.getByRole('button',{name:'Open menu',exact:true});
+  const price=header.locator('#csPrice'), salt=header.locator('#csSaltRow');
+  await expect(title).toHaveText('Card Details');
+  await expect(subtitle.locator('h1')).toHaveText('A Very Long Card Name, Keeper of the Distant and Forgotten Archives');
+  await expect(price).toContainText('€1234.56');
+  await expect(salt).toContainText('2.70');
+  await expect(salt).toBeEnabled();
+  const original=page.viewportSize();
+  for(const size of [original,{width:320,height:480}]){
+    await page.setViewportSize(size);
+    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    const h=await header.boundingBox(), s=await subtitle.boundingBox(), b=await details.boundingBox();
+    const n=await sheet.locator('.app-navigation').boundingBox();
+    const t=await title.boundingBox(), m=await menu.boundingBox();
+    expect(h.y).toBe(0);
+    expect(s.y).toBeCloseTo(h.y+h.height,0);
+    expect(b.y).toBeCloseTo(s.y+s.height,0);
+    expect(b.y+b.height).toBeCloseTo(n.y,0);
+    expect(m.x).toBeGreaterThanOrEqual(0);
+    expect(m.x).toBeLessThanOrEqual(20);
+    expect(m.x+m.width).toBeLessThanOrEqual(t.x);
+    for(const metric of [price,salt]){
+      const bounds=await metric.boundingBox();
+      expect(bounds.x).toBeGreaterThanOrEqual(t.x+t.width);
+      expect(bounds.x+bounds.width).toBeLessThanOrEqual(h.x+h.width-14);
+      await expect(metric).toBeInViewport();
+    }
+    expect(await subtitle.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+    expect(await details.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+    await details.dispatchEvent('wheel');
+    await details.evaluate(el=>el.scrollTop=el.scrollHeight);
+    expect(await details.evaluate(el=>el.scrollTop)).toBeGreaterThan(0);
+    expect(await header.boundingBox()).toEqual(h);
+    expect(await subtitle.boundingBox()).toEqual(s);
+    expect(await sheet.locator('.app-navigation').boundingBox()).toEqual(n);
+    await details.evaluate(el=>el.scrollTop=0);
+  }
+  await page.setViewportSize(original);
+  await price.click();
+  await expect(page.locator('#phOverlay')).toBeVisible();
+  await page.goBack();
+  await expect(page.locator('#phOverlay')).toHaveCount(0);
+  await expect(sheet).toBeVisible();
+  await mkdir('var/previews',{recursive:true});
+  await page.screenshot({path:`var/previews/card-details-redesign-${info.project.name}.png`});
+  await menu.locator('img').click();
+  await expect(sheet).toHaveCount(0);
+  await expect(page.locator('.menu-page')).toBeVisible();
+  await expect(page.locator('#brandTitle')).toHaveText('MENU');
+  expect(errors).toEqual([]);
+});
+
+test('Deck card details share the header and retain editing, updated metrics and tab navigation', async ({page},info)=>{
+  const errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  // Establish a user navigation before opening a fixture with history-backed actions.
+  await page.getByRole('button',{name:'Open menu',exact:true}).click();
+  await page.evaluate(()=>{
+    state.guild='dimir'; applyTheme();
+    const card={id:'details-deck-fixture',name:'Archive Adept',layout:'normal',type_line:'Creature — Wizard',
+      colors:['U'],color_identity:['U'],set:'tst',collector_number:'1',prices:{eur:'1.50'},_salt:0,
+      legalities:{modern:'legal',commander:'legal'},oracle_text:'Draw a card.',
+      image_uris:{normal:'/icon-192.png',large:'/icon-192.png',small:'/icon-192.png'}};
+    const deck={id:'details-deck',name:'Details fixture',format:'modern',cards:[card],maybeboard:[]};
+    state.decksIndex.push(deck);
+    window.detailDeck=deck;
+    openCardActionSheet(deck,card,'main',0);
+  });
+  const sheet=page.locator('#cardSheetOverlay');
+  await expect(sheet.locator('.card-details-header .brand-txt')).toHaveText('Card Details');
+  await expect(sheet.locator('.card-details-subtitle')).toHaveText('Archive Adept');
+  await expect(sheet.locator('#csSaltRow')).toContainText('0.00');
+  await expect(sheet.locator('#csSaltRow')).toBeEnabled();
+  await sheet.locator('#csAddOne').click();
+  await page.locator('#csAddSheet [data-addk="deck"]').click();
+  await expect.poll(()=>page.evaluate(()=>window.detailDeck.cards.length)).toBe(2);
+  await expect(page.locator('#csAddSheet')).toHaveCount(0);
+  await expect(sheet).toHaveCount(0);
+  await page.evaluate(()=>openCardActionSheet(window.detailDeck,window.detailDeck.cards[0],'main',0));
+  await expect(sheet.locator('.card-details-subtitle')).toHaveText('Archive Adept');
+  await expect(sheet.locator('#csPrice')).toContainText('€1.50');
+  const section=sheet.locator('.detail-sec:has(#sheetOracle)');
+  const label=await section.locator('.detail-h').boundingBox(), content=await section.locator('#sheetOracle').boundingBox();
+  expect(label.y+label.height).toBeLessThanOrEqual(content.y);
+  await expect(section).toHaveCSS('border-radius','18px');
+  await expect(sheet.locator('#csChangePrinting')).toBeEnabled();
+  await mkdir('var/previews',{recursive:true});
+  await page.screenshot({path:`var/previews/card-details-deck-${info.project.name}.png`});
+  await sheet.locator('.app-navigation').getByRole('button',{name:'Collection',exact:true}).click();
+  await expect(sheet).toHaveCount(0);
+  await expect(page.locator('#brandTitle')).toHaveText('COLLECTION');
+  await page.evaluate(()=>openCardInfo({...window.detailDeck.cards[0],name:'Updated Printing',prices:{eur:'3.00'},_salt:null}));
+  await expect(sheet.locator('.card-details-subtitle')).toHaveText('Updated Printing');
+  await expect(sheet.locator('#csSaltRow')).toContainText('—');
+  await expect(sheet.locator('#csSaltRow')).toBeDisabled();
+  await sheet.getByRole('button',{name:'Go to home',exact:true}).click();
+  await expect(sheet).toHaveCount(0);
+  await expect(page.locator('#brandTitle')).toHaveText('DECKHAND');
+  if(info.project.name==='desktop'){
+    for(const action of ['close','menu']){
+      await page.evaluate(()=>{
+        state._csPopAt={x:150,y:150,t:Date.now()};
+        openCardInfo(window.detailDeck.cards[0]);
+      });
+      await expect(sheet).toHaveClass(/cs-pop/);
+      const close=sheet.locator('.cs-pop-x'), menu=sheet.getByRole('button',{name:'Open menu',exact:true});
+      await expect(close).toBeVisible();
+      const x=await close.boundingBox(), metrics=await sheet.locator('.card-details-metrics').boundingBox();
+      const logo=await menu.boundingBox(), title=await sheet.locator('.brand-txt').boundingBox();
+      expect(logo.x+logo.width).toBeLessThanOrEqual(title.x);
+      expect(metrics.x+metrics.width).toBeLessThanOrEqual(x.x);
+      await expect(sheet.locator('.card-details-subtitle')).toBeVisible();
+      await (action==='close'?close:menu).click();
+      await expect(sheet).toHaveCount(0);
+      if(action==='menu') await expect(page.locator('#brandTitle')).toHaveText('MENU');
+    }
+  }
+  expect(errors).toEqual([]);
+});
+
+test('Similar Cards starts at the top, reads downward and keeps its place after opening a result', async ({page},info)=>{
+  const errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  const base={layout:'normal',type_line:'Creature — Wizard',oracle_text:'',colors:['U'],color_identity:['U'],
+    set:'tst',collector_number:'1',rarity:'common',prices:{eur:'1.00'},_salt:0,legalities:{commander:'legal'},
+    image_uris:{normal:'/icon-192.png',large:'/icon-192.png',small:'/icon-192.png'}};
+  const source={...base,id:'similar-source',name:'Similar source'};
+  const pool=Array.from({length:18},(_,i)=>({...base,id:`similar-result-${i}`,name:`Similar result ${i+1}`}));
+  let releaseResults;
+  const ready=new Promise(resolve=>releaseResults=resolve);
+  await page.route('**/edhrec/**',route=>route.fulfill({json:{container:{json_dict:{}}}}));
+  await page.route('**/api/scryfall/cards/search*',async route=>{
+    await ready;
+    await route.fulfill({json:{object:'list',data:pool,has_more:false,total_cards:pool.length}});
+  });
+  await page.getByRole('button',{name:'Open menu',exact:true}).click();
+  await page.evaluate(source=>{
+    state._otagCache={[source.name]:[]};
+    _bulkIdx={cards:[],byName:new Map(),tagByOid:new Map(),rulByOid:new Map()};
+    _mwFreq={total:0,freq:new Map()};
+    openCardInfo(source);
+  },source);
+  await page.locator('#ciSimilar').click();
+  const similar=page.locator('#similarOverlay'), main=similar.locator('main');
+  await expect(main).toHaveCSS('flex-direction','column');
+  await expect(similar.locator('#simBody .spinner')).toBeVisible();
+  expect(await main.evaluate(el=>el.scrollTop)).toBe(0);
+  releaseResults();
+  const tiles=similar.locator('#simBody .sr-tile');
+  await expect(tiles).toHaveCount(pool.length);
+  expect(await tiles.evaluateAll(nodes=>nodes.map(n=>decodeURIComponent(n.dataset.name)))).toEqual(pool.map(c=>c.name));
+  expect(await main.evaluate(el=>el.scrollTop)).toBe(0);
+  const hero=await similar.locator('.reco-admiral').boundingBox();
+  const hint=await main.locator(':scope > .hint').boundingBox(), results=await similar.locator('#simBody').boundingBox();
+  expect(hero.y).toBeGreaterThanOrEqual((await main.boundingBox()).y);
+  expect(hero.y+hero.height).toBeLessThanOrEqual(hint.y);
+  expect(hint.y+hint.height).toBeLessThanOrEqual(results.y);
+  const positions=await tiles.evaluateAll(nodes=>nodes.map(n=>n.getBoundingClientRect().y));
+  for(let i=1;i<positions.length;i++) expect(positions[i]).toBeGreaterThanOrEqual(positions[i-1]);
+  expect(positions.at(-1)).toBeGreaterThan(positions[0]);
+  await mkdir('var/previews',{recursive:true});
+  await page.screenshot({path:`var/previews/similar-cards-top-${info.project.name}.png`});
+  const header=await similar.locator('.app-overlay-header').boundingBox(), nav=await similar.locator('.app-navigation').boundingBox();
+  const bounds=await main.boundingBox();
+  await page.mouse.move(bounds.x+bounds.width/2,bounds.y+bounds.height/2);
+  await page.mouse.wheel(0,500);
+  await expect.poll(()=>main.evaluate(el=>el.scrollTop)).toBeGreaterThan(0);
+  expect(await similar.locator('.app-overlay-header').boundingBox()).toEqual(header);
+  expect(await similar.locator('.app-navigation').boundingBox()).toEqual(nav);
+  await tiles.last().scrollIntoViewIfNeeded();
+  const keep=await main.evaluate(el=>el.scrollTop);
+  await tiles.last().dispatchEvent('click');
+  await expect(page.locator('#ciImg')).toHaveAttribute('alt',pool.at(-1).name);
+  await page.goBack();
+  await expect(similar).toBeVisible();
+  expect(await main.evaluate(el=>el.scrollTop)).toBeCloseTo(keep,0);
+  expect(errors).toEqual([]);
+});
+
 test('Inspiration shares its background fade and opens recommendations and card details from the top', async ({page},info)=>{
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
@@ -1229,9 +1939,9 @@ test('Inspiration shares its background fade and opens recommendations and card 
   await expect(sheet).toBeVisible();
   await expect(page.locator('#ciImg')).toBeVisible();
   await expect.poll(()=>details.evaluate(el=>el.scrollTop)).toBe(0);
-  const image=await page.locator('#ciImg').boundingBox(), header=await sheet.locator('.topbar').boundingBox();
-  expect(image.y).toBeGreaterThanOrEqual(header.y+header.height);
-  expect(image.y).toBeLessThan(header.y+header.height+50);
+  const image=await page.locator('#ciImg').boundingBox(), subtitle=await sheet.locator('.card-details-subtitle').boundingBox();
+  expect(image.y).toBeGreaterThanOrEqual(subtitle.y+subtitle.height);
+  expect(image.y).toBeLessThan(subtitle.y+subtitle.height+50);
   const oracle=await details.locator('.detail-sec:has(#sheetOracle)').boundingBox();
   const legality=await details.locator('.detail-sec').filter({hasText:'Legality'}).boundingBox();
   const rulings=await details.locator('.detail-sec:has(#csRulings)').boundingBox();
