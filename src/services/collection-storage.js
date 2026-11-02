@@ -103,9 +103,7 @@ function saveCollection() {
         localStorage.setItem(LS_PREFIX + 'collection', JSON.stringify(state.collection));
       } catch (err) {
         toast(
-          appLang() === 'nl'
-            ? '\u26A0 Opslag vol \u2014 de collectie kon niet bewaard worden. Maak een back-up in Extra\u2019s.'
-            : '\u26A0 Storage full \u2014 the collection could not be saved. Make a backup in Extras.',
+          '\u26A0 Storage full \u2014 the collection could not be saved. Make a backup in Extras.',
         );
       }
     })();

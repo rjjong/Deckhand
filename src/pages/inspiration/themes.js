@@ -1756,8 +1756,8 @@ async function copyDiagnostics() {
   ]
     .concat(_sfLog && _sfLog.length ? _sfLog : ['(empty)'])
     .join('\n');
-  const NL = appLang() === 'nl';
-  const done = () => toast(NL ? 'Diagnose gekopieerd.' : 'Diagnostics copied.');
+
+  const done = () => toast('Diagnostics copied.');
   // the clipboard API first; the old way as a fallback (some WebViews refuse the API)
   const legacy = () => {
     try {
@@ -1770,9 +1770,9 @@ async function copyDiagnostics() {
       const ok = document.execCommand('copy');
       ta.remove();
       if (ok) done();
-      else toast(NL ? 'Kopiëren lukte niet.' : 'Could not copy.');
+      else toast('Could not copy.');
     } catch (e) {
-      toast(NL ? 'Kopiëren lukte niet.' : 'Could not copy.');
+      toast('Could not copy.');
     }
   };
   try {

@@ -27,13 +27,7 @@ function deckPriceFromCache(d) {
    after you have been away to a deck and back. */
 function priceRingHtml(complete, busy) {
   if (complete) return '';
-  const title = busy
-    ? appLang() === 'nl'
-      ? 'Prijzen worden opgehaald\u2026'
-      : 'Fetching prices\u2026'
-    : appLang() === 'nl'
-      ? 'Nog niet compleet'
-      : 'Not complete yet';
+  const title = busy ? 'Fetching prices\u2026' : 'Not complete yet';
   return /* HTML */ `<span class="price-ring${busy ? '' : ' idle'}" title="${title}"></span>`;
 }
 
@@ -91,7 +85,7 @@ function openCoverPicker(d) {
       seen.add(c.name);
       pool.push(c);
     });
-  const nl = appLang() === 'nl';
+
   const el = document.createElement('div');
   el.className = 'deckpick-scrim';
   el.id = 'coverPicker';
@@ -101,16 +95,14 @@ function openCoverPicker(d) {
     class="deckpick"
     style="border-radius:16px;margin:auto;max-width:420px;display:flex;flex-direction:column;"
   >
-    <h4>${nl ? 'Deckplaatje' : 'Cover art'}</h4>
+    <h4>${'Cover art'}</h4>
     <div class="cover-grid">
       ${pool.map((c, i) => `<button type="button" class="cover-opt ${d.cover === c.name ? 'on' : ''}" data-cover="${i}"><img loading="lazy" src="${cardImageMed(c)}" alt="${escapeHtml(c.name)}"></button>`).join('')}
     </div>
     <button class="ghost-btn" id="coverAuto" style="width:100%;margin-top:8px;">
-      ${nl ? 'Automatisch' : 'Automatic'}
+      ${'Automatic'}
     </button>
-    <button class="dp-cancel" id="coverCancel" style="margin-top:8px;">
-      ${nl ? 'Annuleren' : 'Cancel'}
-    </button>
+    <button class="dp-cancel" id="coverCancel" style="margin-top:8px;">${'Cancel'}</button>
   </div>`;
   document.body.appendChild(el);
   const close = () => {
@@ -296,10 +288,7 @@ function deckSaltLabel(d) {
   const s = deckSalt(d);
   // Shown once at least 80% of the deck has been looked up.
   if (s.avg == null || s.pending > s.total * 0.2) return '';
-  const t =
-    appLang() === 'nl'
-      ? 'Gemiddelde salt score (EDHREC) van de kaarten zonder lands'
-      : 'Average salt score (EDHREC) of the nonland cards';
+  const t = 'Average salt score (EDHREC) of the nonland cards';
   return `<span class="dk-salt" title="${t}">🧂 ${s.avg.toFixed(2)}</span>`;
 }
 
@@ -535,43 +524,20 @@ function updateBackupBadges() {
 
 function menuNoticeHtml() {
   try {
-    if (!localStorage.getItem(LS_PREFIX + 'welcomed')) {
-      return /* HTML */ `<div class="pin-pill" id="welcomeNote" style="align-items:flex-start;">
-        <span class="pp-txt" style="white-space:normal;line-height:1.5;"
-          >${modeGlyph()}
-          ${
-            appLang() === 'nl'
-              ? 'Je decks staan <strong>in deze browser, op dit toestel</strong>. Blijf bij één browser — het fijnst als geïnstalleerde app (Chrome ⋮ → App installeren) — en maak af en toe een back-up via Extra\u2019s.'
-              : 'Your decks are saved <strong>in this browser, on this device</strong>. Stick to one browser — nicest as the installed app (Chrome ⋮ → Install app) — and back up now and then from Extras.'
-          }</span
-        >
-        <button id="welcomeOk" title="Got it">✕</button>
-      </div>`;
-    }
     const reminder = backupReminder();
     if (reminder) {
       const { last } = reminder;
-      const nl = appLang() === 'nl';
+
       const days = last ? Math.floor((Date.now() - last) / 86400000) : 0;
       const msg = last
-        ? nl
-          ? `Je laatste back-up is ${days} dagen oud.`
-          : `Your last backup is ${days} days old.`
-        : nl
-          ? 'Je hebt nog geen back-up van je decks en collectie.'
-          : 'You have no backup of your decks and collection yet.';
+        ? `Your last backup is ${days} days old.`
+        : 'You have no backup of your decks and collection yet.';
       return /* HTML */ `<div class="pin-pill" id="backupNote" style="align-items:center;">
         <span class="pp-txt" style="white-space:normal;line-height:1.5;"
           >${inlIco('save', 15)}${msg}</span
         >
-        <button type="button" class="bk-now" id="backupNow">${nl ? 'Nu maken' : 'Back up'}</button>
-        <button
-          id="backupLater"
-          aria-label="Snooze backup reminder"
-          title="${nl ? 'Later' : 'Later'}"
-        >
-          ✕
-        </button>
+        <button type="button" class="bk-now" id="backupNow">${'Back up'}</button>
+        <button id="backupLater" aria-label="Snooze backup reminder" title="${'Later'}">✕</button>
       </div>`;
     }
   } catch (e) {}
@@ -579,12 +545,6 @@ function menuNoticeHtml() {
 }
 
 function wireMenuNotice() {
-  document.getElementById('welcomeOk')?.addEventListener('click', () => {
-    try {
-      localStorage.setItem(LS_PREFIX + 'welcomed', '1');
-    } catch (e) {}
-    render();
-  });
   document.getElementById('backupLater')?.addEventListener('click', () => {
     try {
       localStorage.setItem(LS_PREFIX + 'backupSnooze', String(Date.now()));
@@ -788,7 +748,7 @@ function openDeckTileMenu(id, anchorEl) {
     { label: mIco('folder') + trS('Move to…'), fn: () => openFolderPicker(d) },
     { label: '⚔ Set format…', fn: () => openFormatPicker(d) },
     {
-      label: mIco('image') + (appLang() === 'nl' ? 'Deckplaatje…' : 'Cover art…'),
+      label: mIco('image') + 'Cover art…',
       fn: () => openCoverPicker(d),
     },
     {
@@ -829,7 +789,7 @@ function openFolderMenu(id, anchorEl) {
         }),
     },
     {
-      label: modeGlyph() + ' ' + (appLang() === 'nl' ? 'Icoon wijzigen' : 'Change icon'),
+      label: modeGlyph() + ' ' + 'Change icon',
       fn: () => openFolderIconPicker(f),
     },
     { label: mIco('folderPlus') + trS('New subfolder'), fn: () => openNewFolderPrompt(f.id) },
@@ -977,7 +937,7 @@ function fpTileHtml(kind, id) {
 function renderFolderPicker() {
   const d = state._fpDeck;
   if (!d) return;
-  const NL = appLang() === 'nl';
+
   let el = document.getElementById('folderPicker');
   if (!el) {
     el = document.createElement('div');
@@ -1012,7 +972,7 @@ function renderFolderPicker() {
       : mvFolder
         ? 'Top level'
         : 'Top level (auto-filed by format)';
-  const newTile = `<button type="button" class="folder-tile fp-tile fp-new" id="fpNewSub"><div class="folder-face">${ICONS.folderPlus || '＋'}</div><div class="folder-name">${NL ? 'Nieuwe map' : 'New folder'}</div><div class="folder-sub">${NL ? 'hier' : 'here'}</div></button>`;
+  const newTile = `<button type="button" class="folder-tile fp-tile fp-new" id="fpNewSub"><div class="folder-face">${ICONS.folderPlus || '＋'}</div><div class="folder-name">${'New folder'}</div><div class="folder-sub">${'here'}</div></button>`;
   const tiles =
     newTile +
     (!nav ? FMT_ORDER.map((f) => fpTileHtml('fmt', f)).join('') : '') +
@@ -1050,18 +1010,13 @@ function renderFolderPicker() {
     }),
   );
   document.getElementById('fpNewSub').addEventListener('click', () => {
-    openInAppPrompt(
-      NL ? 'Nieuwe map' : 'New folder',
-      NL ? 'Naam van de map' : 'Folder name',
-      '',
-      (name) => {
-        if (name && name.trim()) {
-          const f = createFolder(name.trim(), state._fpNav || null);
-          state._fpNav = f.id;
-          renderFolderPicker();
-        }
-      },
-    );
+    openInAppPrompt('New folder', 'Folder name', '', (name) => {
+      if (name && name.trim()) {
+        const f = createFolder(name.trim(), state._fpNav || null);
+        state._fpNav = f.id;
+        renderFolderPicker();
+      }
+    });
   });
   document.getElementById('fpHere').addEventListener('click', () => {
     const dest = state._fpNav || null;
@@ -1213,11 +1168,7 @@ function openPasteListSheet(opts) {
         </button>
       </div>
       <p class="hint" style="margin:0 0 8px;">
-        ${
-          appLang() === 'nl'
-            ? `Een eerste regel <span style="font-family:'JetBrains Mono',monospace;">${leaderLineLabel({ format: 'commander' })}: Kaartnaam</span> wijst de leider aan — anders kies je er later een uit het deck.`
-            : `A first line <span style="font-family:'JetBrains Mono',monospace;">${leaderLineLabel({ format: 'commander' })}: Card Name</span> appoints the leader — otherwise appoint one later from the deck.`
-        }
+        ${`A first line <span style="font-family:'JetBrains Mono',monospace;">${leaderLineLabel({ format: 'commander' })}: Card Name</span> appoints the leader — otherwise appoint one later from the deck.`}
       </p>
       <input
         id="pasteDeckName"
@@ -1229,7 +1180,7 @@ function openPasteListSheet(opts) {
         id="pasteDeckText"
         class="bulk-textarea"
         style="min-height:180px;"
-        placeholder="${appLang() === 'nl' ? '1 Kaartnaam&#10;1 Nog een kaart&#10;…' : '1 Card Name&#10;1 Another Card&#10;…'}"
+        placeholder="${'1 Card Name&#10;1 Another Card&#10;…'}"
       ></textarea>
       <input type="file" id="pasteDeckFile" accept=".txt,.dec,text/plain" style="display:none;" />
       <button class="ghost-btn" id="pasteDeckFileBtn" style="width:100%;margin-top:8px;">

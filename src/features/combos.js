@@ -61,7 +61,7 @@ async function wireDeckCombosPanel(d) {
     found.forEach((c) => {
       by[c.nm.length]++;
     });
-    const u = appLang() === 'nl' ? 'kaarts' : 'card';
+    const u = 'card';
     body.innerHTML = /* HTML */ `<button
       type="button"
       class="ghost-btn"
@@ -362,35 +362,21 @@ async function openLandSuggest(d) {
           return rx - ry;
         });
         rankNote =
-          appLang() === 'nl'
-            ? 'Gerangschikt op de EDHREC-landbase van ' +
-              deckLeaders(d)
-                .map((l) => l.name)
-                .join(' & ') +
-              ' (' +
-              rk.size +
-              ' lands).'
-            : 'Ranked by ' +
-              deckLeaders(d)
-                .map((l) => l.name)
-                .join(' & ') +
-              '\u2019s EDHREC landbase (' +
-              rk.size +
-              ' lands).';
+          'Ranked by ' +
+          deckLeaders(d)
+            .map((l) => l.name)
+            .join(' & ') +
+          '\u2019s EDHREC landbase (' +
+          rk.size +
+          ' lands).';
       } else {
-        rankNote =
-          appLang() === 'nl'
-            ? 'Landbase van EDHREC niet beschikbaar \u2014 dit is de algemene populariteit.'
-            : 'EDHREC landbase unavailable \u2014 showing global popularity.';
+        rankNote = 'EDHREC landbase unavailable \u2014 showing global popularity.';
         try {
           console.info('suggest lands:', dbg.join(' | '));
         } catch (e) {}
       }
     } catch (e) {
-      rankNote =
-        appLang() === 'nl'
-          ? 'Landbase van EDHREC niet beschikbaar \u2014 dit is de algemene populariteit.'
-          : 'EDHREC landbase unavailable \u2014 showing global popularity.';
+      rankNote = 'EDHREC landbase unavailable \u2014 showing global popularity.';
       console.warn('suggest lands: edhrec landbase unavailable', e);
     }
     const sel = new Set();
@@ -410,7 +396,7 @@ async function openLandSuggest(d) {
         })
         .join('')}</div>`;
     const hintHtml = () =>
-      `<p class="hint" id="lsHint" style="margin:6px 0;text-align:center;">${appLang() === 'nl' ? `${landCount} ${landCount === 1 ? 'land' : 'lands'} in het deck \u00b7 doel ${goal}${aiWhy.size ? ' (AI)' : ''} \u00b7 ${aiWhy.size ? 'AI-keuzes onderaan' : 'meest gespeeld onderaan'}` : `${landCount} land${landCount === 1 ? '' : 's'} in the deck \u00b7 target ${goal}${aiWhy.size ? ' (AI)' : ''} \u00b7 ${aiWhy.size ? 'AI picks at the bottom' : 'most played at the bottom'}`}<br><span style="white-space:pre-line;">${escapeHtml(rankNote)}</span></p>`;
+      `<p class="hint" id="lsHint" style="margin:6px 0;text-align:center;">${`${landCount} land${landCount === 1 ? '' : 's'} in the deck \u00b7 target ${goal}${aiWhy.size ? ' (AI)' : ''} \u00b7 ${aiWhy.size ? 'AI picks at the bottom' : 'most played at the bottom'}`}<br><span style="white-space:pre-line;">${escapeHtml(rankNote)}</span></p>`;
     // bottom-up: grid, its hint, then the AI box at the very foot of the scroller
     const aiOk = false; // 1.39: the land AI is gone (Stef) -- EDHREC + the deck's own pips decide
     main.innerHTML = `${gridHtml()}${hintHtml()}${aiOk ? '<div class="ls-ai" id="lsAi"></div>' : ''}`;
@@ -456,19 +442,16 @@ async function openLandSuggest(d) {
     // with the reason, and the deck's lands it would swap out (each its own
     // Remove button). Bottom-up inside: the answer lowest, swaps above it.
     let aiState = null;
-    const NLl = appLang() === 'nl';
+
     const paintAi = () => {
       const box = main.querySelector('#lsAi');
       if (!box) return;
       const left = deckAiLeftGet();
-      const leftTxt =
-        left == null ? '' : NLl ? ` \u00b7 nog ${left} vandaag` : ` \u00b7 ${left} left today`;
+      const leftTxt = left == null ? '' : ` \u00b7 ${left} left today`;
       if (aiState && aiState.busy) {
         box.innerHTML = /* HTML */ `<div class="ai-row busy">
           <span class="ai-spin" aria-hidden="true"></span
-          ><span class="ai-txt"
-            >${NLl ? 'De AI leest je deck\u2026 (tot een halve minuut)' : 'The AI is reading your deck\u2026 (up to half a minute)'}</span
-          >
+          ><span class="ai-txt">${'The AI is reading your deck\u2026 (up to half a minute)'}</span>
         </div>`;
         return;
       }
@@ -477,7 +460,7 @@ async function openLandSuggest(d) {
         const swaps = (r.swap || []).filter((x) => d.cards.some((c) => c.name === x.name));
         box.innerHTML =
           (swaps.length
-            ? `<div class="ai-sub">${NLl ? 'Lands die de AI zou wisselen' : 'Lands the AI would swap out'}</div>` +
+            ? `<div class="ai-sub">${'Lands the AI would swap out'}</div>` +
               swaps
                 .map(
                   (x) =>
@@ -485,7 +468,7 @@ async function openLandSuggest(d) {
                 )
                 .join('')
             : '') +
-          `<div class="ai-row done"><span class="ai-badge" aria-hidden="true">\u2726 AI</span><span class="ai-txt">${r.count ? `<b>${r.count} lands</b> \u2014 ` : ''}${escapeHtml(r.countWhy || r.plan || '')}${deckAiModelHtml(r, NLl)}</span></div>` +
+          `<div class="ai-row done"><span class="ai-badge" aria-hidden="true">\u2726 AI</span><span class="ai-txt">${r.count ? `<b>${r.count} lands</b> \u2014 ` : ''}${escapeHtml(r.countWhy || r.plan || '')}${deckAiModelHtml(r)}</span></div>` +
           (r.plan && r.countWhy
             ? `<div class="ai-hint" style="text-align:left;">${escapeHtml(r.plan)}</div>`
             : '');
@@ -496,7 +479,7 @@ async function openLandSuggest(d) {
             const [c] = d.cards.splice(i, 1);
             logDeckChange(d, { type: 'remove', name: c.name, card: c });
             scheduleSave(d);
-            toast(NLl ? `${c.name} is eruit.` : `${c.name} removed.`);
+            toast(`${c.name} removed.`);
             landCount = d.cards.filter((x) => String(x.type_line || '').includes('Land')).length;
             target = Math.max(0, goal - landCount);
             repaintGrid();
@@ -506,7 +489,7 @@ async function openLandSuggest(d) {
         );
         return;
       }
-      box.innerHTML = `${aiState && aiState.err ? `<div class="ai-err">${escapeHtml(aiState.err)}</div>` : ''}<button type="button" class="ghost-btn ai-btn" id="lsAiBtn"><span class="ai-star" aria-hidden="true">\u2726</span>${NLl ? 'Vraag de AI om lands' : 'Ask the AI for lands'}</button><div class="ai-hint">${NLl ? 'Kijkt naar je curve, ramp en kleuren' : 'Looks at your curve, ramp and colours'}${leftTxt}</div>`;
+      box.innerHTML = `${aiState && aiState.err ? `<div class="ai-err">${escapeHtml(aiState.err)}</div>` : ''}<button type="button" class="ghost-btn ai-btn" id="lsAiBtn"><span class="ai-star" aria-hidden="true">\u2726</span>${'Ask the AI for lands'}</button><div class="ai-hint">${'Looks at your curve, ramp and colours'}${leftTxt}</div>`;
       box.querySelector('#lsAiBtn').addEventListener('click', askAi);
     };
     const askAi = async () => {
@@ -543,7 +526,7 @@ async function openLandSuggest(d) {
         );
       const res = await deckAiAsk({
         kind: 'lands',
-        lang: NLl ? 'nl' : 'en',
+        lang: 'en',
         device: judgeDevice(),
         want: 12,
         deck: Object.assign(base.info, { others: deckAiNameList(nonland) }),
@@ -553,7 +536,7 @@ async function openLandSuggest(d) {
       if (res && res.ok && typeof res.left === 'number') deckAiLeftSet(res.left);
       if (res && res.error === 'limit') deckAiLeftSet(0);
       if (!(res && res.ok && res.kind === 'lands')) {
-        aiState = { err: deckAiErrText(res, NLl) };
+        aiState = { err: deckAiErrText(res) };
         paintAi();
         return;
       }
@@ -587,11 +570,11 @@ async function openLandSuggest(d) {
           style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;"
           ><input type="checkbox" id="lsugBasics" checked /><span
             style="font-size:13.5px;overflow:hidden;text-overflow:ellipsis;"
-            >${rest > 0 ? (appLang() === 'nl' ? 'Vul ' + rest + ' aan met basics: ' : 'Fill ' + rest + ' with basics: ') + plan.map((p) => p[1] + ' ' + p[0]).join(' · ') : appLang() === 'nl' ? 'Basics: niet nodig' : 'Basics: none needed'}</span
+            >${rest > 0 ? 'Fill ' + rest + ' with basics: ' + plan.map((p) => p[1] + ' ' + p[0]).join(' · ') : 'Basics: none needed'}</span
           ></label
         >
         <button type="button" class="primary-btn" id="lsugGo" style="width:auto;flex:0 0 auto;">
-          ${appLang() === 'nl' ? 'Voeg toe' : 'Add'}${sel.size ? ' (' + sel.size + ')' : ''}
+          ${'Add'}${sel.size ? ' (' + sel.size + ')' : ''}
         </button>`;
       foot.querySelector('#lsugGo').addEventListener('click', async () => {
         const picks = Array.from(sel).map((i) => pool[i]);

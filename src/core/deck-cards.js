@@ -245,7 +245,7 @@ function openDeckPickPopup(card, mode, refreshFn, pairWith, withCollection) {
           : 'Add to…';
   const sub =
     mode === 'reco'
-      ? `${escapeHtml(nm)} — ${appLang() === 'nl' ? 'de aanbevelingen blijven binnen de gekozen kleuren' : 'recommendations will stay within the chosen colors'}`
+      ? `${escapeHtml(nm)} — ${'recommendations will stay within the chosen colors'}`
       : escapeHtml(nm);
   const el = document.createElement('div');
   el.className = 'deckpick-scrim';

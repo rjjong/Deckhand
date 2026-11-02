@@ -77,24 +77,19 @@ function backupMarkDone() {
 }
 
 function backupAgeLabel() {
-  const nl = appLang() === 'nl';
   let last = 0;
   try {
     last = parseInt(localStorage.getItem(LS_PREFIX + 'lastBackup') || '0', 10);
   } catch (e) {}
-  if (!last) return nl ? 'Nog geen back-up gemaakt' : 'No backup made yet';
+  if (!last) return 'No backup made yet';
   const d = new Date(last),
     days = Math.floor((Date.now() - last) / 86400000);
-  const when = d.toLocaleDateString(nl ? 'nl-NL' : 'en-GB', {
+  const when = d.toLocaleDateString('en-GB', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
   });
-  return (
-    (nl ? 'Laatste back-up: ' : 'Last backup: ') +
-    when +
-    (days >= 1 ? (nl ? ` (${days} d geleden)` : ` (${days} d ago)`) : '')
-  );
+  return 'Last backup: ' + when + (days >= 1 ? ` (${days} d ago)` : '');
 }
 
 // Base64 of a long text, in slices (one giant String.fromCharCode overflows).
@@ -109,7 +104,6 @@ function b64OfText(t) {
 /* "To your cloud or mail": the Android app's own share bridge (APK 4.1+),
    else the browser's file sharing, else a plain download. */
 async function backupShare() {
-  const nl = appLang() === 'nl';
   const json = JSON.stringify(backupPayload()),
     name = backupFileName();
   try {
@@ -124,23 +118,18 @@ async function backupShare() {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({ files: [file], title: name });
       backupMarkDone();
-      toast(nl ? 'Back-up gedeeld.' : 'Backup shared.');
+      toast('Backup shared.');
       return 'share';
     }
   } catch (e) {
     if (e && e.name === 'AbortError') return 'cancel'; // the player closed the sheet
   }
-  toast(
-    nl
-      ? 'Delen kan hier niet — de back-up gaat naar Downloads.'
-      : 'Sharing is not available here — the backup goes to Downloads.',
-  );
+  toast('Sharing is not available here — the backup goes to Downloads.');
   backupDownload(json, name);
   return 'download';
 }
 
 function backupDownload(json, name) {
-  const nl = appLang() === 'nl';
   json = json || JSON.stringify(backupPayload());
   name = name || backupFileName();
   const blob = new Blob([json], { type: 'application/json' });
@@ -155,9 +144,7 @@ function backupDownload(json, name) {
   backupMarkDone();
   const st = backupStats();
   toast(
-    nl
-      ? `Back-up opgeslagen — ${bkN(st.nDecks, 'deck', 'decks')} en ${bkN(st.nCards, 'kaart', 'kaarten')} in één bestand.`
-      : `Backup saved — ${bkN(st.nDecks, 'deck', 'decks')} and ${bkN(st.nCards, 'card', 'cards')} in one file.`,
+    `Backup saved — ${bkN(st.nDecks, 'deck', 'decks')} and ${bkN(st.nCards, 'card', 'cards')} in one file.`,
   );
 }
 
@@ -168,8 +155,7 @@ function backupAllDecks() {
 
 /* The choice sheet: cloud/mail first (by the thumb), Downloads second. */
 function openBackupSheet() {
-  const nl = appLang() === 'nl',
-    st = backupStats();
+  const st = backupStats();
   document.getElementById('backupSheet')?.remove();
   const el = document.createElement('div');
   el.className = 'deckpick-scrim';
@@ -179,28 +165,16 @@ function openBackupSheet() {
   // column-reverse sheet: DOM-first = foot.
   el.innerHTML = /* HTML */ `<div class="deckpick br-sheet bk-sheet">
     <div class="br-actions bk-actions">
-      <button type="button" class="primary-btn" id="bkShare">
-        ☁ ${nl ? 'Naar je cloud of mail' : 'To your cloud or mail'}
-      </button>
-      <button type="button" class="ghost-btn" id="bkSave">
-        ⬇ ${nl ? 'Opslaan in Downloads' : 'Save to Downloads'}
-      </button>
+      <button type="button" class="primary-btn" id="bkShare">☁ ${'To your cloud or mail'}</button>
+      <button type="button" class="ghost-btn" id="bkSave">⬇ ${'Save to Downloads'}</button>
     </div>
     <div class="bk-hint">
-      ${
-        nl
-          ? 'Kies in het deelmenu bijvoorbeeld <b>Google Drive</b>, <b>Nextcloud</b>, <b>Dropbox</b> of je <b>mail</b>. Terugzetten: Menu → Instellingen → Back-up → Terugzetten, en kies het bestand — ook rechtstreeks uit je cloud.'
-          : 'In the share menu pick, for example, <b>Google Drive</b>, <b>Nextcloud</b>, <b>Dropbox</b> or your <b>mail</b>. To restore: Menu → Settings → Backup → Restore, and pick the file — straight from your cloud too.'
-      }
+      ${'In the share menu pick, for example, <b>Google Drive</b>, <b>Nextcloud</b>, <b>Dropbox</b> or your <b>mail</b>. To restore: Menu → Settings → Backup → Restore, and pick the file — straight from your cloud too.'}
     </div>
     <div class="br-title">
-      <b>${inlIco('save', 16)}${nl ? 'Back-up maken' : 'Make a backup'}</b
+      <b>${inlIco('save', 16)}${'Make a backup'}</b
       ><span
-        >${
-          nl
-            ? `${bkN(st.nDecks, 'deck', 'decks')}, ${bkN(st.nCards, 'kaart', 'kaarten')} in je collectie, mappen, Gezocht, tags en instellingen — alles in één bestand.`
-            : `${bkN(st.nDecks, 'deck', 'decks')}, ${bkN(st.nCards, 'card', 'cards')} in your collection, binders, Wants, tags and settings — all in one file.`
-        }</span
+        >${`${bkN(st.nDecks, 'deck', 'decks')}, ${bkN(st.nCards, 'card', 'cards')} in your collection, binders, Wants, tags and settings — all in one file.`}</span
       ><span>${escapeHtml(backupAgeLabel())}</span>
     </div>
   </div>`;
@@ -226,25 +200,21 @@ async function restoreFromFile(file) {
   try {
     payload = JSON.parse(await file.text());
   } catch (e) {
-    toast(
-      appLang() === 'nl' ? 'Dit is geen geldig back-upbestand.' : "That file isn't valid JSON.",
-    );
+    toast("That file isn't valid JSON.");
     return;
   }
   if (payload && payload.ls && typeof payload.ls === 'object' && !Array.isArray(payload.ls)) {
     // Full backup: replace this device's app data wholesale, then reboot the
     // app so every screen rebuilds from the restored storage.
     const keys = Object.keys(payload.ls).filter((k) => k.indexOf(LS_PREFIX) === 0);
-    const nl = appLang() === 'nl';
+
     if (!keys.length) {
-      toast(nl ? 'Dit back-upbestand is leeg.' : 'That backup file looks empty.');
+      toast('That backup file looks empty.');
       return;
     }
     const when = payload.exportedAt
-      ? new Date(payload.exportedAt).toLocaleString(nl ? 'nl-NL' : 'en-GB')
-      : nl
-        ? 'een onbekende datum'
-        : 'an unknown date';
+      ? new Date(payload.exportedAt).toLocaleString('en-GB')
+      : 'an unknown date';
     const nDecks = keys.filter((k) => k.indexOf(LS_PREFIX + 'deck:') === 0).length;
     let nCards = 0;
     try {
@@ -253,11 +223,9 @@ async function restoreFromFile(file) {
     } catch (e) {}
     const okFull = await new Promise((res) =>
       openInAppConfirm(
-        nl
-          ? `Back-up van ${when} — ${bkN(nDecks, 'deck', 'decks')} en ${bkN(nCards, 'kaart', 'kaarten')}, plus mappen en instellingen.\n\nTerugzetten VERVANGT alles wat nu in de app op dit toestel staat.`
-          : `Full backup from ${when} — ${bkN(nDecks, 'deck', 'decks')} and ${bkN(nCards, 'card', 'cards')}, plus binders and settings.\n\nRestoring REPLACES everything currently in this app on this device.`,
+        `Full backup from ${when} — ${bkN(nDecks, 'deck', 'decks')} and ${bkN(nCards, 'card', 'cards')}, plus binders and settings.\n\nRestoring REPLACES everything currently in this app on this device.`,
         res,
-        { danger: true, ok: nl ? 'Terugzetten' : trS('Restore'), must: true },
+        { danger: true, ok: trS('Restore'), must: true },
       ),
     );
     if (!okFull) return;
@@ -276,14 +244,10 @@ async function restoreFromFile(file) {
         (await deckDbClear()) && (await deckDbPutMany(deckKeys.map((k) => [k, payload.ls[k]])));
       (inDb ? otherKeys : keys).forEach((k) => localStorage.setItem(k, payload.ls[k]));
     } catch (e) {
-      toast(
-        nl
-          ? 'Terugzetten liep vast op de opslag — maak ruimte vrij en probeer opnieuw.'
-          : 'Restore hit a storage error — free some space and try again.',
-      );
+      toast('Restore hit a storage error — free some space and try again.');
       return;
     }
-    toast(nl ? 'Alles teruggezet — de app start opnieuw…' : 'Everything restored — reloading…');
+    toast('Everything restored — reloading…');
     setTimeout(() => {
       try {
         location.reload();
@@ -364,25 +328,6 @@ function wirePreferences() {
       const label = startupPageOptions().find((item) => item.k === state.startupPage)?.l;
       const detail = document.querySelector('#startupRow .l2');
       if (detail) detail.textContent = label;
-    }),
-  );
-  document.querySelectorAll('[data-lang-choice]').forEach((b) =>
-    b.addEventListener('click', () => {
-      const code = b.dataset.langChoice;
-      if (code === appLang()) return;
-      setAppLang(code);
-      state._langImgCache = {}; // re-resolve card data in the new language
-      if (code === 'en') {
-        disableI18n();
-        render();
-      } else {
-        render();
-        enableI18n();
-        try {
-          translateTree(document.body);
-        } catch (err) {}
-      }
-      toast(code === 'nl' ? 'Taal opgeslagen.' : 'Language saved.');
     }),
   );
   document.querySelectorAll('[data-theme-choice]').forEach((b) => {
@@ -469,7 +414,6 @@ function wireMenuTools() {
   ensureCmdrBans(!((state.cmdrBans || {}).names || []).length);
   document.getElementById('apkUpdBtn')?.addEventListener('click', () => openApkUpdateSheet());
   document.getElementById('draftRow')?.addEventListener('click', () => switchPage('draft'));
-  document.getElementById('tourRow')?.addEventListener('click', startAppTour);
   document.getElementById('crRow')?.addEventListener('click', openCROverlay);
   document.getElementById('fullRulesToggle')?.addEventListener('click', () => {
     state.settingsFullRulesOpen = !state.settingsFullRulesOpen;
@@ -515,11 +459,8 @@ function wireMenuTools() {
   document.getElementById('apkBtn')?.addEventListener('click', async () => {
     const note = document.getElementById('apkNote');
     if (note && note.textContent && /\u2026$/.test(note.textContent)) return; // already checking
-    const nl = appLang() === 'nl';
-    if (note)
-      note.textContent = nl
-        ? 'Even kijken of het bestand er staat\u2026'
-        : 'Checking the file is there\u2026';
+
+    if (note) note.textContent = 'Checking the file is there\u2026';
     let ok = false,
       ct = '';
     try {
@@ -529,15 +470,13 @@ function wireMenuTools() {
     } catch (e) {}
     if (!ok || /text\/html/i.test(ct)) {
       if (note)
-        note.textContent = nl
-          ? '\u26a0 De APK staat nog niet op de site \u2014 zet Deckhand.apk in de hoofdmap van de repo.'
-          : '\u26a0 The APK is not on the site yet \u2014 put Deckhand.apk in the repo root.';
+        note.textContent =
+          '\u26a0 The APK is not on the site yet \u2014 put Deckhand.apk in the repo root.';
       return;
     }
     if (note)
-      note.textContent = nl
-        ? 'Download gestart \u2014 open het bestand en sta \u201conbekende apps\u201d \u00e9\u00e9n keer toe.'
-        : 'Download started \u2014 open the file and allow \u201cunknown apps\u201d once.';
+      note.textContent =
+        'Download started \u2014 open the file and allow \u201cunknown apps\u201d once.';
     const a = document.createElement('a');
     a.href = './Deckhand.apk';
     a.download = 'Deckhand.apk';

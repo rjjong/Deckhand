@@ -215,7 +215,7 @@ function lifeCardHtml(p, idx, count) {
       data-rot="${rot}"
       style="${style}"
     >
-      ${won ? `<div class="win-fx" aria-hidden="true">${Array.from({ length: 14 }, (_, i) => `<i style="--i:${i}"></i>`).join('')}</div><div class="win-banner">\u{1F3C6} ${appLang() === 'nl' ? 'Winnaar!' : 'Winner!'}</div>` : ''}
+      ${won ? `<div class="win-fx" aria-hidden="true">${Array.from({ length: 14 }, (_, i) => `<i style="--i:${i}"></i>`).join('')}</div><div class="win-banner">\u{1F3C6} ${'Winner!'}</div>` : ''}
       <div class="life-face front ${p.defeated ? 'defeated' : ''}">
         ${p.medal ? `<div class="medal-badge" title="High roll winner">${modeGlyph()}</div>` : ''}
         <div class="tap-zone left" data-idx="${idx}" data-side="minus">
@@ -299,7 +299,7 @@ function renderLifeGrid() {
     const wid = players.length > 1 && alive.length === 1 ? players.indexOf(alive[0]) : -1;
     if (wid >= 0 && state.life._winLogged !== wid) {
       state.life._winLogged = wid;
-      lifeLog(`\u{1F3C6} ${alive[0].name} ${appLang() === 'nl' ? 'wint!' : 'wins!'}`);
+      lifeLog(`\u{1F3C6} ${alive[0].name} ${'wins!'}`);
       try {
         navigator.vibrate && navigator.vibrate([30, 60, 30]);
       } catch (e) {}

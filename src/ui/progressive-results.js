@@ -163,9 +163,7 @@ function wireResultButtons(list, d, refreshFn, opts) {
         if (i < 0) return;
         const rm = d.cards.splice(i, 1)[0];
         logDeckChange(d, { type: 'remove', name: rm.name, card: rm });
-        toast(
-          `${rm.name} ${appLang() === 'nl' ? 'uit' : 'removed from'} ${d.name}${appLang() === 'nl' ? ' gehaald' : ''}.`,
-        );
+        toast(`${rm.name} ${'removed from'} ${d.name}${''}.`);
         scheduleSave(d);
         const c = list.find((x) => x.name === nm) || rm;
         if (refreshFn) refreshFn(c);

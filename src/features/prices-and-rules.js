@@ -95,7 +95,7 @@ function openPriceHistory(card, key) {
     </svg>
     <div id="phTip" style="position:absolute;display:none;pointer-events:none;background:var(--pop-bg);border:1.5px solid var(--pop-line);border-radius:8px;padding:5px 9px;font-size:13px;line-height:1.35;white-space:nowrap;box-shadow:0 6px 16px rgba(0,0,0,0.45);color:var(--ink-text);"></div>
     </div>
-    <p class="hint" style="text-align:center;">${pts.length} ${appLang() === 'nl' ? 'dagen' : 'daily points'} · €${Number(pts[0][1]).toFixed(2)} → €${Number(pts[pts.length - 1][1]).toFixed(2)}<br><span style="font-size:12px;">${appLang() === 'nl' ? 'Tik op de lijn om een dag te lezen.' : 'Tap the line to read a day.'}</span></p>`;
+    <p class="hint" style="text-align:center;">${pts.length} ${'daily points'} · €${Number(pts[0][1]).toFixed(2)} → €${Number(pts[pts.length - 1][1]).toFixed(2)}<br><span style="font-size:12px;">${'Tap the line to read a day.'}</span></p>`;
   }
   let movers = '';
   if (_key.startsWith('__col:')) {
@@ -275,7 +275,7 @@ function deckPriceSums(rows) {
 
 function openDeckPricePage(d) {
   if (!d) return;
-  const NL = appLang() === 'nl';
+
   document.getElementById('deckPriceOverlay')?.remove();
   const el = document.createElement('div');
   el.className = 'overlay';
@@ -286,13 +286,13 @@ function openDeckPricePage(d) {
   // Written foot-first: main is column-reverse, so the summary (with the
   // budgets and the coin button) lands at the foot, the list above it.
   el.innerHTML = /* HTML */ `<div class="overlay-inner">
-    ${overlayCapHtml((NL ? 'Prijzen' : 'Prices') + ' · ' + d.name)}
+    ${overlayCapHtml('Prices' + ' · ' + d.name)}
     <main>
       <div class="panel-card" id="dppSum">
         <div class="dpp-grid" id="dppStats"></div>
         <div class="dpp-grid" style="margin-top:10px;">
-          <label class="dpp-k" for="dppCard">${NL ? 'Kaartbudget' : 'Card budget'}</label>
-          <label class="dpp-k" for="dppDeck">${NL ? 'Deckbudget' : 'Deck budget'}</label>
+          <label class="dpp-k" for="dppCard">${'Card budget'}</label>
+          <label class="dpp-k" for="dppDeck">${'Deck budget'}</label>
           <input
             class="dpp-in"
             id="dppCard"
@@ -313,14 +313,12 @@ function openDeckPricePage(d) {
           />
         </div>
         <button type="button" class="ghost-btn dpp-alt" id="dppAlt">
-          ${ICONS.coins}<span>${NL ? 'Budgetalternatieven' : 'Budget alternatives'}</span>
+          ${ICONS.coins}<span>${'Budget alternatives'}</span>
         </button>
       </div>
       <div class="panel-card">
         <div class="dpp-head">
-          <div class="panel-h" style="margin:0 0 6px;">
-            ${NL ? 'Kaarten op prijs' : 'Cards by price'}
-          </div>
+          <div class="panel-h" style="margin:0 0 6px;">${'Cards by price'}</div>
           <span class="dpp-cnt" id="dppCnt"></span>
         </div>
         <div class="dpp-box" id="dppList"></div>
@@ -348,16 +346,16 @@ function openDeckPricePage(d) {
         : 0;
     const left = bud.deck != null ? bud.deck - sums.total : null;
     el.querySelector('#dppStats').innerHTML = /* HTML */ ` <div class="dpp-k">
-        ${NL ? 'Gemiddeld per kaart' : 'Average per card'}
+        ${'Average per card'}
       </div>
-      <div class="dpp-k">${NL ? 'Deck totaal' : 'Deck total'}</div>
+      <div class="dpp-k">${'Deck total'}</div>
       <div class="dpp-v">${sums.priced ? fmtEur(sums.avg) : '—'}</div>
       <div class="dpp-v${overDeck ? ' over' : ''}">${fmtEur(sums.total)}</div>
       <div class="dpp-note${overCards ? ' over' : ''}">
-        ${overCards ? (NL ? overCards + ' boven budget' : overCards + ' over budget') : sums.unknown ? (NL ? sums.unknown + ' nog onbekend' : sums.unknown + ' not known yet') : ''}
+        ${overCards ? overCards + ' over budget' : sums.unknown ? sums.unknown + ' not known yet' : ''}
       </div>
       <div class="dpp-note${overDeck ? ' over' : ''}">
-        ${left == null ? '' : overDeck ? fmtEur(-left) + (NL ? ' te veel' : ' over') : fmtEur(left) + (NL ? ' over' : ' left')}
+        ${left == null ? '' : overDeck ? fmtEur(-left) + ' over' : fmtEur(left) + ' left'}
       </div>`;
     shown = rows.filter((r) => {
       if (typeof r.eur !== 'number') return filt.lo <= 0 && filt.hi == null; // unknown prices only in the full range
@@ -372,7 +370,7 @@ function openDeckPricePage(d) {
           return `<div class="dpp-row${over ? ' over' : ''}" data-dpp="${i}" role="button"><span class="dpp-nm">${r.qty > 1 ? `<span class="dpp-q">${r.qty}×</span>` : ''}${escapeHtml(r.card.name)}</span><span class="dpp-eur">${typeof r.eur === 'number' ? fmtEur(r.eur) : '—'}</span></div>`;
         })
         .join('') ||
-      `<div class="hint" style="text-align:center;margin:10px 0;">${NL ? 'Geen kaarten in deze prijsklasse.' : 'No cards in this price range.'}</div>`;
+      `<div class="hint" style="text-align:center;margin:10px 0;">${'No cards in this price range.'}</div>`;
     box.scrollTop = box.scrollHeight; // the foot: in a reversed box that is where it starts
   };
   paint();
@@ -498,7 +496,7 @@ async function budgetCheckBatch(d, items) {
   // Only what is still in the main deck counts (an undo may have beaten us).
   const live = items.filter((it) => d.cards.includes(it.card));
   if (!live.length) return;
-  const NL = appLang() === 'nl';
+
   const priceOf = (it) => knownEur(it.card.name);
   const overCard =
     bud.card != null
@@ -523,22 +521,11 @@ async function budgetCheckBatch(d, items) {
     });
     const list =
       names.slice(0, 5).join(', ') +
-      (names.length > 5
-        ? (NL ? ' en nog ' : ' and ') + (names.length - 5) + (NL ? '' : ' more')
-        : '');
+      (names.length > 5 ? ' and ' + (names.length - 5) + ' more' : '');
     lines.push(
-      NL
-        ? names.length === 1
-          ? list + ' kost meer dan je kaartbudget van ' + fmtEur(bud.card) + '.'
-          : names.length +
-            ' kaarten kosten meer dan je kaartbudget van ' +
-            fmtEur(bud.card) +
-            ': ' +
-            list +
-            '.'
-        : names.length === 1
-          ? list + ' costs more than your card budget of ' + fmtEur(bud.card) + '.'
-          : names.length +
+      names.length === 1
+        ? list + ' costs more than your card budget of ' + fmtEur(bud.card) + '.'
+        : names.length +
             ' cards cost more than your card budget of ' +
             fmtEur(bud.card) +
             ': ' +
@@ -548,23 +535,14 @@ async function budgetCheckBatch(d, items) {
   }
   if (overDeck) {
     lines.push(
-      NL
-        ? d.name +
-            ' kost nu ' +
-            fmtEur(total) +
-            ', ' +
-            fmtEur(total - bud.deck) +
-            ' boven je deckbudget van ' +
-            fmtEur(bud.deck) +
-            '.'
-        : d.name +
-            ' now costs ' +
-            fmtEur(total) +
-            ', ' +
-            fmtEur(total - bud.deck) +
-            ' over your deck budget of ' +
-            fmtEur(bud.deck) +
-            '.',
+      d.name +
+        ' now costs ' +
+        fmtEur(total) +
+        ', ' +
+        fmtEur(total - bud.deck) +
+        ' over your deck budget of ' +
+        fmtEur(bud.deck) +
+        '.',
     );
   }
   // Remove what caused it: the whole batch when the deck went over, else
@@ -572,7 +550,7 @@ async function budgetCheckBatch(d, items) {
   const drop = overDeck ? live : overCard;
   const n = drop.length;
   openInAppConfirm(
-    (NL ? 'Buiten budget\n' : 'Over budget\n') + lines.join('\n'),
+    'Over budget\n' + lines.join('\n'),
     (ok) => {
       if (!ok) return;
       let gone = 0;
@@ -588,15 +566,7 @@ async function budgetCheckBatch(d, items) {
       });
       if (!gone) return;
       scheduleSave(d);
-      toast(
-        NL
-          ? gone === 1
-            ? drop[0].card.name + ' is er weer uit.'
-            : gone + ' kaarten zijn er weer uit.'
-          : gone === 1
-            ? drop[0].card.name + ' is out again.'
-            : gone + ' cards are out again.',
-      );
+      toast(gone === 1 ? drop[0].card.name + ' is out again.' : gone + ' cards are out again.');
       if (
         state.screen === 'decklist' &&
         state.activeDeckId === d.id &&
@@ -605,8 +575,8 @@ async function budgetCheckBatch(d, items) {
         render();
     },
     {
-      ok: NL ? (n === 1 ? 'Verwijderen' : n + ' verwijderen') : n === 1 ? 'Remove' : 'Remove ' + n,
-      cancel: NL ? 'Houden' : 'Keep',
+      ok: n === 1 ? 'Remove' : 'Remove ' + n,
+      cancel: 'Keep',
       icon: 'coins',
     },
   );
@@ -736,32 +706,10 @@ const FORMAT_RULES = [
   ],
 ];
 
-const FORMAT_RULES_NL = {
-  standard:
-    '60+ kaarten, sideboard tot 15, max. 4 exemplaren, 20 life. Alleen de nieuwste sets: ongeveer drie jaar. Geen rotatie in 2026; vanaf 2027 vallen de oudste sets af bij de eerste set van het jaar.',
-  pauper:
-    '60+ kaarten, sideboard tot 15, max. 4 exemplaren, 20 life. Alleen kaarten die ooit als common zijn uitgebracht.',
-  modern:
-    '60+ kaarten, sideboard tot 15, max. 4 exemplaren, 20 life. Elke set vanaf Eighth Edition en Mirrodin (2003). Roteert nooit.',
-  legacy:
-    '60+ kaarten, sideboard tot 15, max. 4 exemplaren, 20 life. Heel Magic, met een lange banlijst.',
-  vintage:
-    '60+ kaarten, sideboard tot 15, max. 4 exemplaren, 20 life. Heel Magic; de sterkste kaarten zijn restricted tot 1 exemplaar.',
-  premodern:
-    'Minstens 60 kaarten, max. 4 exemplaren, sets van Fourth Edition tot en met Scourge (1995\u20132003).',
-  commander:
-    'Singleton-deck van 100 kaarten onder leiding van een legendary commander, 40 life, color identity-regels, offici\u00eble banlijst.',
-  paupercommander:
-    'Commander, maar de 99 zijn commons en de commander is een uncommon creature naar keuze. 30 life, 16 commander damage.',
-  duel: 'Competitieve Commander voor twee: 20 life, geen commander damage, geen sideboard en een eigen, strengere banlijst.',
-  predh:
-    'Commander bevroren in de tijd: alleen kaarten van v\u00f3\u00f3r New Phyrexia (2011), geen kaarten of regels van daarna.',
-};
-
 function fmtRulesBodyHtml() {
   // Bottom-up (.acc-up): the digest sits right above the format's name, the
   // Complete rules button above that, the full text above the button.
-  const _fnl = appLang() === 'nl';
+
   const byId = {};
   FORMAT_RULES.forEach((r) => {
     byId[r[0]] = r;
@@ -770,34 +718,13 @@ function fmtRulesBodyHtml() {
     .map((k) => byId[k])
     .map(
       ([id, label, txt]) =>
-        `<div class="settings-row" data-fmtrule="${id}" style="cursor:pointer;flex-wrap:wrap;"><div style="flex:1;"><div class="l1 sub-fold">${label}${foldIcoHtml(false)}</div><div class="l2" data-fmtruletxt="${id}" hidden><span>${(_fnl && FORMAT_RULES_NL[id]) || txt}</span><button type="button" class="ghost-btn" data-fmtfull="${id}" style="display:block;width:100%;margin:2px 0;">${foldIcoHtml(false)} ${trS('Complete rules')}</button><div data-fmtfullbox="${id}" hidden></div></div></div></div>`,
+        `<div class="settings-row" data-fmtrule="${id}" style="cursor:pointer;flex-wrap:wrap;"><div style="flex:1;"><div class="l1 sub-fold">${label}${foldIcoHtml(false)}</div><div class="l2" data-fmtruletxt="${id}" hidden><span>${txt}</span><button type="button" class="ghost-btn" data-fmtfull="${id}" style="display:block;width:100%;margin:2px 0;">${foldIcoHtml(false)} ${trS('Complete rules')}</button><div data-fmtfullbox="${id}" hidden></div></div></div></div>`,
     )
     .join('');
 }
 
-const FMT_FULL_NL = {
-  standard:
-    '<div class="rules-text"><h4>Deckbouw</h4><p>Een main deck van minstens 60 kaarten — zonder maximum — en een sideboard van hooguit 15. Niet meer dan vier exemplaren van een kaart met dezelfde Engelse naam, main deck en sideboard samen. Basic lands, en kaarten waarvan de eigen tekst het toestaat, zijn onbeperkt.</p><h4>Kaartpool</h4><p>De nieuwste premier sets — zo’n drie jaar aan sets. In 2026 is er geen rotatie. Vanaf 2027 roteren de oudste sets eens per jaar uit, als de eerste set van het jaar verschijnt. Foundations blijft legaal tot minstens 2029. Een kaart is legaal als een van zijn prints in een van die sets zit.</p><h4>Spelen</h4><p>Twee spelers, elk 20 life, een starthand van 7 kaarten en de London mulligan. Toernooien spelen best-of-three; tussen de potjes mag je kaarten één-op-één wisselen met je sideboard.</p><h4>Bans</h4><p>Wizards of the Coast kondigt wijzigingen aan op vaste momenten. Deze app haalt de officiële lijst één keer per dag op — zie Banlijsten hierboven.</p></div>',
-  modern:
-    '<div class="rules-text"><h4>Deckbouw</h4><p>Een main deck van minstens 60 kaarten — zonder maximum — en een sideboard van hooguit 15. Niet meer dan vier exemplaren van een kaart met dezelfde Engelse naam, main deck en sideboard samen. Basic lands, en kaarten waarvan de eigen tekst het toestaat, zijn onbeperkt.</p><h4>Kaartpool</h4><p>Elke kaart uit Eighth Edition, Mirrodin en elke Standard-set daarna, plus de sets die rechtstreeks voor Modern zijn gemaakt (Modern Horizons). Modern roteert nooit — het groeit alleen.</p><h4>Spelen</h4><p>Twee spelers, elk 20 life, een starthand van 7 kaarten en de London mulligan. Toernooien spelen best-of-three; tussen de potjes mag je kaarten één-op-één wisselen met je sideboard.</p><h4>Bans</h4><p>Wizards of the Coast kondigt wijzigingen aan op vaste momenten. Deze app haalt de officiële lijst één keer per dag op — zie Banlijsten hierboven.</p></div>',
-  legacy:
-    '<div class="rules-text"><h4>Deckbouw</h4><p>Een main deck van minstens 60 kaarten — zonder maximum — en een sideboard van hooguit 15. Niet meer dan vier exemplaren van een kaart met dezelfde Engelse naam, main deck en sideboard samen. Basic lands, en kaarten waarvan de eigen tekst het toestaat, zijn onbeperkt.</p><h4>Kaartpool</h4><p>Elke set uit de geschiedenis van Magic. Conspiracy-kaarten, ante-kaarten en kaarten met stickers of Attractions zijn gebannen op hun type.</p><h4>Spelen</h4><p>Twee spelers, elk 20 life, een starthand van 7 kaarten en de London mulligan. Toernooien spelen best-of-three; tussen de potjes mag je kaarten één-op-één wisselen met je sideboard.</p><h4>Bans</h4><p>Een lange lijst: de kaarten die een potje beëindigen voordat het begonnen is, of de andere speler buitenspel zetten. Wizards kondigt wijzigingen aan op vaste momenten; de app haalt de lijst dagelijks op — zie Banlijsten hierboven.</p></div>',
-  vintage:
-    '<div class="rules-text"><h4>Deckbouw</h4><p>Een main deck van minstens 60 kaarten en een sideboard van hooguit 15. Tot vier exemplaren van een kaart — maar een kaart op de <em>restricted</em>-lijst mag maar één keer voorkomen, main deck en sideboard samen. Basic lands zijn onbeperkt.</p><h4>Kaartpool</h4><p>Heel Magic, terug tot Alpha — de Power Nine incluis. Conspiracy-kaarten, ante-kaarten en kaarten met stickers of Attractions zijn gebannen op hun type.</p><h4>Spelen</h4><p>Twee spelers, elk 20 life, een starthand van 7 kaarten en de London mulligan. Toernooien spelen best-of-three; tussen de potjes mag je kaarten één-op-één wisselen met je sideboard.</p><h4>Bans en restricties</h4><p>Bijna niets is gebannen; de sterkste kaarten zijn in plaats daarvan restricted tot één exemplaar. Beide lijsten worden dagelijks opgehaald — zie Banlijsten hierboven.</p></div>',
-  pauper:
-    '<div class="rules-text"><h4>Deckbouw</h4><p>Een main deck van minstens 60 kaarten — zonder maximum — en een sideboard van hooguit 15. Niet meer dan vier exemplaren van een kaart met dezelfde Engelse naam, main deck en sideboard samen. Basic lands, en kaarten waarvan de eigen tekst het toestaat, zijn onbeperkt.</p><h4>Kaartpool</h4><p>Elke kaart die ooit als common is uitgebracht, op papier of op Magic Online — welke rarity zijn andere prints ook hebben.</p><h4>Spelen</h4><p>Twee spelers, elk 20 life, een starthand van 7 kaarten en de London mulligan. Toernooien spelen best-of-three; tussen de potjes mag je kaarten één-op-één wisselen met je sideboard.</p><h4>Bans</h4><p>Het Pauper Format Panel stelt de lijst op samen met Wizards of the Coast. De app haalt hem dagelijks op — zie Banlijsten hierboven.</p></div>',
-  premodern:
-    '<div class="rules-text"><h4>Deckbouw</h4><p>Minstens 60 kaarten, een sideboard van 15 als je wilt, maximaal 4 exemplaren per kaartnaam (basic lands uitgezonderd).</p><h4>Kaartpool</h4><p>Sets van Fourth Edition tot en met Scourge (1995–2003) — het tijdperk tussen de oudste kaarten van Magic en het moderne kaartframe.</p><h4>Spelen</h4><p>20 life, London mulligan, matches in best-of-three.</p><h4>Bans</h4><p>Een banlijst die de community zelf bijhoudt, afgestemd op een gevarieerde old-school meta — zie Banlijsten hierboven.</p></div>',
-  paupercommander:
-    '<div class="rules-text"><h4>Je commander</h4><p>Elke creature die ooit als <em>uncommon</em> is uitgebracht, mag het deck leiden. Zijn color identity bepaalt de kleuren van het deck, precies zoals in Commander.</p><h4>Deckbouw</h4><p>De commander plus 99 andere kaarten, die elk ooit ergens als <em>common</em> zijn uitgebracht. Singleton: geen twee kaarten met dezelfde naam (basic lands uitgezonderd). Geen enkele kaart mag buiten de color identity van de commander vallen.</p><h4>Spelen</h4><p>Multiplayer; spelers beginnen met 30 life. De commander werkt zoals in Commander — command zone, {2} extra voor elke keer dat je hem opnieuw cast — en 16 combat damage van dezelfde commander schakelt een speler uit.</p><p>Sinds november 2024 telt alleen een uncommon-druk uit een gewone set (core, expansion, Masters, draft innovation, precons); Secret Lair, promo\u2019s en dergelijke tellen niet mee.</p><h4>Bans</h4><p>Een heel korte communitylijst — de common-rarity doet het meeste werk — zie Banlijsten hierboven.</p></div>',
-  duel: '<div class="rules-text"><h4>Deckbouw</h4><p>Een singleton-deck van 100 kaarten onder leiding van een legendary commander, gebouwd binnen zijn color identity — het Commander-skelet, afgestemd op één tegen één.</p><h4>Spelen</h4><p>Twee spelers, elk 20 life; wie begint, slaat zijn eerste draw over. Commander damage bestaat niet: je wint op life, poison en de gewone manieren. Er wordt zonder sideboard gespeeld.</p><h4>Bans</h4><p>Een onafhankelijk regelcomité houdt een eigen, strengere banlijst bij, met ook kaarten die alleen <em>als commander</em> gebannen zijn — zie Banlijsten hierboven.</p></div>',
-  predh:
-    '<div class="rules-text"><h4>Het idee</h4><p>Commander zoals het er in het voorjaar van 2011 uitzag: alleen kaarten van vóór New Phyrexia zijn legaal, en niets wat later kwam — geen planeswalker-commanders, geen partners, geen kaarten die voor Commander-producten zijn ontworpen.</p><h4>Deckbouw</h4><p>Een singleton-deck van 100 kaarten onder leiding van een legendary creature, gebouwd binnen zijn color identity, alleen met prints van vóór 2011.</p><h4>Spelen</h4><p>Multiplayer, 40 life; 21 commander damage van dezelfde commander schakelt een speler uit — de klassieke regels van toen.</p><h4>Bans</h4><p>De banlijst staat stil op de Commander-lijst van 2011 en wordt bewaard door de PreDH-community — zie Banlijsten hierboven.</p></div>',
-};
-
 function fmtFullRulesHtml(id) {
   if (id === 'commander') return commanderFullRulesHtml();
-  if (appLang() === 'nl' && FMT_FULL_NL[id]) return FMT_FULL_NL[id];
   const F = {
     standard: `<div class="rules-text"><h4>Deck construction</h4><p>A main deck of at least 60 cards — no maximum — and a sideboard of up to 15. No more than four copies of any card by English name, counting main deck and sideboard together. Basic lands, and cards whose own text says so, are unlimited.</p><h4>Card pool</h4><p>The newest premier sets — about three years of them. There is no rotation in 2026. From 2027 the oldest sets rotate out once a year, when the year's first set comes out. Foundations stays legal until at least 2029. A card is legal if any printing of it is in one of those sets.</p><h4>Playing</h4><p>Two players, 20 life each, a 7-card hand and the London mulligan. Tournaments play best-of-three; between games you may swap cards with your sideboard, one for one.</p><h4>Bans</h4><p>Wizards of the Coast announces changes on a fixed schedule. This app fetches the official list once a day — see Ban lists above.</p></div>`,
     modern: `<div class="rules-text"><h4>Deck construction</h4><p>A main deck of at least 60 cards — no maximum — and a sideboard of up to 15. No more than four copies of any card by English name, counting main deck and sideboard together. Basic lands, and cards whose own text says so, are unlimited.</p><h4>Card pool</h4><p>Every card printed in Eighth Edition, Mirrodin and every Standard set after them, plus sets made straight for Modern (Modern Horizons). It never rotates — it only grows.</p><h4>Playing</h4><p>Two players, 20 life each, a 7-card hand and the London mulligan. Tournaments play best-of-three; between games you may swap cards with your sideboard, one for one.</p><h4>Bans</h4><p>Wizards of the Coast announces changes on a fixed schedule. This app fetches the official list once a day — see Ban lists above.</p></div>`,
@@ -825,24 +752,13 @@ function banInfoHtml(fmt) {
     duel: `<p style="margin-top:0;">An independent Duel Commander rules committee maintains this list, updated on its own schedule. One-on-one play is far less forgiving than a four-player table, so many cards that are fine in regular Commander are banned here — some only from the command zone.</p>`,
     predh: `<p style="margin-top:0;">Frozen history: this is the Commander banned list as it stood in spring 2011, before New Phyrexia — the PreDH community preserves it rather than updates it.</p>`,
   };
-  const MN = {
-    standard: `<p style="margin-top:0;">Wizards of the Coast houdt deze lijst bij via offici\u00eble Banned &amp; Restricted-aankondigingen. Bans in Standard zijn zeldzaam en richten zich op kaarten die de meta domineren of speelpatronen opleveren die het format niet hoort te hebben; rotatie ruimt de meeste problemen vanzelf op.</p>`,
-    modern: `<p style="margin-top:0;">Wizards of the Coast houdt deze lijst bij. Modern roteert nooit, dus bans zijn het enige ventiel \u2014 kaarten belanden hier als ze potjes te snel of te eentonig maken, of te veel andere strategie\u00ebn wegdrukken.</p>`,
-    legacy: `<p style="margin-top:0;">Wizards of the Coast houdt deze lijst bij. Legacy verwelkomt bijna alle kracht van Magic, dus de lijst richt zich op gratis overwinningen: kaarten die een potje be\u00ebindigen voordat het begint, of een tegenstander buitensluiten.</p>`,
-    vintage: `<p style="margin-top:0;">Wizards of the Coast houdt deze lijst bij \u2014 maar Vintage bant bijna niets. Kaarten die overal elders gebannen zouden zijn, zijn hier <em>restricted</em> tot \u00e9\u00e9n exemplaar; de korte banlijst bevat alleen kaarten die onpraktisch zijn op toernooien.</p>`,
-    pauper: `<p style="margin-top:0;">Het Pauper Format Panel \u2014 communityleden die samenwerken met Wizards of the Coast \u2014 houdt deze lijst bij en bant commons die boven de betaalbare, interactieve geest van het format uitgroeien.</p>`,
-    premodern: `<p style="margin-top:0;">De Premodern-community houdt deze lijst zelf bij en stemt hem af op een gevarieerde meta binnen de kaartpool van 1995\u20132003, niet op pure kracht.</p>`,
-    commander: `<p style="margin-top:0;">Het Commander Format Panel houdt deze lijst bij, samen met Wizards of the Coast. Commander is een sociaal format: bans richten zich op kaarten die voor ellendige potjes zorgen \u2014 niet alleen op sterke kaarten \u2014 en de lijst is bewust kort, in vertrouwen op Rule Zero-gesprekken voor de rest.</p>`,
-    paupercommander: `<p style="margin-top:0;">De Pauper Commander-community houdt deze lijst bewust piepklein \u2014 de common-rarity filtert de meeste probleemkaarten van Magic al weg.</p>`,
-    duel: `<p style="margin-top:0;">Een onafhankelijk regelcomit\u00e9 voor Duel Commander houdt deze lijst bij, op een eigen schema. Een\u2011tegen\u2011een is veel minder vergevingsgezind dan een tafel met vier, dus veel kaarten die in gewone Commander prima zijn, zijn hier gebannen \u2014 sommige alleen vanuit de command zone.</p>`,
-    predh: `<p style="margin-top:0;">Bevroren geschiedenis: dit is de Commander-banlijst zoals die in het voorjaar van 2011 was, v\u00f3\u00f3r New Phyrexia \u2014 de PreDH-community bewaart hem in plaats van hem bij te werken.</p>`,
-  };
-  const _bm = (appLang() === 'nl' && MN[fmt]) || M[fmt];
+
+  const _bm = M[fmt];
   return /* HTML */ `<div
     class="rules-text"
     style="margin-bottom:10px;padding:12px;background:var(--ink-2);border-radius:8px;border:2px solid var(--line);"
   >
-    ${_bm || `<p style="margin-top:0;">${appLang() === 'nl' ? 'Geen achtergrond bij deze lijst.' : 'No background notes for this list.'}</p>`}
+    ${_bm || `<p style="margin-top:0;">${'No background notes for this list.'}</p>`}
   </div>`;
 }
 
@@ -882,7 +798,7 @@ function openNewsPreview(a) {
   const d = a.d ? new Date(a.d) : null;
   const ds =
     d && !isNaN(d)
-      ? d.toLocaleDateString(appLang() === 'nl' ? 'nl-NL' : 'en-GB', {
+      ? d.toLocaleDateString('en-GB', {
           day: 'numeric',
           month: 'long',
           year: 'numeric',
@@ -967,7 +883,7 @@ async function loadMtgNews(box) {
         const d = a.d ? new Date(a.d) : null;
         const ds =
           d && !isNaN(d)
-            ? d.toLocaleDateString(appLang() === 'nl' ? 'nl-NL' : 'en-GB', {
+            ? d.toLocaleDateString('en-GB', {
                 day: 'numeric',
                 month: 'short',
               })

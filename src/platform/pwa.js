@@ -98,3 +98,31 @@ document.addEventListener(
   },
   { passive: false },
 );
+
+function retireWebPush() {
+  if (window.DeckhandNotify) return;
+  try {
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.ready
+      .then((reg) => (reg && reg.pushManager ? reg.pushManager.getSubscription() : null))
+      .then(async (sub) => {
+        if (!sub) return;
+        try {
+          await fetch('/.netlify/functions/push-subscribe', {
+            method: 'DELETE',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ endpoint: sub.endpoint }),
+          });
+        } catch (e) {}
+        try {
+          await sub.unsubscribe();
+        } catch (e) {}
+        try {
+          localStorage.setItem(LS_PREFIX + 'pushOn', '0');
+        } catch (e) {}
+      })
+      .catch(() => {});
+  } catch (e) {}
+}
+
+setTimeout(retireWebPush, 4000);

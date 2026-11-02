@@ -314,7 +314,7 @@ function collectionPageHtml() {
             wantsMode
               ? `
       <div class="sr-tile col-tile want-tile" data-wn="${escapeHtml(it.name)}">
-        <div class="want-img"><img loading="lazy" class="${it.border_color === 'white' ? 'wb-card' : ''}" src="${it.img}" alt="${escapeHtml(it.name)}">${pwPillHtml(it.name)}<button type="button" class="want-have" data-wanthave="${escapeHtml(it.name)}" title="${appLang() === 'nl' ? 'Ik heb hem' : 'I got it'}" aria-label="${appLang() === 'nl' ? 'Ik heb hem' : 'I got it'}">\uFF0B</button></div>
+        <div class="want-img"><img loading="lazy" class="${it.border_color === 'white' ? 'wb-card' : ''}" src="${it.img}" alt="${escapeHtml(it.name)}">${pwPillHtml(it.name)}<button type="button" class="want-have" data-wanthave="${escapeHtml(it.name)}" title="${'I got it'}" aria-label="${'I got it'}">\uFF0B</button></div>
         <div class="col-tile-info">
           <div class="l1">${escapeHtml(it.name)}</div>
           <div class="l2 want-in">${it.eur != null ? `<span class="wi-eur">€${it.eur.toFixed(2)}</span>` : ''}${wantInLabel(it)}</div>
@@ -407,7 +407,7 @@ function wireCollectionPage() {
           ? [
               [
                 'bfRules',
-                '⚙ ' + (appLang() === 'nl' ? 'Map-instellingen…' : 'Binder settings…'),
+                '⚙ ' + 'Binder settings…',
                 () => {
                   const b = state.collection.binders.find((x) => x.id === bid);
                   if (b) openBinderRules(b, false);
@@ -446,13 +446,7 @@ function wireCollectionPage() {
       ]
         .concat(
           ruledBinders().length
-            ? [
-                [
-                  'fabResort',
-                  '↻ ' + (appLang() === 'nl' ? 'Mappen opnieuw sorteren' : 'Re-sort binders'),
-                  () => binderResort(),
-                ],
-              ]
+            ? [['fabResort', '↻ ' + 'Re-sort binders', () => binderResort()]]
             : [],
         )
         .concat([
@@ -712,10 +706,7 @@ function wireCollectionPage() {
         label: mIco('trash') + trS('Remove from collection'),
         danger: true,
         fn: () => {
-          const q =
-            appLang() === 'nl'
-              ? n + ' kaart' + (n === 1 ? '' : 'en') + ' uit je collectie verwijderen?'
-              : 'Remove ' + n + ' card' + (n === 1 ? '' : 's') + ' from your collection?';
+          const q = 'Remove ' + n + ' card' + (n === 1 ? '' : 's') + ' from your collection?';
           openInAppConfirm(
             q,
             (ok) => {

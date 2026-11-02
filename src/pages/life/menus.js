@@ -36,7 +36,6 @@ function lifePopupHeadHtml(title, description) {
 }
 
 function lifeMenuPopHtml() {
-  const nl = appLang() === 'nl';
   const option = (id, icon, label) =>
     `<button type="button" class="lm-opt" id="${id}"><span aria-hidden="true">${icon}</span><span>${escapeHtml(label)}</span></button>`;
   return /* HTML */ `<div
@@ -44,11 +43,11 @@ function lifeMenuPopHtml() {
     id="lifeMenuPop"
     role="dialog"
     aria-modal="true"
-    aria-label="${nl ? 'Tafelmenu' : 'Table menu'}"
+    aria-label="${'Table menu'}"
   >
     ${option('mHistory', ICONS.list, trS('History'))} ${option('mTools', ICONS.tools, trS('Tools'))}
     ${option('mLifeSettings', ICONS.settings, trS('Settings'))}
-    ${option('leaveLifeBtn', ICONS.return, nl ? 'Verlaten' : 'Leave')}
+    ${option('leaveLifeBtn', ICONS.return, 'Leave')}
   </div>`;
 }
 
@@ -100,7 +99,7 @@ function dicePopHtml() {
       aria-modal="true"
       aria-label="${trS('Dice')}"
     >
-      ${lifePopupHeadHtml(trS('Dice'), appLang() === 'nl' ? 'Kies wat je wilt gooien.' : 'Choose what to roll.')}
+      ${lifePopupHeadHtml(trS('Dice'), 'Choose what to roll.')}
       <div class="dice-grid life-popup-body">
         ${[4, 6, 8, 10, 12, 20].map((n) => d(n, `D${n}`)).join('')}${d('coin', trS('Coin'), ICONS.coin)}${d('high', trS('High Roll'))}
       </div>
@@ -294,7 +293,7 @@ function renderLifeToolsPanel() {
     box.innerHTML = '';
     return;
   }
-  const nl = appLang() === 'nl';
+
   const tool = (id, icon, label) =>
     `<button type="button" class="hub-card life-tool" id="${id}"><span class="hub-icon" aria-hidden="true">${icon}</span><strong>${escapeHtml(label)}</strong></button>`;
   box.innerHTML = /* HTML */ `<section
@@ -305,10 +304,9 @@ function renderLifeToolsPanel() {
   >
     ${lifePopupHeadHtml(trS('Tools'))}
     <div class="life-tools-grid life-popup-body">
-      ${tool('mDice', ICONS.dice, trS('Dice'))}
-      ${tool('lifeJudgeBtn', ICONS.gavel, nl ? 'Vraag de AI-judge' : 'Ask AI Judge')}
-      ${tool('lifeRestoreBtn', ICONS.restore, nl ? 'Potje herstellen' : 'Restore a game')}
-      ${tool('restartLifeBtn', ICONS.close, nl ? 'Opnieuw beginnen' : 'Restart game')}
+      ${tool('mDice', ICONS.dice, trS('Dice'))} ${tool('lifeJudgeBtn', ICONS.gavel, 'Ask AI Judge')}
+      ${tool('lifeRestoreBtn', ICONS.restore, 'Restore a game')}
+      ${tool('restartLifeBtn', ICONS.close, 'Restart game')}
     </div>
   </section>`;
   box.querySelector('#mDice').addEventListener('click', () => {
@@ -337,9 +335,9 @@ function renderHistoryPanel() {
     aria-modal="true"
     aria-label="${trS('History')}"
   >
-    ${lifePopupHeadHtml(trS('History'), appLang() === 'nl' ? 'De nieuwste gebeurtenissen staan bovenaan.' : 'The latest events appear first.')}
+    ${lifePopupHeadHtml(trS('History'), 'The latest events appear first.')}
     <div class="hub-actions life-popup-body history-list">
-      ${state.life.history.length ? state.life.history.map((h) => `<div class="hub-card life-history-row">${escapeHtml(h)}</div>`).join('') : `<p class="hub-footnote">${appLang() === 'nl' ? 'Nog geen gebeurtenissen.' : 'No events yet.'}</p>`}
+      ${state.life.history.length ? state.life.history.map((h) => `<div class="hub-card life-history-row">${escapeHtml(h)}</div>`).join('') : `<p class="hub-footnote">${'No events yet.'}</p>`}
     </div>
   </section>`;
 }
@@ -352,36 +350,28 @@ function renderSettingsPanel() {
     return;
   }
   const S = state.life.settings;
-  const _lnl = appLang() === 'nl';
+
   const rows = [
     {
       key: 'autoKill',
       label: 'Auto-Kill',
       sub: lethalDmg()
-        ? _lnl
-          ? `Een speler ligt eruit bij 0 life, 10 poison of ${lethalDmg()} ${lifeLeaderWord()} damage`
-          : `Mark a player defeated at 0 life, 10 poison, or ${lethalDmg()} ${lifeLeaderWord()} damage`
-        : _lnl
-          ? 'Een speler ligt eruit bij 0 life of 10 poison'
-          : 'Mark a player defeated at 0 life or 10 poison',
+        ? `Mark a player defeated at 0 life, 10 poison, or ${lethalDmg()} ${lifeLeaderWord()} damage`
+        : 'Mark a player defeated at 0 life or 10 poison',
     },
     ...(lethalDmg()
       ? [
           {
             key: 'admiralDamage',
-            label: _lnl
-              ? `${lifeLeaderWord()} damage bijhouden`
-              : `Track ${lifeLeaderWord()} Damage`,
-            sub: _lnl
-              ? `${lethalDmg()} van \u00e9\u00e9n ${lifeLeaderWord()} is lethal`
-              : `${lethalDmg()} from one ${lifeLeaderWord()} is lethal`,
+            label: `Track ${lifeLeaderWord()} Damage`,
+            sub: `${lethalDmg()} from one ${lifeLeaderWord()} is lethal`,
           },
         ]
       : []),
     {
       key: 'poison',
       label: 'Track Poison',
-      sub: _lnl ? '10 poison counters zijn lethal' : '10 poison counters is lethal',
+      sub: '10 poison counters is lethal',
     },
     { key: 'salty', label: 'Salty Defeat Messages', sub: 'Show a flavor message on defeat' },
   ];
@@ -391,7 +381,7 @@ function renderSettingsPanel() {
     aria-modal="true"
     aria-label="${trS('Settings')}"
   >
-    ${lifePopupHeadHtml(trS('Settings'), _lnl ? 'Pas de tafel aan je potje aan.' : 'Make the table work for your game.')}
+    ${lifePopupHeadHtml(trS('Settings'), 'Make the table work for your game.')}
     <div class="hub-actions life-popup-body">
       ${rows.map((r) => `<div class="hub-card life-toggle"><div class="hub-copy"><strong>${escapeHtml(r.label)}</strong><small>${escapeHtml(r.sub)}</small></div><label class="toggle-switch"><input type="checkbox" aria-label="${escapeHtml(r.label)}" data-lset="${r.key}" ${S[r.key] ? 'checked' : ''}><span class="track"></span><span class="knob"></span></label></div>`).join('')}
       <div class="hub-card life-toggle">
@@ -408,7 +398,7 @@ function renderSettingsPanel() {
           ><span class="knob"></span
         ></label>
       </div>
-      ${canSetLifeBright() ? `<div class="hub-card life-bright"><div class="hub-copy"><strong>${_lnl ? 'Helderheid' : 'Brightness'} <b id="lifeBrightVal">${lifeBrightLabel(lifeBrightPct())}</b></strong><small>${_lnl ? 'Helemaal links: je telefoon bepaalt. Verder: vast op die stand zolang de life counter open is, en onthouden.' : 'All the way left: your phone decides. Further: locked at that level while the life counter is open, and remembered.'}</small><input type="range" aria-label="${_lnl ? 'Helderheid' : 'Brightness'}" id="lifeBrightRange" min="0" max="100" step="5" value="${lifeBrightPct()}"></div></div>` : ''}
+      ${canSetLifeBright() ? `<div class="hub-card life-bright"><div class="hub-copy"><strong>${'Brightness'} <b id="lifeBrightVal">${lifeBrightLabel(lifeBrightPct())}</b></strong><small>${'All the way left: your phone decides. Further: locked at that level while the life counter is open, and remembered.'}</small><input type="range" aria-label="${'Brightness'}" id="lifeBrightRange" min="0" max="100" step="5" value="${lifeBrightPct()}"></div></div>` : ''}
     </div>
   </section>`;
   document.querySelectorAll('[data-lset]').forEach((chk) => {
@@ -454,17 +444,13 @@ function openSetLifePopup(idx) {
   >
     <span class="hub-icon dialog-icon" aria-hidden="true">${ICONS.heart}</span>
     <h2 id="setLifeTitle">${escapeHtml(p.name)}</h2>
-    <label class="hub-footnote" for="setLifeInput"
-      >${appLang() === 'nl' ? 'Stel het levenstotaal in' : 'Set life total'}</label
-    >
+    <label class="hub-footnote" for="setLifeInput">${'Set life total'}</label>
     <input id="setLifeInput" type="number" inputmode="numeric" value="${p.life}" />
     <div class="dialog-actions">
       <button type="button" class="dp-cancel dialog-secondary" id="setLifeCancel">
         ${trS('Cancel')}
       </button>
-      <button type="button" class="primary-btn dialog-primary" id="setLifeOk">
-        ${appLang() === 'nl' ? 'Instellen' : 'Set'}
-      </button>
+      <button type="button" class="primary-btn dialog-primary" id="setLifeOk">${'Set'}</button>
     </div>
   </div>`;
   const close = () => el.remove();

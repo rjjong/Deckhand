@@ -142,17 +142,6 @@ function appBackStep(viaHistory) {
     rearm({ screen: state.screen, folder: state.folderNav || null }, '#' + state.screen);
     return true;
   }
-  // The guided tour: back steps to the previous tip (the first one stays).
-  if (document.getElementById('tourScrim')) {
-    if ((state._tourI | 0) > 0) {
-      state._tourI = (state._tourI | 0) - 1;
-      try {
-        showTourStep();
-      } catch (err) {}
-    }
-    rearm({ screen: state.screen, folder: state.folderNav || null }, '#' + state.screen);
-    return true;
-  }
   // A dice / coin result over the life counter: back clears it first.
   const diceRes = document.getElementById('diceResultPop');
   // 1.49: while the dice picker is still stacked, this back step is the

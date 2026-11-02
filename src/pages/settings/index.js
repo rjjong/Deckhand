@@ -86,15 +86,10 @@ function fbMailto(text) {
 
 function openFeedbackSheet() {
   if (window.DECKHAND_CONFIG?.selfHosted) {
-    toast(
-      appLang() === 'nl'
-        ? 'Feedback versturen staat uit op deze server.'
-        : 'Feedback submission is disabled on this server.',
-    );
+    toast('Feedback submission is disabled on this server.');
     return;
   }
-  const NL = appLang() === 'nl',
-    T = (a, b) => (NL ? a : b);
+
   document.getElementById('fbSheet')?.remove();
   const opened = Date.now(),
     shots = [null, null, null];
@@ -104,22 +99,14 @@ function openFeedbackSheet() {
   el.style.zIndex = 1300;
   el.style.alignItems = 'flex-end';
   el.innerHTML = /* HTML */ `<div class="deckpick fb-sheet" role="dialog" aria-label="Feedback">
-    <h4>${T('Feedback sturen', 'Send feedback')}</h4>
+    <h4>${'Send feedback'}</h4>
     <p class="fb-hint">
-      ${T(
-        'Wat gebeurde er, en waar in de app? Een screenshot helpt enorm: maak er een (meestal aan/uit + volume omlaag tegelijk) en voeg hem hieronder toe, tot 3. Je appversie en telefoontype gaan vanzelf mee.',
-        'What happened, and where in the app? A screenshot helps a lot: take one (usually power + volume down together) and add it below, up to 3. Your app version and phone type come along by themselves.',
-      )}
+      ${'What happened, and where in the app? A screenshot helps a lot: take one (usually power + volume down together) and add it below, up to 3. Your app version and phone type come along by themselves.'}
     </p>
-    <textarea
-      id="fbMsg"
-      rows="5"
-      maxlength="2000"
-      placeholder="${T('Je bericht\u2026', 'Your message\u2026')}"
-    ></textarea>
+    <textarea id="fbMsg" rows="5" maxlength="2000" placeholder="${'Your message\u2026'}"></textarea>
     <div class="fb-count" id="fbCount">0/2000</div>
     <div class="fb-shots">
-      ${[0, 1, 2].map((i) => `<button type="button" class="fb-shot" data-fbshot="${i}">${inlIco('camera', 18)}<span>${T('Screenshot', 'Screenshot')}</span></button>`).join('')}
+      ${[0, 1, 2].map((i) => `<button type="button" class="fb-shot" data-fbshot="${i}">${inlIco('camera', 18)}<span>${'Screenshot'}</span></button>`).join('')}
     </div>
     <input type="file" id="fbFile" accept="image/*" hidden />
     <input
@@ -127,7 +114,7 @@ function openFeedbackSheet() {
       id="fbEmail"
       maxlength="120"
       autocomplete="email"
-      placeholder="${T('Je e-mail (alleen als je antwoord wilt)', 'Your email (only if you want a reply)')}"
+      placeholder="${'Your email (only if you want a reply)'}"
     />
     <input
       type="text"
@@ -138,8 +125,8 @@ function openFeedbackSheet() {
       aria-hidden="true"
     />
     <div class="fb-actions">
-      <button type="button" class="ghost-btn" id="fbCancel">${T('Annuleren', 'Cancel')}</button
-      ><button type="button" class="primary-btn" id="fbSend">${T('Versturen', 'Send')}</button>
+      <button type="button" class="ghost-btn" id="fbCancel">${'Cancel'}</button
+      ><button type="button" class="primary-btn" id="fbSend">${'Send'}</button>
     </div>
   </div>`;
   document.body.appendChild(el);
@@ -167,7 +154,7 @@ function openFeedbackSheet() {
     const b = el.querySelector(`[data-fbshot="${i}"]`);
     if (shots[i])
       b.innerHTML = `<img src="${URL.createObjectURL(shots[i])}" alt=""><span class="fb-x" data-fbx="${i}">\u2715</span>`;
-    else b.innerHTML = `${inlIco('camera', 18)}<span>${T('Screenshot', 'Screenshot')}</span>`;
+    else b.innerHTML = `${inlIco('camera', 18)}<span>${'Screenshot'}</span>`;
   };
   el.querySelectorAll('[data-fbshot]').forEach((b) =>
     b.addEventListener('click', (e) => {
@@ -186,7 +173,7 @@ function openFeedbackSheet() {
     const f = file.files && file.files[0];
     if (!f) return;
     if (!/^image\//.test(f.type)) {
-      toast(T('Alleen afbeeldingen.', 'Images only.'));
+      toast('Images only.');
       return;
     }
     shots[slot] = await fbShrink(f);
@@ -199,36 +186,21 @@ function openFeedbackSheet() {
       return;
     } // a bot filled the trap
     if (text.length < 10) {
-      toast(
-        T(
-          'Schrijf iets meer (minstens 10 tekens).',
-          'Write a little more (at least 10 characters).',
-        ),
-      );
+      toast('Write a little more (at least 10 characters).');
       msg.focus();
       return;
     }
     if (Date.now() - opened < 4000) {
-      toast(T('Even rustig \u2014 probeer het zo nog eens.', 'Easy \u2014 try again in a moment.'));
+      toast('Easy \u2014 try again in a moment.');
       return;
     }
     const log = fbSentToday();
     if (log.length && Date.now() - log[log.length - 1] < 60000) {
-      toast(
-        T(
-          'Je stuurde net al iets \u2014 wacht een minuutje.',
-          'You just sent one \u2014 wait a minute.',
-        ),
-      );
+      toast('You just sent one \u2014 wait a minute.');
       return;
     }
     if (log.length >= 5) {
-      toast(
-        T(
-          'Vandaag al 5 berichten gestuurd \u2014 morgen weer.',
-          'Five messages sent today \u2014 more tomorrow.',
-        ),
-      );
+      toast('Five messages sent today \u2014 more tomorrow.');
       return;
     }
     const ctx =
@@ -258,7 +230,7 @@ function openFeedbackSheet() {
     });
     const btn = el.querySelector('#fbSend');
     btn.disabled = true;
-    btn.textContent = T('Versturen\u2026', 'Sending\u2026');
+    btn.textContent = 'Sending\u2026';
     let ok = false;
     try {
       const same = location.origin === DECKHAND_SITE.replace(/\/$/, '');
@@ -275,16 +247,13 @@ function openFeedbackSheet() {
         localStorage.setItem(FB_LOG, JSON.stringify(log.concat([Date.now()])));
       } catch (e) {}
       done();
-      toast(T('Bedankt! Je bericht is verstuurd.', 'Thank you! Your message was sent.'));
+      toast('Thank you! Your message was sent.');
       return;
     }
     btn.disabled = false;
-    btn.textContent = T('Versturen', 'Send');
+    btn.textContent = 'Send';
     openInAppConfirm(
-      T(
-        'Versturen lukte niet. Openen in je mail-app? Screenshots voeg je daar zelf toe.',
-        'Sending failed. Open it in your mail app? Add screenshots there yourself.',
-      ),
+      'Sending failed. Open it in your mail app? Add screenshots there yourself.',
       (yes) => {
         if (yes) {
           try {
@@ -292,7 +261,7 @@ function openFeedbackSheet() {
           } catch (e) {}
         }
       },
-      { ok: T('Mail-app', 'Mail app'), cancel: T('Annuleren', 'Cancel') },
+      { ok: 'Mail app', cancel: 'Cancel' },
     );
     const ic = document.getElementById('inAppConfirm');
     if (ic) ic.style.zIndex = 1400; // above this sheet
@@ -370,8 +339,7 @@ function apkOutdated() {
 }
 
 function apkUpdateNow() {
-  const nl = appLang() === 'nl',
-    url = DECKHAND_SITE + 'Deckhand.apk?v=' + APK_LATEST;
+  const url = DECKHAND_SITE + 'Deckhand.apk?v=' + APK_LATEST;
   const n = window.DeckhandNotify;
   if (n && typeof n.installUpdate === 'function') {
     n.installUpdate(url);
@@ -379,11 +347,7 @@ function apkUpdateNow() {
   }
   // An older app: the page asks for the file, the app hands the download to
   // the browser, and the browser saves it -- tap it there to install.
-  toast(
-    nl
-      ? 'Je browser downloadt de nieuwe app. Tik op de download en dan op Installeren.'
-      : 'Your browser downloads the new app. Tap the download, then Install.',
-  );
+  toast('Your browser downloads the new app. Tap the download, then Install.');
   try {
     location.href = url;
   } catch (e) {}
@@ -391,25 +355,17 @@ function apkUpdateNow() {
 }
 
 window.dhUpdateState = function (st) {
-  const nl = appLang() === 'nl';
   const M = {
-    downloading: nl ? 'Nieuwe app downloaden…' : 'Downloading the new app…',
-    permission: nl
-      ? 'Sta toe dat Deckhand apps installeert, en ga dan terug.'
-      : 'Allow Deckhand to install apps, then come back.',
-    installing: nl
-      ? 'Bevestig de installatie in het scherm van Android.'
-      : 'Confirm the install on Android\u2019s screen.',
-    error: nl
-      ? 'Downloaden mislukt — probeer het later nog eens.'
-      : 'Download failed — try again later.',
+    downloading: 'Downloading the new app…',
+    permission: 'Allow Deckhand to install apps, then come back.',
+    installing: 'Confirm the install on Android\u2019s screen.',
+    error: 'Download failed — try again later.',
   };
   if (M[st]) toast(M[st]);
 };
 
 function openApkUpdateSheet() {
-  const nl = appLang() === 'nl',
-    cur = apkInstalled();
+  const cur = apkInstalled();
   if (!cur) return;
   document.getElementById('apkSheet')?.remove();
   const self = !!(
@@ -423,31 +379,21 @@ function openApkUpdateSheet() {
   // column-reverse sheet: Install at the foot, by the thumb.
   el.innerHTML = /* HTML */ `<div class="deckpick br-sheet apk-sheet">
     <div class="br-actions">
-      <button type="button" class="primary-btn" id="apkNow">
-        ${nl ? 'Nu installeren' : 'Install now'}
-      </button>
-      <button type="button" class="ghost-btn" id="apkLater">${nl ? 'Later' : 'Later'}</button>
+      <button type="button" class="primary-btn" id="apkNow">${'Install now'}</button>
+      <button type="button" class="ghost-btn" id="apkLater">${'Later'}</button>
     </div>
     <div class="bk-hint">
       ${
         self
-          ? nl
-            ? 'De app downloadt de nieuwe versie en Android vraagt je om te bevestigen.'
-            : 'The app downloads the new version and Android asks you to confirm.'
-          : nl
-            ? 'Je browser downloadt de nieuwe versie. Tik op de download en daarna op <b>Installeren</b>. Android vraagt misschien eerst of de browser apps mag installeren.'
-            : 'Your browser downloads the new version. Tap the download, then <b>Install</b>. Android may first ask whether the browser may install apps.'
+          ? 'The app downloads the new version and Android asks you to confirm.'
+          : 'Your browser downloads the new version. Tap the download, then <b>Install</b>. Android may first ask whether the browser may install apps.'
       }
-      ${nl ? ' Je decks, collectie en instellingen blijven gewoon staan.' : ' Your decks, collection and settings stay as they are.'}
+      ${' Your decks, collection and settings stay as they are.'}
     </div>
     <div class="br-title">
-      <b>${inlIco('phone', 16)}${nl ? 'Nieuwe Android-app' : 'New Android app'} — ${APK_LATEST}</b
+      <b>${inlIco('phone', 16)}${'New Android app'} — ${APK_LATEST}</b
       ><span
-        >${
-          nl
-            ? `Je hebt versie ${escapeHtml(cur)}. Nieuw in ${APK_LATEST}: ${escapeHtml(((APK_NOTES[APK_LATEST] || {}).nl || []).join(' · '))}.`
-            : `You have version ${escapeHtml(cur)}. New in ${APK_LATEST}: ${escapeHtml(((APK_NOTES[APK_LATEST] || {}).en || []).join(' · '))}.`
-        }</span
+        >${`You have version ${escapeHtml(cur)}. New in ${APK_LATEST}: ${escapeHtml(((APK_NOTES[APK_LATEST] || {}).en || []).join(' · '))}.`}</span
       >
     </div>
   </div>`;
@@ -497,7 +443,7 @@ function apkUpdateCheck() {
   } catch (e) {}
 }
 
-function shareAppText(lang) {
+function shareAppText() {
   if (window.DECKHAND_CONFIG?.selfHosted) return 'Deckhand — ' + DECKHAND_SITE;
   // ?v=<version>: every release is a link WhatsApp has never seen, so it
   // fetches the preview card (og-image.png) fresh instead of reusing an old
@@ -505,17 +451,6 @@ function shareAppText(lang) {
   const S = DECKHAND_SITE,
     site = S + '?v=' + APP_VERSION,
     apk = S + 'Deckhand.apk';
-  if (lang === 'nl')
-    return `Deckhand — de complete Magic: The Gathering-app. Gratis, zonder reclame.
-${site}
-
-Decks bouwen voor elk format, EDHREC ingebouwd, kaarten zoeken, een budgettool, je collectie met Cardmarket-prijzen, een AI-judge voor regelvragen, een life counter en Magic-nieuws. Bijna alles werkt offline.
-
-Android: installeer de app direct
-${apk}
-(Je telefoon vraagt misschien één keer of je apps buiten de Play Store toestaat.)
-
-iPhone: open de eerste link in Safari en kies Delen → Zet op beginscherm.`;
   return `Deckhand — the complete Magic: The Gathering companion. Free, no ads.
 ${site}
 
@@ -538,184 +473,104 @@ function inAndroidApp() {
 
 /* About: what Deckhand stands for. */
 function aboutHtml() {
-  const NL = appLang() === 'nl';
-  const items = NL
-    ? [
-        [
-          'Een complete ervaring',
-          'decks, collectie, zoeken, spoilers, life counter, drafttools, een AI-judge voor je regelvragen en AI-hulp bij je lands: alles wat je als Magic-speler nodig hebt, in één app.',
-        ],
-        [
-          'Open source',
-          'de code staat openbaar op GitHub (GPL v3). Kijk erin, leer ervan, maak hem beter.',
-        ],
-        [
-          'Voor altijd gratis',
-          'geen betaalde versie, geen abonnement, niets achter een betaalmuur.',
-        ],
-        ['Geen reclame', 'niets dat in de weg zit, niets dat je verkocht wordt.'],
-        [
-          'Geen account, niemand die meekijkt',
-          'je hoeft niets aan te maken, en Deckhand houdt niet bij wat je doet.',
-        ],
-        [
-          'Jouw data is van jou',
-          'je decks en collectie staan op je eigen telefoon. Eén back-upbestand naar je eigen cloud, en je decks exporteer je naar elke andere app.',
-        ],
-        [
-          'Werkt offline',
-          'de kaartendatabase staat op je telefoon: aan de keukentafel, in de winkel, in de trein.',
-        ],
-        [
-          'Gemaakt voor één hand',
-          'elke knop zit onderin, binnen bereik van je duim. De rest van het scherm is voor je kaarten.',
-        ],
-        [
-          'Zuinig op de community',
-          'kaartdata van Scryfall, thema’s van EDHREC: altijd met naam genoemd, en nooit vaker gevraagd dan nodig.',
-        ],
-        [
-          'Door Magic-spelers, voor Magic-spelers',
-          'gebouwd uit wat we aan onze eigen tafels misten. Ideeën zijn welkom.',
-        ],
-      ]
-    : [
-        [
-          'A complete experience',
-          'decks, collection, search, spoilers, life counter, draft tools, an AI judge for your rules questions and AI help with your lands: everything a Magic player needs, in one app.',
-        ],
-        [
-          'Open source',
-          'the code is public on GitHub (GPL v3). Look inside, learn from it, make it better.',
-        ],
-        ['Free forever', 'no paid version, no subscription, nothing behind a paywall.'],
-        ['No ads', 'nothing in your way, nothing being sold to you.'],
-        [
-          'No account, nobody watching',
-          'there is nothing to sign up for, and Deckhand does not track what you do.',
-        ],
-        [
-          'Your data is yours',
-          'your decks and collection live on your own phone. One backup file to your own cloud, and your decks export to any other app.',
-        ],
-        [
-          'Works offline',
-          'the card database lives on your phone: at the kitchen table, in the store, on the train.',
-        ],
-        [
-          'Made for one hand',
-          'every button sits at the bottom, within reach of your thumb. The rest of the screen is for your cards.',
-        ],
-        [
-          'Kind to the community',
-          'card data from Scryfall, themes from EDHREC: always credited, and never asked more often than needed.',
-        ],
-        [
-          'By Magic players, for Magic players',
-          'built from what we missed at our own tables. Ideas are welcome.',
-        ],
-      ];
-  const data = NL
-    ? [
-        [
-          'Alles op je eigen telefoon',
-          'je decks, collectie, Gezocht, prijsalerts, potjes en instellingen staan in de opslag van de app op dit toestel. Er is geen Deckhand-server die ze bewaart of meeleest — behalve als je zelf Sync aanzet (zie hieronder).',
-        ],
-        [
-          'Kaartgegevens worden gedownload',
-          'de kaartendatabase en prijzen komen eens per dag of week van de Deckhand-site en blijven op je telefoon staan. Zoek je iets wat er niet in staat, dan vraagt de app het rechtstreeks aan Scryfall of EDHREC; die zien dat er een vraag komt, maar niet van wie.',
-        ],
-        [
-          'Meldingen zonder account',
-          'de Android-app kijkt zelf op je telefoon of er spoilers of updates zijn. Er wordt niets over jou opgeslagen om je een melding te kunnen sturen.',
-        ],
-        [
-          'Feedback',
-          'wat je via Over Deckhand stuurt, gaat via de Deckhand-site (Netlify) als e-mail naar de maker, met je appversie en telefoontype. Je e-mailadres alleen als je het zelf invult.',
-        ],
-        [
-          'De AI-judge',
-          'je vraag gaat met de officiële regels en de tekst van de kaarten die je tagt via de Deckhand-site naar een AI-dienst: Google Gemini, met Groq als reserve. Zonder naam of account: alleen een willekeurig toestelnummer, om de 20 vragen per dag te tellen. Google mag wat via zijn gratis laag binnenkomt gebruiken om zijn diensten te verbeteren; er gaat niets mee dat naar jou wijst. Voor een antwoord is dus internet nodig.',
-        ],
-        [
-          'AI-hulp bij lands',
-          'vraag je de AI om lands, dan gaan de kaartnamen, kaartteksten en cijfers van dat deck via de Deckhand-site naar dezelfde AI-dienst. Je deck zelf wordt daar niet bewaard, alleen het antwoord, zodat hetzelfde deck de volgende keer niets kost. Ook hier alleen het toestelnummer, om de 10 analyses per dag te tellen.',
-        ],
-        [
-          'Wis je de app, dan is alles weg',
-          'app-gegevens wissen, de app verwijderen of je telefoon resetten haalt alles mee. Daarom de back-up in Extra\u2019s: één bestand met alles, dat je in je eigen cloud zet en op elk toestel terugzet.',
-        ],
-        [
-          'Sync, alleen als je het aanzet',
-          'koppel je apparaten in Extra\u2019s \u2192 Sync, dan staat een kopie van je decks, collectie, mappen, tags en instellingen op de Deckhand-site (Netlify), onder je koppelcode. Zonder naam of account; de site bewaart alleen een versleutelde vingerafdruk van de code. Wie de code heeft, kan erbij \u2014 deel hem dus niet. Ontkoppelen kan altijd.',
-        ],
-        [
-          'Beschermde opslag',
-          'de app vraagt Android of zijn opslag beschermd mag blijven, zodat het systeem hem niet opruimt als je telefoon vol raakt. In Extra\u2019s → Back-up zie je of dat gelukt is.',
-        ],
-      ]
-    : [
-        [
-          'Everything on your own phone',
-          'your decks, collection, Wants, price alerts, games and settings live in the app\u2019s storage on this device. There is no Deckhand server that keeps or reads them — unless you turn on Sync yourself (see below).',
-        ],
-        [
-          'Card data is downloaded',
-          'the card database and prices come from the Deckhand site once a day or week and stay on your phone. Look up something that is not in it and the app asks Scryfall or EDHREC directly; they see a request arrive, not who sent it.',
-        ],
-        [
-          'Notifications without an account',
-          'the Android app checks for spoilers and updates on your phone itself. Nothing about you is stored to be able to notify you.',
-        ],
-        [
-          'Feedback',
-          'what you send from About Deckhand goes through the Deckhand site (Netlify) as an email to the maker, with your app version and phone type. Your email address only if you fill it in.',
-        ],
-        [
-          'The AI judge',
-          'your question goes, with the official rules and the text of the cards you tag, through the Deckhand site to an AI service: Google Gemini, with Groq as the reserve. No name, no account: only a random device number, to count the 20 questions a day. Google may use what comes in through its free tier to improve its services; nothing that points to you goes along. So an answer needs an internet connection.',
-        ],
-        [
-          'AI help with lands',
-          'when you ask the AI for lands, the card names, card texts and numbers of that deck go through the Deckhand site to the same AI service. Your deck itself is not kept there, only the answer, so the same deck costs nothing next time. Here too only the device number, to count the 10 analyses a day.',
-        ],
-        [
-          'Clear the app and it is all gone',
-          'clearing app data, uninstalling or resetting your phone takes everything with it. That is why there is the backup in Extras: one file with everything, kept in your own cloud and restored on any device.',
-        ],
-        [
-          'Sync, only if you turn it on',
-          'link your devices in Extras \u2192 Sync and a copy of your decks, collection, binders, tags and settings is kept on the Deckhand site (Netlify), under your link code. No name, no account; the site keeps only a scrambled fingerprint of the code. Whoever has the code can get in \u2014 so don\u2019t share it. You can unlink any time.',
-        ],
-        [
-          'Protected storage',
-          'the app asks Android to keep its storage protected, so the system does not clean it up when your phone runs full. Extras → Backup shows whether that worked.',
-        ],
-      ];
+  const items = [
+    [
+      'A complete experience',
+      'decks, collection, search, spoilers, life counter, draft tools, an AI judge for your rules questions and AI help with your lands: everything a Magic player needs, in one app.',
+    ],
+    [
+      'Open source',
+      'the code is public on GitHub (GPL v3). Look inside, learn from it, make it better.',
+    ],
+    ['Free forever', 'no paid version, no subscription, nothing behind a paywall.'],
+    ['No ads', 'nothing in your way, nothing being sold to you.'],
+    [
+      'No account, nobody watching',
+      'there is nothing to sign up for, and Deckhand does not track what you do.',
+    ],
+    [
+      'Your data is yours',
+      'your decks and collection live on your own phone. One backup file to your own cloud, and your decks export to any other app.',
+    ],
+    [
+      'Works offline',
+      'the card database lives on your phone: at the kitchen table, in the store, on the train.',
+    ],
+    [
+      'Made for one hand',
+      'every button sits at the bottom, within reach of your thumb. The rest of the screen is for your cards.',
+    ],
+    [
+      'Kind to the community',
+      'card data from Scryfall, themes from EDHREC: always credited, and never asked more often than needed.',
+    ],
+    [
+      'By Magic players, for Magic players',
+      'built from what we missed at our own tables. Ideas are welcome.',
+    ],
+  ];
+  const data = [
+    [
+      'Everything on your own phone',
+      'your decks, collection, Wants, price alerts, games and settings live in the app\u2019s storage on this device. There is no Deckhand server that keeps or reads them — unless you turn on Sync yourself (see below).',
+    ],
+    [
+      'Card data is downloaded',
+      'the card database and prices come from the Deckhand site once a day or week and stay on your phone. Look up something that is not in it and the app asks Scryfall or EDHREC directly; they see a request arrive, not who sent it.',
+    ],
+    [
+      'Notifications without an account',
+      'the Android app checks for spoilers and updates on your phone itself. Nothing about you is stored to be able to notify you.',
+    ],
+    [
+      'Feedback',
+      'what you send from About Deckhand goes through the Deckhand site (Netlify) as an email to the maker, with your app version and phone type. Your email address only if you fill it in.',
+    ],
+    [
+      'The AI judge',
+      'your question goes, with the official rules and the text of the cards you tag, through the Deckhand site to an AI service: Google Gemini, with Groq as the reserve. No name, no account: only a random device number, to count the 20 questions a day. Google may use what comes in through its free tier to improve its services; nothing that points to you goes along. So an answer needs an internet connection.',
+    ],
+    [
+      'AI help with lands',
+      'when you ask the AI for lands, the card names, card texts and numbers of that deck go through the Deckhand site to the same AI service. Your deck itself is not kept there, only the answer, so the same deck costs nothing next time. Here too only the device number, to count the 10 analyses a day.',
+    ],
+    [
+      'Clear the app and it is all gone',
+      'clearing app data, uninstalling or resetting your phone takes everything with it. That is why there is the backup in Extras: one file with everything, kept in your own cloud and restored on any device.',
+    ],
+    [
+      'Sync, only if you turn it on',
+      'link your devices in Extras \u2192 Sync and a copy of your decks, collection, binders, tags and settings is kept on the Deckhand site (Netlify), under your link code. No name, no account; the site keeps only a scrambled fingerprint of the code. Whoever has the code can get in \u2014 so don\u2019t share it. You can unlink any time.',
+    ],
+    [
+      'Protected storage',
+      'the app asks Android to keep its storage protected, so the system does not clean it up when your phone runs full. Extras → Backup shows whether that worked.',
+    ],
+  ];
   return /* HTML */ `<div class="about-txt">
     <p>
-      ${NL ? 'Deckhand rust op één gedachte: alles wat een Magic-speler nodig heeft, in één app, zonder addertjes.' : 'Deckhand rests on one idea: everything a Magic player needs, in one app, with no strings attached.'}
+      ${'Deckhand rests on one idea: everything a Magic player needs, in one app, with no strings attached.'}
     </p>
     <ul>
       ${items.map(([k, v]) => `<li><strong>${k}</strong> — ${v}</li>`).join('')}
     </ul>
-    <h4 class="about-h">${NL ? 'Waar je gegevens staan' : 'Where your data lives'}</h4>
+    <h4 class="about-h">${'Where your data lives'}</h4>
     <ul>
       ${data.map(([k, v]) => `<li><strong>${k}</strong> — ${v}</li>`).join('')}
     </ul>
-    <h4 class="about-h">${NL ? 'Feedback' : 'Feedback'}</h4>
+    <h4 class="about-h">${'Feedback'}</h4>
     <p class="about-fb-hint">
-      ${NL ? 'Een bug gezien, iets wat niet klopt, of een idee? Laat het weten \u2014 met een screenshot erbij is het meteen duidelijk.' : 'Spotted a bug, something off, or have an idea? Let us know \u2014 with a screenshot it is clear at once.'}
+      ${'Spotted a bug, something off, or have an idea? Let us know \u2014 with a screenshot it is clear at once.'}
     </p>
     <button type="button" class="primary-btn about-fb" id="feedbackBtn">
-      ${inlIco('edit', 16)}${NL ? 'Stuur feedback' : 'Send feedback'}
+      ${inlIco('edit', 16)}${'Send feedback'}
     </button>
     <a
       class="ghost-btn about-gh"
       href="https://github.com/stefvdv/Deckhand"
       target="_blank"
       rel="noopener"
-      >${NL ? 'De code op GitHub' : 'The code on GitHub'} ↗</a
+      >${'The code on GitHub'} ↗</a
     >
   </div>`;
 }
@@ -869,31 +724,19 @@ const EXTRAS_FMT_ORDER = [
 ];
 
 function startupPageOptions() {
-  const nl = appLang() === 'nl';
-  return [{ k: 'home', l: nl ? 'Startpagina' : 'Home', i: ICONS.home }].concat(
+  return [{ k: 'home', l: 'Home', i: ICONS.home }].concat(
     primaryNavItems().map((item) => ({
       ...item,
-      l: nl
-        ? {
-            decks: 'Decks',
-            collection: 'Collectie',
-            search: 'Zoeken',
-            browse: 'Inspiratie',
-            life: 'Leventeller',
-          }[item.k]
-        : item.l,
+      l: item.l,
     })),
   );
 }
 
 function menuToolsHtml(preferences = false) {
-  const NL = appLang() === 'nl',
-    T = (a, b) => (NL ? a : b);
   const hints = {
     lifeRow: 'Start or resume a game',
     draftRow: 'Seats, timers, pairings and standings',
     crRow: 'Look up rules and ask a question',
-    langRow: 'Choose your interface and card language',
     dataSourcesRow: 'Local library, catalogues and refresh controls',
     guildRow: 'Pick your colors',
     fmtRulesRow: 'Read the rules for each format',
@@ -908,16 +751,10 @@ function menuToolsHtml(preferences = false) {
   if (preferences)
     return /* HTML */ ` <section class="menu-tools hub-actions" aria-label="Preferences">
       <div class="settings-section">
-        ${menuCardHtml('startupRow', ICONS.home, T('Opstartpagina', 'Startup page'), startupPageOptions().find((item) => item.k === state.startupPage)?.l || T('Startpagina', 'Home'))}
+        ${menuCardHtml('startupRow', ICONS.home, 'Startup page', startupPageOptions().find((item) => item.k === state.startupPage)?.l || 'Home')}
         <div id="startupBody" class="menu-tool-body" hidden>
-          <p class="hint startup-hint">
-            ${T('Kies welke pagina opent als je de app start.', 'Choose which page opens when you launch the app.')}
-          </p>
-          <div
-            class="startup-options"
-            role="group"
-            aria-label="${T('Opstartpagina', 'Startup page')}"
-          >
+          <p class="hint startup-hint">${'Choose which page opens when you launch the app.'}</p>
+          <div class="startup-options" role="group" aria-label="${'Startup page'}">
             ${startupPageOptions()
               .map(
                 (item) =>
@@ -928,51 +765,39 @@ function menuToolsHtml(preferences = false) {
         </div>
       </div>
       <div class="settings-section">
-        ${tile('langRow', ICONS.globe, T('Taal', 'Language'))}
-        <div id="languageBody" class="menu-tool-body" hidden>
-          <div class="seg seg-inline">
-            ${APP_LANGS.map((L) => `<button data-lang-choice="${L.code}" class="${appLang() === L.code ? 'active' : ''}">${L.code.toUpperCase()}</button>`).join('')}
-          </div>
-        </div>
-      </div>
-      <div class="settings-section">
-        ${tile('dataSourcesRow', ICONS.library, T('Gegevensbronnen', 'Data sources'))}
+        ${tile('dataSourcesRow', ICONS.library, 'Data sources')}
         <div id="dataSourcesBody" class="menu-tool-body" hidden>${dataSourcesHtml()}</div>
       </div>
       <div class="settings-section">
         <div id="guildBody" class="guild-list xt-body" hidden>
           ${GUILDS.map((x) => `<button type="button" class="guild-opt ${x.k === state.guild ? 'sel' : ''}" data-guild="${x.k}"><span class="guild-swatch" style="--gm:${GUILD_SWATCH[x.main][0]};--gs:${GUILD_SWATCH[x.side][1]};"></span>${manaIconSvg(x.main, 16)}${manaIconSvg(x.side, 16)}<span>${x.n}</span></button>`).join('')}
         </div>
-        ${tile('guildRow', `<span id="guildCur">${manaIconSvg(g.main, 22)}${manaIconSvg(g.side, 22)}</span>`, T('Kleurenschema', 'Color scheme'))}
+        ${tile('guildRow', `<span id="guildCur">${manaIconSvg(g.main, 22)}${manaIconSvg(g.side, 22)}</span>`, 'Color scheme')}
       </div>
       <div class="settings-section">
-        ${tile('syncRow', SYNC_ICON, 'Sync', `<div class="l2">${syncState() ? T('Gekoppeld', 'Linked') : T('Meerdere apparaten', 'Several devices')}</div>`)}
+        ${tile('syncRow', SYNC_ICON, 'Sync', `<div class="l2">${syncState() ? 'Linked' : 'Several devices'}</div>`)}
       </div>
       <div class="settings-section">
         <div id="backupBody" class="acc-up xt-body" hidden style="padding:4px 14px 2px;">
           <div class="l2">
-            ${T('Decks, collectie en instellingen in één bestand — bewaar het in je eigen cloud.', 'Decks, collection and settings in one file — keep it in your own cloud.')}
+            ${'Decks, collection and settings in one file — keep it in your own cloud.'}
           </div>
           <div class="l2" id="lastBackupLine" style="margin-top:5px;">${backupAgeLabel()}</div>
           <div class="l2" style="margin-top:5px;">
             ${
               state._persisted === true
-                ? inlIco('shield', 14) + T('Opslag beschermd', 'Storage protected')
+                ? inlIco('shield', 14) + 'Storage protected'
                 : state._persisted === false
-                  ? inlIco('warn', 14) +
-                    T(
-                      'Opslag onbeschermd — installeer de app en maak back-ups',
-                      'Storage unprotected — install the app and back up',
-                    )
-                  : T('Opslag controleren…', 'Checking storage…')
+                  ? inlIco('warn', 14) + 'Storage unprotected — install the app and back up'
+                  : 'Checking storage…'
             }
           </div>
           <div style="display:flex;gap:8px;margin:10px 0 4px;">
             <button class="ghost-btn" id="backupBtn" style="padding:9px 12px;font-size:13px;">
-              ${inlIco('save')}${T('Back-up maken', 'Make a backup')}
+              ${inlIco('save')}${'Make a backup'}
             </button>
             <button class="ghost-btn" id="restoreBtn" style="padding:9px 12px;font-size:13px;">
-              ${inlIco('restore')}${T('Terugzetten', 'Restore')}
+              ${inlIco('restore')}${'Restore'}
             </button>
           </div>
           <button
@@ -980,7 +805,7 @@ function menuToolsHtml(preferences = false) {
             id="deletedDecksBtn"
             style="padding:9px 12px;font-size:13px;margin:0 0 6px;"
           >
-            ${inlIco('restore')}${T('Verwijderde decks', 'Deleted decks')}
+            ${inlIco('restore')}${'Deleted decks'}
           </button>
           <input
             type="file"
@@ -989,33 +814,27 @@ function menuToolsHtml(preferences = false) {
             style="display:none;"
           />
         </div>
-        ${tile('backupRow', ICONS.shield, T('Back-up', 'Backup'))}
+        ${tile('backupRow', ICONS.shield, 'Backup')}
       </div>
     </section>`;
   return /* HTML */ ` <section class="menu-tools hub-actions" aria-label="Tools">
     <div class="settings-section">${tile('draftRow', ICONS.draft, 'Draft tools')}</div>
-    <div class="settings-section">
-      ${tile('crRow', ICONS.gavel, T('Vraag de AI-judge', 'Ask AI judge'))}
-    </div>
-    <div class="settings-section">
-      ${tile('fmtRulesRow', ICONS.library, T('Format&shy;regels', 'Format rules'))}
-    </div>
-    <div class="settings-section">
-      ${tile('banListsRow', ICONS.ban, T('Banlijsten', 'Ban lists'))}
-    </div>
-    ${browser && !window.DECKHAND_CONFIG?.selfHosted && /Android/i.test(navigator.userAgent) ? `<div class="settings-section" id="apkRow">${tile('apkBtn', ICONS.phone, T('Android-app', 'Android app'), '<div class="l2" id="apkNote"></div>')}</div>` : ''}
+    <div class="settings-section">${tile('crRow', ICONS.gavel, 'Ask AI judge')}</div>
+    <div class="settings-section">${tile('fmtRulesRow', ICONS.library, 'Format rules')}</div>
+    <div class="settings-section">${tile('banListsRow', ICONS.ban, 'Ban lists')}</div>
+    ${browser && !window.DECKHAND_CONFIG?.selfHosted && /Android/i.test(navigator.userAgent) ? `<div class="settings-section" id="apkRow">${tile('apkBtn', ICONS.phone, 'Android app', '<div class="l2" id="apkNote"></div>')}</div>` : ''}
     <div class="settings-section" id="appFootCell">
       <p class="hint" id="appFootNote" style="text-align:center;line-height:1.45;font-size:11px;">
-        Deckhand v${APP_VERSION} · ${T('kaarten', 'cards')}
+        Deckhand v${APP_VERSION} · ${'cards'}
         <a href="https://scryfall.com" target="_blank" rel="noopener" style="color:var(--head-ink);"
           >Scryfall</a
         >
-        · ${T('thema’s', 'themes')}
+        · ${'themes'}
         <a href="https://edhrec.com" target="_blank" rel="noopener" style="color:var(--head-ink);"
           >EDHREC</a
         >
-        · ${T('prijzen', 'prices')} Cardmarket<br />Unofficial Fan Content under the Fan Content
-        Policy. Not approved/endorsed by Wizards. © Wizards of the Coast LLC.
+        · ${'prices'} Cardmarket<br />Unofficial Fan Content under the Fan Content Policy. Not
+        approved/endorsed by Wizards. © Wizards of the Coast LLC.
       </p>
     </div>
   </section>`;
@@ -1051,41 +870,6 @@ function commanderQuickRulesHtml() {
 }
 
 function commanderFullRulesHtml() {
-  if (appLang() === 'nl')
-    return /* HTML */ `<div class="rules-text">
-      <p>
-        <strong>Commander</strong> is een multiplayer-format voor vier spelers: free-for-all-potjes
-        rond een legendary leider.
-      </p>
-      <p>
-        <strong>Je Commander.</strong> Een legendary creature. Hij begint het spel in de command
-        zone en je mag hem daarvandaan casten — voor {2} extra per keer dat je hem dit potje al
-        vanuit de command zone hebt gecast. Als je Commander het battlefield zou verlaten of van
-        zone zou wisselen, mag je hem in plaats daarvan terugzetten in de command zone.
-      </p>
-      <p>
-        <strong>Deckbouw.</strong> Precies 100 kaarten, je Commander meegeteld. Behalve basic lands
-        mogen geen twee kaarten dezelfde naam hebben. De color identity van elke kaart — de
-        manasymbolen in de kosten en de regeltekst — moet binnen de color identity van je Commander
-        vallen.
-      </p>
-      <p>
-        <strong>Legaliteit.</strong> Commander heeft een heel brede kaartpool — bijna elke gewone
-        kaart met zwarte rand die ooit op papier verscheen, is legaal. Grapkaarten met zilveren rand
-        (Un-sets zoals Unhinged) en playtestkaarten niet, en de kaarten op de officiële
-        Commander-banlijst ook niet — zie Banlijsten, live opgehaald en altijd actueel.
-      </p>
-      <p>
-        <strong>Spelen.</strong> Spelers beginnen met 40 life. De gebruikelijke gratis eerste
-        mulligan geldt. Alle normale manieren om te winnen en te verliezen gelden — en daarnaast
-        verliest een speler die in de loop van het potje 21 of meer combat damage van dezelfde
-        Commander heeft gekregen.
-      </p>
-      <p>
-        <strong>De geest van het format.</strong> Commander is een sociaal format: bespreek vóór het
-        potje het power level met je tafel en mik op potjes waar iedereen plezier aan heeft.
-      </p>
-    </div>`;
   return /* HTML */ `<div class="rules-text">
     <p>
       <strong>Commander</strong> is a four-player multiplayer format: free-for-all games built

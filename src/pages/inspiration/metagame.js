@@ -87,7 +87,7 @@ function hydrateMetaArt(root) {
 
 function metaDateShort(iso) {
   try {
-    return new Date(iso + 'T00:00:00').toLocaleDateString(appLang() === 'nl' ? 'nl-NL' : 'en-GB', {
+    return new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', {
       day: 'numeric',
       month: 'short',
     });

@@ -225,11 +225,10 @@ function ptLongPress(el, onTap, onHold) {
 
 function openPlaytest(d) {
   if (!d || !(d.cards || []).length) {
-    toast(appLang() === 'nl' ? 'Dit deck heeft nog geen kaarten.' : 'This deck has no cards yet.');
+    toast('This deck has no cards yet.');
     return;
   }
-  const nl = appLang() === 'nl',
-    con = deckIsConstructed(d);
+  const con = deckIsConstructed(d);
   const wrap = (c) => ({ c, id: uid(), tapped: false });
   let S;
   const fresh = () => {
@@ -280,7 +279,7 @@ function openPlaytest(d) {
   pushOverlay('playtest', () => {
     document.getElementById('ptOverlay')?.remove();
   });
-  const T = (a, b) => (nl ? a : b);
+
   const landsOnBf = () => S.bf.filter((x) => ptIsLand(x.c)).length;
   const zones = {
     hand: () => S.hand,
@@ -308,7 +307,7 @@ function openPlaytest(d) {
   const draw = (n) => {
     for (let i = 0; i < (n || 1); i++) {
       if (!S.lib.length) {
-        toast(T('Je bibliotheek is leeg.', 'Your library is empty.'));
+        toast('Your library is empty.');
         break;
       }
       S.hand.push(S.lib.pop());
@@ -321,17 +320,11 @@ function openPlaytest(d) {
   const msg = () => {
     if (S.phase === 'mull')
       return S.mull
-        ? T(
-            `Mulligan ${S.mull}${!con && S.mull === 1 ? ' (gratis)' : ''} — houden of nog een keer?`,
-            `Mulligan ${S.mull}${!con && S.mull === 1 ? ' (free)' : ''} — keep or again?`,
-          )
-        : T('Je openingshand. Houden of mulligan?', 'Your opening hand. Keep or mulligan?');
+        ? `Mulligan ${S.mull}${!con && S.mull === 1 ? ' (free)' : ''} — keep or again?`
+        : 'Your opening hand. Keep or mulligan?';
     if (S.phase === 'bottom')
-      return T(
-        `Tik ${S.bottomNeed} kaart${S.bottomNeed === 1 ? '' : 'en'} aan om onderop te leggen.`,
-        `Tap ${S.bottomNeed} card${S.bottomNeed === 1 ? '' : 's'} to put on the bottom.`,
-      );
-    return T('Tik: spelen / tappen · vasthouden: meer', 'Tap: play / tap · hold: more');
+      return `Tap ${S.bottomNeed} card${S.bottomNeed === 1 ? '' : 's'} to put on the bottom.`;
+    return 'Tap: play / tap · hold: more';
   };
   const paint = () => {
     const perms = S.bf.filter((x) => !ptIsLand(x.c)),
@@ -354,10 +347,10 @@ function openPlaytest(d) {
       return n ? ` +${n * 2}` : '';
     };
     el.innerHTML = /* HTML */ `<div class="overlay-inner pt-wrap">
-      ${overlayCapHtml(T('Speeltest', 'Playtest') + ' — ' + (d.name || ''), `<label class="pt-smart" title="${T('Slimme tegenstanders', 'Smart opponents')}"><span class="toggle-switch"><input type="checkbox" id="ptSmart" ${ptSmartOn() ? 'checked' : ''}><span class="track"></span><span class="knob"></span></span><span class="pt-smart-l">Smart</span></label>`)}
+      ${overlayCapHtml('Playtest' + ' — ' + (d.name || ''), `<label class="pt-smart" title="${'Smart opponents'}"><span class="toggle-switch"><input type="checkbox" id="ptSmart" ${ptSmartOn() ? 'checked' : ''}><span class="track"></span><span class="knob"></span></span><span class="pt-smart-l">Smart</span></label>`)}
       <div class="pt-stats">
-        <span>${T('Beurt', 'Turn')} <b>${S.turn || '–'}</b></span>
-        <span data-ptdrop="top" title="${T('Bovenop de bibliotheek', 'Top of library')}"
+        <span>${'Turn'} <b>${S.turn || '–'}</b></span>
+        <span data-ptdrop="top" title="${'Top of library'}"
           >${inlIco('library', 15)}<b>${S.lib.length}</b></span
         >
         <button type="button" class="pt-zone" data-ptpile="gy" data-ptdrop="gy">
@@ -377,14 +370,14 @@ function openPlaytest(d) {
             ? (cre.length
                 ? `<div class="pt-row pt-cre">${cre.map((x) => tile(x, 'bf')).join('')}</div>`
                 : '') + (nc.length ? `<div class="pt-row pt-nc">${ncHtml}</div>` : '')
-            : `<div class="pt-row pt-perms"><div class="pt-empty">${T('Slagveld', 'Battlefield')}</div></div>`
+            : `<div class="pt-row pt-perms"><div class="pt-empty">${'Battlefield'}</div></div>`
         }
         <div class="pt-row pt-lands">
-          ${lands.length ? lands.map((x) => tile(x, 'bf')).join('') : `<div class="pt-empty">${T('Lands', 'Lands')}</div>`}
+          ${lands.length ? lands.map((x) => tile(x, 'bf')).join('') : `<div class="pt-empty">${'Lands'}</div>`}
         </div>
       </div>
       <div class="pt-czrow">
-        ${deckLeaders(d).length ? `<div class="pt-cz" data-ptdrop="cz"><div class="pt-czs">${S.cz.length ? S.cz.map((x) => `<div class="pt-czc">${tile(x, 'cz')}<i>${tax(x).trim()}</i></div>`).join('') : '<div class="pt-czc pt-cz-empty"></div>'}</div><span class="pt-cz-l">${T('Command zone', 'Command zone')}</span></div>` : ''}
+        ${deckLeaders(d).length ? `<div class="pt-cz" data-ptdrop="cz"><div class="pt-czs">${S.cz.length ? S.cz.map((x) => `<div class="pt-czc">${tile(x, 'cz')}<i>${tax(x).trim()}</i></div>`).join('') : '<div class="pt-czc pt-cz-empty"></div>'}</div><span class="pt-cz-l">${'Command zone'}</span></div>` : ''}
         <div class="pt-gy" data-ptdrop="gy" data-ptpile="gy" role="button">
           <div class="pt-gy-cards">
             ${S.gy
@@ -407,10 +400,10 @@ function openPlaytest(d) {
       <div class="pt-bar">
         ${
           S.phase === 'mull'
-            ? `<button type="button" class="ghost-btn" id="ptMull">Mulligan</button><button type="button" class="primary-btn" id="ptKeep">${T('Houden', 'Keep')}</button>`
+            ? `<button type="button" class="ghost-btn" id="ptMull">Mulligan</button><button type="button" class="primary-btn" id="ptKeep">${'Keep'}</button>`
             : S.phase === 'bottom'
-              ? `<button type="button" class="ghost-btn" disabled>${T('Nog', 'Left')} ${S.bottomNeed}</button>`
-              : `<button type="button" class="ghost-btn" id="ptMore">${T('Meer', 'More')} ▴</button><button type="button" class="ghost-btn" id="ptDraw">${T('Trek', 'Draw')}</button><button type="button" class="primary-btn" id="ptNext">${T('Volgende beurt', 'Next turn')} ▸</button>`
+              ? `<button type="button" class="ghost-btn" disabled>${'Left'} ${S.bottomNeed}</button>`
+              : `<button type="button" class="ghost-btn" id="ptMore">${'More'} ▴</button><button type="button" class="ghost-btn" id="ptDraw">${'Draw'}</button><button type="button" class="primary-btn" id="ptNext">${'Next turn'} ▸</button>`
         }
       </div>
     </div>`;
@@ -456,12 +449,7 @@ function openPlaytest(d) {
     if (isLeader(x))
       S.cz.push(x); // back home; the cast still raised its tax
     else S.gy.push(x);
-    toast(
-      T(
-        `${x.c.name} is gecounterd door een tegenstander.`,
-        `${x.c.name} was countered by an opponent.`,
-      ),
-    );
+    toast(`${x.c.name} was countered by an opponent.`);
     return true;
   };
   const smartRound = () => {
@@ -469,12 +457,12 @@ function openPlaytest(d) {
       t = Math.max(1, S.turn),
       opps = con ? 1 : 3;
     for (let o = 1; o <= opps; o++) {
-      const who = con ? T('Tegenstander', 'Opponent') : T('Tegenstander ', 'Opponent ') + o;
+      const who = con ? 'Opponent' : 'Opponent ' + o;
       const crs = S.bf.filter((x) => ptIsCreatureX(x));
       // board wipe: from turn 4, likelier the more you have out
       if (crs.length >= 2 && t >= 4 && Math.random() < 0.03 * (1 + crs.length / 4)) {
         crs.forEach((x) => sendAway(x, 'gy'));
-        ev.push(`${who}: board wipe \u2014 ${crs.length} ${T('wezens weg', 'creatures gone')}`);
+        ev.push(`${who}: board wipe \u2014 ${crs.length} ${'creatures gone'}`);
         continue;
       }
       // spot removal on your most dangerous permanent
@@ -484,7 +472,7 @@ function openPlaytest(d) {
           ex = Math.random() < 0.35;
         sendAway(x, ex ? 'ex' : 'gy');
         ev.push(
-          `${who}: ${ex ? 'exile' : 'removal'} ${T('op', 'on')} ${x.c.name}${isLeader(x) ? T(' (terug naar de command zone)', ' (back to the command zone)') : ''}`,
+          `${who}: ${ex ? 'exile' : 'removal'} ${'on'} ${x.c.name}${isLeader(x) ? ' (back to the command zone)' : ''}`,
         );
       }
       // an attack: odds and damage grow with the turn. 1.40: YOU decide --
@@ -511,16 +499,12 @@ function openPlaytest(d) {
         const per = Math.max(1, Math.round(st.dmg / st.n));
         if (!bl.length) {
           S.life -= st.dmg;
-          lines.push(
-            `${st.who}: ${T('valt aan', 'attacks')} \u2014 ${st.dmg} ${T('schade', 'damage')}`,
-          );
+          lines.push(`${st.who}: ${'attacks'} \u2014 ${st.dmg} ${'damage'}`);
           continue;
         }
-        const head = `${st.who}: ${T('valt aan met', 'attacks with')} ${st.n} ${st.n === 1 ? T('wezen', 'creature') : T('wezens', 'creatures')} \u2014 ${st.dmg} ${T('schade', 'damage')}`;
-        const opts = [['take', T(`${st.dmg} schade nemen`, `Take ${st.dmg} damage`)]].concat(
-          bl
-            .slice(0, 6)
-            .map((x) => ['b:' + x.id, T('Blokkeer met ', 'Block with ') + escapeHtml(x.c.name)]),
+        const head = `${st.who}: ${'attacks with'} ${st.n} ${st.n === 1 ? 'creature' : 'creatures'} \u2014 ${st.dmg} ${'damage'}`;
+        const opts = [['take', `Take ${st.dmg} damage`]].concat(
+          bl.slice(0, 6).map((x) => ['b:' + x.id, 'Block with ' + escapeHtml(x.c.name)]),
         );
         ptMenu(
           head,
@@ -535,22 +519,18 @@ function openPlaytest(d) {
               const dies = x && tough <= per;
               if (dies) sendAway(x, 'gy');
               lines.push(
-                `${st.who}: ${T('valt aan', 'attacks')} \u2014 ${x ? x.c.name : '?'} ${T('blokt', 'blocks')}${dies ? T(' en sneuvelt', ' and dies') : ''} \u00b7 ${taken} ${T('schade', 'damage')}`,
+                `${st.who}: ${'attacks'} \u2014 ${x ? x.c.name : '?'} ${'blocks'}${dies ? ' and dies' : ''} \u00b7 ${taken} ${'damage'}`,
               );
             } else {
               S.life -= st.dmg;
-              lines.push(
-                `${st.who}: ${T('valt aan', 'attacks')} \u2014 ${st.dmg} ${T('schade', 'damage')}`,
-              );
+              lines.push(`${st.who}: ${'attacks'} \u2014 ${st.dmg} ${'damage'}`);
             }
             paint();
             next();
           },
           () => {
             S.life -= st.dmg;
-            lines.push(
-              `${st.who}: ${T('valt aan', 'attacks')} \u2014 ${st.dmg} ${T('schade', 'damage')}`,
-            );
+            lines.push(`${st.who}: ${'attacks'} \u2014 ${st.dmg} ${'damage'}`);
             paint();
             next();
           },
@@ -564,13 +544,13 @@ function openPlaytest(d) {
   };
   const showRound = (ev) => {
     if (!ev.length) {
-      toast(T('Tegenstanders deden niets tegen jou.', 'The opponents left you alone.'));
+      toast('The opponents left you alone.');
       return;
     }
-    const lines = ev.concat(S.life <= 0 ? [T('Je levens zijn op.', 'You are out of life.')] : []);
+    const lines = ev.concat(S.life <= 0 ? ['You are out of life.'] : []);
     ptMenu(
-      T('Tussen je beurten', 'Between your turns'),
-      [['ok', 'OK']].concat(S.life <= 0 ? [['end', T('Afronden', 'Finish')]] : []),
+      'Between your turns',
+      [['ok', 'OK']].concat(S.life <= 0 ? [['end', 'Finish']] : []),
       (k) => {
         if (k === 'end') summary();
       },
@@ -606,12 +586,7 @@ function openPlaytest(d) {
       else moveTo(x, 'bf');
     } else if (to === 'cz') {
       if (!isLeader(x)) {
-        toast(
-          T(
-            'Alleen je commander hoort in de command zone.',
-            'Only your commander belongs in the command zone.',
-          ),
-        );
+        toast('Only your commander belongs in the command zone.');
         return;
       }
       moveTo(x, 'cz');
@@ -638,19 +613,14 @@ function openPlaytest(d) {
     const f = find(x.id);
     if (!f) return;
     const opts = [];
-    if (!x.c.token) opts.push(['view', T('Bekijk', 'View')]);
-    if (f.k !== 'hand' && !x.c.token) opts.push(['hand', T('Naar je hand', 'To hand')]);
-    if (f.k !== 'bf') opts.push(['bf', T('Op het slagveld', 'Onto the battlefield')]);
-    if (isLeader(x) && f.k !== 'cz')
-      opts.push(['cz', T('Naar de command zone', 'To the command zone')]);
+    if (!x.c.token) opts.push(['view', 'View']);
+    if (f.k !== 'hand' && !x.c.token) opts.push(['hand', 'To hand']);
+    if (f.k !== 'bf') opts.push(['bf', 'Onto the battlefield']);
+    if (isLeader(x) && f.k !== 'cz') opts.push(['cz', 'To the command zone']);
     if (f.k !== 'gy' && !x.c.token) opts.push(['gy', 'Graveyard']);
     if (f.k !== 'ex' && !x.c.token) opts.push(['ex', 'Exile']);
-    if (!x.c.token)
-      opts.push(
-        ['top', T('Bovenop de bibliotheek', 'Top of library')],
-        ['bottom', T('Onderop de bibliotheek', 'Bottom of library')],
-      );
-    if (x.c.token) opts.push(['gone', T('Token weg', 'Remove token')]);
+    if (!x.c.token) opts.push(['top', 'Top of library'], ['bottom', 'Bottom of library']);
+    if (x.c.token) opts.push(['gone', 'Remove token']);
     ptMenu(x.c.name, opts, (k) => {
       if (k === 'view') {
         try {
@@ -719,16 +689,13 @@ function openPlaytest(d) {
     const draw2 = () => {
       m.innerHTML = /* HTML */ `<div class="deckpick br-sheet pt-menu">
         <div class="br-actions">
-          <button type="button" class="primary-btn" id="ptScryOk">${T('Klaar', 'Done')}</button>
+          <button type="button" class="primary-btn" id="ptScryOk">${'Done'}</button>
         </div>
         <div class="pt-scry">
-          ${top.map((x) => `<button type="button" class="pt-scry-c${bottom.has(x.id) ? ' down' : ''}" data-scry="${x.id}">${tile(x, 'lib')}<span>${bottom.has(x.id) ? T('Onderop', 'Bottom') : T('Bovenop', 'Top')}</span></button>`).join('')}
+          ${top.map((x) => `<button type="button" class="pt-scry-c${bottom.has(x.id) ? ' down' : ''}" data-scry="${x.id}">${tile(x, 'lib')}<span>${bottom.has(x.id) ? 'Bottom' : 'Top'}</span></button>`).join('')}
         </div>
         <div class="br-title">
-          <b>Scry ${n}</b
-          ><span
-            >${T('Tik een kaart om hem onderop te leggen. Links ligt bovenop.', 'Tap a card to send it to the bottom. Leftmost is on top.')}</span
-          >
+          <b>Scry ${n}</b><span>${'Tap a card to send it to the bottom. Leftmost is on top.'}</span>
         </div>
       </div>`;
       m.querySelectorAll('[data-scry]').forEach((b) =>
@@ -775,7 +742,7 @@ function openPlaytest(d) {
       </div>
       <div class="br-title">
         <b>${k === 'gy' ? 'Graveyard' : 'Exile'} · ${a.length}</b
-        ><span>${T('Tik: groot · vasthouden: verplaatsen', 'Tap: zoom · hold: move')}</span>
+        ><span>${'Tap: zoom · hold: move'}</span>
       </div>
     </div>`;
     let after = null;
@@ -812,31 +779,21 @@ function openPlaytest(d) {
     const L = landsOnBf();
     const dead = S.hand.filter((x) => !ptIsLand(x.c) && ptMv(x.c) > L).map((x) => x.c.name);
     const lines = [
-      T(`Beurten gespeeld: ${S.turn}`, `Turns played: ${S.turn}`),
-      T(`Lands op het slagveld: ${L}`, `Lands on the battlefield: ${L}`),
-      missed.length
-        ? T(
-            `Landdrop gemist in beurt ${missed.join(', ')}`,
-            `Missed a land drop on turn ${missed.join(', ')}`,
-          )
-        : T('Geen landdrop gemist', 'No land drop missed'),
+      `Turns played: ${S.turn}`,
+      `Lands on the battlefield: ${L}`,
+      missed.length ? `Missed a land drop on turn ${missed.join(', ')}` : 'No land drop missed',
       S.cz.length || S.cmdrTurn != null
         ? S.cmdrTurn != null
-          ? T(`Commander gecast in beurt ${S.cmdrTurn}`, `Commander cast on turn ${S.cmdrTurn}`)
-          : T('Commander niet gecast', 'Commander not cast')
+          ? `Commander cast on turn ${S.cmdrTurn}`
+          : 'Commander not cast'
         : '',
-      dead.length
-        ? T(
-            `Nog te duur in je hand: ${dead.join(', ')}`,
-            `Still too expensive in hand: ${dead.join(', ')}`,
-          )
-        : '',
+      dead.length ? `Still too expensive in hand: ${dead.join(', ')}` : '',
     ].filter(Boolean);
     ptMenu(
-      T('Hoe ging het?', 'How did it go?'),
+      'How did it go?',
       [
-        ['again', T('Nog een potje', 'Another game')],
-        ['close', T('Sluiten', 'Close')],
+        ['again', 'Another game'],
+        ['close', 'Close'],
       ],
       (k) => {
         if (k === 'again') {
@@ -854,18 +811,18 @@ function openPlaytest(d) {
   };
   const more = () => {
     const opts = [
-      ['scry', T('Scry 3 / kijk bovenop', 'Scry 3 / look at the top')],
-      ['token', T('Token maken', 'Make a token')],
-      ['shuffle', T('Bibliotheek schudden', 'Shuffle library')],
-      ['untap', T('Alles untappen', 'Untap all')],
-      ['restart', T('Opnieuw beginnen', 'Start over')],
-      ['end', T('Afronden', 'Finish')],
+      ['scry', 'Scry 3 / look at the top'],
+      ['token', 'Make a token'],
+      ['shuffle', 'Shuffle library'],
+      ['untap', 'Untap all'],
+      ['restart', 'Start over'],
+      ['end', 'Finish'],
     ];
-    ptMenu(T('Meer', 'More'), opts, (k) => {
+    ptMenu('More', opts, (k) => {
       if (k === 'scry') scry();
       else if (k === 'shuffle') {
         ptShuffle(S.lib);
-        toast(T('Geschud.', 'Shuffled.'));
+        toast('Shuffled.');
       } else if (k === 'untap') {
         S.bf.forEach((x) => {
           x.tapped = false;
@@ -878,8 +835,8 @@ function openPlaytest(d) {
       else if (k === 'token') {
         const list = tokenNames
           .map((t) => ['tk:' + t, escapeHtml(t)])
-          .concat([['tk:', T('Andere token…', 'Other token…')]]);
-        ptMenu(T('Welke token?', 'Which token?'), list, (tk) => {
+          .concat([['tk:', 'Other token…']]);
+        ptMenu('Which token?', list, (tk) => {
           const make = (name) => {
             if (!name) return;
             S.bf.push({ c: { name, token: true, type_line: 'Token' }, id: uid(), tapped: false });
@@ -887,13 +844,7 @@ function openPlaytest(d) {
           };
           const nm = tk.slice(3);
           if (nm) make(nm);
-          else
-            openInAppPrompt(
-              T('Token', 'Token'),
-              T('Bijv. 1/1 Soldier', 'E.g. 1/1 Soldier'),
-              '',
-              (v) => make((v || '').trim()),
-            );
+          else openInAppPrompt('Token', 'E.g. 1/1 Soldier', '', (v) => make((v || '').trim()));
         });
       }
     });
@@ -989,12 +940,7 @@ function openPlaytest(d) {
     el.querySelector('#ptSmart')?.addEventListener('change', (e) => {
       ptSmartSet(e.target.checked);
       if (e.target.checked)
-        toast(
-          T(
-            'Smart aan: tegenstanders vallen aan, ruimen op en counteren volgens Commander-gemiddelden.',
-            'Smart on: opponents attack, remove and counter by Commander averages.',
-          ),
-        );
+        toast('Smart on: opponents attack, remove and counter by Commander averages.');
     });
     el.querySelector('#ptMore')?.addEventListener('click', more);
     el.querySelectorAll('button[data-ptpile]').forEach((b) =>

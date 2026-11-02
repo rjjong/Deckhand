@@ -48,7 +48,7 @@ const num = (x, lo, hi, def)=>{ const v = Number(x); return Number.isFinite(v) ?
 export function clean(body){
   body = body || {};
   const kind = body.kind === 'lands' ? 'lands' : 'cuts';
-  const lang = body.lang === 'nl' ? 'nl' : 'en';
+  const lang = 'en';
   const dk = body.deck || {};
   const fmt = ['commander', 'paupercommander', 'predh', 'duel'].includes(dk.format) ? dk.format : 'commander';
   const leaders = (Array.isArray(dk.leaders) ? dk.leaders : []).slice(0, 2).map(c=>({
@@ -96,14 +96,12 @@ const FMT_TXT = {
 };
 
 export function systemPrompt(c){
-  const nl = c.lang === 'nl';
   const common = [
     'You are an expert Magic: The Gathering deckbuilder helping a player improve ONE deck.',
     'Format: ' + FMT_TXT[c.deck.format],
     'Base every judgement on the Oracle texts given: how each card works with the leader, the chosen theme and the other cards. Synergy and the deck\'s game plan matter more than raw card power or popularity.',
     'You may ONLY name cards that appear in the CANDIDATES list, spelled exactly as listed. Never invent cards.',
-    nl ? 'Write all reasons and the summary in Dutch (simple words, like talking to a friend at the table). Keep card names in English.'
-       : 'Write in plain English, like talking to a friend at the table.',
+    'Write in plain English, like talking to a friend at the table.',
     'Each reason: one sentence, at most 25 words, concrete (name the card or mechanic it clashes with or duplicates).'
   ];
   if(c.kind === 'cuts') return common.concat([

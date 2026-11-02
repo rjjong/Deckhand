@@ -27,7 +27,8 @@ The mobile shell has five labeled bottom tabs: Decks, Collection, Search,
 Inspiration, and Life. The logo opens Menu, with cards for tools and Settings.
 Format Rules and Ban Lists open dedicated pages from Menu.
 Settings is the last menu card; the life counter is available from Life.
-Settings contains Language, Data sources, Color scheme, Sync, and Backup.
+Settings contains Startup page, Data sources, Color scheme, Sync, and Backup.
+The interface is English-only and opens without a first-start introduction.
 The title returns home. Content scrolls above the bottom tabs and below its
 fixed title and toolbars. Decks and Collection have full-width search bars
 that scroll with their pages.

@@ -61,38 +61,20 @@ function searchPageHtml() {
    panel scrolls. It lives inside the panel, so a folded panel has none. */
 /* 1.35: the small i-buttons behind the harder filters (a toast explains). */
 function advInfo(key) {
-  const nl = appLang() === 'nl';
   const T = {
-    tags: nl
-      ? 'Scryfall-functietags: wat een kaart doet (removal, ramp, tutor\u2026). Kies er meerdere: een kaart moet ze allemaal hebben.'
-      : 'Scryfall function tags: what a card does (removal, ramp, tutor\u2026). Pick several: a card must have them all.',
-    tag: nl
-      ? 'Scryfall-functietag: wat een kaart doet (removal, ramp, tutor\u2026).'
-      : 'Scryfall function tag: what a card does (removal, ramp, tutor\u2026).',
-    oracle: nl
-      ? 'Elk woord mag overal in de regeltekst staan. Zet aanhalingstekens (") om woorden voor een exacte zin.'
-      : 'Each word may appear anywhere in the rules text. Put quotes (") around words for an exact phrase.',
-    colors: nl
-      ? 'De kleuren van de kaart zelf, uit de manakosten.'
-      : 'The colours of the card itself, from its mana cost.',
-    ident: nl
-      ? 'Alle kleuren in kosten \u00e9n regeltekst. Dat bepaalt of een kaart in een commander-deck past.'
-      : 'Every colour in the cost and the rules text. That decides whether a card fits a commander deck.',
-    cost: nl
-      ? 'Symbolen die in de manakosten moeten zitten, bijvoorbeeld {2}{G}{G}.'
-      : 'Symbols the mana cost must contain, for example {2}{G}{G}.',
-    price: nl
-      ? 'Cardmarket-prijs. Laat de rechterknop op \u221e staan voor geen bovengrens.'
-      : 'Cardmarket price. Leave the right thumb on \u221e for no upper limit.',
-    allDeck: nl
-      ? 'Uit: alleen kaarten die in dit deck mogen. Aan: alles, ook buiten de kleuren en niet legaal.'
-      : 'Off: only cards this deck may hold. On: everything, off-colour and not legal included.',
-    allFmt: nl
-      ? 'Uit: alleen kaarten die legaal zijn in het gekozen format. Aan: alles.'
-      : 'Off: only cards legal in the chosen format. On: everything.',
-    deckColors: nl
-      ? 'Kleurenidentiteit: alle kleuren in kosten \u00e9n regeltekst van de kaart.'
-      : 'Colour identity: every colour in the card\u2019s cost and rules text.',
+    tags: 'Scryfall function tags: what a card does (removal, ramp, tutor\u2026). Pick several: a card must have them all.',
+    tag: 'Scryfall function tag: what a card does (removal, ramp, tutor\u2026).',
+    oracle:
+      'Each word may appear anywhere in the rules text. Put quotes (") around words for an exact phrase.',
+    colors: 'The colours of the card itself, from its mana cost.',
+    ident:
+      'Every colour in the cost and the rules text. That decides whether a card fits a commander deck.',
+    cost: 'Symbols the mana cost must contain, for example {2}{G}{G}.',
+    price: 'Cardmarket price. Leave the right thumb on \u221e for no upper limit.',
+    allDeck:
+      'Off: only cards this deck may hold. On: everything, off-colour and not legal included.',
+    allFmt: 'Off: only cards legal in the chosen format. On: everything.',
+    deckColors: 'Colour identity: every colour in the card\u2019s cost and rules text.',
   };
   return infoBtnHtml(T[key] || '');
 }
@@ -130,35 +112,19 @@ function advancedSearchScreenHtml() {
   const collection = state.screen === 'collection';
   const browse = state.screen === 'browse';
   const title = browse
-    ? appLang() === 'nl'
-      ? 'Inspiratiefilters'
-      : 'Inspiration filters'
+    ? 'Inspiration filters'
     : collection
-      ? appLang() === 'nl'
-        ? 'Collectiefilters'
-        : 'Collection filters'
+      ? 'Collection filters'
       : spoilers
-        ? appLang() === 'nl'
-          ? 'Spoilerfilters'
-          : 'Spoiler filters'
-        : appLang() === 'nl'
-          ? 'Uitgebreid zoeken'
-          : 'Advanced search';
+        ? 'Spoiler filters'
+        : 'Advanced search';
   const back = browse
-    ? appLang() === 'nl'
-      ? 'Terug naar inspiratie'
-      : 'Back to inspiration'
+    ? 'Back to inspiration'
     : collection
-      ? appLang() === 'nl'
-        ? 'Terug naar collectie'
-        : 'Back to collection'
+      ? 'Back to collection'
       : spoilers
-        ? appLang() === 'nl'
-          ? 'Terug naar spoilers'
-          : 'Back to spoilers'
-        : appLang() === 'nl'
-          ? 'Terug naar zoeken'
-          : 'Back to search';
+        ? 'Back to spoilers'
+        : 'Back to search';
   return /* HTML */ `<section
     id="advancedSearchScreen"
     role="dialog"
@@ -173,8 +139,8 @@ function advancedSearchScreenHtml() {
       <button
         type="button"
         id="advancedSearchReset"
-        aria-label="${appLang() === 'nl' ? 'Zoekfilters wissen' : 'Reset search filters'}"
-        title="${appLang() === 'nl' ? 'Wissen' : 'Reset'}"
+        aria-label="${'Reset search filters'}"
+        title="${'Reset'}"
       >
         <svg
           viewBox="0 0 24 24"
@@ -192,12 +158,7 @@ function advancedSearchScreenHtml() {
     <div id="advancedSearchBody">
       ${browse ? browseFiltersHtml() : collection ? collectionAdvancedPanelHtml() : spoilers ? spoilerAdvancedPanelHtml() : `<div class="adv-row"><label for="advName">${trS('Name')}</label><input id="advName" type="text" value="${escapeHtml(state.searchName)}" placeholder="Card name…"></div>${advancedPanelHtml()}`}
     </div>
-    <button
-      type="button"
-      id="advGo"
-      aria-label="${appLang() === 'nl' ? 'Zoek kaarten' : 'Search cards'}"
-      title="${appLang() === 'nl' ? 'Zoek kaarten' : 'Search cards'}"
-    >
+    <button type="button" id="advGo" aria-label="${'Search cards'}" title="${'Search cards'}">
       ${ICONS.search}
     </button>
   </section>`;
@@ -645,14 +606,7 @@ function wireRandomCardRefresh() {
       const status = document.querySelector('#cotdBox .cotd-refresh-status');
       if (status) {
         status.hidden = false;
-        status.textContent =
-          dy >= 80
-            ? appLang() === 'nl'
-              ? 'Loslaten om te vernieuwen'
-              : 'Release to refresh'
-            : appLang() === 'nl'
-              ? 'Trek omlaag om te vernieuwen'
-              : 'Pull to refresh';
+        status.textContent = dy >= 80 ? 'Release to refresh' : 'Pull to refresh';
       }
     },
     { passive: false },

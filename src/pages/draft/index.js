@@ -33,10 +33,6 @@ function draftReviewSecs(packDone) {
   return 60 + 30 * (packDone - 1);
 }
 
-function dT(en, nl) {
-  return appLang() === 'nl' ? nl : en;
-}
-
 function draftNew(keep) {
   const k = keep || {};
   return {
@@ -298,11 +294,11 @@ function draftLandSplit(counts, total) {
 }
 
 const DRAFT_BASICS = {
-  W: ['Plains', 'Plains'],
-  U: ['Island', 'Island'],
-  B: ['Swamp', 'Swamp'],
-  R: ['Mountain', 'Mountain'],
-  G: ['Forest', 'Forest'],
+  W: 'Plains',
+  U: 'Island',
+  B: 'Swamp',
+  R: 'Mountain',
+  G: 'Forest',
 };
 
 // ---- countdown timers: {total, endsAt, pausedLeft} -- idle, running, or paused
@@ -447,7 +443,7 @@ function draftName(d, id) {
 
 function draftPassHtml(pack) {
   const left = draftPassLeft(pack);
-  return `<span class="dr-dir">${left ? '↻' : '↺'}</span> ${left ? dT('pass left', 'doorgeven naar links') : dT('pass right', 'doorgeven naar rechts')}`;
+  return `<span class="dr-dir">${left ? '↻' : '↺'}</span> ${left ? 'pass left' : 'pass right'}`;
 }
 
 /* Draft tools share the menu's layout and read from setup to the next action. */
@@ -455,47 +451,17 @@ function draftPageHtml() {
   const d = state.draft || (state.draft = draftLoad());
   const intros = {
     setup: [
-      dT('Gather your pod.', 'Verzamel je spelers.'),
-      dT(
-        'Add your players, choose your draft settings, and find everyone a seat.',
-        'Voeg je spelers toe, kies je draftinstellingen en geef iedereen een plaats.',
-      ),
+      'Gather your pod.',
+      'Add your players, choose your draft settings, and find everyone a seat.',
     ],
-    seating: [
-      dT('Find your seat.', 'Zoek je plaats.'),
-      dT(
-        'Settle around the table and get ready to pass the packs.',
-        'Neem plaats aan tafel en maak je klaar om de packs door te geven.',
-      ),
-    ],
-    drafting: [
-      dT('Make your picks.', 'Kies je kaarten.'),
-      dT(
-        'Follow the pack direction and keep the table moving together.',
-        'Volg de richting van de packs en houd de tafel samen op tempo.',
-      ),
-    ],
+    seating: ['Find your seat.', 'Settle around the table and get ready to pass the packs.'],
+    drafting: ['Make your picks.', 'Follow the pack direction and keep the table moving together.'],
     building: [
-      dT('Build your deck.', 'Bouw je deck.'),
-      dT(
-        'Turn your picks into a deck, set your lands, and get ready to play.',
-        'Bouw een deck met je picks, kies je lands en maak je klaar om te spelen.',
-      ),
+      'Build your deck.',
+      'Turn your picks into a deck, set your lands, and get ready to play.',
     ],
-    rounds: [
-      dT('Play the round.', 'Speel de ronde.'),
-      dT(
-        'Check your pairing, track the time, and record each result.',
-        'Bekijk je tegenstander, houd de tijd bij en vul de uitslagen in.',
-      ),
-    ],
-    final: [
-      dT('See the results.', 'Bekijk de eindstand.'),
-      dT(
-        'Your final standings and every round, together in one place.',
-        'De eindstand en alle rondes bij elkaar op één plek.',
-      ),
-    ],
+    rounds: ['Play the round.', 'Check your pairing, track the time, and record each result.'],
+    final: ['See the results.', 'Your final standings and every round, together in one place.'],
   };
   const intro = intros[d.phase] || intros.setup;
   return /* HTML */ `<main class="hub-page tools-page draft-main">
@@ -505,10 +471,7 @@ function draftPageHtml() {
       <p>${intro[1]}</p>
     </section>
     ${draftTopHtml(d)}
-    <section
-      class="hub-actions tool-sections"
-      aria-label="${dT('Draft tools', 'Drafthulpmiddelen')}"
-    >
+    <section class="hub-actions tool-sections" aria-label="${'Draft tools'}">
       ${draftPhaseHtml(d)} ${draftFootHtml(d)} ${draftStandingsHtml(d)} ${draftHistoryHtml(d)}
     </section>
   </main>`;
@@ -516,16 +479,16 @@ function draftPageHtml() {
 
 function draftTopHtml(d) {
   const steps = [
-    ['setup', dT('Players', 'Spelers')],
-    ['seating', dT('Seats', 'Plaatsen')],
+    ['setup', 'Players'],
+    ['seating', 'Seats'],
     ['drafting', 'Draft'],
-    ['building', dT('Build', 'Bouwen')],
-    ['rounds', dT('Rounds', 'Rondes')],
-    ['final', dT('Final', 'Eindstand')],
+    ['building', 'Build'],
+    ['rounds', 'Rounds'],
+    ['final', 'Final'],
   ];
   const at = steps.findIndex((s) => s[0] === d.phase);
   return /* HTML */ `<div class="dr-top">
-    <nav class="dr-steps" aria-label="${dT('Draft progress', 'Draftvoortgang')}">
+    <nav class="dr-steps" aria-label="${'Draft progress'}">
       ${steps
         .map((s, i) => {
           const available =
@@ -552,37 +515,27 @@ function draftFootHtml(d) {
     `<button type="button" class="${o && o.ghost ? 'ghost-btn' : 'hub-card hub-primary'}" data-dr="${act}"${o && o.off ? ' disabled' : ''}>${o && o.ghost ? label : `<span class="hub-icon" aria-hidden="true">${ICONS.draft}</span><span class="hub-copy"><strong>${label}</strong></span><span class="hub-arrow" aria-hidden="true">›</span>`}</button>`;
   let html = '';
   if (d.phase === 'setup')
-    html = btn('seat', dT('Seat the players', 'Spelers aan tafel zetten') + ' →', {
+    html = btn('seat', 'Seat the players' + ' →', {
       off: d.players.length < 2,
     });
-  else if (d.phase === 'seating')
-    html = btn('draft-start', dT('To the draft', 'Naar de draft') + ' →');
+  else if (d.phase === 'seating') html = btn('draft-start', 'To the draft' + ' →');
   else if (d.phase === 'drafting') {
     const p = d.pick || {};
-    if (p.mode === 'wait') html = btn('pack-start', dT('Start pack ', 'Start pack ') + p.pack);
-    else if (p.mode === 'manual')
-      html = btn('pack-done', dT('Pack ', 'Pack ') + p.pack + dT(' done', ' klaar'));
-    else if (p.mode === 'done')
-      html = btn('build-start', dT('To deckbuilding', 'Naar deckbouwen') + ' →');
+    if (p.mode === 'wait') html = btn('pack-start', 'Start pack ' + p.pack);
+    else if (p.mode === 'manual') html = btn('pack-done', 'Pack ' + p.pack + ' done');
+    else if (p.mode === 'done') html = btn('build-start', 'To deckbuilding' + ' →');
     else
       html =
-        btn('pick-skip', dT('Next', 'Volgende') + ' ⏭', { ghost: true }) +
-        (p.endsAt
-          ? btn('pick-pause', '⏸ ' + dT('Pause', 'Pauze'))
-          : btn('pick-resume', '▶ ' + dT('Resume', 'Verder')));
-  } else if (d.phase === 'building')
-    html = btn('round1', dT('Pair round 1', 'Ronde 1 indelen') + ' →');
+        btn('pick-skip', 'Next' + ' ⏭', { ghost: true }) +
+        (p.endsAt ? btn('pick-pause', '⏸ ' + 'Pause') : btn('pick-resume', '▶ ' + 'Resume'));
+  } else if (d.phase === 'building') html = btn('round1', 'Pair round 1' + ' →');
   else if (d.phase === 'rounds') {
     const r = d.rs[d.rs.length - 1];
     const all = r && r.matches.every((m) => m.res);
     html =
       r && r.n >= d.rounds
-        ? btn('final', dT('Final standings', 'Eindstand') + ' →', { off: !all })
-        : btn(
-            'next-round',
-            dT('Pair round ', 'Ronde ') + ((r ? r.n : 0) + 1) + dT('', ' indelen') + ' →',
-            { off: !all },
-          );
+        ? btn('final', 'Final standings' + ' →', { off: !all })
+        : btn('next-round', 'Pair round ' + ((r ? r.n : 0) + 1) + '' + ' →', { off: !all });
   }
   return html ? `<div class="dr-foot">${html}</div>` : '';
 }
@@ -610,13 +563,13 @@ function draftPhaseHtml(d) {
     const seg = (cur, opts) =>
       `<div class="seg seg-inline dr-seg">${opts.map(([v, l, act]) => `<button type="button" class="${cur === v ? 'active' : ''}" data-dr="${act}">${l}</button>`).join('')}</div>`;
     return /* HTML */ `<div class="panel-card">
-        ${toolPanelHeadingHtml(ICONS.draft, dT('Players', 'Spelers') + ' (' + d.players.length + ')', dT('Everyone at the table', 'Iedereen aan tafel'))}
+        ${toolPanelHeadingHtml(ICONS.draft, 'Players' + ' (' + d.players.length + ')', 'Everyone at the table')}
         ${
           d.players.length
-            ? `<div class="dr-chips">${d.players.map((p) => `<span class="dr-chip">${escapeHtml(p.name)}<button type="button" data-dr="del" data-id="${p.id}" aria-label="${dT('Remove', 'Verwijderen')}">✕</button></span>`).join('')}</div>`
-            : `<p class="hint">${dT('Add everyone at the table. Two players is enough; a pod of 8 is classic.', 'Voeg iedereen aan tafel toe. Twee spelers is genoeg; 8 is de klassieke pod.')}</p>`
+            ? `<div class="dr-chips">${d.players.map((p) => `<span class="dr-chip">${escapeHtml(p.name)}<button type="button" data-dr="del" data-id="${p.id}" aria-label="${'Remove'}">✕</button></span>`).join('')}</div>`
+            : `<p class="hint">${'Add everyone at the table. Two players is enough; a pod of 8 is classic.'}</p>`
         }
-        ${recent.length ? `<div class="dr-recent-h">${dT('Played before', 'Eerder gespeeld')}</div><div class="dr-chips">${recent.map((n) => `<button type="button" class="dr-chip recent" data-dr="recent" data-name="${escapeHtml(n)}">+ ${escapeHtml(n)}</button>`).join('')}</div>` : ''}
+        ${recent.length ? `<div class="dr-recent-h">${'Played before'}</div><div class="dr-chips">${recent.map((n) => `<button type="button" class="dr-chip recent" data-dr="recent" data-name="${escapeHtml(n)}">+ ${escapeHtml(n)}</button>`).join('')}</div>` : ''}
         <div class="dr-add">
           <input
             id="drName"
@@ -624,21 +577,17 @@ function draftPhaseHtml(d) {
             enterkeyhint="done"
             autocomplete="off"
             autocapitalize="words"
-            placeholder="${dT('Player name', 'Naam van speler')}"
+            placeholder="${'Player name'}"
             maxlength="24"
-          /><button type="button" class="primary-btn" data-dr="add">
-            + ${dT('Add', 'Toevoegen')}
-          </button>
+          /><button type="button" class="primary-btn" data-dr="add">+ ${'Add'}</button>
         </div>
       </div>
       <div class="panel-card">
-        ${toolPanelHeadingHtml(ICONS.settings, dT('Settings', 'Instellingen'), dT('Set up your draft', 'Stel je draft in'))}
+        ${toolPanelHeadingHtml(ICONS.settings, 'Settings', 'Set up your draft')}
         <div class="dr-set">
           <div>
-            <div class="l1">${dT('Pack size', 'Packgrootte')}</div>
-            <div class="l2">
-              ${dT('Play Booster 14 · Draft Booster 15', 'Play Booster 14 · Draft Booster 15')}
-            </div>
+            <div class="l1">${'Pack size'}</div>
+            <div class="l2">${'Play Booster 14 · Draft Booster 15'}</div>
           </div>
           ${seg(d.packSize, [
             [14, '14', 'pack14'],
@@ -647,20 +596,18 @@ function draftPhaseHtml(d) {
         </div>
         <div class="dr-set">
           <div>
-            <div class="l1">${dT('Pick timer', 'Pick-timer')}</div>
-            <div class="l2">${dT('Tournament timing per pick', 'Toernooitijd per pick')}</div>
+            <div class="l1">${'Pick timer'}</div>
+            <div class="l2">${'Tournament timing per pick'}</div>
           </div>
           ${seg(d.pickTimer ? 1 : 0, [
-            [1, dT('On', 'Aan'), 'ptimer-on'],
-            [0, dT('Off', 'Uit'), 'ptimer-off'],
+            [1, 'On', 'ptimer-on'],
+            [0, 'Off', 'ptimer-off'],
           ])}
         </div>
         <div class="dr-set">
           <div>
-            <div class="l1">${dT('Matches', 'Matches')}</div>
-            <div class="l2">
-              ${dT('Best of one or best of three', 'Best of one of best of three')}
-            </div>
+            <div class="l1">${'Matches'}</div>
+            <div class="l2">${'Best of one or best of three'}</div>
           </div>
           ${seg(d.bo, [
             [1, 'Bo1', 'bo1'],
@@ -669,19 +616,17 @@ function draftPhaseHtml(d) {
         </div>
         <div class="dr-set">
           <div>
-            <div class="l1">${dT('Rounds', 'Rondes')}</div>
-            <div class="l2">
-              ${d.roundsAuto ? dT('Set by the number of players', 'Op basis van het aantal spelers') : dT('Set by you', 'Door jou ingesteld')}
-            </div>
+            <div class="l1">${'Rounds'}</div>
+            <div class="l2">${d.roundsAuto ? 'Set by the number of players' : 'Set by you'}</div>
           </div>
           ${draftStepHtml('rounds', d.rounds)}
         </div>
         <div class="dr-set">
-          <div><div class="l1">${dT('Round time', 'Rondetijd')}</div></div>
+          <div><div class="l1">${'Round time'}</div></div>
           ${draftStepHtml('rmin', d.roundMin + ' min')}
         </div>
         <div class="dr-set">
-          <div><div class="l1">${dT('Deckbuilding time', 'Tijd voor deckbouwen')}</div></div>
+          <div><div class="l1">${'Deckbuilding time'}</div></div>
           ${draftStepHtml('bmin', d.buildMin + ' min')}
         </div>
       </div>`;
@@ -703,25 +648,24 @@ function draftPhaseHtml(d) {
       .join('');
     const r1 = draftCrossPairs(d.seats);
     return /* HTML */ `<div class="panel-card">
-        <div class="panel-h">${dT('The table', 'De tafel')}</div>
+        <div class="panel-h">${'The table'}</div>
         <div class="dr-ring">
           ${seats}
           <div class="dr-ring-mid">
-            <span class="dr-arrow">↻</span
-            >${dT('Pack 1 and 3: left', 'Pack 1 en 3: links')}<br />${dT('Pack 2: right', 'Pack 2: rechts')}
+            <span class="dr-arrow">↻</span>${'Pack 1 and 3: left'}<br />${'Pack 2: right'}
           </div>
         </div>
         <button type="button" class="ghost-btn" data-dr="reshuffle" style="width:100%;">
-          ⇄ ${dT('Shuffle the seats', 'Plaatsen opnieuw loten')}
+          ⇄ ${'Shuffle the seats'}
         </button>
       </div>
       <div class="panel-card">
-        <div class="panel-h">${dT('Round 1', 'Ronde 1')}</div>
+        <div class="panel-h">${'Round 1'}</div>
         <div class="dr-pairs">
-          ${r1.map((m) => (m.b == null ? `<div>${nm(m.a)} — <i>${dT('bye', 'bye')}</i></div>` : `<div>${nm(m.a)} <i>vs</i> ${nm(m.b)}</div>`)).join('')}
+          ${r1.map((m) => (m.b == null ? `<div>${nm(m.a)} — <i>${'bye'}</i></div>` : `<div>${nm(m.a)} <i>vs</i> ${nm(m.b)}</div>`)).join('')}
         </div>
         <p class="hint" style="margin:8px 0 0;">
-          ${dT('Straight across the table: you never face the player you passed to.', 'Recht over de tafel: je speelt nooit tegen degene aan wie je doorgaf.')}
+          ${'Straight across the table: you never face the player you passed to.'}
         </p>
       </div>`;
   }
@@ -729,46 +673,41 @@ function draftPhaseHtml(d) {
     const p = d.pick || { pack: 1, left: d.packSize, mode: 'wait' };
     if (p.mode === 'wait')
       return /* HTML */ `<div class="panel-card dr-center">
-        <div class="dr-big">
-          ${dT('Open pack ', 'Open pack ')}${p.pack} ${dT('of', 'van')} ${d.packs}
-        </div>
+        <div class="dr-big">${'Open pack '}${p.pack} ${'of'} ${d.packs}</div>
         <div class="dr-sub">${draftPassHtml(p.pack)}</div>
         <p class="hint" style="margin:10px 0 0;">
-          ${d.pickTimer ? dT('Everyone opens their pack, then tap Start: the clock runs every pick by itself.', 'Iedereen opent zijn pack, tik dan op Start: de klok loopt elke pick vanzelf.') : dT('Pick timer is off: tap the button when this pack is finished.', 'De pick-timer staat uit: tik op de knop als dit pack op is.')}
+          ${d.pickTimer ? 'Everyone opens their pack, then tap Start: the clock runs every pick by itself.' : 'Pick timer is off: tap the button when this pack is finished.'}
         </p>
       </div>`;
     if (p.mode === 'manual')
       return /* HTML */ `<div class="panel-card dr-center">
-        <div class="dr-big">Pack ${p.pack} ${dT('of', 'van')} ${d.packs}</div>
+        <div class="dr-big">Pack ${p.pack} ${'of'} ${d.packs}</div>
         <div class="dr-sub">${draftPassHtml(p.pack)}</div>
       </div>`;
     if (p.mode === 'done')
       return /* HTML */ `<div class="panel-card dr-center">
-        <div class="dr-big">${dT('Draft complete', 'Draft klaar')}</div>
-        <div class="dr-sub">
-          ${dT('Time to build a 40-card deck.', 'Tijd om een deck van 40 kaarten te bouwen.')}
-        </div>
+        <div class="dr-big">${'Draft complete'}</div>
+        <div class="dr-sub">${'Time to build a 40-card deck.'}</div>
       </div>`;
     const pickNo = d.packSize - p.left + 1;
     return /* HTML */ `<div class="panel-card dr-center">
       <div class="dr-big">
-        ${p.mode === 'review' ? dT('Review your picks', 'Bekijk je picks') : `Pack ${p.pack} · Pick ${pickNo}`}
+        ${p.mode === 'review' ? 'Review your picks' : `Pack ${p.pack} · Pick ${pickNo}`}
       </div>
-      ${draftClockHtml(p, p.mode === 'review' ? dT('Next: pack ', 'Hierna: pack ') + (p.pack + 1) + ' · ' + draftPassHtml(p.pack + 1) : draftPassHtml(p.pack))}
+      ${draftClockHtml(p, p.mode === 'review' ? 'Next: pack ' + (p.pack + 1) + ' · ' + draftPassHtml(p.pack + 1) : draftPassHtml(p.pack))}
     </div>`;
   }
   if (d.phase === 'building') {
     const t = d.build;
     const split = draftLandSplit(d.landCounts || {}, d.landTotal || 17);
-    const nlang = appLang() === 'nl' ? 1 : 0;
     const res = Object.keys(split)
-      .map((c) => `<b>${split[c]}</b> ${DRAFT_BASICS[c][nlang]}`)
+      .map((c) => `<b>${split[c]}</b> ${DRAFT_BASICS[c]}`)
       .join(' · ');
     return /* HTML */ `<div class="panel-card dr-center">
-        <div class="dr-big">${dT('Deckbuilding', 'Deckbouwen')}</div>
-        ${draftClockHtml(t, t.over ? `<b class="dr-over">${dT('Time! Decks down.', 'Tijd! Decks klaar.')}</b>` : dT('40 cards: about 23 spells and 17 lands', '40 kaarten: zo’n 23 spells en 17 lands'))}
+        <div class="dr-big">${'Deckbuilding'}</div>
+        ${draftClockHtml(t, t.over ? `<b class="dr-over">${'Time! Decks down.'}</b>` : '40 cards: about 23 spells and 17 lands')}
         <div class="dr-row">
-          ${t.endsAt ? `<button type="button" class="ghost-btn" data-dr="build-pause">⏸ ${dT('Pause', 'Pauze')}</button>` : `<button type="button" class="ghost-btn" data-dr="build-go">▶ ${t.pausedLeft != null && !t.over ? dT('Resume', 'Verder') : dT('Start', 'Start')}</button>`}<button
+          ${t.endsAt ? `<button type="button" class="ghost-btn" data-dr="build-pause">⏸ ${'Pause'}</button>` : `<button type="button" class="ghost-btn" data-dr="build-go">▶ ${t.pausedLeft != null && !t.over ? 'Resume' : 'Start'}</button>`}<button
             type="button"
             class="ghost-btn"
             data-dr="build-plus"
@@ -778,18 +717,14 @@ function draftPhaseHtml(d) {
         </div>
       </div>
       <div class="panel-card">
-        <div class="panel-h">${dT('Basic lands', 'Basic lands')}</div>
-        <p class="hint">
-          ${dT('How many spells of each colour? The lands follow.', 'Hoeveel spells per kleur? De lands volgen vanzelf.')}
-        </p>
-        ${['W', 'U', 'B', 'R', 'G'].map((c) => `<div class="dr-set"><div class="dr-mana">${manaIconSvg(c, 22)}<span>${DRAFT_BASICS[c][nlang]}</span></div>${draftStepHtml('land' + c, (d.landCounts || {})[c] || 0)}</div>`).join('')}
+        <div class="panel-h">${'Basic lands'}</div>
+        <p class="hint">${'How many spells of each colour? The lands follow.'}</p>
+        ${['W', 'U', 'B', 'R', 'G'].map((c) => `<div class="dr-set"><div class="dr-mana">${manaIconSvg(c, 22)}<span>${DRAFT_BASICS[c]}</span></div>${draftStepHtml('land' + c, (d.landCounts || {})[c] || 0)}</div>`).join('')}
         <div class="dr-set">
-          <div><div class="l1">${dT('Lands in total', 'Lands in totaal')}</div></div>
+          <div><div class="l1">${'Lands in total'}</div></div>
           ${draftStepHtml('ltot', d.landTotal || 17)}
         </div>
-        <div class="dr-lands">
-          ${res || dT('Add your spells per colour above.', 'Vul hierboven je spells per kleur in.')}
-        </div>
+        <div class="dr-lands">${res || 'Add your spells per colour above.'}</div>
       </div>`;
   }
   if (d.phase === 'rounds') {
@@ -801,7 +736,7 @@ function draftPhaseHtml(d) {
           return /* HTML */ `<div class="dr-match">
             <span class="dr-tbl">–</span>
             <div class="dr-vs">
-              <div class="dr-p win"><span>${nm(m.a)}</span><span>${dT('bye', 'bye')}</span></div>
+              <div class="dr-p win"><span>${nm(m.a)}</span><span>${'bye'}</span></div>
             </div>
           </div>`;
         const res = m.res,
@@ -816,7 +751,7 @@ function draftPhaseHtml(d) {
             <span class="dr-p ${res && bw > aw ? 'win' : ''}"
               ><span>${nm(m.b)}</span><span>${res ? bw : ''}</span></span
             >
-            ${res ? '' : `<span class="dr-tap">${dT('Tap to enter the result', 'Tik om de uitslag in te voeren')}</span>`}
+            ${res ? '' : `<span class="dr-tap">${'Tap to enter the result'}</span>`}
           </button>
           <button
             type="button"
@@ -833,15 +768,14 @@ function draftPhaseHtml(d) {
       .join('');
     return /* HTML */ `<div class="panel-card">
         <div class="panel-h">
-          ${dT('Round ', 'Ronde ')}${r.n} ${dT('of', 'van')} ${d.rounds} ·
-          ${d.bo === 1 ? 'Bo1' : 'Bo3'}
+          ${'Round '}${r.n} ${'of'} ${d.rounds} · ${d.bo === 1 ? 'Bo1' : 'Bo3'}
         </div>
         <div class="dr-matches">${rows}</div>
       </div>
       <div class="panel-card dr-center">
-        ${draftClockHtml(t, t.over ? `<b class="dr-over">${dT('Time! Finish this turn, then 5 more turns.', 'Tijd! Maak de beurt af, plus nog 5 beurten.')}</b>` : '')}
+        ${draftClockHtml(t, t.over ? `<b class="dr-over">${'Time! Finish this turn, then 5 more turns.'}</b>` : '')}
         <div class="dr-row">
-          ${t.endsAt ? `<button type="button" class="ghost-btn" data-dr="rt-pause">⏸ ${dT('Pause', 'Pauze')}</button>` : `<button type="button" class="ghost-btn" data-dr="rt-go">▶ ${t.pausedLeft != null && !t.over ? dT('Resume', 'Verder') : dT('Start round', 'Start ronde')}</button>`}<button
+          ${t.endsAt ? `<button type="button" class="ghost-btn" data-dr="rt-pause">⏸ ${'Pause'}</button>` : `<button type="button" class="ghost-btn" data-dr="rt-go">▶ ${t.pausedLeft != null && !t.over ? 'Resume' : 'Start round'}</button>`}<button
             type="button"
             class="ghost-btn"
             data-dr="rt-plus"
@@ -855,9 +789,9 @@ function draftPhaseHtml(d) {
     const st = draftStandings(d);
     const w = st[0];
     return /* HTML */ `<div class="panel-card dr-center">
-      <div class="dr-sub">${dT('Champion', 'Winnaar')}</div>
+      <div class="dr-sub">${'Champion'}</div>
       <div class="dr-champ">${w ? escapeHtml(w.name) : ''}</div>
-      ${w ? `<div class="dr-sub">${w.w}-${w.l}-${w.dr} · ${w.mp} ${dT('points', 'punten')}</div>` : ''}
+      ${w ? `<div class="dr-sub">${w.w}-${w.l}-${w.dr} · ${w.mp} ${'points'}</div>` : ''}
     </div>`;
   }
   return '';
@@ -868,13 +802,13 @@ function draftStandingsHtml(d) {
   const st = draftStandings(d);
   const pct = (v) => Math.round(v * 100) + '%';
   return /* HTML */ `<div class="panel-card">
-    <div class="panel-h">${dT('Standings', 'Stand')}</div>
+    <div class="panel-h">${'Standings'}</div>
     <table class="dr-stand">
       <tr>
         <th>#</th>
-        <th>${dT('Player', 'Speler')}</th>
+        <th>${'Player'}</th>
         <th>W-L-D</th>
-        <th>${dT('Pts', 'Ptn')}</th>
+        <th>${'Pts'}</th>
         <th>OMW</th>
         <th>GW</th>
         <th>OGW</th>
@@ -882,7 +816,7 @@ function draftStandingsHtml(d) {
       ${st.map((x, i) => `<tr${d.phase === 'rounds' ? ` data-dr="drop" data-id="${x.id}"` : ''} class="${x.dropped ? 'dropped' : ''}"><td>${i + 1}</td><td>${escapeHtml(x.name)}</td><td>${x.w}-${x.l}-${x.dr}</td><td><b>${x.mp}</b></td><td>${pct(x.omw)}</td><td>${pct(x.gwp)}</td><td>${pct(x.ogw)}</td></tr>`).join('')}
     </table>
     <p class="hint" style="margin:8px 0 0;">
-      ${dT('Ties: opponents’ match-win %, then game-win %, then opponents’ game-win %.', 'Bij gelijke punten: match-win % van je tegenstanders, dan je game-win %, dan dat van je tegenstanders.')}${d.phase === 'rounds' ? ' ' + dT('Tap a player to drop them.', 'Tik op een speler om hem te laten stoppen.') : ''}
+      ${'Ties: opponents’ match-win %, then game-win %, then opponents’ game-win %.'}${d.phase === 'rounds' ? ' ' + 'Tap a player to drop them.' : ''}
     </p>
   </div>`;
 }
@@ -896,8 +830,8 @@ function draftHistoryHtml(d) {
     .reverse()
     .map(
       (r) => `<div class="panel-card dr-past">
-    <div class="panel-h">${dT('Round ', 'Ronde ')}${r.n}</div>
-    ${r.matches.map((m) => (m.b == null ? `<div>${nm(m.a)} — ${dT('bye', 'bye')}</div>` : `<div>${nm(m.a)} <b>${m.res ? m.res.aw + '–' + m.res.bw : ''}</b> ${nm(m.b)}</div>`)).join('')}
+    <div class="panel-h">${'Round '}${r.n}</div>
+    ${r.matches.map((m) => (m.b == null ? `<div>${nm(m.a)} — ${'bye'}</div>` : `<div>${nm(m.a)} <b>${m.res ? m.res.aw + '–' + m.res.bw : ''}</b> ${nm(m.b)}</div>`)).join('')}
   </div>`,
     )
     .join('');
@@ -937,19 +871,18 @@ function draftResultMenu(anchor, d, i) {
   const items =
     d.bo === 1
       ? [
-          { label: A + ' ' + dT('wins', 'wint'), fn: set(1, 0) },
-          { label: dT('Draw', 'Gelijkspel'), fn: set(0, 0, 1) },
-          { label: B + ' ' + dT('wins', 'wint'), fn: set(0, 1) },
+          { label: A + ' ' + 'wins', fn: set(1, 0) },
+          { label: 'Draw', fn: set(0, 0, 1) },
+          { label: B + ' ' + 'wins', fn: set(0, 1) },
         ]
       : [
           { label: A + ' 2–0', fn: set(2, 0) },
           { label: A + ' 2–1', fn: set(2, 1) },
-          { label: '1–1 ' + dT('(draw)', '(gelijk)'), fn: set(1, 1) },
+          { label: '1–1 ' + '(draw)', fn: set(1, 1) },
           { label: B + ' 2–1', fn: set(1, 2) },
           { label: B + ' 2–0', fn: set(0, 2) },
         ];
-  if (mt.res)
-    items.push({ label: dT('Clear result', 'Uitslag wissen'), fn: set(null), danger: true });
+  if (mt.res) items.push({ label: 'Clear result', fn: set(null), danger: true });
   openTileMenu(anchor, items);
 }
 
@@ -973,7 +906,7 @@ function draftAction(act, el) {
       .slice(0, 24);
     if (!name) return false;
     if (d.players.some((p) => p.name.toLowerCase() === name.toLowerCase())) {
-      toast(dT('That name is already in.', 'Die naam staat er al.'));
+      toast('That name is already in.');
       return false;
     }
     d.players.push({
@@ -1230,14 +1163,14 @@ function draftAction(act, el) {
       openTileMenu(el, [
         p.dropped
           ? {
-              label: dT('Back in the event', 'Weer meedoen'),
+              label: 'Back in the event',
               fn: () => {
                 p.dropped = false;
                 save();
               },
             }
           : {
-              label: dT('Drop ', 'Laat ') + escapeHtml(p.name) + dT(' from the event', ' stoppen'),
+              label: 'Drop ' + escapeHtml(p.name) + ' from the event',
               danger: true,
               fn: () => {
                 p.dropped = true;
@@ -1249,10 +1182,7 @@ function draftAction(act, el) {
     }
     case 'new':
       openInAppConfirm(
-        dT(
-          'Start a new draft? Seats, rounds and results are cleared; the players and settings stay.',
-          'Een nieuwe draft beginnen? Plaatsen, rondes en uitslagen gaan weg; spelers en instellingen blijven.',
-        ),
+        'Start a new draft? Seats, rounds and results are cleared; the players and settings stay.',
         (ok) => {
           if (!ok) return;
           state.draft = draftNew({

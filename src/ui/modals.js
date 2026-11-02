@@ -53,13 +53,9 @@ function renderModal() {
       } catch (err) {}
       refreshDecklistBox(dd);
       toast(
-        appLang() === 'nl'
-          ? dd.scryTags
-            ? 'Scryfall-tags aan voor dit deck.'
-            : 'Scryfall-tags uit voor dit deck; je eigen tags blijven.'
-          : dd.scryTags
-            ? 'Scryfall tags on for this deck.'
-            : 'Scryfall tags off for this deck; your own tags stay.',
+        dd.scryTags
+          ? 'Scryfall tags on for this deck.'
+          : 'Scryfall tags off for this deck; your own tags stay.',
       );
     });
     document.querySelectorAll('[data-sortpick]').forEach((b) => {
@@ -270,7 +266,7 @@ function renderModal() {
       <div class="modal-sheet">
         <h3>Delete "${escapeHtml(d.name)}"?</h3>
         <p style="font-size:14px;color:var(--sub-text);margin:0 0 14px;">
-          ${appLang() === 'nl' ? 'Je kunt hem 60 dagen terugzetten: Extra’s → Back-up → Verwijderde decks.' : 'You can bring it back for 60 days: Extras → Backup → Deleted decks.'}
+          ${'You can bring it back for 60 days: Extras → Backup → Deleted decks.'}
         </p>
         <div class="modal-actions">
           <button class="cancel" id="cancelBtn">Cancel</button

@@ -320,7 +320,7 @@ function lifeSpec() {
 }
 
 function lifeFmtLabel(f) {
-  return f === 'constructed' ? (appLang() === 'nl' ? '60 kaarten' : '60 cards') : fmtLabelOf(f);
+  return f === 'constructed' ? '60 cards' : fmtLabelOf(f);
 }
 
 function lifeStart(count) {

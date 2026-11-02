@@ -488,7 +488,7 @@ var PAIR_ICON =
 async function openPairPopup(card) {
   const A = pairAbility(card);
   if (!A) return;
-  const NL = appLang() === 'nl';
+
   pushOverlay('pairPop', () => {
     document.getElementById('pairPopOverlay')?.remove();
   });
@@ -510,8 +510,7 @@ async function openPairPopup(card) {
         />
       </div>
       <p class="hint" style="text-align:center;margin:0 0 8px;">
-        ${NL ? 'Partner-combinaties' : 'Partner pairings'} —
-        ${escapeHtml(A.label)}${A.with ? ' ' + escapeHtml(A.with) : ''}
+        ${'Partner pairings'} — ${escapeHtml(A.label)}${A.with ? ' ' + escapeHtml(A.with) : ''}
       </p>
       <div id="pairPopBody">
         <div class="status"><div class="spinner"></div></div>
@@ -541,9 +540,7 @@ async function openPairPopup(card) {
       canPair(card, c) && !isBanned(c) && (fmt !== 'commander' || commanderVerdict(c) !== 'banned'),
   );
   if (!list.length) {
-    box.innerHTML = /* HTML */ `<div class="empty-note">
-      ${NL ? 'Geen combinaties gevonden.' : 'No pairings found.'}
-    </div>`;
+    box.innerHTML = /* HTML */ `<div class="empty-note">${'No pairings found.'}</div>`;
     return;
   }
   // the commander in front: a Background or a Doctor's companion sits behind its lead
@@ -554,9 +551,7 @@ async function openPairPopup(card) {
       ${merged.map((it, i) => pairTileHtml(it._pair, i, null)).join('')}
     </div>
     <p class="hint" style="text-align:center;margin:8px 0 4px;">
-      ${list.length}
-      ${NL ? (list.length === 1 ? 'combinatie' : 'combinaties') : list.length === 1 ? 'pairing' : 'pairings'}
-      · ${NL ? 'meest gespeeld onderaan' : 'most played at the bottom'}
+      ${list.length} ${list.length === 1 ? 'pairing' : 'pairings'} · ${'most played at the bottom'}
     </p>`;
   const pinned =
     state.screen === 'search' && state.searchPinnedDeckId

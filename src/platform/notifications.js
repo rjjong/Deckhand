@@ -31,10 +31,9 @@ function _pushStatus(msg) {
 const SPOIL_EVERY_CHOICES = [1, 5, 10, 0];
 
 function spoilEveryLabel(v) {
-  const NL = appLang() === 'nl';
-  if (!v) return NL ? 'Geen meldingen' : 'No alerts';
-  if (v === 1) return NL ? 'Elke kaart' : 'Every card';
-  return NL ? 'Per ' + v + ' kaarten' : 'Every ' + v + ' cards';
+  if (!v) return 'No alerts';
+  if (v === 1) return 'Every card';
+  return 'Every ' + v + ' cards';
 }
 
 function normSpoilEvery(v) {
@@ -76,35 +75,28 @@ function savePushPrefs(p) {
 }
 
 function _pushOnMsg(p) {
-  const NL = appLang() === 'nl';
   const stukken = [];
   const every = normSpoilEvery(p.spoilerEvery != null ? p.spoilerEvery : p.spoilers ? 5 : 0);
-  if (every === 1) stukken.push(NL ? 'elke gespoilde kaart' : 'every spoiled card');
-  else if (every > 1) stukken.push(NL ? 'spoilers per ' + every : 'spoilers every ' + every);
-  if (p.updates) stukken.push(NL ? 'app-updates' : 'app updates');
-  if (!stukken.length) return NL ? 'Uit.' : 'Off.';
-  const lijst = stukken.length === 2 ? stukken.join(NL ? ' en ' : ' and ') : stukken[0];
-  return (NL ? '\u2713 Aan \u2014 ' : '\u2713 On \u2014 ') + lijst + '.';
+  if (every === 1) stukken.push('every spoiled card');
+  else if (every > 1) stukken.push('spoilers every ' + every);
+  if (p.updates) stukken.push('app updates');
+  if (!stukken.length) return 'Off.';
+  const lijst = stukken.length === 2 ? stukken.join(' and ') : stukken[0];
+  return '\u2713 On \u2014 ' + lijst + '.';
 }
 
 /* Why push is off. Android's WebView -- what the Deckhand APK runs on -- has no
    Push API at all, so the honest answer there is not "your phone can't do this"
    but "this wrapper can't, the browser version can". */
 function _pushUnavailableMsg() {
-  const NL = appLang() === 'nl';
-  if (window.DECKHAND_CONFIG?.selfHosted)
-    return NL
-      ? 'Pushmeldingen staan uit op deze server.'
-      : 'Push notifications are disabled on this server.';
+  if (window.DECKHAND_CONFIG?.selfHosted) return 'Push notifications are disabled on this server.';
   if (nativeNotify()) {
-    return NL ? '' : '';
+    return '';
   }
   if (inAndroidApp()) {
-    return NL
-      ? 'Niet beschikbaar in de Android-app \u2014 pushmeldingen werken alleen in de browserversie. Updates zie je hier gewoon in de changelog.'
-      : 'Not available inside the Android app \u2014 push only works in the browser version. Updates still show up here in the changelog.';
+    return 'Not available inside the Android app \u2014 push only works in the browser version. Updates still show up here in the changelog.';
   }
-  return NL ? 'Dit toestel ondersteunt geen pushmeldingen.' : 'This device does not support push.';
+  return 'This device does not support push.';
 }
 
 /* Inside the Android app there is no Push API, but the app itself can look
@@ -122,13 +114,10 @@ function nativeNotify() {
 
 function _nativeOnMsg() {
   return '';
-  return appLang() === 'nl'
-    ? '\u2713 Aan \u2014 de app kijkt \u00e9\u00e9n keer per dag zelf naar nieuwe sets en updates.'
-    : '\u2713 On \u2014 the app checks once a day for new sets and updates.';
+  return '\u2713 On \u2014 the app checks once a day for new sets and updates.';
 }
 
 async function enableNativeNotify() {
-  const NL = appLang() === 'nl';
   const n = nativeNotify();
   if (!n) return;
   try {
@@ -140,20 +129,17 @@ async function enableNativeNotify() {
     _pushStatus(_nativeOnMsg());
     _nativePermCheck(n);
   } catch (e) {
-    _pushStatus((NL ? 'Aanzetten mislukt: ' : 'Could not enable: ') + ((e && e.message) || e));
+    _pushStatus('Could not enable: ' + ((e && e.message) || e));
   }
 }
 
 /* Android 13+ shows its own permission sheet; report the outcome honestly. */
 function _nativePermCheck(n) {
-  const NL = appLang() === 'nl';
   setTimeout(() => {
     try {
       if (n.permissionGranted && !n.permissionGranted()) {
         _pushStatus(
-          NL
-            ? '\u26a0 Meldingen staan nog uit voor Deckhand \u2014 zet ze aan bij Instellingen \u2192 Apps \u2192 Deckhand \u2192 Meldingen.'
-            : '\u26a0 Notifications are still off for Deckhand \u2014 turn them on in Settings \u2192 Apps \u2192 Deckhand \u2192 Notifications.',
+          '\u26a0 Notifications are still off for Deckhand \u2014 turn them on in Settings \u2192 Apps \u2192 Deckhand \u2192 Notifications.',
         );
       }
     } catch (e) {}
@@ -168,7 +154,7 @@ function disableNativeNotify() {
   try {
     localStorage.setItem(LS_PREFIX + 'pushOn', '0');
   } catch (e) {}
-  _pushStatus(appLang() === 'nl' ? 'Uit.' : 'Off.');
+  _pushStatus('Off.');
 }
 
 /* The verdict belongs on screen the moment Extras opens, not only after a tap.
@@ -194,9 +180,7 @@ function applyNativePrefs(p) {
     try {
       localStorage.setItem(LS_PREFIX + 'pushOn', p.spoilerEvery > 0 || p.updates ? '1' : '0');
     } catch (e) {}
-    _pushStatus(
-      p.spoilerEvery > 0 || p.updates ? _nativeOnMsg() : appLang() === 'nl' ? 'Uit.' : 'Off.',
-    );
+    _pushStatus(p.spoilerEvery > 0 || p.updates ? _nativeOnMsg() : 'Off.');
     // Android 13+ shows its own permission sheet; report the outcome honestly.
     if (p.spoilerEvery > 0 || p.updates) _nativePermCheck(n);
     return;
@@ -273,7 +257,7 @@ async function syncPushPrefs(p) {
     _pushStatus(_pushUnavailableMsg());
     return;
   }
-  const NL = appLang() === 'nl';
+
   p = Object.assign({}, p, { spoilerEvery: normSpoilEvery(p.spoilerEvery) });
   p.spoilers = p.spoilerEvery > 0;
   // Wat je koos wordt METEEN bewaard, ook als het aanmelden daarna misgaat:
@@ -292,11 +276,7 @@ async function syncPushPrefs(p) {
     }
     const perm = await Notification.requestPermission();
     if (perm !== 'granted') {
-      _pushStatus(
-        NL
-          ? 'Toestemming geweigerd \u2014 zet meldingen aan in de Android-instellingen.'
-          : 'Permission denied \u2014 allow notifications in Android settings.',
-      );
+      _pushStatus('Permission denied \u2014 allow notifications in Android settings.');
       savePushPrefs({ spoilers: false, updates: false, spoilerEvery: 0 });
       paintPushAvailability();
       return;
@@ -325,13 +305,12 @@ async function syncPushPrefs(p) {
     if (!r.ok) throw new Error('subscribe ' + r.status);
     _pushStatus(_pushOnMsg(p));
   } catch (e) {
-    _pushStatus((NL ? 'Aanzetten mislukt: ' : 'Could not enable: ') + ((e && e.message) || e));
+    _pushStatus('Could not enable: ' + ((e && e.message) || e));
     paintPushAvailability();
   }
 }
 
 async function unsubscribePush() {
-  const NL = appLang() === 'nl';
   try {
     const reg = await navigator.serviceWorker.ready;
     const sub = await reg.pushManager.getSubscription();
@@ -346,5 +325,5 @@ async function unsubscribePush() {
       await sub.unsubscribe();
     }
   } catch (e) {}
-  _pushStatus(NL ? 'Uit.' : 'Off.');
+  _pushStatus('Off.');
 }

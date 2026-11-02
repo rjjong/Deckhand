@@ -145,7 +145,7 @@ function openAddManyToCollection(cards, onDone) {
         <div class="adv-row">
           <label>Binder</label>
           <select id="acBinder" class="col-select">
-            ${ruledBinders().length ? `<option value="__auto__" selected>✦ ${appLang() === 'nl' ? 'Automatisch (map-regels)' : 'Automatic (binder rules)'}</option>` : ''}
+            ${ruledBinders().length ? `<option value="__auto__" selected>✦ ${'Automatic (binder rules)'}</option>` : ''}
             <option value="">— No binder —</option>
             ${state.collection.binders.map((b) => `<option value="${b.id}">${escapeHtml(b.name)}</option>`).join('')}
             <option value="__wants__">🔖 Wants list</option>
@@ -548,7 +548,7 @@ async function openAddToCollection(card) {
         <div class="adv-row">
           <label>Binder</label>
           <select id="acBinder" class="col-select">
-            ${ruledBinders().length ? `<option value="__auto__"${state.colFilter && state.collection.binders.some((b) => b.id === state.colFilter.binder) ? '' : ' selected'}>✦ ${appLang() === 'nl' ? 'Automatisch (map-regels)' : 'Automatic (binder rules)'}</option>` : ''}
+            ${ruledBinders().length ? `<option value="__auto__"${state.colFilter && state.collection.binders.some((b) => b.id === state.colFilter.binder) ? '' : ' selected'}>✦ ${'Automatic (binder rules)'}</option>` : ''}
             <option value="">— No binder —</option>
             ${state.collection.binders.map((b) => `<option value="${b.id}" ${state.colFilter && state.colFilter.binder === b.id ? 'selected' : ''}>${escapeHtml(b.name)}</option>`).join('')}
             <option value="__wants__">🔖 Wants list</option>

@@ -60,7 +60,7 @@ function pwHit(name) {
 }
 
 function pwEur(v) {
-  return '€' + (appLang() === 'nl' ? v.toFixed(2).replace('.', ',') : v.toFixed(2));
+  return '€' + v.toFixed(2);
 }
 
 // The little pill on a Wants tile: a bell to set one, the limit once set,
@@ -73,7 +73,7 @@ function pwPillHtml(name) {
       type="button"
       class="want-bell"
       data-wantbell="${nm}"
-      aria-label="${appLang() === 'nl' ? 'Prijsalert' : 'Price alert'}"
+      aria-label="${'Price alert'}"
     >
       ${ICONS.bell}
     </button>`;
@@ -87,8 +87,7 @@ function pwPillHtml(name) {
 }
 
 function openPriceWatchSheet(name) {
-  const nl = appLang() === 'nl',
-    w = pwAll()[name],
+  const w = pwAll()[name],
     now = pwNow(name);
   document.getElementById('pwSheet')?.remove();
   const start = w ? w.max : now != null ? Math.max(0.1, Math.floor(now * 0.8 * 10) / 10) : 5;
@@ -100,19 +99,15 @@ function openPriceWatchSheet(name) {
   // column-reverse sheet: Save at the foot.
   el.innerHTML = /* HTML */ `<div class="deckpick br-sheet pw-sheet">
     <div class="br-actions">
-      <button type="button" class="primary-btn" id="pwSave">${nl ? 'Opslaan' : 'Save'}</button>
-      ${w ? `<button type="button" class="ghost-btn" id="pwOff">${nl ? 'Alert uit' : 'Alert off'}</button>` : ''}
+      <button type="button" class="primary-btn" id="pwSave">${'Save'}</button>
+      ${w ? `<button type="button" class="ghost-btn" id="pwOff">${'Alert off'}</button>` : ''}
     </div>
     <div class="pw-hint">
-      ${
-        nl
-          ? 'De Android-app stuurt een melding zodra de goedkoopste papieren printing eronder zakt (één keer per dag gekeken). In de browser zie je het als je de app opent.'
-          : 'The Android app notifies you as soon as the cheapest paper printing drops under it (checked once a day). In the browser you see it when you open the app.'
-      }
+      ${'The Android app notifies you as soon as the cheapest paper printing drops under it (checked once a day). In the browser you see it when you open the app.'}
     </div>
     ${now != null ? `<div class="br-chips pw-chips">${[10, 20, 30].map((p) => `<button type="button" class="chip br-chip" data-pwpct="${p}">−${p}%</button>`).join('')}</div>` : ''}
     <label class="pw-row"
-      ><span>${nl ? 'Waarschuw onder' : 'Alert under'}</span><span class="pw-eur">€</span
+      ><span>${'Alert under'}</span><span class="pw-eur">€</span
       ><input
         id="pwMax"
         type="number"
@@ -122,8 +117,8 @@ function openPriceWatchSheet(name) {
         value="${start.toFixed(2)}"
     /></label>
     <div class="br-title">
-      <b>${inlIco('bell', 16)}${nl ? 'Prijsalert' : 'Price alert'}</b
-      ><span>${escapeHtml(name)}${now != null ? ` — ${nl ? 'nu' : 'now'} ${pwEur(now)}` : ''}</span>
+      <b>${inlIco('bell', 16)}${'Price alert'}</b
+      ><span>${escapeHtml(name)}${now != null ? ` — ${'now'} ${pwEur(now)}` : ''}</span>
     </div>
   </div>`;
   let after = null;
@@ -147,7 +142,7 @@ function openPriceWatchSheet(name) {
   el.querySelector('#pwSave').addEventListener('click', () => {
     const v = parseFloat(String(el.querySelector('#pwMax').value).replace(',', '.'));
     if (!(v > 0)) {
-      toast(nl ? 'Vul een prijs in.' : 'Enter a price.');
+      toast('Enter a price.');
       return;
     }
     try {
@@ -157,9 +152,7 @@ function openPriceWatchSheet(name) {
     pwSave();
     after = () => {
       render();
-      toast(
-        nl ? `Alert gezet: ${name} onder ${pwEur(v)}.` : `Alert set: ${name} under ${pwEur(v)}.`,
-      );
+      toast(`Alert set: ${name} under ${pwEur(v)}.`);
     };
     close();
   });
@@ -196,21 +189,16 @@ function pwStartupCheck() {
       } catch (e) {}
     pwTellNative();
     if (!hits.length) return;
-    const nl = appLang() === 'nl';
+
     const list =
       hits
         .slice(0, 3)
         .map((n) => `${n} ${pwEur(pwNow(n))}`)
-        .join(', ') +
-      (hits.length > 3 ? (nl ? ` en nog ${hits.length - 3}` : ` and ${hits.length - 3} more`) : '');
+        .join(', ') + (hits.length > 3 ? ` and ${hits.length - 3} more` : '');
     toast(
-      (nl
-        ? hits.length === 1
-          ? 'Gezochte kaart onder je grens: '
-          : `${hits.length} gezochte kaarten onder je grens: `
-        : hits.length === 1
-          ? 'A wanted card is under your limit: '
-          : `${hits.length} wanted cards are under your limit: `) + list,
+      (hits.length === 1
+        ? 'A wanted card is under your limit: '
+        : `${hits.length} wanted cards are under your limit: `) + list,
     );
   } catch (e) {}
 }

@@ -684,7 +684,7 @@ function inspirationCapTitle() {
   try {
     const d = getDeck(state.inspireDeckId);
     if (!d || deckIsConstructed(d)) return '';
-    const word = appLang() === 'nl' ? 'Inspiratie' : 'Inspiration';
+    const word = 'Inspiration';
     const parts = [word, d.name || 'Untitled deck'];
     if (d.admiral) {
       const sel = state.inspireSel || {};
@@ -789,7 +789,7 @@ function navHtml() {
         ${netChipHtml()}
         ${state.screen === 'search' ? '<button type="button" id="spoilersBtn" title="Spoilers from upcoming sets" aria-label="Spoilers">🔮</button>' : ''}
         ${state.screen === 'spoilers' ? `<button type="button" id="spAdvToggle" class="header-filter" aria-label="Advanced spoiler filters" title="${trS('Advanced filters')}" aria-haspopup="dialog" aria-expanded="${state.spAdvOpen}">${ICONS.filter}</button>` : ''}
-        ${state.screen === 'draft' && state.draft?.phase !== 'setup' ? `<button type="button" id="draftResetBtn" class="header-filter" aria-label="${dT('Reset draft', 'Draft opnieuw beginnen')}" title="${dT('Reset draft', 'Draft opnieuw beginnen')}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2.6 8.4M3 4v6h6"/></svg></button>` : ''}
+        ${state.screen === 'draft' && state.draft?.phase !== 'setup' ? `<button type="button" id="draftResetBtn" class="header-filter" aria-label="${'Reset draft'}" title="${'Reset draft'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2.6 8.4M3 4v6h6"/></svg></button>` : ''}
         ${(() => {
           if (state.screen !== 'decklist') return '';
           const dd = getDeck(state.activeDeckId);
@@ -1061,12 +1061,6 @@ function wirePreferenceCards() {
     attributes: true,
     attributeFilter: ['hidden'],
   });
-  const language = document.getElementById('languageBody');
-  document
-    .getElementById('langRow')
-    ?.addEventListener('click', () =>
-      foldToggle(language, null, document.getElementById('langRow')),
-    );
   document
     .getElementById('startupRow')
     ?.addEventListener('click', () =>

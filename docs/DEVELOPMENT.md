@@ -37,13 +37,13 @@ index.html                  HTML shell
 src/
   app/                      Routing, navigation, history, and startup
   core/                     Shared state, formats, deck storage, card rules
-  services/                 Scryfall, local card library, sync, translations
+  services/                 Scryfall, local card library, sync, English text helpers
   ui/                       Reusable controls, dialogs, card sheets, icons
   pages/                    Page markup and event handlers, grouped by tab
     home/  menu/  settings/  decks/  decklist/  collection/
     search/  inspiration/  spoilers/  trade/  judge/  draft/  life/
     references/             Format rules and ban lists
-  features/                 Onboarding, combos, pricing, playtesting, related tools
+  features/                 Release notes, combos, pricing, playtesting, related tools
   platform/                 PWA, desktop input, native bridge, sharing
 styles/
   theme.css                 Color tokens and theme palettes
@@ -156,7 +156,9 @@ To switch back to the sample, set `DATA_DIR=./var/data-sample` in `.env`.
 The logo at the top left opens Menu. Its cards provide draft tools, the AI
 judge, format rules, and ban lists, with Settings last. The life counter is
 available from the Life tab.
-Settings contains Language, Data sources, Color scheme, Sync, and Backup. Related controls
+The interface is English-only; previous Dutch preferences fall back to English.
+First startup opens the chosen page directly without a guided introduction.
+Settings contains Startup page, Data sources, Color scheme, Sync, and Backup. Related controls
 expand below their card. Notification options, feedback, What's new, About,
 app installation, and app sharing buttons have been removed. Tapping any main
 page title returns home. The five labeled bottom tabs are Decks,

@@ -61,7 +61,7 @@ function sendLifeBright(n, v) {
 }
 
 function lifeBrightLabel(v) {
-  return v > 0 ? v + '%' : appLang() === 'nl' ? 'Telefoon' : 'Phone';
+  return v > 0 ? v + '%' : 'Phone';
 }
 
 function canSetLifeBright() {

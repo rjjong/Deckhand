@@ -1869,7 +1869,7 @@ html[data-main='W'] :is(.sr-tile, .pair-cell) .st-meta-row .add-btn svg {
 }
 
 /* ...and that grid is always a full 330px: centred with auto margins in the
-   sheet's flex column it used to shrink to its labels (narrower in Dutch). */
+   sheet's flex column it used to shrink to its labels. */
 
 main.card-detail .cs-actions-grid {
   width: 100%;

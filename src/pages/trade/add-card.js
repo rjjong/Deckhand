@@ -96,9 +96,9 @@ function openTradeAdd(side) {
           .map((c, i) => {
             let shelf = '';
             if (ownedLen >= 0 && ownedLen > 0 && i === 0)
-              shelf = `<div class="section-label" style="${lblCss}">${appLang() === 'nl' ? 'In je collectie' : 'In your collection'}</div>`;
+              shelf = `<div class="section-label" style="${lblCss}">${'In your collection'}</div>`;
             else if (ownedLen >= 0 && i === ownedLen && i < list.length)
-              shelf = `<div class="section-label" style="${lblCss}">${appLang() === 'nl' ? 'Alle resultaten' : 'All results'}</div>`;
+              shelf = `<div class="section-label" style="${lblCss}">${'All results'}</div>`;
             return (
               shelf +
               `<div class="sr-tile ta-tile" data-i="${i}" role="button">

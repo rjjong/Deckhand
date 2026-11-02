@@ -232,7 +232,6 @@ function renderCardSheet(d, card, loc, idx) {
     .getElementById('dcImg')
     ?.addEventListener('click', () => showCardPreview(card, cardImageLarge(card)));
   wireCombosButton(el, card);
-  applyLocalizedSheetImage(card, 'dcImg');
   try {
     paintPendingArt();
   } catch (e) {}
@@ -330,7 +329,6 @@ function renderCardSheet(d, card, loc, idx) {
   // 1.40: Add asks where -- this deck (as many as you set), the collection,
   // or another deck
   document.getElementById('csAddOne')?.addEventListener('click', () => {
-    const nl = appLang() === 'nl';
     document.getElementById('csAddSheet')?.remove();
     const m = document.createElement('div');
     m.className = 'deckpick-scrim';
@@ -341,21 +339,20 @@ function renderCardSheet(d, card, loc, idx) {
       chosen = null;
     m.innerHTML = /* HTML */ `<div class="deckpick br-sheet pt-menu add-sheet">
       <button type="button" class="primary-btn" data-addk="deck">
-        ${nl ? 'Toevoegen aan' : 'Add to'} ${escapeHtml(d.name)}
+        ${'Add to'} ${escapeHtml(d.name)}
       </button>
       <button type="button" class="ghost-btn" data-addk="coll">
-        <span class="ib">${ICONS.binder}</span>${nl ? 'Naar je collectie' : 'To your collection'}
+        <span class="ib">${ICONS.binder}</span>${'To your collection'}
       </button>
       <button type="button" class="ghost-btn" data-addk="other">
-        <span class="ib">${ICONS.addOne}</span>${nl ? 'Naar een ander deck…' : 'To another deck…'}
+        <span class="ib">${ICONS.addOne}</span>${'To another deck…'}
       </button>
       <div class="add-qty">
         <button type="button" class="ghost-btn" data-q="-1">−</button><b id="csAddQ">1</b
         ><button type="button" class="ghost-btn" data-q="1">＋</button>
       </div>
       <div class="br-title">
-        <b>${escapeHtml(card.name)}</b
-        ><span>${nl ? 'Hoeveel, en waarheen?' : 'How many, and where to?'}</span>
+        <b>${escapeHtml(card.name)}</b><span>${'How many, and where to?'}</span>
       </div>
     </div>`;
     m.querySelectorAll('[data-q]').forEach((b) =>
@@ -924,15 +921,10 @@ function renderTagEditor(d, card, box) {
   const dropQ = () => drop && drop.querySelector('#tagDropQ');
   const ensureDropShell = () => {
     if (!drop || dropList()) return;
-    const nl = appLang() === 'nl';
+
     drop.innerHTML = /* HTML */ `<div class="tag-drop-search">
         <span class="tds-ico">${ICONS.search}</span
-        ><input
-          type="text"
-          id="tagDropQ"
-          autocomplete="off"
-          placeholder="${nl ? 'Zoek een tag…' : 'Search tags…'}"
-        />
+        ><input type="text" id="tagDropQ" autocomplete="off" placeholder="${'Search tags…'}" />
       </div>
       <div class="tag-drop-list"></div>`;
     const dq = dropQ();
@@ -979,7 +971,7 @@ function renderTagEditor(d, card, box) {
         items: sec.items.filter((t) => !q || t.toLowerCase().includes(q)).slice(0, 400),
       }))
       .filter((sec) => sec.items.length);
-    const nl = appLang() === 'nl';
+
     if (!secs.length && !(dq && dq.value)) {
       drop.hidden = true;
       return;
@@ -997,7 +989,7 @@ function renderTagEditor(d, card, box) {
                 .join(''),
           )
           .join('')
-      : `<div class="tag-drop-none">${nl ? 'Geen tag gevonden — Enter maakt hem aan.' : 'No tag found — Enter creates it.'}</div>`;
+      : `<div class="tag-drop-none">${'No tag found — Enter creates it.'}</div>`;
     if (_dropHideT) {
       clearTimeout(_dropHideT);
       _dropHideT = null;

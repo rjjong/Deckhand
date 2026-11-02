@@ -355,12 +355,7 @@ async function syncRun(why) {
           render();
         } catch (e) {}
       }
-      if (why !== 'start' || got)
-        toast(
-          appLang() === 'nl'
-            ? '☁ Bijgewerkt vanaf je andere apparaat.'
-            : '☁ Updated from your other device.',
-        );
+      if (why !== 'start' || got) toast('☁ Updated from your other device.');
     }
     // more changes may have come in while this round ran
     if (Object.keys(syncPending()).length) syncSoon(4000);
@@ -377,22 +372,19 @@ async function syncRun(why) {
 }
 
 function syncLastLabel() {
-  const st = syncState(),
-    nl = appLang() === 'nl';
+  const st = syncState();
   if (!st) return '';
   if (st.err && /code|store|404|http 5/.test(st.err))
-    return (nl ? '⚠ Sync werkt nog niet (' : '⚠ Sync is not working yet (') + st.err + ')';
-  if (!st.last) return nl ? 'Nog niet gesynchroniseerd' : 'Not synced yet';
+    return '⚠ Sync is not working yet (' + st.err + ')';
+  if (!st.last) return 'Not synced yet';
   const min = Math.round((Date.now() - st.last) / 60000);
   return (
-    (nl ? 'Laatst gesynchroniseerd: ' : 'Last synced: ') +
+    'Last synced: ' +
     (min < 1
-      ? nl
-        ? 'zojuist'
-        : 'just now'
+      ? 'just now'
       : min < 60
         ? min + ' min'
-        : new Date(st.last).toLocaleString(nl ? 'nl-NL' : 'en-GB', {
+        : new Date(st.last).toLocaleString('en-GB', {
             day: 'numeric',
             month: 'short',
             hour: '2-digit',
@@ -432,8 +424,7 @@ window.addEventListener('online', () => {
 
 /* Extras -> Sync: link this device, show the code, sync now, unlink. */
 function openSyncSheet() {
-  const nl = appLang() === 'nl',
-    st = syncState();
+  const st = syncState();
   document.getElementById('syncSheet')?.remove();
   const el = document.createElement('div');
   el.className = 'deckpick-scrim';
@@ -443,28 +434,20 @@ function openSyncSheet() {
   const body = st
     ? `
     <div class="br-actions bk-actions">
-      <button type="button" class="primary-btn" id="syncNow">↻ ${nl ? 'Nu synchroniseren' : 'Sync now'}</button>
-      <button type="button" class="ghost-btn" id="syncShare">${nl ? 'Code delen of kopiëren' : 'Share or copy the code'}</button>
-      <button type="button" class="ghost-btn" id="syncOff">${nl ? 'Ontkoppel dit apparaat' : 'Unlink this device'}</button>
+      <button type="button" class="primary-btn" id="syncNow">↻ ${'Sync now'}</button>
+      <button type="button" class="ghost-btn" id="syncShare">${'Share or copy the code'}</button>
+      <button type="button" class="ghost-btn" id="syncOff">${'Unlink this device'}</button>
     </div>
-    <div class="bk-hint">${
-      nl
-        ? 'Vul deze code in op je andere apparaat: Menu → Settings → Sync → <b>Ik heb al een code</b>. Houd hem voor jezelf: wie de code heeft, ziet je decks en collectie.'
-        : 'Enter this code on your other device: Menu → Settings → Sync → <b>I already have a code</b>. Keep it to yourself: whoever has it sees your decks and collection.'
-    }</div>
+    <div class="bk-hint">${'Enter this code on your other device: Menu → Settings → Sync → <b>I already have a code</b>. Keep it to yourself: whoever has it sees your decks and collection.'}</div>
     <div class="sync-code" id="syncCodeTxt">${escapeHtml(syncNiceCode(st.code))}</div>
-    <div class="br-title"><b>☁ ${nl ? 'Gekoppeld' : 'Linked'}</b><span id="syncLastLine">${escapeHtml(syncLastLabel())}</span></div>`
+    <div class="br-title"><b>☁ ${'Linked'}</b><span id="syncLastLine">${escapeHtml(syncLastLabel())}</span></div>`
     : `
     <div class="br-actions bk-actions">
-      <button type="button" class="primary-btn" id="syncNew">＋ ${nl ? 'Nieuwe koppeling starten' : 'Start a new link'}</button>
-      <button type="button" class="ghost-btn" id="syncJoin">${nl ? 'Ik heb al een code' : 'I already have a code'}</button>
+      <button type="button" class="primary-btn" id="syncNew">＋ ${'Start a new link'}</button>
+      <button type="button" class="ghost-btn" id="syncJoin">${'I already have a code'}</button>
     </div>
-    <div class="bk-hint">${
-      nl
-        ? '<b>Eerste apparaat:</b> start een nieuwe koppeling — je krijgt een code.<br><b>Volgende apparaten:</b> kies “Ik heb al een code”. Daar gaat wat al in de cloud staat voor; decks die alleen op dat apparaat staan blijven bewaard. Maak voor de zekerheid eerst een back-up.'
-        : '<b>First device:</b> start a new link — you get a code.<br><b>Next devices:</b> choose “I already have a code”. There, what the cloud already holds wins; decks that exist only on that device are kept. Make a backup first, to be safe.'
-    }</div>
-    <div class="br-title"><b>☁ ${nl ? 'Synchroniseren tussen apparaten' : 'Sync between devices'}</b><span>${nl ? 'Decks, collectie, mappen, tags en instellingen — op je telefoon, tablet en pc tegelijk.' : 'Decks, collection, binders, tags and settings — on your phone, tablet and PC at once.'}</span></div>`;
+    <div class="bk-hint">${'<b>First device:</b> start a new link — you get a code.<br><b>Next devices:</b> choose “I already have a code”. There, what the cloud already holds wins; decks that exist only on that device are kept. Make a backup first, to be safe.'}</div>
+    <div class="br-title"><b>☁ ${'Sync between devices'}</b><span>${'Decks, collection, binders, tags and settings — on your phone, tablet and PC at once.'}</span></div>`;
   el.innerHTML = /* HTML */ `<div class="deckpick br-sheet bk-sheet">${body}</div>`;
   brSheetOpen(el, 'syncSheet');
   const close = () => brSheetClose('syncSheet');
@@ -479,8 +462,8 @@ function openSyncSheet() {
   };
   const report = (r) => {
     const s2 = syncState();
-    if (r === null && s2 && s2.err) toast((nl ? '⚠ Sync mislukt: ' : '⚠ Sync failed: ') + s2.err);
-    else toast(nl ? '☁ Gesynchroniseerd.' : '☁ Synced.');
+    if (r === null && s2 && s2.err) toast('⚠ Sync failed: ' + s2.err);
+    else toast('☁ Synced.');
   };
   el.querySelector('#syncNew')?.addEventListener('click', async (e) => {
     busy(e.currentTarget, true);
@@ -493,13 +476,13 @@ function openSyncSheet() {
   el.querySelector('#syncJoin')?.addEventListener('click', async () => {
     close();
     await brAfterPop();
-    openInAppPrompt(nl ? 'Koppelcode' : 'Link code', 'XXXX-XXXX-XXXX-XXXX', '', async (v) => {
+    openInAppPrompt('Link code', 'XXXX-XXXX-XXXX-XXXX', '', async (v) => {
       if (v == null) return;
       if (syncCleanCode(v).length !== 16) {
-        toast(nl ? 'Die code klopt niet — 16 tekens.' : 'That code is not right — 16 characters.');
+        toast('That code is not right — 16 characters.');
         return;
       }
-      toast(nl ? '☁ Koppelen…' : '☁ Linking…');
+      toast('☁ Linking…');
       const r = await syncLink(v, false);
       report(r);
       openSyncSheet();
@@ -523,23 +506,21 @@ function openSyncSheet() {
     }
     try {
       await navigator.clipboard.writeText(code);
-      toast(nl ? 'Code gekopieerd.' : 'Code copied.');
+      toast('Code copied.');
     } catch (err) {
       toast(code);
     }
   });
   el.querySelector('#syncOff')?.addEventListener('click', () => {
     openInAppConfirm(
-      nl
-        ? 'Dit apparaat stopt met synchroniseren. Alles wat er nu op staat blijft staan.'
-        : 'This device stops syncing. Everything on it now stays.',
+      'This device stops syncing. Everything on it now stays.',
       (ok) => {
         if (!ok) return;
         syncUnlink();
         close();
-        toast(nl ? 'Ontkoppeld.' : 'Unlinked.');
+        toast('Unlinked.');
       },
-      { ok: nl ? 'Ontkoppelen' : 'Unlink' },
+      { ok: 'Unlink' },
     );
   });
 }

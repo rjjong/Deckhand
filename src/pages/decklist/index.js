@@ -150,8 +150,7 @@ function menuPopHtml() {
   return /* HTML */ `<div class="menu-pop" id="menuPop">
     <button id="mImpExp">Import / Export</button><button id="mSortBy">${trS('Sort by')} ⌄</button
     ><button id="mFormat">Format ⌄</button><button id="mAddFolder">Move to folder…</button
-    ><button id="mDuplicate">Duplicate deck</button
-    ><button id="mVersions">${appLang() === 'nl' ? 'Versies…' : 'Versions…'}</button
+    ><button id="mDuplicate">Duplicate deck</button><button id="mVersions">${'Versions…'}</button
     ><button id="mShare">Share deck</button>
     <hr />
     <button id="mDelete" class="danger">Delete deck</button>

@@ -387,14 +387,12 @@ function deckColorNoteHtml(d) {
   if (!d || !deckLeaders(d).length) return '';
   const ci = deckColorIdentity(d);
   const pips = ci.length ? manaRowSvg(ci.join('').toLowerCase(), 14) : manaIconSvg('C', 14);
-  const NL = appLang() === 'nl';
+
   return /* HTML */ `<div
     class="ra-sub deck-ci-note"
     style="font-size:12.5px;display:flex;align-items:center;justify-content:center;gap:6px;"
   >
-    ${pips}<span
-      >${NL ? 'binnen de kleuren van' : 'within the colours of'} ${escapeHtml(d.name || '')}</span
-    >
+    ${pips}<span>${'within the colours of'} ${escapeHtml(d.name || '')}</span>
   </div>`;
 }
 

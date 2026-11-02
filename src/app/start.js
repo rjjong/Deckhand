@@ -16,7 +16,7 @@ setTimeout(async () => {
     if (!r || !r.ok) return;
     const v = await r.json();
     if (v && v.version && v.version !== APP_VERSION) {
-      sfJournal('update: v' + v.version + ' staat klaar (deze sessie draait v' + APP_VERSION + ')');
+      sfJournal('update: v' + v.version + ' is available (this session runs v' + APP_VERSION + ')');
     }
   } catch (e) {}
 }, 6000);
@@ -62,7 +62,7 @@ loadDecksIndex().then(async () => {
   // render() now sends the signal on the first painted frame; this is only a
   // backstop for a start that somehow never paints.
   if (!pendingShareToken()) setTimeout(appReady, 1500);
-  if (!maybeShowWelcome()) maybeShowChangelog();
+  maybeShowChangelog();
   // A share link needs the legal-set list before it can resolve any cards
   if (pendingShareToken()) {
     await resolveLegalSets();

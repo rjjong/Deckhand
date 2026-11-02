@@ -29,8 +29,7 @@ const GEMINI_MODELS = ['gemini-3.8-flash', 'gemini-2.5-flash'];
 const listOf = (v)=>String(v || '').split(',').map(x=>x.trim()).filter(Boolean);
 const CEREBRAS_MODELS = ['gpt-oss-120b', 'llama-3.3-70b'];
 
-export function systemPrompt(lang){
-  const nl = lang === 'nl';
+export function systemPrompt(){
   return [
     'You are a certified Magic: The Gathering rules judge answering a player at the table.',
     'Use ONLY the Comprehensive Rules excerpts and card texts/rulings given in the user message. Do not rely on memory of other rules or cards.',
@@ -40,8 +39,7 @@ export function systemPrompt(lang){
     'If the question names a card whose text is not given, say that you need that card and do not guess what it does.',
     'Cite the rule numbers you rely on (for example 603.2 or 702.19b). Only cite numbers that appear in the excerpts.',
     'If the excerpts do not settle the question, say so plainly, give your best reading and set "confident" to false.',
-    nl ? 'Write the answer and reasoning in Dutch. Keep card names, rule numbers and quoted rule text in English.'
-       : 'Write in English.',
+    'Write in English.',
     'Reply with ONE JSON object and nothing else:',
     '{"answer": "one or two sentences, starting with Yes, No, or the direct outcome",',
     ' "reasoning": "a short explanation, at most 150 words, quoting the key rule words",',
@@ -51,7 +49,7 @@ export function systemPrompt(lang){
 
 export function clean(body){
   const q = String(body && body.q || '').trim().slice(0, MAX_Q);
-  const lang = body && body.lang === 'nl' ? 'nl' : 'en';
+  const lang = 'en';
   const cards = (Array.isArray(body && body.cards) ? body.cards : []).slice(0, MAX_CARDS).map(c=>({
     name: String(c && c.name || '').slice(0, 150),
     type: String(c && c.type || '').slice(0, 150),
@@ -177,7 +175,7 @@ export async function handle(body, deps){
   if(devN >= perDev) return { status: 429, json: { ok: false, error: 'limit', limit: perDev } };
   if(allN >= all) return { status: 429, json: { ok: false, error: 'quota' } };
   // 3. ask
-  const out = await askProviders(env, deps.fetch, systemPrompt(c.lang), userMessage(c));
+  const out = await askProviders(env, deps.fetch, systemPrompt(), userMessage(c));
   if(out.error) return { status: out.error === 'nokey' ? 503 : 502, json: { ok: false, error: out.error } };
   try{
     if(count){

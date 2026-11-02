@@ -221,12 +221,8 @@ async function _netConfirmDown() {
 function netChipHtml() {
   const local = window.DECKHAND_CONFIG?.selfHosted && navigator.onLine !== false;
   const title = local
-    ? appLang() === 'nl'
-      ? 'De lokale Deckhand-server is niet bereikbaar. Start de server opnieuw.'
-      : 'The local Deckhand server is unavailable. Start the server again.'
-    : appLang() === 'nl'
-      ? 'Geen verbinding — je ziet de opgeslagen versie'
-      : 'No connection — showing cached data';
+    ? 'The local Deckhand server is unavailable. Start the server again.'
+    : 'No connection — showing cached data';
   return _netDown
     ? `<span class="net-chip" id="netChip" title="${title}">⚡ ${local ? 'Server offline' : 'Offline'}</span>`
     : '';

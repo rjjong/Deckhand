@@ -111,7 +111,7 @@ function castabilityReport(d) {
 function castabilitySummaryHtml(d) {
   const r = castabilityReport(d);
   if (!r || r.avg == null) return '';
-  const nl = appLang() === 'nl';
+
   const pct = (v) => Math.round(v * 100) + '%';
   const col = (v) =>
     v >= 0.9
@@ -119,25 +119,17 @@ function castabilitySummaryHtml(d) {
       : v >= 0.75
         ? 'var(--ink-text)'
         : 'color-mix(in srgb, var(--danger) 55%, #fff)';
-  const CN = nl
-    ? { W: 'witte', U: 'blauwe', B: 'zwarte', R: 'rode', G: 'groene' }
-    : { W: 'white', U: 'blue', B: 'black', R: 'red', G: 'green' };
+  const CN = { W: 'white', U: 'blue', B: 'black', R: 'red', G: 'green' };
   let tip = '';
   if (r.tip.kind === 'color')
-    tip = nl
-      ? `Nog 2 ${CN[r.tip.k]} bronnen ${manaIconSvg(r.tip.k, 15)} maken je gekleurde spells gemiddeld <b>${Math.round(r.tip.gain * 100)}%</b> beter op curve castbaar.`
-      : `2 more ${CN[r.tip.k]} sources ${manaIconSvg(r.tip.k, 15)} make your coloured spells <b>${Math.round(r.tip.gain * 100)}%</b> more castable on curve, on average.`;
+    tip = `2 more ${CN[r.tip.k]} sources ${manaIconSvg(r.tip.k, 15)} make your coloured spells <b>${Math.round(r.tip.gain * 100)}%</b> more castable on curve, on average.`;
   else if (r.tip.kind === 'card') {
     const t = r.tip,
       more = t.p2 - t.p >= 0.05;
-    tip = nl
-      ? `<b>${escapeHtml(t.name)}</b> is maar ${pct(t.p)} van de keren castbaar op beurt ${t.mv} (${t.S} ${CN[t.k]} bronnen ${manaIconSvg(t.k, 15)}). ${more ? `Met 2 bronnen meer wordt dat <b>${pct(t.p2)}</b>.` : 'Meer bronnen helpen hier weinig: overweeg een kaart met minder van die symbolen.'}`
-      : `<b>${escapeHtml(t.name)}</b> is castable on turn ${t.mv} only ${pct(t.p)} of the time (${t.S} ${CN[t.k]} sources ${manaIconSvg(t.k, 15)}). ${more ? `2 more sources raise that to <b>${pct(t.p2)}</b>.` : 'More sources barely help here: consider a card with fewer of those pips.'}`;
+    tip = `<b>${escapeHtml(t.name)}</b> is castable on turn ${t.mv} only ${pct(t.p)} of the time (${t.S} ${CN[t.k]} sources ${manaIconSvg(t.k, 15)}). ${more ? `2 more sources raise that to <b>${pct(t.p2)}</b>.` : 'More sources barely help here: consider a card with fewer of those pips.'}`;
   } else if (r.tip.kind === 'tapped')
-    tip = nl
-      ? `${r.tip.n} lands komen altijd tapped binnen — overweeg er 2 te vervangen door lands die untapped binnenkomen.`
-      : `${r.tip.n} lands always enter tapped — consider swapping 2 of them for lands that enter untapped.`;
-  else tip = nl ? 'Je mana basis past goed bij dit deck.' : 'Your mana base fits this deck well.';
+    tip = `${r.tip.n} lands always enter tapped — consider swapping 2 of them for lands that enter untapped.`;
+  else tip = 'Your mana base fits this deck well.';
   const pips = (needs) =>
     Object.keys(needs)
       .map((k) => Array.from({ length: needs[k] }, () => manaIconSvg(k, 14)).join(''))
@@ -145,14 +137,10 @@ function castabilitySummaryHtml(d) {
   return /* HTML */ `<div class="cast-sum">
     <div class="cast-score">
       <b style="color:${col(r.avg)};">${pct(r.avg)}</b
-      ><span
-        >${nl ? `op curve castbaar · gemiddeld over ${r.n} gekleurde spells` : `castable on curve · average of ${r.n} coloured spells`}</span
-      >
+      ><span>${`castable on curve · average of ${r.n} coloured spells`}</span>
     </div>
     <div class="cast-tip"><span class="cast-tip-k">Tip</span><span>${tip}</span></div>
-    <div class="chip-label" style="margin:10px 0 4px;">
-      ${nl ? 'Lastigst op curve' : 'Hardest on curve'}
-    </div>
+    <div class="chip-label" style="margin:10px 0 4px;">${'Hardest on curve'}</div>
     ${r.hardest.map((h, i) => `<button type="button" class="cast-row" data-casthard="${i}"><span class="cast-mv">${h.mv}</span><span class="cast-nm">${escapeHtml(h.c.name)}</span><span class="cast-pips">${pips(h.needs)}</span><span class="cast-p${h.p < 0.75 ? ' low' : ''}" style="color:${col(h.p)};">${pct(h.p)}</span></button>`).join('')}
   </div>`;
 }
@@ -387,9 +375,7 @@ async function loadDeckPrice(d) {
   if (badge) badge.textContent = 'Deck total: ' + fmtEur(total);
   if (liveNote) {
     liveNote.textContent = missing
-      ? appLang() === 'nl'
-        ? `Cardmarket-trendprijs, goedkoopste versie van elke kaart. ${missing} ${missing > 1 ? 'kaarten hebben' : 'kaart heeft'} geen prijs.`
-        : `Cardmarket trend price, cheapest printing of each card. ${missing} card${missing > 1 ? 's have' : ' has'} no price listed.`
+      ? `Cardmarket trend price, cheapest printing of each card. ${missing} card${missing > 1 ? 's have' : ' has'} no price listed.`
       : trS('Cardmarket trend price, cheapest printing of each card.');
   }
   renderTopPriced(d);
@@ -826,10 +812,7 @@ function primerTabHtml(d) {
           [trS('Weakest card'), g.weak || '—'],
         ]
           .map(([k, v]) => `<div><b>${escapeHtml(String(k))}:</b> ${escapeHtml(String(v))}</div>`)
-          .join('') +
-        (g.note
-          ? `<div><b>${appLang() === 'nl' ? 'Notities' : 'Notes'}:</b> ${escapeHtml(g.note)}</div>`
-          : '');
+          .join('') + (g.note ? `<div><b>${'Notes'}:</b> ${escapeHtml(g.note)}</div>` : '');
       return /* HTML */ `<div class="glog-row">
         <span class="glog-res ${g.res === 'W' ? 'w' : 'l'}">${g.res}</span>
         <div class="glog-mid">
@@ -853,24 +836,24 @@ function primerTabHtml(d) {
   const playLogPanel = `<div class="panel-card"><div class="panel-h">Play Log</div>
     ${statHtml}
     <button class="primary-btn" id="logGameBtn" style="margin-top:6px;">⊕ Log a game</button>
-    ${rows ? `<button class="ghost-btn" id="glogToggle" data-lbl="${appLang() === 'nl' ? 'Potjes' : 'Games'} (${log.length})" style="width:100%;margin-top:8px;">${foldIcoHtml(state._glogOpen)} ${appLang() === 'nl' ? 'Potjes' : 'Games'} (${log.length})</button><div class="glog-list" id="glogList"${state._glogOpen ? '' : ' style="display:none;"'}>${rows}</div>` : ''}
+    ${rows ? `<button class="ghost-btn" id="glogToggle" data-lbl="${'Games'} (${log.length})" style="width:100%;margin-top:8px;">${foldIcoHtml(state._glogOpen)} ${'Games'} (${log.length})</button><div class="glog-list" id="glogList"${state._glogOpen ? '' : ' style="display:none;"'}>${rows}</div>` : ''}
   </div>`;
-  const handPanel = `<div class="panel-card"><div class="panel-h">${appLang() === 'nl' ? 'Handtester' : 'Hand tester'}</div>
+  const handPanel = `<div class="panel-card"><div class="panel-h">${'Hand tester'}</div>
     <div id="htHand" style="display:flex;flex-wrap:wrap;gap:6px;min-height:44px;align-items:flex-start;"></div>
     <div style="margin-top:8px;display:flex;gap:8px;">
-      <button type="button" class="primary-btn" id="htNew" style="flex:1;">${appLang() === 'nl' ? 'Trek 7' : 'Draw 7'}</button>
+      <button type="button" class="primary-btn" id="htNew" style="flex:1;">${'Draw 7'}</button>
       <button type="button" class="ghost-btn" id="htMull" style="flex:1;" disabled>Mulligan</button>
       <button type="button" class="ghost-btn" id="htDraw" style="flex:1;" disabled>+1</button>
     </div>
-    <button type="button" class="primary-btn" id="ptOpen" style="width:100%;margin-top:8px;">▶ ${appLang() === 'nl' ? 'Speeltest: speel een potje' : 'Playtest: play a game'}</button></div>`;
+    <button type="button" class="primary-btn" id="ptOpen" style="width:100%;margin-top:8px;">▶ ${'Playtest: play a game'}</button></div>`;
   // The 60s: the matchup guide sits right above the hand tester, nearest the thumb.
-  return `${handPanel}${deckIsConstructed(d) ? matchupPanelHtml(d) : ''}${playLogPanel}<div class="panel-card"><div class="panel-h">${appLang() === 'nl' ? 'Beschrijving & primer' : 'Description & primer'}</div>
+  return `${handPanel}${deckIsConstructed(d) ? matchupPanelHtml(d) : ''}${playLogPanel}<div class="panel-card"><div class="panel-h">${'Description & primer'}</div>
     ${
       dpEditing
         ? `
       <textarea id="deckDescText" class="bulk-textarea" style="min-height:70px;" placeholder="${escapeHtml(trS('A few lines about this deck — shown on the Decklist page.'))}">${escapeHtml(d.description || '')}</textarea>
       <textarea id="primerText" class="bulk-textarea" style="min-height:200px;margin-top:8px;" placeholder="${escapeHtml(trS('Primer — strategy notes'))}">${escapeHtml(d.primer || '')}</textarea>
-      <p class="hint" style="margin:4px 0 2px;"># headers, **bold**, *italics*, - lists · ${appLang() === 'nl' ? 'een kaartnaam tussen &quot;aanhalingstekens&quot; wordt een link' : 'a card name between &quot;quotes&quot; becomes a link'}</p>
+      <p class="hint" style="margin:4px 0 2px;"># headers, **bold**, *italics*, - lists · ${'a card name between &quot;quotes&quot; becomes a link'}</p>
     `
         : `<div class="rules-text" id="dpView">${renderPrimerHtml([String(d.description || '').trim(), String(d.primer || '').trim()].filter(Boolean).join('\n\n'))}</div>`
     }
@@ -1338,8 +1321,7 @@ function wireBuilderBody(d) {
                 ? `<img src="${u}" style="width:23%;border-radius:6px;" alt="">`
                 : `<span style="font-size:12px;border:2px solid var(--line);border-radius:6px;padding:4px;">${escapeHtml(c.name)}</span>`;
             })
-            .join('') ||
-          `<span class="hint">${appLang() === 'nl' ? 'Trek een starthand.' : 'Draw an opening hand.'}</span>`;
+            .join('') || `<span class="hint">${'Draw an opening hand.'}</span>`;
         const m = document.getElementById('htMull'),
           dr = document.getElementById('htDraw');
         if (m) {

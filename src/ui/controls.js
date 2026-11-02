@@ -720,7 +720,7 @@ document.addEventListener('click', (e) => {
   if (e.target?.closest?.('#capNoteBtn') && state.screen === 'collection') {
     const key = collectionValueKey();
     notePrice(key, collectionTotalValue(collectionValueItems()));
-    openPriceHistory(appLang() === 'nl' ? 'Collectiewaarde' : 'Collection Value', key);
+    openPriceHistory('Collection Value', key);
   }
   if (e.target && e.target.id === 'blSuggestLands') {
     const d = getDeck(state.activeDeckId);

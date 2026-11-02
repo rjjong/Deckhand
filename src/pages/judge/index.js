@@ -399,7 +399,7 @@ async function judgeOpenCard(name) {
     card = await scanCardFor(name);
   } catch (e) {}
   if (!card) {
-    toast(appLang() === 'nl' ? 'Kaart niet gevonden.' : 'Card not found.');
+    toast('Card not found.');
     return;
   }
   showCardPreview(card, cardImageLarge(card));
@@ -536,7 +536,7 @@ async function judgeAsk(payload) {
 }
 
 // The answer leads, followed by its cited rules in reading order.
-function judgeAnswerHtml(res, rules, q, NL) {
+function judgeAnswerHtml(res, rules, q) {
   const cards = res._cards || [];
   const lnk = (txt) =>
     judgeMarkCards(escapeHtml(txt), cards)
@@ -563,19 +563,19 @@ function judgeAnswerHtml(res, rules, q, NL) {
   );
   const v = judgeVerify(nums, rules);
   let shown = v.ok,
-    head = NL ? 'Geciteerde regels' : 'Rules cited';
+    head = 'Rules cited';
   if (!v.ok.length && !v.bad.length && res._read && res._read.length) {
     shown = res._read.slice(0, 3);
-    head = NL ? 'Regels die de judge las' : 'Rules the judge read';
+    head = 'Rules the judge read';
   }
   const unsure =
     res.confident === false
-      ? `<div class="cja-meta">\u26a0 ${NL ? 'Let op: de AI twijfelt \u2014 de officiële regels gaan altijd voor.' : 'Careful: the AI is not sure \u2014 the official rules always take priority.'}</div>`
+      ? `<div class="cja-meta">\u26a0 ${'Careful: the AI is not sure \u2014 the official rules always take priority.'}</div>`
       : '';
   return (
     `<div class="cja" data-notr><div class="cja-a">${lnk(res.answer)}</div>${unsure}` +
     (res.reasoning
-      ? `<button type="button" class="cja-whyt" data-cjwhy aria-expanded="false">${NL ? 'Uitleg van de AI' : 'The AI\u2019s reasoning'} <span class="fold-ico">\u25BE</span></button><div class="cja-why" hidden>${lnk(res.reasoning)}</div>`
+      ? `<button type="button" class="cja-whyt" data-cjwhy aria-expanded="false">${'The AI\u2019s reasoning'} <span class="fold-ico">\u25BE</span></button><div class="cja-why" hidden>${lnk(res.reasoning)}</div>`
       : '') +
     `</div>` +
     (shown.length || v.bad.length ? `<div class="cja-h">${head}</div>` : '') +
@@ -583,7 +583,7 @@ function judgeAnswerHtml(res, rules, q, NL) {
     v.bad
       .map(
         (n) =>
-          `<div class="cr-rule"><div class="cr-num">⚠ ${escapeHtml(n)}</div><div class="cr-txt">${NL ? 'Deze regel bestaat niet in de officiële regels \u2014 dat deel van het antwoord is niet te controleren.' : 'This rule does not exist in the official rules \u2014 that part of the answer cannot be checked.'}</div></div>`,
+          `<div class="cr-rule"><div class="cr-num">⚠ ${escapeHtml(n)}</div><div class="cr-txt">${'This rule does not exist in the official rules \u2014 that part of the answer cannot be checked.'}</div></div>`,
       )
       .join('')
   );
@@ -594,16 +594,15 @@ function openCROverlay(startMode) {
   const el = document.createElement('div');
   el.id = 'crOverlay';
   el.className = 'overlay';
-  const NL = appLang() === 'nl',
-    T = (a, b) => (NL ? a : b);
+
   // 1.35: the judge first; the Comprehensive Rules behind a button.
   let mode = startMode === 'rules' ? 'rules' : 'judge';
   el.innerHTML = `
-    ${overlayCapHtml(T('Vraag de AI-judge', 'Ask AI judge'), `<button type="button" id="crOpenRules" aria-label="${T('Comprehensive Rules lezen', 'Read the Comprehensive Rules')}" title="${T('Comprehensive Rules lezen', 'Read the Comprehensive Rules')}">${inlIco('library', 24)}</button>`)}
+    ${overlayCapHtml('Ask AI judge', `<button type="button" id="crOpenRules" aria-label="${'Read the Comprehensive Rules'}" title="${'Read the Comprehensive Rules'}">${inlIco('library', 24)}</button>`)}
     <div id="crBody"></div>
     <div class="cr-bar">
       <div class="cr-qwrap"><div class="cr-qmirror" id="crQMirror" aria-hidden="true"></div><textarea id="crQ" rows="3" maxlength="500" enterkeyhint="send" autocomplete="off" spellcheck="false"></textarea></div>
-      <div class="cr-side"><button type="button" class="primary-btn cr-judge" id="crJudge" title="${T('Vraag de judge', 'Ask the judge')}" aria-label="${T('Vraag de judge', 'Ask the judge')}">${ICONS.gavel}</button><span class="cr-count" id="crCount">0/500</span></div>
+      <div class="cr-side"><button type="button" class="primary-btn cr-judge" id="crJudge" title="${'Ask the judge'}" aria-label="${'Ask the judge'}">${ICONS.gavel}</button><span class="cr-count" id="crCount">0/500</span></div>
       <div class="cr-tagpop" id="crTagPop" hidden></div>
     </div>
     ${overlayNavHtml()}`;
@@ -624,8 +623,8 @@ function openCROverlay(startMode) {
     }
     const l = judgeLeftGet(),
       n = l == null ? 20 : l;
-    count.textContent = NL ? 'nog ' + n : n + ' left';
-    count.title = NL ? 'Vragen die je vandaag nog kunt stellen' : 'Questions left today';
+    count.textContent = n + ' left';
+    count.title = 'Questions left today';
     count.classList.add('cr-left');
   };
   const title = el.querySelector('.ov-title');
@@ -669,27 +668,19 @@ function openCROverlay(startMode) {
   });
   // 1.38: examples that have a real answer -- the card is tagged, so its text
   // goes along; the rest is answered by the keyword rules themselves
-  const examples = NL
-    ? [
-        { q: 'Sterft een indestructible creature met 0 toughness?', tags: [] },
-        { q: 'Kan @Counterspell een triggered ability counteren?', tags: ['Counterspell'] },
-        { q: 'Gaat trample-damage door een blocker met protection?', tags: [] },
-      ]
-    : [
-        { q: 'Does an indestructible creature with 0 toughness die?', tags: [] },
-        { q: 'Can @Counterspell counter a triggered ability?', tags: ['Counterspell'] },
-        { q: 'Does trample carry damage through a blocker with protection?', tags: [] },
-      ];
+  const examples = [
+    { q: 'Does an indestructible creature with 0 toughness die?', tags: [] },
+    { q: 'Can @Counterspell counter a triggered ability?', tags: ['Counterspell'] },
+    { q: 'Does trample carry damage through a blocker with protection?', tags: [] },
+  ];
   const judgeHome = () => {
     body.innerHTML = /* HTML */ `<section class="hub-intro cj-hero">
-        <span class="hub-eyebrow">${T('REGELHULP', 'RULES COMPANION')}</span>
-        <h1>${T('Vraag de AI-judge.', 'Ask the AI judge.')}</h1>
-        <p>
-          ${T('Beschrijf de situatie. Tag kaarten met @ om hun kaarttekst mee te sturen.', 'Describe the situation. Tag cards with @ to include their card text.')}
-        </p>
+        <span class="hub-eyebrow">${'RULES COMPANION'}</span>
+        <h1>${'Ask the AI judge.'}</h1>
+        <p>${'Describe the situation. Tag cards with @ to include their card text.'}</p>
       </section>
       <div class="hub-actions cj-try">
-        <div class="cj-lab">${T('Probeer', 'Try one')}</div>
+        <div class="cj-lab">${'Try one'}</div>
         ${examples.map((x) => `<button type="button" class="hub-card cj-ex" data-cjex="${escapeHtml(x.q)}" data-cjtags="${escapeHtml(x.tags.join('|'))}"><span class="hub-icon" aria-hidden="true">${ICONS.gavel}</span><span class="hub-copy"><strong>${escapeHtml(x.q)}</strong></span><span class="hub-arrow" aria-hidden="true">›</span></button>`).join('')}
       </div>`;
     body.scrollTop = 0;
@@ -706,13 +697,10 @@ function openCROverlay(startMode) {
     });
     const chapters = Array.from(byChap.values()).sort((a, b) => +a.n - +b.n);
     body.innerHTML = /* HTML */ `<section class="hub-intro cr-rules-intro">
-        <span class="hub-eyebrow">${T('OFFICIËLE REGELS', 'OFFICIAL RULES')}</span>
-        <h1>${T('Ken de regels.', 'Know the rules.')}</h1>
+        <span class="hub-eyebrow">${'OFFICIAL RULES'}</span>
+        <h1>${'Know the rules.'}</h1>
         <p>
-          ${T(
-            `${rules.length} regels geladen, een week bewaard om offline te lezen. Tik op een hoofdstuk of zoek op woorden of een regelnummer (601.2).`,
-            `${rules.length} rules loaded, kept a week for offline reading. Tap a section, or search by words or a rule number (601.2).`,
-          )}
+          ${`${rules.length} rules loaded, kept a week for offline reading. Tap a section, or search by words or a rule number (601.2).`}
         </p>
       </section>
       <div class="hub-actions cr-toc">
@@ -728,21 +716,16 @@ function openCROverlay(startMode) {
     if (state._cr) showToc(state._cr);
     else
       body.innerHTML = /* HTML */ `<div class="empty-note" style="padding:14px;">
-        ${T('Regels laden…', 'Loading the rules…')}
+        ${'Loading the rules…'}
       </div>`;
   };
   const setMode = (m) => {
     mode = m;
     el.classList.toggle('cr-mode-rules', m === 'rules');
-    title.textContent =
-      m === 'rules'
-        ? T('Officiële regels', 'Comprehensive Rules')
-        : T('Vraag de AI-judge', 'Ask AI judge');
+    title.textContent = m === 'rules' ? 'Comprehensive Rules' : 'Ask AI judge';
     q.rows = m === 'rules' ? 1 : 3;
     q.placeholder =
-      m === 'rules'
-        ? T('Woorden of regel (601.2)…', 'Words or rule (601.2)…')
-        : T('Stel je regelvraag… tag kaarten met @', 'Ask your rules question… tag cards with @');
+      m === 'rules' ? 'Words or rule (601.2)…' : 'Ask your rules question… tag cards with @';
     state._crqArmed = false;
     q.value = '';
     setCount();
@@ -771,9 +754,9 @@ function openCROverlay(startMode) {
     const toks = crTokens(query);
     const hits = crSearch(rules, query, 14);
     body.innerHTML = hits.length
-      ? `<p class="hint" style="margin:4px 12px 8px;">${T('De officiële regels die dat beantwoorden, de beste bovenaan (in het Engels):', 'The official rules answering that, best match first:')}</p>` +
+      ? `<p class="hint" style="margin:4px 12px 8px;">${'The official rules answering that, best match first:'}</p>` +
         hits.map((r) => crRuleHtml(r, toks)).join('')
-      : `<div class="empty-note" style="padding:14px;">${T('Geen regel met die woorden — probeer minder of andere woorden, of een regelnummer zoals 903 voor Commander.', 'No rule matches those words — try fewer or different terms, or a rule number like 903 for Commander.')}</div>`;
+      : `<div class="empty-note" style="padding:14px;">${'No rule matches those words — try fewer or different terms, or a rule number like 903 for Commander.'}</div>`;
     body.scrollTop = 0;
   };
   el.addEventListener('click', (e) => {
@@ -924,11 +907,10 @@ function openCROverlay(startMode) {
       tagPop.hidden = true;
       return;
     }
-    const NLt = appLang() === 'nl';
+
     const f = t.frag.trim();
     let html;
-    if (f.length < 2)
-      html = `<div class="cr-tagnote">${NLt ? 'Typ de kaartnaam\u2026' : 'Type the card name\u2026'}</div>`;
+    if (f.length < 2) html = `<div class="cr-tagnote">${'Type the card name\u2026'}</div>`;
     else {
       const names = await scanNameList();
       if (my !== tagSeq) return;
@@ -972,7 +954,7 @@ function openCROverlay(startMode) {
                 `<button type="button" data-tagname="${escapeHtml(n)}">${escapeHtml(n)}</button>`,
             )
             .join('')
-        : `<div class="cr-tagnote">${NLt ? 'Geen kaart met die naam' : 'No card by that name'}</div>`;
+        : `<div class="cr-tagnote">${'No card by that name'}</div>`;
     }
     tagPop.innerHTML = html;
     tagPop.hidden = false;
@@ -1039,22 +1021,17 @@ function openCROverlay(startMode) {
   };
   let judgeBusy = false;
   const askJudge = async () => {
-    const NLj = appLang() === 'nl';
     const query = q.value.trim();
     tagPop.hidden = true;
     if (query.length < 4) {
-      toast(NLj ? 'Typ eerst je vraag.' : 'Type your question first.');
+      toast('Type your question first.');
       q.focus();
       return;
     }
     if (judgeBusy) return;
     const rules = state._cr || (await ensureCR());
     if (!rules) {
-      toast(
-        NLj
-          ? 'De regels konden niet worden opgehaald — controleer je verbinding.'
-          : 'The rules could not be loaded — check your connection.',
-      );
+      toast('The rules could not be loaded — check your connection.');
       return;
     }
     arm();
@@ -1066,13 +1043,13 @@ function openCROverlay(startMode) {
     const tagged = judgeTagsIn(query, picked).slice(0, 5);
     body.innerHTML = /* HTML */ `<div class="status" style="margin:16px 0;">
       <div class="spinner"></div>
-      ${NLj ? 'De judge leest de regels…' : 'The judge is reading the rules…'}
+      ${'The judge is reading the rules…'}
     </div>`;
     body.scrollTop = 0;
     const g = await judgeGather(query, tagged, rules);
     const res = await judgeAsk({
       q: query,
-      lang: NLj ? 'nl' : 'en',
+      lang: 'en',
       cards: g.cards,
       rules: g.rules.map((r) => ({ n: r.n, t: r.t })),
       device: judgeDevice(),
@@ -1081,39 +1058,26 @@ function openCROverlay(startMode) {
     if (!document.getElementById('crOverlay') || mode !== 'judge') return;
     if (res && typeof res.left === 'number') {
       judgeLeftSet(res.left);
-      if (res.left === 5)
-        judgeNotice(
-          NLj
-            ? 'Nog 5 vragen voor vandaag. Morgen kun je er weer 20 stellen.'
-            : '5 questions left for today. Tomorrow you get 20 again.',
-        );
+      if (res.left === 5) judgeNotice('5 questions left for today. Tomorrow you get 20 again.');
     }
     if (res && res.error === 'limit') judgeLeftSet(0);
     setCount();
     if (res && res.ok) {
       res._cards = g.cards.map((k) => k.name);
       res._read = g.rules;
-      body.innerHTML = judgeAnswerHtml(res, rules, query, NLj);
+      body.innerHTML = judgeAnswerHtml(res, rules, query);
       body.scrollTop = 0;
       return;
     }
     // no judge: say why, and show what the app found itself
     const why =
       res && res.error === 'limit'
-        ? NLj
-          ? `Je hebt vandaag je ${res.limit || ''} vragen aan de judge gesteld. Morgen kan het weer. Hieronder wat de regels zelf zeggen.`
-          : `You have asked the judge your ${res.limit || ''} questions for today. More tomorrow. Below, what the rules themselves say.`
+        ? `You have asked the judge your ${res.limit || ''} questions for today. More tomorrow. Below, what the rules themselves say.`
         : res && res.error === 'nokey'
-          ? NLj
-            ? 'De judge is nog niet ingesteld. Hieronder wat de regels zelf zeggen.'
-            : 'The judge is not set up yet. Below, what the rules themselves say.'
+          ? 'The judge is not set up yet. Below, what the rules themselves say.'
           : res && res.error === 'offline'
-            ? NLj
-              ? 'Geen verbinding met de judge. Hieronder wat de regels zelf zeggen.'
-              : 'No connection to the judge. Below, what the rules themselves say.'
-            : NLj
-              ? 'De judge is even niet bereikbaar. Hieronder wat de regels zelf zeggen.'
-              : 'The judge cannot be reached right now. Below, what the rules themselves say.';
+            ? 'No connection to the judge. Below, what the rules themselves say.'
+            : 'The judge cannot be reached right now. Below, what the rules themselves say.';
     const toks = crTokens(query);
     body.innerHTML =
       `<p class="hint" style="margin:4px 12px 8px;">⚠ ${escapeHtml(why)}</p>` +
@@ -1130,7 +1094,7 @@ function openCROverlay(startMode) {
     if (!document.getElementById('crOverlay')) return;
     if (!rules && mode === 'rules') {
       body.innerHTML = /* HTML */ `<div class="empty-note" style="padding:14px;">
-        ${T('De regels konden niet worden opgehaald. Controleer je verbinding en probeer het opnieuw — na de eerste keer blijven ze een week offline beschikbaar.', 'The rules service could not be reached. Check your connection and try again — after the first load they stay available offline for a week.')}
+        ${'The rules service could not be reached. Check your connection and try again — after the first load they stay available offline for a week.'}
       </div>`;
       return;
     }

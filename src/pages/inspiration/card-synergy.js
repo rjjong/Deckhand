@@ -51,22 +51,16 @@ function openCardReco(card, forDeck, comboKey) {
     document.getElementById('cardRecoOverlay')?.remove();
   });
   const themes = detectCardThemes(card);
-  const _snl = appLang() === 'nl';
+
   const scope = combo
-    ? _snl
-      ? `binnen de kleuren van ${combo.label}`
-      : `within ${combo.label} colors`
+    ? `within ${combo.label} colors`
     : forDeck && forDeck.admiral
-      ? _snl
-        ? `binnen de kleuren van ${forDeck.admiral.name}`
-        : `within ${forDeck.admiral.name}'s colors`
-      : _snl
-        ? 'alle kleuren'
-        : 'any colors';
+      ? `within ${forDeck.admiral.name}'s colors`
+      : 'any colors';
   // The real app navigation at the foot, back button included -- like every
   // other sub-page. The old top bar's second line now sits under the card.
   el.innerHTML = /* HTML */ `<div class="overlay-inner">
-    ${overlayCapHtml((appLang() === 'nl' ? 'Gespeeld met ' : 'Played with ') + card.name)}
+    ${overlayCapHtml('Played with ' + card.name)}
     <main>
       <div class="tag-focus-row" id="crTagRow" hidden></div>
       <div class="reco-admiral">
@@ -306,17 +300,17 @@ async function cardRecoFocus(card, forDeck, comboKey, tag) {
       pool.push(c);
     }
   });
-  const nl = appLang() === 'nl';
+
   if (!pool.length) {
     b2.innerHTML = /* HTML */ `<div class="empty-note">
-      ${nl ? 'Geen kaarten gevonden voor deze functie.' : 'No cards found for this function.'}
+      ${'No cards found for this function.'}
     </div>`;
     return;
   }
   b2.innerHTML = /* HTML */ `<p class="hint" style="margin:0 0 4px;text-align:center;">
-    ${nl ? 'Focus op' : 'Focused on'}
+    ${'Focused on'}
     <b>${escapeHtml(otagLabel(tag))}</b
-    >${first.length ? (nl ? ' — eerst kaarten die met ' : ' — cards played with ') + escapeHtml(card.name) + (nl ? ' gespeeld worden' : ' first') : ''}.
+    >${first.length ? ' — cards played with ' + escapeHtml(card.name) + ' first' : ''}.
   </p>`;
   const crEl = b2.closest('.overlay');
   const rewire = () => cardRecoFocus(card, forDeck, comboKey, tag);
@@ -726,11 +720,11 @@ function tagFocusRowFill(rowId, selId, tags, onPick) {
     row.innerHTML = '';
     return;
   }
-  const nl = appLang() === 'nl';
+
   const cur = document.getElementById(selId)?.value || '';
-  row.innerHTML = /* HTML */ `<span class="tf-lbl">${nl ? 'Focus' : 'Focus'}</span
+  row.innerHTML = /* HTML */ `<span class="tf-lbl">${'Focus'}</span
     ><select id="${selId}">
-      <option value="">${nl ? 'Alle functies' : 'All functions'}</option>
+      <option value="">${'All functions'}</option>
       ${tags
         .map(
           (t) =>
@@ -967,7 +961,7 @@ async function loadBudgetAlternatives(d) {
     }
     row.innerHTML = /* HTML */ `<span
         style="font-size:13.5px;color:var(--sub-text);white-space:nowrap;"
-        >${appLang() === 'nl' ? 'Budgetgrens' : 'Budget line'}</span
+        >${'Budget line'}</span
       >
       <input
         type="range"
@@ -1002,21 +996,13 @@ async function loadBudgetAlternatives(d) {
     </div>`;
     return;
   }
-  const _bnl = appLang() === 'nl';
+
   box.innerHTML = /* HTML */ `<p class="hint" style="text-align:center;margin:0 0 8px;">
-    ${
-      _bnl
-        ? `${priced.length} ${priced.length > 1 ? 'kaarten' : 'kaart'} vanaf €${BUDGET_FLOOR}`
-        : `${priced.length} card${priced.length > 1 ? 's' : ''} at €${BUDGET_FLOOR}+`
-    }
+    ${`${priced.length} card${priced.length > 1 ? 's' : ''} at €${BUDGET_FLOOR}+`}
     ${infoBtnHtml(
-      _bnl
-        ? 'Elke kaart van €' +
-            BUDGET_FLOOR +
-            ' of meer krijgt zuinigere vervangers voor dezelfde taak, elk op of onder de budgetgrens. Tik op + om er een in te wisselen.'
-        : 'Every card at €' +
-            BUDGET_FLOOR +
-            ' or more gets thriftier stand-ins for the same job, each at or under the budget line. Tap + to swap one in.',
+      'Every card at €' +
+        BUDGET_FLOOR +
+        ' or more gets thriftier stand-ins for the same job, each at or under the budget line. Tap + to swap one in.',
     )}
   </p>`;
   // Build ONE shared candidate pool up front — EDHREC's dedicated budget page
@@ -1189,13 +1175,10 @@ async function loadBudgetAlternatives(d) {
     pool.forEach((x) => totalCands.add(x.name));
     landPool.forEach((x) => totalCands.add(x.name));
     if (totalCands.size < 25) {
-      const nl = appLang() === 'nl';
       box.insertAdjacentHTML(
         'afterbegin',
         `<p class="hint" style="text-align:center;margin:0 0 8px;color:var(--brass);">` +
-          (nl
-            ? `Weinig kaarten onder \u20ac${BUDGET_FLOOR} in deze kleuren \u2014 schuif de grens hoger voor meer keuze.`
-            : `Few cards under \u20ac${BUDGET_FLOOR} in these colours \u2014 slide the line up for more choice.`) +
+          `Few cards under \u20ac${BUDGET_FLOOR} in these colours \u2014 slide the line up for more choice.` +
           `</p>`,
       );
     }

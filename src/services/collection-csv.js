@@ -292,19 +292,15 @@ function openCollectionImport(presetBinder) {
   el.id = 'colImportOverlay';
   el.innerHTML = /* HTML */ ` <div class="appoint-sheet" style="max-width:460px;">
     <div class="appoint-head">
-      <span>${appLang() === 'nl' ? 'Importeren / exporteren' : 'Import / export'}</span
+      <span>${'Import / export'}</span
       ><button class="icon-btn" id="ciClose">${ICONS.close || '✕'}</button>
     </div>
     <p class="hint" style="margin:0 0 8px;">
-      ${
-        appLang() === 'nl'
-          ? 'Plak een lijst (één kaart per regel, bv. 1 Sol Ring) of CSV-tekst, of laad een bestand uit Moxfield, Archidekt, ManaBox of Delver Lens.'
-          : 'Paste a list (one card per line, e.g. 1 Sol Ring) or CSV text, or load a file from Moxfield, Archidekt, ManaBox or Delver Lens.'
-      }
+      ${'Paste a list (one card per line, e.g. 1 Sol Ring) or CSV text, or load a file from Moxfield, Archidekt, ManaBox or Delver Lens.'}
     </p>
     <input type="file" id="ciFile" accept=".csv,.txt,text/csv,text/plain" style="display:none;" />
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-      <label class="hint" style="flex:none;">${appLang() === 'nl' ? 'Naar:' : 'Into:'}</label>
+      <label class="hint" style="flex:none;">${'Into:'}</label>
       <select id="ciBinder" class="deck-select" style="flex:1;"></select>
     </div>
     <textarea
@@ -314,14 +310,12 @@ function openCollectionImport(presetBinder) {
       placeholder="1 Sol Ring&#10;2 Arcane Signet&#10;…"
     ></textarea>
     <button class="ghost-btn" id="ciPick" style="width:100%;margin-top:8px;">
-      ${inlIco('file')}${appLang() === 'nl' ? 'Laad een bestand (.csv / .txt)' : 'Load a file (.csv / .txt)'}
+      ${inlIco('file')}${'Load a file (.csv / .txt)'}
     </button>
-    <button class="primary-btn" id="ciGo" style="margin-top:10px;">
-      ${appLang() === 'nl' ? 'Importeren' : 'Import'}
-    </button>
+    <button class="primary-btn" id="ciGo" style="margin-top:10px;">${'Import'}</button>
     <div id="ciReport" class="hint" style="margin:8px 0 4px;min-height:18px;"></div>
     <div class="hint" style="margin:6px 0 8px;text-align:center;">
-      ${appLang() === 'nl' ? 'Nog geen bestand? Scan je kaarten met een gratis app:' : 'No file yet? Scan your cards with a free app:'}
+      ${'No file yet? Scan your cards with a free app:'}
     </div>
     <a
       class="ghost-btn"
@@ -333,9 +327,7 @@ function openCollectionImport(presetBinder) {
     >
     ${/iPhone|iPad|iPod/i.test(navigator.userAgent) ? '' : `<a class="ghost-btn" style="display:block;width:100%;box-sizing:border-box;text-align:center;text-decoration:none;" target="_blank" rel="noopener" href="https://play.google.com/store/apps/details?id=delverlab.delverlens">Delver Lens</a>`}
     <hr style="border:none;border-top:2px solid var(--line);margin:12px 0;" />
-    <button class="ghost-btn" id="ciExport" style="width:100%;">
-      ${appLang() === 'nl' ? 'Exporteer collectie' : 'Export collection'}
-    </button>
+    <button class="ghost-btn" id="ciExport" style="width:100%;">${'Export collection'}</button>
   </div>`;
   document.body.appendChild(el);
   pushOverlay('colImport', () => {
@@ -361,9 +353,7 @@ function openCollectionImport(presetBinder) {
     try {
       text = await file.text();
     } catch (err) {
-      setCiReport(
-        '⚠ ' + (appLang() === 'nl' ? 'Kon dat bestand niet lezen.' : 'Could not read that file.'),
-      );
+      setCiReport('⚠ ' + 'Could not read that file.');
       e.target.value = '';
       return;
     }
@@ -373,10 +363,7 @@ function openCollectionImport(presetBinder) {
       ta.scrollTop = 0;
     }
     ciFileName = file.name;
-    setCiReport(
-      escapeHtml(file.name) +
-        (appLang() === 'nl' ? ' geladen — tik op Importeren.' : ' loaded — tap Import.'),
-    );
+    setCiReport(escapeHtml(file.name) + ' loaded — tap Import.');
     e.target.value = '';
   });
   document.getElementById('ciText').addEventListener('input', () => {
@@ -385,11 +372,7 @@ function openCollectionImport(presetBinder) {
   document.getElementById('ciGo').addEventListener('click', () => {
     const t = document.getElementById('ciText')?.value || '';
     if (!t.trim()) {
-      setCiReport(
-        appLang() === 'nl'
-          ? 'Plak eerst een lijst of laad een bestand.'
-          : 'Paste a list or load a file first.',
-      );
+      setCiReport('Paste a list or load a file first.');
       return;
     }
     runCsvImport(t, ciFileName ? binderNameFromFilename(ciFileName) : null);
@@ -400,17 +383,13 @@ function openCollectionImport(presetBinder) {
 /* Where imported cards go: binder rules, a new binder, no binder, or one of
    the binders -- the same choice for a CSV file and for a pasted list. */
 function colImportBinderOptions() {
-  const _inl = appLang() === 'nl';
   return (
     (ruledBinders().length
-      ? `<option value="__auto__">✦ ${_inl ? 'Automatisch (map-regels)' : 'Automatic (binder rules)'}</option>`
+      ? `<option value="__auto__">✦ ${'Automatic (binder rules)'}</option>`
       : '') +
-    `<option value="__new__">${_inl ? 'Een map (ik geef hem een naam)…' : "A binder (I'll name it)…"}</option><option value="">${_inl ? 'Mijn hele collectie — geen map' : 'My whole collection — no binder'}</option>` +
+    `<option value="__new__">${"A binder (I'll name it)…"}</option><option value="">${'My whole collection — no binder'}</option>` +
     (state.collection.binders || [])
-      .map(
-        (b) =>
-          `<option value="${b.id}">${_inl ? 'In map' : 'Into binder'}: ${escapeHtml(b.name)}</option>`,
-      )
+      .map((b) => `<option value="${b.id}">${'Into binder'}: ${escapeHtml(b.name)}</option>`)
       .join('')
   );
 }
@@ -418,12 +397,7 @@ function colImportBinderOptions() {
 async function runCsvImport(text, suggestedBinderName, forcedBinder) {
   const entries = parseCollectionCsv(text);
   if (!entries.length) {
-    setCiReport(
-      '⚠ ' +
-        (appLang() === 'nl'
-          ? 'Geen kaarten gevonden — één kaart per regel (1 Sol Ring) of een CSV-export.'
-          : 'No cards found — one card per line (1 Sol Ring) or a CSV export.'),
-    );
+    setCiReport('⚠ ' + 'No cards found — one card per line (1 Sol Ring) or a CSV export.');
     return;
   }
   let binder =

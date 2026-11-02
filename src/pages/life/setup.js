@@ -1,7 +1,6 @@
 // pages / life / setup
 
 function renderLifeSetup(el, m) {
-  const nl = appLang() === 'nl';
   let picked = m.lifeLayout || state.life.layout;
   if (!LIFE_LAYOUTS.some((x) => x.id === picked)) picked = '4q';
   const thumb = (lay, index) => {
@@ -12,11 +11,11 @@ function renderLifeSetup(el, m) {
     const rh = trows <= 2 ? 38 : 26;
     const th = trows * rh + (trows - 1) * 3;
     const gtA = lay.areas.map((r) => `&quot;${r}&quot;`).join(' ');
-    return `<button type="button" class="llay ${picked === lay.id ? 'on' : ''}" data-setup-lay="${lay.id}" aria-pressed="${picked === lay.id}" aria-label="${lay.count} ${nl ? 'spelers, opstelling' : 'players, arrangement'} ${index + 1}">
+    return `<button type="button" class="llay ${picked === lay.id ? 'on' : ''}" data-setup-lay="${lay.id}" aria-pressed="${picked === lay.id}" aria-label="${lay.count} ${'players, arrangement'} ${index + 1}">
         <span class="llay-grid" style="grid-template-columns:repeat(${tcols},1fr);grid-template-rows:repeat(${trows},1fr);height:${th}px;grid-template-areas:${gtA};">
           ${lay.rot.map((r, i) => `<i style="grid-area:${'abcdefgh'[i]};"><b style="transform:rotate(${r}deg);">${lifeStart(lay.count)}</b></i>`).join('')}
         </span>
-        <span class="llay-n">${lay.count} ${nl ? 'spelers' : 'players'}</span>
+        <span class="llay-n">${lay.count} ${'players'}</span>
       </button>`;
   };
   el.innerHTML = /* HTML */ `<div
@@ -24,32 +23,30 @@ function renderLifeSetup(el, m) {
     id="lifeSetupScreen"
     role="dialog"
     aria-modal="true"
-    aria-label="${nl ? 'Nieuw potje' : 'New game'}"
+    aria-label="${'New game'}"
   >
-    ${overlayCapHtml(nl ? 'Nieuw potje' : 'New game', lifePopupCloseHtml('lifeSetupCancel', trS('Cancel')))}
+    ${overlayCapHtml('New game', lifePopupCloseHtml('lifeSetupCancel', trS('Cancel')))}
     <div class="life-setup-body tab-viewport">
       <main class="hub-page tools-page life-setup-page">
         <section class="hub-intro">
           <span class="hub-eyebrow">LIFE TRACKER</span>
-          <h1>${nl ? 'Stel je tafel samen.' : 'Set your table.'}</h1>
-          <p>
-            ${nl ? 'Kies een format en een opstelling die past bij waar iedereen zit.' : 'Choose your format and an arrangement that matches where everyone sits.'}
-          </p>
+          <h1>${'Set your table.'}</h1>
+          <p>${'Choose your format and an arrangement that matches where everyone sits.'}</p>
         </section>
         <section class="hub-actions tool-sections">
           <section class="panel-card">
-            ${toolPanelHeadingHtml(ICONS.shield, nl ? 'Format' : 'Format', nl ? 'Beginleven en schadetelling' : 'Starting life and damage rules')}
+            ${toolPanelHeadingHtml(ICONS.shield, 'Format', 'Starting life and damage rules')}
             <div class="life-format-grid">
-              ${LIFE_FMTS.map((f) => `<button type="button" class="hub-card life-format-card ${lifeFmt() === f ? 'active' : ''}" data-lifefmt="${f}" aria-pressed="${lifeFmt() === f}"><strong>${escapeHtml(lifeFmtLabel(f))}</strong><small>${fmtSpec(f === 'constructed' ? 'standard' : f).life} ${nl ? 'beginleven' : 'starting life'}</small></button>`).join('')}
+              ${LIFE_FMTS.map((f) => `<button type="button" class="hub-card life-format-card ${lifeFmt() === f ? 'active' : ''}" data-lifefmt="${f}" aria-pressed="${lifeFmt() === f}"><strong>${escapeHtml(lifeFmtLabel(f))}</strong><small>${fmtSpec(f === 'constructed' ? 'standard' : f).life} ${'starting life'}</small></button>`).join('')}
             </div>
           </section>
           <section class="panel-card">
-            ${toolPanelHeadingHtml(ICONS.draft, nl ? 'Tafelopstelling' : 'Table layout', nl ? 'Kies waar je spelers zitten' : 'Choose how your players are seated')}
+            ${toolPanelHeadingHtml(ICONS.draft, 'Table layout', 'Choose how your players are seated')}
             <div class="life-layout-grid">${LIFE_LAYOUTS.map(thumb).join('')}</div>
           </section>
         </section>
         <p class="hub-footnote">
-          ${nl ? 'Spelersnamen kun je tijdens het potje aanpassen. Je potje wordt automatisch bewaard.' : 'You can change player names during the game. Your game saves automatically.'}
+          ${'You can change player names during the game. Your game saves automatically.'}
         </p>
       </main>
     </div>
@@ -57,10 +54,7 @@ function renderLifeSetup(el, m) {
       <button type="button" class="hub-card life-start-button" id="startGameBtn">
         <span class="hub-icon" aria-hidden="true">${ICONS.dice}</span
         ><span class="hub-copy"
-          ><strong>${nl ? 'Begin het potje' : 'Start game'}</strong
-          ><small
-            >${nl ? 'Draai om de eerste speler te kiezen' : 'Spin to choose the first player'}</small
-          ></span
+          ><strong>${'Start game'}</strong><small>${'Spin to choose the first player'}</small></span
         ><span class="hub-arrow" aria-hidden="true">›</span>
       </button>
     </div>

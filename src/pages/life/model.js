@@ -18,7 +18,7 @@ function ensureLifePlayers() {
       initiative: false,
     });
   L.players.length = L.count;
-  const _pw = appLang() === 'nl' ? 'Speler ' : 'Player ';
+  const _pw = 'Player ';
   L.players.forEach((p, i) => {
     if (!p.name) p.name = _pw + (i + 1);
     else if (/^(Player|Speler) \d+$/.test(p.name))
@@ -201,11 +201,8 @@ function lifeSetMonarch(idx) {
   });
   if (!was) {
     ps[idx].monarch = true;
-    lifeLog(`👑 ${ps[idx].name} ${appLang() === 'nl' ? 'is de monarch.' : 'became the monarch.'}`);
-  } else
-    lifeLog(
-      `${ps[idx].name} ${appLang() === 'nl' ? 'is geen monarch meer.' : 'is no longer the monarch.'}`,
-    );
+    lifeLog(`👑 ${ps[idx].name} ${'became the monarch.'}`);
+  } else lifeLog(`${ps[idx].name} ${'is no longer the monarch.'}`);
   renderLifeGrid();
 }
 
@@ -217,19 +214,14 @@ function lifeSetInitiative(idx) {
   });
   if (!was) {
     ps[idx].initiative = true;
-    lifeLog(
-      `${ps[idx].name} ${appLang() === 'nl' ? 'neemt het initiatief.' : 'took the initiative.'}`,
-    );
+    lifeLog(`${ps[idx].name} ${'took the initiative.'}`);
   } else {
-    lifeLog(
-      `${ps[idx].name} ${appLang() === 'nl' ? 'heeft het initiatief niet meer.' : 'no longer has the initiative.'}`,
-    );
+    lifeLog(`${ps[idx].name} ${'no longer has the initiative.'}`);
   }
   renderLifeGrid();
 }
 
 function openLifeDungeon(idx) {
-  const nl = appLang() === 'nl';
   const ps = ensureLifePlayers();
   let me = idx; // whose move a tap makes
   let view = ps[me].dg ? ps[me].dg.id : null; // a dungeon up close, or all four
@@ -250,8 +242,8 @@ function openLifeDungeon(idx) {
     if (!(D.rooms[room] || []).length) {
       p.dgDone[D.id] = (p.dgDone[D.id] || 0) + 1;
       p.dg = null;
-      lifeLog(`${p.name} ${nl ? 'voltooide' : 'completed'} ${D.name}.`);
-      toast(nl ? `${p.name}: ${D.name} voltooid!` : `${p.name}: ${D.name} completed!`);
+      lifeLog(`${p.name} ${'completed'} ${D.name}.`);
+      toast(`${p.name}: ${D.name} completed!`);
     }
     paint();
     renderLifeGrid();
@@ -301,12 +293,8 @@ function openLifeDungeon(idx) {
       ${lifePopupHeadHtml(
         D ? D.name : 'Dungeons',
         D
-          ? nl
-            ? `Tik de kamer waar ${p.name} heen gaat. Goud = kan als volgende.`
-            : `Tap the room ${p.name} ventures into. Gold = can go next.`
-          : nl
-            ? 'Tik een dungeon. De stipjes laten zien wie waar zit.'
-            : 'Tap a dungeon. The dots show who is where.',
+          ? `Tap the room ${p.name} ventures into. Gold = can go next.`
+          : 'Tap a dungeon. The dots show who is where.',
       )}
       <div class="life-popup-body">
         <div class="dg-players">
@@ -315,12 +303,12 @@ function openLifeDungeon(idx) {
         ${D ? cardHtml(D, true) : `<div class="dg-grid">${LIFE_DUNGEONS.map((X) => cardHtml(X, false)).join('')}</div>`}
       </div>
       <div class="dg-actions life-popup-footer">
-        ${D ? `<button type="button" class="ghost-btn" id="dgAll">← ${nl ? 'Alle dungeons' : 'All dungeons'}</button>` : ''}${p.dg ? `<button type="button" class="ghost-btn" id="dgLeave">${nl ? 'Verlaten' : 'Leave'}</button>` : ''}<button
+        ${D ? `<button type="button" class="ghost-btn" id="dgAll">← ${'All dungeons'}</button>` : ''}${p.dg ? `<button type="button" class="ghost-btn" id="dgLeave">${'Leave'}</button>` : ''}<button
           type="button"
           class="primary-btn"
           id="dgOk"
         >
-          ${nl ? 'Klaar' : 'Done'}
+          ${'Done'}
         </button>
       </div>
     </section>`;
@@ -415,7 +403,6 @@ function lifeAutosave() {
 }
 
 function openLifeRestore() {
-  const nl = appLang() === 'nl';
   const all = lifeSavesAll();
   document.getElementById('lifeRestoreSheet')?.remove();
   const m = document.createElement('div');
@@ -425,7 +412,7 @@ function openLifeRestore() {
   m.style.alignItems = 'flex-end';
   const when = (t) => {
     try {
-      return new Date(t).toLocaleString(nl ? 'nl-NL' : 'en-GB', {
+      return new Date(t).toLocaleString('en-GB', {
         weekday: 'short',
         day: 'numeric',
         month: 'short',
@@ -441,19 +428,19 @@ function openLifeRestore() {
     class="deckpick life-sheet"
     role="dialog"
     aria-modal="true"
-    aria-label="${nl ? 'Opgeslagen potjes' : 'Saved games'}"
+    aria-label="${'Saved games'}"
   >
-    ${lifePopupHeadHtml(nl ? 'Opgeslagen potjes' : 'Saved games', nl ? 'Kies een van je laatste tien potjes om verder te spelen.' : 'Choose one of your last ten games to resume.')}
+    ${lifePopupHeadHtml('Saved games', 'Choose one of your last ten games to resume.')}
     <div class="hub-actions life-popup-body">
       ${
         all.length
           ? all
               .map(
                 (g, i) =>
-                  `<button type="button" class="hub-card${g.id === state.life.gameId ? ' cur' : ''}" data-lr="${i}"><span class="hub-icon" aria-hidden="true">${ICONS.restore}</span><span class="hub-copy"><strong>${escapeHtml(when(g.t))}${g.id === state.life.gameId ? (nl ? ' \u00b7 dit potje' : ' \u00b7 this game') : ''}</strong><small>${(g.d.players || []).map((p) => `${escapeHtml(p.name)} ${p.life}${p.monarch ? ' 👑' : ''}`).join(' \u00b7 ')}</small></span><span class="hub-arrow" aria-hidden="true">›</span></button>`,
+                  `<button type="button" class="hub-card${g.id === state.life.gameId ? ' cur' : ''}" data-lr="${i}"><span class="hub-icon" aria-hidden="true">${ICONS.restore}</span><span class="hub-copy"><strong>${escapeHtml(when(g.t))}${g.id === state.life.gameId ? ' \u00b7 this game' : ''}</strong><small>${(g.d.players || []).map((p) => `${escapeHtml(p.name)} ${p.life}${p.monarch ? ' 👑' : ''}`).join(' \u00b7 ')}</small></span><span class="hub-arrow" aria-hidden="true">›</span></button>`,
               )
               .join('')
-          : `<p class="hub-footnote">${nl ? 'Nog geen opgeslagen potjes.' : 'No saved games yet.'}</p>`
+          : `<p class="hub-footnote">${'No saved games yet.'}</p>`
       }
     </div>
   </section>`;
@@ -492,7 +479,7 @@ function openLifeRestore() {
       L.toolsOpen = false;
       if (!state.lifeOpen) openLifeOverlay();
       else renderLifeOverlay();
-      toast(nl ? 'Potje hersteld.' : 'Game restored.');
+      toast('Game restored.');
     }, 0);
   });
   m.querySelector('[data-life-close]')?.focus({ preventScroll: true });
@@ -766,11 +753,7 @@ async function animatedHighRoll(mode) {
     state.life.startIdx = winner;
     state.life.turnNum = 1;
     lifeLog(`Spin the wheel — ${players[winner].name} goes first!`);
-    toast(
-      appLang() === 'nl'
-        ? `${players[winner].name} begint!`
-        : `${players[winner].name} goes first!`,
-    );
+    toast(`${players[winner].name} goes first!`);
   }
   state.life.spinning = false;
   renderLifeGrid();
@@ -841,8 +824,8 @@ function restartLife() {
     },
     {
       danger: true,
-      title: appLang() === 'nl' ? 'Opnieuw beginnen' : 'Restart game',
-      ok: appLang() === 'nl' ? 'Opnieuw beginnen' : 'Restart game',
+      title: 'Restart game',
+      ok: 'Restart game',
       icon: 'close',
     },
   );

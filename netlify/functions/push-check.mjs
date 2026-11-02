@@ -53,9 +53,7 @@ async function spoiledCards(codes){
   return out;
 }
 
-/* `build` receives 'nl' or 'en' and returns the payload for that reader, so
-   nobody gets a notification in a language they did not choose. Subscriptions
-   saved before the language was recorded keep getting Dutch.
+/* Notifications use English, including subscriptions with an old language preference.
    `kind` is 'spoilers' or 'updates' — the two switches in Extras. A record
    that never recorded a switch counts as ON for both: those readers signed
    up when there was one switch for everything. */
@@ -83,7 +81,7 @@ async function eachSub(fn){
 async function pushToAll(build, kind){
   return eachSub((rec)=>{
     if(kind && rec[kind] === false) return null;
-    return build(rec.lang === 'en' ? 'en' : 'nl');
+    return build();
   });
 }
 /* How many new cards this reader waits for. A record from before the choice
@@ -128,15 +126,11 @@ export default async () => {
       const fresh = interesting.filter(s => !seen.includes(s.code));
       if(fresh.length){
         const names = fresh.map(s => s.name).slice(0, 3).join(', ');
-        const r = await pushToAll((lang)=>lang === 'en' ? {
+        const r = await pushToAll(()=>({
           title: '🔮 A new Magic set is up',
           body: names + ' — the spoilers are gathering in Deckhand.',
           url: './?go=spoilers'
-        } : {
-          title: '🔮 Nieuwe Magic-set gespot',
-          body: names + ' — de spoilers verzamelen zich in Deckhand.',
-          url: './?go=spoilers'
-        }, 'spoilers');
+        }), 'spoilers');
         await state.setJSON('announced', seen.concat(fresh.map(s => s.code)).slice(-300));
         report.push(`sets: ${names} → sent ${r.sent}, pruned ${r.pruned}`);
       } else report.push('sets: nothing new');
@@ -154,17 +148,13 @@ export default async () => {
         await state.setJSON('lastVersion', { version: v.version });   // first run: remember, never spam
         report.push('version: baseline ' + v.version);
       } else if(last.version !== v.version){
-        const bulletsFor = (lang)=>(((v.notes && v.notes[lang]) || (v.notes && v.notes.nl) || [])
-          .slice(0, 3).map(x => '• ' + x).join('\n'));
-        const r = await pushToAll((lang)=>lang === 'en' ? {
+        const bullets = ((v.notes && v.notes.en) || [])
+          .slice(0, 3).map(x => '• ' + x).join('\n');
+        const r = await pushToAll(()=>({
           title: 'Deckhand Update — v' + v.version,
-          body: bulletsFor('en') || 'Open the app to see what changed.',
+          body: bullets || 'Open the app to see what changed.',
           url: './'
-        } : {
-          title: 'Deckhand Update — v' + v.version,
-          body: bulletsFor('nl') || 'Open de app voor de details.',
-          url: './'
-        }, 'updates');
+        }), 'updates');
         await state.setJSON('lastVersion', { version: v.version });
         report.push(`version: ${last.version} → ${v.version}, sent ${r.sent}, pruned ${r.pruned}`);
       } else report.push('version: unchanged ' + v.version);
@@ -238,14 +228,13 @@ export default async () => {
           const namen = boek.recent.filter(x => x.seq > mijn).slice(-3).reverse().map(x => x.name);
           const rest = aantal - namen.length;
           await store.setJSON(key, Object.assign({}, rec, { spoilerSeq: boek.seq }));
-          const en = rec.lang === 'en';
           const kop = aantal === 1
-            ? (en ? '\u{1F52E} A new card was spoiled' : '\u{1F52E} Er is een nieuwe kaart gespoild')
-            : (en ? '\u{1F52E} ' + aantal + ' new cards spoiled' : '\u{1F52E} ' + aantal + ' nieuwe kaarten gespoild');
+            ? '\u{1F52E} A new card was spoiled'
+            : '\u{1F52E} ' + aantal + ' new cards spoiled';
           return {
             title: kop,
-            body: namen.join(', ') + (rest > 0 ? (en ? ' and ' + rest + ' more' : ' en nog ' + rest) : '')
-                  + (en ? ' — open Deckhand to see them.' : ' — open Deckhand om ze te bekijken.'),
+            body: namen.join(', ') + (rest > 0 ? ' and ' + rest + ' more' : '')
+                  + ' — open Deckhand to see them.',
             url: './?go=spoilers'
           };
         });

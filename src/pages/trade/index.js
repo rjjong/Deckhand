@@ -115,7 +115,7 @@ function tradeRowsHtml(key) {
 
 function tradePageHtml() {
   loadTrade();
-  const nl = appLang() === 'nl';
+
   const totA = tradeSideTotal(state.trade.a),
     totB = tradeSideTotal(state.trade.b);
   const missing = state.trade.a.concat(state.trade.b).some((it) => it.eur == null);
@@ -132,26 +132,26 @@ function tradePageHtml() {
     label,
     tot,
   ) => `<section class="panel-card trade-side" aria-label="${label}">
-    ${toolPanelHeadingHtml(key === 'a' ? ICONS.imp : ICONS.exp, label, key === 'a' ? (nl ? 'Kaarten die je ontvangt' : 'Cards you receive') : nl ? 'Kaarten die je geeft' : 'Cards you give', `<strong class="trade-total">€${tot.toFixed(2)}</strong>`)}
+    ${toolPanelHeadingHtml(key === 'a' ? ICONS.imp : ICONS.exp, label, key === 'a' ? 'Cards you receive' : 'Cards you give', `<strong class="trade-total">€${tot.toFixed(2)}</strong>`)}
     ${tradeRowsHtml(key)}
-    <button type="button" class="hub-card trade-add" data-tradeadd="${key}"><span class="hub-icon" aria-hidden="true">${ICONS.plus}</span><span class="hub-copy"><strong>${trS('Add card')}</strong><small>${nl ? 'Kies de juiste printing' : 'Choose the exact printing'}</small></span><span class="hub-arrow" aria-hidden="true">›</span></button>
+    <button type="button" class="hub-card trade-add" data-tradeadd="${key}"><span class="hub-icon" aria-hidden="true">${ICONS.plus}</span><span class="hub-copy"><strong>${trS('Add card')}</strong><small>${'Choose the exact printing'}</small></span><span class="hub-arrow" aria-hidden="true">›</span></button>
   </section>`;
   return /* HTML */ `<main class="hub-page tools-page trade-page">
     <div class="trade-overview">
       <div
         class="trade-verdict ${even ? 'even' : ''}"
         role="status"
-        aria-label="${nl ? 'Ruilverschil' : 'Trade difference'}"
+        aria-label="${'Trade difference'}"
       >
         ${verdict}
       </div>
     </div>
-    <section class="hub-actions tool-sections" aria-label="${nl ? 'Ruilkaarten' : 'Trade cards'}">
-      ${sideCard('b', nl ? 'Jij' : 'You', totB)} ${sideCard('a', nl ? 'Ik' : 'Me', totA)}
+    <section class="hub-actions tool-sections" aria-label="${'Trade cards'}">
+      ${sideCard('b', 'You', totB)} ${sideCard('a', 'Me', totA)}
     </section>
     ${missing ? `<p class="hint">${trS('Some cards have no listed price and count as €0.00.')}</p>` : ''}
     <p class="hub-footnote">
-      ${nl ? 'Cardmarket-trendprijzen · Kies de juiste printing als je een kaart toevoegt.' : 'Cardmarket trend prices · Choose the exact printing when adding a card.'}
+      ${'Cardmarket trend prices · Choose the exact printing when adding a card.'}
     </p>
   </main>`;
 }
@@ -215,10 +215,7 @@ function confirmTrade() {
   const gives = state.trade.b,
     gets = state.trade.a;
   if (!gives.length && !gets.length) return;
-  const q =
-    appLang() === 'nl'
-      ? 'Deze ruil bevestigen? Kaarten onder Ik komen in je collectie; kaarten onder Jij gaan eruit.'
-      : 'Confirm this trade? Cards under Me join your collection; cards under You leave it.';
+  const q = 'Confirm this trade? Cards under Me join your collection; cards under You leave it.';
   openInAppConfirm(
     q,
     async (okd) => {

@@ -608,48 +608,45 @@ async function dvPrune() {
 }
 
 function dvWhyLabel(w) {
-  const nl = appLang() === 'nl';
   return (
     {
-      edit: nl ? 'bewerkt' : 'edited',
-      presync: nl ? 'vóór sync' : 'before sync',
-      sync: nl ? 'van ander apparaat' : 'from other device',
-      deleted: nl ? 'verwijderd' : 'deleted',
-      restore: nl ? 'teruggezet' : 'restored',
-      prerestore: nl ? 'v\u00F3\u00F3r terugzetten' : 'before restore',
+      edit: 'edited',
+      presync: 'before sync',
+      sync: 'from other device',
+      deleted: 'deleted',
+      restore: 'restored',
+      prerestore: 'before restore',
     }[w] || w
   );
 }
 
 function dvWhen(t) {
-  const nl = appLang() === 'nl',
-    d = new Date(t),
+  const d = new Date(t),
     today = new Date();
   const same = d.toDateString() === today.toDateString();
-  const time = d.toLocaleTimeString(nl ? 'nl-NL' : 'en-GB', { hour: '2-digit', minute: '2-digit' });
+  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   return same
-    ? (nl ? 'Vandaag ' : 'Today ') + time
-    : d.toLocaleDateString(nl ? 'nl-NL' : 'en-GB', { day: 'numeric', month: 'short' }) + ' ' + time;
+    ? 'Today ' + time
+    : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' ' + time;
 }
 
 async function dvRestore(rec, asCopy) {
-  const nl = appLang() === 'nl';
   let v = null;
   try {
     v = JSON.parse(rec.j);
   } catch (e) {}
   if (!v) {
-    toast(nl ? 'Deze versie is niet leesbaar.' : 'This version cannot be read.');
+    toast('This version cannot be read.');
     return;
   }
   if (asCopy) {
     v.id = uid();
-    v.name = (v.name || rec.name || 'Deck') + (nl ? ' (versie)' : ' (version)');
+    v.name = (v.name || rec.name || 'Deck') + ' (version)';
     v.createdAt = Date.now();
     v.updatedAt = Date.now();
     state.decksIndex.unshift(v);
     await persistDeck(v);
-    toast(nl ? 'Versie als nieuw deck gezet.' : 'Version saved as a new deck.');
+    toast('Version saved as a new deck.');
     openDeck(v.id);
     return;
   }
@@ -662,13 +659,12 @@ async function dvRestore(rec, asCopy) {
   if (i >= 0) state.decksIndex[i] = v;
   else state.decksIndex.unshift(v);
   await persistDeck(v);
-  toast(nl ? 'Versie teruggezet.' : 'Version restored.');
+  toast('Version restored.');
   openDeck(v.id);
 }
 
 /* The versions sheet of one deck (or, with no id, every deleted deck). */
 async function openDeckVersions(id) {
-  const nl = appLang() === 'nl';
   let recs = [];
   if (id) {
     recs = (await dvList(id)).reverse(); // newest first
@@ -692,29 +688,25 @@ async function openDeckVersions(id) {
     .map((r, i) => {
       const isNow = !!id && i === 0; // every change is noted, so the newest is what is there now
       return `<div class="dv-row">
-      <div class="dv-txt"><b>${escapeHtml(id ? dvWhen(r.t) : r.name || '?')}</b><span>${id ? '' : escapeHtml(dvWhen(r.t)) + ' · '}${r.n} ${nl ? (r.n === 1 ? 'kaart' : 'kaarten') : r.n === 1 ? 'card' : 'cards'} · ${escapeHtml(dvWhyLabel(r.why))}${isNow ? (nl ? ' · <i>nu</i>' : ' · <i>now</i>') : ''}</span></div>
-      ${isNow ? '' : `<button type="button" class="ghost-btn" data-dvi="${i}" data-dvc="0">${nl ? 'Terugzetten' : 'Restore'}</button>`}
-      <button type="button" class="ghost-btn" data-dvi="${i}" data-dvc="1">${nl ? 'Als kopie' : 'As copy'}</button>
+      <div class="dv-txt"><b>${escapeHtml(id ? dvWhen(r.t) : r.name || '?')}</b><span>${id ? '' : escapeHtml(dvWhen(r.t)) + ' · '}${r.n} ${r.n === 1 ? 'card' : 'cards'} · ${escapeHtml(dvWhyLabel(r.why))}${isNow ? ' · <i>now</i>' : ''}</span></div>
+      ${isNow ? '' : `<button type="button" class="ghost-btn" data-dvi="${i}" data-dvc="0">${'Restore'}</button>`}
+      <button type="button" class="ghost-btn" data-dvi="${i}" data-dvc="1">${'As copy'}</button>
     </div>`;
     })
     .join('');
   // column-reverse sheet: DOM-first = foot -- the newest version nearest the thumb
   el.innerHTML = /* HTML */ `<div class="deckpick br-sheet bk-sheet dv-sheet">
     <div class="dv-list">
-      ${rows || `<div class="bk-hint" style="text-align:center;">${id ? (nl ? 'Nog geen eerdere versies — ze komen vanzelf zodra je het deck bewerkt.' : 'No earlier versions yet — they appear by themselves as you edit the deck.') : nl ? 'Geen verwijderde decks om terug te zetten.' : 'No deleted decks to restore.'}</div>`}
+      ${rows || `<div class="bk-hint" style="text-align:center;">${id ? 'No earlier versions yet — they appear by themselves as you edit the deck.' : 'No deleted decks to restore.'}</div>`}
     </div>
     <div class="br-title">
       <b
-        >${inlIco('restore', 16)}${id ? (nl ? 'Versies van ' : 'Versions of ') + escapeHtml(d ? d.name : '') : nl ? 'Verwijderde decks' : 'Deleted decks'}</b
+        >${inlIco('restore', 16)}${id ? 'Versions of ' + escapeHtml(d ? d.name : '') : 'Deleted decks'}</b
       ><span
         >${
           id
-            ? nl
-              ? 'Eén versie per bewerksessie, plus een kopie vóór elke sync. Terugzetten bewaart ook wat er nu staat.'
-              : 'One version per editing session, plus a copy before every sync. Restoring keeps what is there now as well.'
-            : nl
-              ? 'Verwijderde decks blijven 60 dagen bewaard.'
-              : 'Deleted decks are kept for 60 days.'
+            ? 'One version per editing session, plus a copy before every sync. Restoring keeps what is there now as well.'
+            : 'Deleted decks are kept for 60 days.'
         }</span
       >
     </div>
@@ -730,12 +722,8 @@ async function openDeckVersions(id) {
       if (!r) return;
       const copy = b.dataset.dvc === '1';
       const msg = copy
-        ? nl
-          ? `Deze versie (${dvWhen(r.t)}) als nieuw deck toevoegen?`
-          : `Add this version (${dvWhen(r.t)}) as a new deck?`
-        : nl
-          ? `Het deck terugzetten naar ${dvWhen(r.t)}? Wat er nu staat, blijft als versie bewaard.`
-          : `Restore the deck to ${dvWhen(r.t)}? What is there now stays as a version.`;
+        ? `Add this version (${dvWhen(r.t)}) as a new deck?`
+        : `Restore the deck to ${dvWhen(r.t)}? What is there now stays as a version.`;
       openInAppConfirm(
         msg,
         async (ok) => {
@@ -744,7 +732,7 @@ async function openDeckVersions(id) {
           await brAfterPop();
           dvRestore(r, copy);
         },
-        { ok: copy ? (nl ? 'Als kopie' : 'As copy') : nl ? 'Terugzetten' : 'Restore' },
+        { ok: copy ? 'As copy' : 'Restore' },
       );
     }),
   );

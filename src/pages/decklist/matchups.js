@@ -839,19 +839,18 @@ function groupPriceLabel(cards) {
 }
 
 function dlEmptyAddHtml(d) {
-  const NL = appLang() === 'nl';
   return /* HTML */ `<div class="dl-empty-add">
     <button
       type="button"
       class="deck-fab dl-empty-plus"
       id="dlEmptyAdd"
-      aria-label="${NL ? 'Kaarten toevoegen' : 'Add cards'}"
+      aria-label="${'Add cards'}"
     >
       ＋
     </button>
-    <div class="dl-empty-t">${NL ? 'Voeg kaarten toe' : 'Add some cards'}</div>
+    <div class="dl-empty-t">${'Add some cards'}</div>
     <div class="dl-empty-s">
-      ${NL ? 'Zoeken voegt ze direct toe aan' : 'Search adds them straight to'}
+      ${'Search adds them straight to'}
       <strong>${escapeHtml(d.name || '')}</strong>
     </div>
   </div>`;

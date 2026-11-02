@@ -90,7 +90,7 @@ function csPopPlace(el) {
     x.type = 'button';
     x.className = 'cs-pop-x desk-x';
     x.textContent = '✕';
-    x.title = appLang() === 'nl' ? 'Sluiten' : 'Close';
+    x.title = 'Close';
     x.addEventListener('click', (e) => {
       e.stopPropagation();
       csPopCloseNow();
@@ -245,7 +245,7 @@ function deskAddCross(n) {
       !n.matches('.deckpick-scrim, .modal-backdrop, #appointOverlay, #cutWhyOverlay')
     )
       return;
-    if (n.id === 'tourScrim' || n.querySelector('.app-dialog')) return; // These dialogs have their own cancel action.
+    if (n.querySelector('.app-dialog')) return; // These dialogs have their own cancel action.
     const sheet = n.querySelector('.deckpick, .modal-sheet, .appoint-sheet');
     if (
       !sheet ||
@@ -258,7 +258,7 @@ function deskAddCross(n) {
     x.type = 'button';
     x.className = 'desk-x';
     x.textContent = '✕';
-    x.title = appLang() === 'nl' ? 'Sluiten' : 'Close';
+    x.title = 'Close';
     x.addEventListener('click', (e) => {
       e.stopPropagation();
       // the dialog's own outside-tap close, as if its backdrop was clicked

@@ -51,9 +51,7 @@ function inspirationPageHtml() {
       ${sel.theme && !both ? '' : `<div class="bs-row">${cselectHtml('inspKindred', [{ v: '', l: trS('Kindred — none'), gen: '🐾' }].concat(kinList.map((t) => ({ v: t.slug, l: escapeHtml(t.label), art: inspSlugArt(t.slug, d) }))), sel.kindred || '', trS('Kindred — none'), { search: true, tiles: true })}</div>`}
       ${sel.kindred && !both ? '' : `<div class="bs-row">${cselectHtml('inspTheme', [{ v: '', l: trS('Theme — none'), gen: '📜' }].concat(thList.map((t) => ({ v: t.slug, l: escapeHtml(t.label), art: inspSlugArt(t.slug, d) }))), sel.theme || '', trS('Theme — none'), { search: true, tiles: true })}</div>`}
       <div class="bs-row insp-land-row">
-        <button type="button" class="ghost-btn" id="inspLandBase">
-          ⛰ ${appLang() === 'nl' ? 'Landbase' : 'Land base'}
-        </button>
+        <button type="button" class="ghost-btn" id="inspLandBase">⛰ ${'Land base'}</button>
       </div>
     </div>
     <div id="inspireResults"></div>
@@ -898,174 +896,112 @@ function deckCutPlan(d, stats, o) {
 }
 
 function cutWhyText(w, d) {
-  const NL = appLang() === 'nl';
-  const lead = d.admiral ? String(d.admiral.name).split(',')[0] : NL ? 'je leider' : 'your leader';
+  const lead = d.admiral ? String(d.admiral.name).split(',')[0] : 'your leader';
   const role = { ramp: 'ramp', draw: 'card draw', removal: 'removal', wipe: 'board wipes' };
   switch (w.k) {
     case 'rate':
       return w.pg
-        ? NL
-          ? `in ${Math.round(w.p * 100)}% van de ${w.pg}-decks`
-          : `in ${Math.round(w.p * 100)}% of ${w.pg} decks`
-        : NL
-          ? `in ${Math.round(w.p * 100)}% van de ${lead}-decks`
-          : `in ${Math.round(w.p * 100)}% of ${lead} decks`;
+        ? `in ${Math.round(w.p * 100)}% of ${w.pg} decks`
+        : `in ${Math.round(w.p * 100)}% of ${lead} decks`;
     case 'absent':
-      return NL ? `bijna nooit gespeeld met ${lead}` : `hardly ever played with ${lead}`;
+      return `hardly ever played with ${lead}`;
     case 'offtheme':
-      return NL ? `weinig gespeeld in ${w.pg}-decks` : `rarely played in ${w.pg} decks`;
+      return `rarely played in ${w.pg} decks`;
     case 'offtribe':
-      return NL ? `past niet bij ${w.pg}` : `off-tribe for ${w.pg}`;
+      return `off-tribe for ${w.pg}`;
     case 'rank':
-      return NL ? 'weinig gespeeld in Commander' : 'rarely played in Commander';
+      return 'rarely played in Commander';
     case 'role':
-      return NL
-        ? `al ${w.n}× ${role[w.role]} (richtlijn ~${w.t})`
-        : `${w.n} ${role[w.role]} already (guide ~${w.t})`;
+      return `${w.n} ${role[w.role]} already (guide ~${w.t})`;
     case 'mv':
-      return NL ? `${w.mv} mana — zwaar bovenin de curve` : `${w.mv} mana — top-heavy curve`;
+      return `${w.mv} mana — top-heavy curve`;
     case 'weakest':
       return w.pos === 1
-        ? NL
-          ? `zwakste ${role[w.role]} van je ${w.of}`
-          : `weakest ${role[w.role]} of your ${w.of}`
-        : NL
-          ? `op één na zwakste ${role[w.role]}`
-          : `second-weakest ${role[w.role]}`;
+        ? `weakest ${role[w.role]} of your ${w.of}`
+        : `second-weakest ${role[w.role]}`;
     case 'pricey':
-      return NL
-        ? `duur voor ${role[w.role]} (${w.mv} vs ~${w.avg})`
-        : `pricey for ${role[w.role]} (${w.mv} vs ~${w.avg})`;
+      return `pricey for ${role[w.role]} (${w.mv} vs ~${w.avg})`;
     case 'cast':
-      return NL ? `${w.p}× {${w.col}} — lastig te casten` : `${w.p}× {${w.col}} — hard to cast`;
+      return `${w.p}× {${w.col}} — hard to cast`;
     case 'winmore':
       return 'win-more';
     case 'narrow':
-      return NL ? 'situationeel' : 'situational';
+      return 'situational';
     case 'antisyn':
-      return NL ? `lage synergie met ${lead}` : `low synergy with ${lead}`;
+      return `low synergy with ${lead}`;
     case 'land':
-      return w.mine
-        ? NL
-          ? `${w.n} lands (jouw doel ${w.t})`
-          : `${w.n} lands (your goal ${w.t})`
-        : NL
-          ? `${w.n} lands (richtlijn ~${w.t})`
-          : `${w.n} lands (guide ~${w.t})`;
+      return w.mine ? `${w.n} lands (your goal ${w.t})` : `${w.n} lands (guide ~${w.t})`;
   }
   return '';
 }
 
 /* The long story behind one reason, for the explanation popup. */
 function cutWhyLong(w, d) {
-  const NL = appLang() === 'nl';
-  const lead = d.admiral ? String(d.admiral.name).split(',')[0] : NL ? 'je leider' : 'your leader';
+  const lead = d.admiral ? String(d.admiral.name).split(',')[0] : 'your leader';
   const role = { ramp: 'ramp', draw: 'card draw', removal: 'removal', wipe: 'board wipes' };
-  const col =
-    (NL
-      ? { W: 'wit', U: 'blauw', B: 'zwart', R: 'rood', G: 'groen' }
-      : { W: 'white', U: 'blue', B: 'black', R: 'red', G: 'green' })[w.col] || w.col;
+  const col = { W: 'white', U: 'blue', B: 'black', R: 'red', G: 'green' }[w.col] || w.col;
   const pct = (p) => Math.round(p * 100) + '%';
   switch (w.k) {
     case 'rate':
       return w.pg
-        ? NL
-          ? `Decks met ${lead} en ${w.pg} spelen hem maar in ${pct(w.p)} van de gevallen. Spelers met dit plan kiezen meestal iets anders voor deze plek.`
-          : `${lead} decks built around ${w.pg} run it only ${pct(w.p)} of the time. Players on this plan usually pick something else for the slot.`
-        : NL
-          ? `Op EDHREC speelt maar ${pct(w.p)} van de ${lead}-decks deze kaart. Wie deze commander bouwt, vindt meestal iets beters voor dezelfde plek.`
-          : `On EDHREC only ${pct(w.p)} of ${lead} decks run this card. People building this commander usually find something better for the slot.`;
+        ? `${lead} decks built around ${w.pg} run it only ${pct(w.p)} of the time. Players on this plan usually pick something else for the slot.`
+        : `On EDHREC only ${pct(w.p)} of ${lead} decks run this card. People building this commander usually find something better for the slot.`;
     case 'absent':
-      return NL
-        ? `Hij staat niet op de EDHREC-pagina van ${lead}: bijna niemand speelt hem met deze commander. Dat is geen bewijs dat hij slecht is, maar wel dat hij niet in het bekende plan past.`
-        : `It isn't on ${lead}'s EDHREC page: hardly anyone plays it with this commander. Not proof it's bad, but it sits outside the known plan.`;
+      return `It isn't on ${lead}'s EDHREC page: hardly anyone plays it with this commander. Not proof it's bad, but it sits outside the known plan.`;
     case 'offtheme':
-      return NL
-        ? `Op de ${w.pg}-pagina van ${lead} komt hij (bijna) niet voor. Voor het thema dat je koos levert hij weinig op.`
-        : `It (almost) never shows up on ${lead}'s ${w.pg} page. For the theme you picked it adds little.`;
+      return `It (almost) never shows up on ${lead}'s ${w.pg} page. For the theme you picked it adds little.`;
     case 'offtribe':
-      return NL
-        ? `Een creature die geen ${w.pg} is en de stam ook niet helpt. In een kindred-deck telt elke creature-plek voor de lords en tribal payoffs; deze telt niet mee.`
-        : `A creature that isn't ${w.pg} and doesn't help the tribe. In a kindred deck every creature slot feeds the lords and tribal payoffs; this one doesn't count.`;
+      return `A creature that isn't ${w.pg} and doesn't help the tribe. In a kindred deck every creature slot feeds the lords and tribal payoffs; this one doesn't count.`;
     case 'weakest':
-      return NL
-        ? `Van je ${w.of} ${role[w.role]}-kaarten scoort deze ${w.pos === 1 ? 'het laagst' : 'op één na het laagst'} in hoe vaak hij gespeeld wordt. ${w.best} doet hetzelfde werk en wordt veel vaker gekozen. De zwakste in een rol is de makkelijkste cut: de rol blijft gevuld.`
-        : `Of your ${w.of} ${role[w.role]} cards this one scores ${w.pos === 1 ? 'lowest' : 'second-lowest'} on how often it is played. ${w.best} does the same job and is picked far more often. The weakest in a role is the easiest cut: the role stays filled.`;
+      return `Of your ${w.of} ${role[w.role]} cards this one scores ${w.pos === 1 ? 'lowest' : 'second-lowest'} on how often it is played. ${w.best} does the same job and is picked far more often. The weakest in a role is the easiest cut: the role stays filled.`;
     case 'pricey':
-      return NL
-        ? `Hij kost ${w.mv} mana, terwijl je andere ${role[w.role]}-kaarten gemiddeld ${w.avg} kosten. Hetzelfde werk, maar later in het spel.`
-        : `It costs ${w.mv} mana while your other ${role[w.role]} cards average ${w.avg}. The same job, but later in the game.`;
+      return `It costs ${w.mv} mana while your other ${role[w.role]} cards average ${w.avg}. The same job, but later in the game.`;
     case 'cast':
-      return NL
-        ? `Hij vraagt ${w.p}× ${col} mana ({${w.col}}), en maar ${w.src} van je ${w.lands} lands maken ${col}. Grote kans dat je hem op het moment dat je hem wilt spelen niet kunt casten.`
-        : `It asks for ${w.p}× ${col} mana ({${w.col}}), and only ${w.src} of your ${w.lands} lands make ${col}. Good odds you can't cast it when you want to.`;
+      return `It asks for ${w.p}× ${col} mana ({${w.col}}), and only ${w.src} of your ${w.lands} lands make ${col}. Good odds you can't cast it when you want to.`;
     case 'winmore':
-      return NL
-        ? `Win-more: hij doet vooral iets als je al voor staat (een groot bord oppompen, extra combat, dubbele schade). Sta je achter, dan helpt hij je nauwelijks terug in het spel.`
-        : `Win-more: it mostly matters when you're already ahead (pumping a big board, extra combat, double damage). When you're behind it barely helps you back.`;
+      return `Win-more: it mostly matters when you're already ahead (pumping a big board, extra combat, double damage). When you're behind it barely helps you back.`;
     case 'narrow':
-      return NL
-        ? `Situationeel: hij raakt maar één soort doel. Heeft de tafel dat niet, dan is het een dode kaart in je hand.`
-        : `Situational: it only hits one kind of target. When the table has none, it's a dead card in hand.`;
+      return `Situational: it only hits one kind of target. When the table has none, it's a dead card in hand.`;
     case 'antisyn':
-      return NL
-        ? `EDHREC geeft hem een negatieve synergie met ${lead} (${Math.round(w.s * 100)}%): hij wordt vaker in andere decks gespeeld dan in dit soort.`
-        : `EDHREC gives it negative synergy with ${lead} (${Math.round(w.s * 100)}%): it shows up more in other decks than in this kind.`;
+      return `EDHREC gives it negative synergy with ${lead} (${Math.round(w.s * 100)}%): it shows up more in other decks than in this kind.`;
     case 'role':
-      return NL
-        ? `Je hebt al ${w.n} ${role[w.role]}-kaarten; een gangbare richtlijn is ~${w.t}. Eén minder kost je weinig.`
-        : `You already run ${w.n} ${role[w.role]} cards; a common guide is ~${w.t}. One fewer costs you little.`;
+      return `You already run ${w.n} ${role[w.role]} cards; a common guide is ~${w.t}. One fewer costs you little.`;
     case 'mv':
-      return NL
-        ? `${w.mv} mana is zwaar. Te veel dure kaarten maken je eerste beurten traag; met te veel kaarten in het deck is de top van de curve een logische plek om te snijden.`
-        : `${w.mv} mana is heavy. Too many expensive cards slow your early turns; with too many cards in the deck, the top of the curve is a natural place to trim.`;
+      return `${w.mv} mana is heavy. Too many expensive cards slow your early turns; with too many cards in the deck, the top of the curve is a natural place to trim.`;
     case 'land':
       return w.mine
-        ? NL
-          ? `Je deck heeft ${w.n} lands en jouw doel is ${w.t}. Een basic land eruit is de goedkoopste cut die er is.`
-          : `Your deck has ${w.n} lands and your goal is ${w.t}. A basic land is the cheapest cut there is.`
-        : NL
-          ? `Je deck heeft ${w.n} lands; de gangbare richtlijn is ~${w.t}. Een basic land eruit is de goedkoopste cut die er is.`
-          : `Your deck has ${w.n} lands; the common guide is ~${w.t}. A basic land is the cheapest cut there is.`;
+        ? `Your deck has ${w.n} lands and your goal is ${w.t}. A basic land is the cheapest cut there is.`
+        : `Your deck has ${w.n} lands; the common guide is ~${w.t}. A basic land is the cheapest cut there is.`;
     case 'rank':
-      return NL
-        ? 'Over heel Commander gezien wordt hij weinig gespeeld (EDHREC-rang).'
-        : 'Across all of Commander it is rarely played (EDHREC rank).';
+      return 'Across all of Commander it is rarely played (EDHREC rank).';
   }
   return '';
 }
 
 /* Tap the short reason under a tile: the full argument in a popup. */
 function openCutWhy(d, x, i, total) {
-  const NL = appLang() === 'nl';
   document.getElementById('cutWhyOverlay')?.remove();
   const el = document.createElement('div');
   el.id = 'cutWhyOverlay';
   const items =
-    (x.ai
-      ? `<li><b>\u2726 ${NL ? 'Wat de AI zegt' : 'What the AI says'}</b><span>${escapeHtml(x.ai)}</span></li>`
-      : '') +
+    (x.ai ? `<li><b>\u2726 ${'What the AI says'}</b><span>${escapeHtml(x.ai)}</span></li>` : '') +
       x.why
         .map(
           (w) =>
             `<li><b>${escapeHtml(cutWhyText(w, d))}</b><span>${escapeHtml(cutWhyLong(w, d))}</span></li>`,
         )
         .join('') ||
-    `<li><span>${NL ? 'Geen opvallende zwakte — hij is gewoon de minst onmisbare van wat er staat.' : 'No single weakness — it is simply the least essential of what is there.'}</span></li>`;
+    `<li><span>${'No single weakness — it is simply the least essential of what is there.'}</span></li>`;
   el.innerHTML = /* HTML */ ` <div class="appoint-sheet" style="max-width:460px;">
     <div class="appoint-head">
       <span>${escapeHtml(x.card.name)}</span
       ><button class="icon-btn" id="cwClose">${ICONS.close || '✕'}</button>
     </div>
-    <p class="hint" style="margin:0 0 8px;">
-      ${NL ? `Cut-kandidaat ${i + 1} van ${total}. Waarom:` : `Cut candidate ${i + 1} of ${total}. Why:`}
-    </p>
+    <p class="hint" style="margin:0 0 8px;">${`Cut candidate ${i + 1} of ${total}. Why:`}</p>
     <ul class="cut-why-list">
       ${items}
     </ul>
-    <p class="hint" style="margin:10px 0 0;">
-      ${NL ? 'Een richtlijn, geen regel — jij kent je deck het best.' : 'A guide, not a rule — you know your deck best.'}
-    </p>
+    <p class="hint" style="margin:10px 0 0;">${'A guide, not a rule — you know your deck best.'}</p>
   </div>`;
   document.body.appendChild(el);
   pushOverlay('cutWhy', () => {
@@ -1156,16 +1092,16 @@ function deckAiModelName(m) {
   return m;
 }
 
-function deckAiModelHtml(res, NL) {
+function deckAiModelHtml(res) {
   const m = String((res && res.model) || '');
   if (!m) return '';
   const reserve = /llama/i.test(m);
   return /* HTML */ `<span class="ai-via"
-    >${reserve ? (NL ? 'reservemodel (Llama 3.3) \u2014 de sterke AI was even bezet' : 'reserve model (Llama 3.3) \u2014 the strong AI was busy') : escapeHtml(deckAiModelName(m))}${res.cached ? (NL ? ' \u00b7 eerder antwoord' : ' \u00b7 earlier answer') : ''}</span
+    >${reserve ? 'reserve model (Llama 3.3) \u2014 the strong AI was busy' : escapeHtml(deckAiModelName(m))}${res.cached ? ' \u00b7 earlier answer' : ''}</span
   >`;
 }
 
-function deckAiErrText(res, NL) {
+function deckAiErrText(res) {
   const e = res && res.error;
   // what each model said, small, so a screenshot tells what went wrong
   const tried = (res && Array.isArray(res.tried) ? res.tried : [])
@@ -1173,45 +1109,20 @@ function deckAiErrText(res, NL) {
     .join(' \u00b7 ');
   let tail = tried ? `\n(${tried})` : '';
   if (!tried && res && res.http)
-    tail = `\n(server: http ${res.http}${res.http === 404 ? (NL ? ' \u2014 de AI-functie staat niet op de site' : ' \u2014 the AI function is not on the site') : ''}${res.raw ? ': ' + res.raw : ''})`;
-  else if (!tried && res && res.old)
-    tail = NL
-      ? '\n(server: een oudere versie van de AI-functie)'
-      : '\n(server: an older version of the AI function)';
+    tail = `\n(server: http ${res.http}${res.http === 404 ? ' \u2014 the AI function is not on the site' : ''}${res.raw ? ': ' + res.raw : ''})`;
+  else if (!tried && res && res.old) tail = '\n(server: an older version of the AI function)';
   if (res && Array.isArray(res.keys) && !res.keys.includes('gemini'))
-    tail += NL ? '\n(server: geen Gemini-sleutel gevonden)' : '\n(server: no Gemini key found)';
+    tail += '\n(server: no Gemini key found)';
   if (e === 'quota')
-    return (
-      (NL
-        ? 'De AI is even bezet: de gratis limiet per minuut is op. Probeer het over een minuut nog eens.'
-        : 'The AI is busy: the free per-minute limit is used up. Try again in a minute.') + tail
-    );
-  if (e === 'shape')
-    return (
-      (NL
-        ? 'De AI gaf een antwoord dat de app niet kon lezen. Probeer het nog eens.'
-        : 'The AI gave an answer the app could not read. Try again.') + tail
-    );
+    return 'The AI is busy: the free per-minute limit is used up. Try again in a minute.' + tail;
+  if (e === 'shape') return 'The AI gave an answer the app could not read. Try again.' + tail;
   if (e === 'down' && tried)
-    return (
-      (NL
-        ? 'De AI is nu even niet bereikbaar. Probeer het straks nog eens.'
-        : 'The AI can\u2019t be reached right now. Try again in a while.') + tail
-    );
+    return 'The AI can\u2019t be reached right now. Try again in a while.' + tail;
   if (e === 'limit')
-    return NL
-      ? `Je ${res.limit || ''} AI-analyses voor vandaag zijn op. Morgen kan het weer.`
-      : `Your ${res.limit || ''} AI analyses for today are used up. More tomorrow.`;
-  if (e === 'offline')
-    return NL
-      ? 'Geen verbinding. De AI heeft internet nodig.'
-      : 'No connection. The AI needs the internet.';
-  if (e === 'nokey') return NL ? 'De AI is nog niet ingesteld.' : 'The AI is not set up yet.';
-  return (
-    (NL
-      ? 'De AI is nu even niet bereikbaar. Probeer het straks nog eens.'
-      : 'The AI can’t be reached right now. Try again in a while.') + tail
-  );
+    return `Your ${res.limit || ''} AI analyses for today are used up. More tomorrow.`;
+  if (e === 'offline') return 'No connection. The AI needs the internet.';
+  if (e === 'nokey') return 'The AI is not set up yet.';
+  return 'The AI can’t be reached right now. Try again in a while.' + tail;
 }
 
 /* A card's rules text for the AI: every face, short. */
@@ -1322,7 +1233,6 @@ function deckAiNameList(cards) {
 /* Cuts: every card that may go, with its rules text and how often decks
    with this leader run it -- the AI weighs synergy above that number. */
 function deckAiCutsPayload(d, plan) {
-  const NL = appLang() === 'nl';
   const base = deckAiDeckInfo(d);
   const ctx = base.ctx;
   const qS =
@@ -1379,7 +1289,7 @@ function deckAiCutsPayload(d, plan) {
   });
   return {
     kind: 'cuts',
-    lang: NL ? 'nl' : 'en',
+    lang: 'en',
     device: judgeDevice(),
     want: Math.min(15, plan.over + 3),
     deck: Object.assign(base.info, { others: deckAiNameList(others) }),
@@ -1460,9 +1370,7 @@ async function askCutsAi(d, plan) {
   if (res && res.ok && typeof res.left === 'number') deckAiLeftSet(res.left);
   if (res && res.error === 'limit') deckAiLeftSet(0);
   state._cutsAI[d.id] =
-    res && res.ok && res.kind === 'cuts'
-      ? { key, res }
-      : { key, err: deckAiErrText(res, appLang() === 'nl') };
+    res && res.ok && res.kind === 'cuts' ? { key, res } : { key, err: deckAiErrText(res) };
   if (res && res.ok && res.kind === 'cuts') cutsAiStoreSet(d, key, res);
   if (
     state.screen === 'inspiration' &&
@@ -1476,10 +1384,10 @@ async function askCutsAi(d, plan) {
    reading of the deck once it has answered. */
 function cutsAiRowHtml(d) {
   if (!deckAiFits(d)) return '';
-  const NL = appLang() === 'nl';
+
   const a = (state._cutsAI || {})[d.id];
   const left = deckAiLeftGet();
-  const leftTxt = left == null ? '' : NL ? ` · nog ${left} vandaag` : ` · ${left} left today`;
+  const leftTxt = left == null ? '' : ` · ${left} left today`;
   if (
     (a && a.busy) ||
     (!a &&
@@ -1490,20 +1398,16 @@ function cutsAiRowHtml(d) {
   )
     return /* HTML */ `<div class="ai-row busy">
       <span class="ai-spin" aria-hidden="true"></span
-      ><span class="ai-txt"
-        >${NL ? 'De AI leest je deck… (tot een halve minuut)' : 'The AI is reading your deck… (up to half a minute)'}</span
-      >
+      ><span class="ai-txt">${'The AI is reading your deck… (up to half a minute)'}</span>
     </div>`;
   if (a && a.res)
     return /* HTML */ `<div class="ai-row done">
       <span class="ai-badge" aria-hidden="true">✦ AI</span
       ><span class="ai-txt"
-        >${escapeHtml(a.res.plan || (NL ? 'Gekozen op samenhang met je leider en plan.' : 'Picked on how the cards work with your leader and plan.'))}${deckAiModelHtml(a.res, NL)}</span
-      ><button type="button" class="cut-reset" id="cutAiOff">
-        ${NL ? 'Eigen lijst' : 'Own list'}
-      </button>
+        >${escapeHtml(a.res.plan || 'Picked on how the cards work with your leader and plan.')}${deckAiModelHtml(a.res)}</span
+      ><button type="button" class="cut-reset" id="cutAiOff">${'Own list'}</button>
     </div>`;
-  return `${a && a.err ? `<div class="ai-err">${escapeHtml(a.err)}</div>` : ''}<button type="button" class="ghost-btn ai-btn" id="cutAiBtn"><span class="ai-star" aria-hidden="true">✦</span>${NL ? 'Vraag de AI om cuts' : 'Ask the AI for cuts'}</button><div class="ai-hint">${NL ? 'Leest hoe je kaarten samenwerken' : 'Reads how your cards work together'}${leftTxt}</div>`;
+  return `${a && a.err ? `<div class="ai-err">${escapeHtml(a.err)}</div>` : ''}<button type="button" class="ghost-btn ai-btn" id="cutAiBtn"><span class="ai-star" aria-hidden="true">✦</span>${'Ask the AI for cuts'}</button><div class="ai-hint">${'Reads how your cards work together'}${leftTxt}</div>`;
 }
 
 /* The Cuts row: the top of the Inspiration menus, right above Theme, in
@@ -1512,9 +1416,8 @@ function cutsAiRowHtml(d) {
    (bottom-up): settings right above the button, then the list with the
    strongest cut lowest, More at the top. */
 function cutsBlockHtml(d, plan) {
-  const NL = appLang() === 'nl';
   const open = state._cutsOpenFor === d.id;
-  const btn = `<button type="button" class="cselect-btn cut-toggle" id="cutToggle" aria-expanded="${open}"><span class="cs-label">Cuts — ${plan.over} ${NL ? 'te veel' : 'too many'}</span><span class="cs-car">${open ? '▴' : '▾'}</span></button>`;
+  const btn = `<button type="button" class="cselect-btn cut-toggle" id="cutToggle" aria-expanded="${open}"><span class="cs-label">Cuts — ${plan.over} ${'too many'}</span><span class="cs-car">${open ? '▴' : '▾'}</span></button>`;
   if (!open) return /* HTML */ `<div class="cut-block">${btn}</div>`;
   const n = plan.aiWait
     ? 0
@@ -1527,17 +1430,17 @@ function cutsBlockHtml(d, plan) {
   const lead = d.admiral ? String(d.admiral.name).split(',')[0] : '';
   const own =
     !plan.aiOnly && !plan.aiWait && deckAiFits(d)
-      ? `<div class="cut-basis"><b>${NL ? 'Eigen schatting van de app (zonder AI)' : 'The app\u2019s own estimate (no AI)'}</b></div>`
+      ? `<div class="cut-basis"><b>${'The app\u2019s own estimate (no AI)'}</b></div>`
       : '';
   const basis =
     own +
-    `<div class="cut-basis">${NL ? 'Op basis van' : 'Based on'} ${escapeHtml(lead)}${plan.pg ? ' · ' + escapeHtml(plan.pg) : ''}${plan.pg ? '' : NL ? ' — kies hieronder een Theme of Kindred' : ' — pick a Theme or Kindred below'}</div>`;
+    `<div class="cut-basis">${'Based on'} ${escapeHtml(lead)}${plan.pg ? ' · ' + escapeHtml(plan.pg) : ''}${plan.pg ? '' : ' — pick a Theme or Kindred below'}</div>`;
   const lands = plan.tpl.land
-    ? `<div class="cut-lands"><span class="cut-lands-l">${NL ? 'Aantal lands' : 'Land count'}</span>
+    ? `<div class="cut-lands"><span class="cut-lands-l">${'Land count'}</span>
       <button type="button" class="ghost-btn cut-step" data-cutland="-1" aria-label="−">−</button>
       <b class="cut-lands-n">${plan.tpl.land}</b>
       <button type="button" class="ghost-btn cut-step" data-cutland="1" aria-label="+">+</button>
-      <span class="cut-lands-h">${NL ? 'nu' : 'now'} ${plan.counts.land}${typeof d.landGoal === 'number' ? ` · <button type="button" class="cut-reset" data-cutland="0">${NL ? 'standaard' : 'default'}</button>` : ''}</span></div>`
+      <span class="cut-lands-h">${'now'} ${plan.counts.land}${typeof d.landGoal === 'number' ? ` · <button type="button" class="cut-reset" data-cutland="0">${'default'}</button>` : ''}</span></div>`
     : '';
   // Tiles, two across, bottom-up (wrap-reverse): the strongest cut at the
   // foot, on the left. Under each card: the short reason (tap = the full
@@ -1554,7 +1457,7 @@ function cutsBlockHtml(d, plan) {
               .slice(0, 2)
               .map((w) => escapeHtml(cutWhyText(w, d)))
               .filter(Boolean)
-              .join(' · ') || (NL ? 'minst onmisbaar in dit deck' : 'least essential in this deck')
+              .join(' · ') || 'least essential in this deck'
       }</span><span class="cut-reason-i" aria-hidden="true">›</span></button>
       <button type="button" class="ghost-btn cut-act" data-cutdel="${i}" style="color:var(--danger);border-color:var(--danger);"><span class="ib">${ICONS.removeOne}</span>${trS('Remove one')}</button>
       <button type="button" class="ghost-btn cut-act" data-cutmaybe="${i}"><span class="ib">${ICONS.maybe}</span>${trS('To maybeboard')}</button>
@@ -1629,7 +1532,7 @@ function paintCuts(d) {
 function wireCutsBlock(d, plan) {
   const slot = document.getElementById('cutSlot');
   if (!slot) return;
-  const NL = appLang() === 'nl';
+
   slot.querySelector('#cutToggle')?.addEventListener('click', () => {
     state._cutsOpenFor = state._cutsOpenFor === d.id ? null : d.id;
     paintCuts(d);
@@ -1646,15 +1549,7 @@ function wireCutsBlock(d, plan) {
       logDeckChange(d, { type: 'toMaybe', name: x.card.name, card: x.card });
     } else logDeckChange(d, { type: 'remove', name: x.card.name, card: x.card });
     scheduleSave(d);
-    toast(
-      toMaybe
-        ? NL
-          ? `${x.card.name} naar de maybeboard.`
-          : `${x.card.name} to the maybeboard.`
-        : NL
-          ? `${x.card.name} is eruit.`
-          : `${x.card.name} removed.`,
-    );
+    toast(toMaybe ? `${x.card.name} to the maybeboard.` : `${x.card.name} removed.`);
     // Fits now: the page draws again, without the Cuts row and with the
     // Theme / Kindred menus back to one at a time.
     if (deckCutOver(d) <= 0) {

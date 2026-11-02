@@ -880,7 +880,6 @@ function openCardInfo(card, opts) {
       showCardPreview(card, colIdx != null ? cardImageLargeRaw(card) : cardImageLarge(card)),
     );
   wireCombosButton(el, card);
-  applyLocalizedSheetImage(card, 'ciImg');
   try {
     paintPendingArt();
   } catch (e) {}

@@ -83,11 +83,10 @@ function wireBrowseFilters() {
 }
 
 function inspirationPeriodHtml() {
-  const nl = appLang() === 'nl';
   return /* HTML */ `<div class="adv-row inspiration-period">
-    <label id="inspirationPeriodLabel">${nl ? 'Periode' : 'Time period'}</label>
+    <label id="inspirationPeriodLabel">${'Time period'}</label>
     <div class="if-winrow" role="group" aria-labelledby="inspirationPeriodLabel">
-      ${['week', 'month', 'year'].map((win) => `<button type="button" class="ghost-btn if-win${win === _inspFeedWin ? ' active' : ''}" data-ifwin="${win}" aria-pressed="${win === _inspFeedWin}">${win === 'week' ? 'Week' : win === 'month' ? (nl ? 'Maand' : 'Month') : nl ? 'Jaar' : 'Year'}</button>`).join('')}
+      ${['week', 'month', 'year'].map((win) => `<button type="button" class="ghost-btn if-win${win === _inspFeedWin ? ' active' : ''}" data-ifwin="${win}" aria-pressed="${win === _inspFeedWin}">${win === 'week' ? 'Week' : win === 'month' ? 'Month' : 'Year'}</button>`).join('')}
     </div>
   </div>`;
 }
@@ -406,17 +405,13 @@ async function loadInspFeed() {
       _netConfirmDown();
     } catch (e) {}
   }
-  const _NL = appLang() === 'nl';
+
   grid.innerHTML = _got
     ? out.cards.map((c, i) => tile(c, bf, key, i)).join('')
     : `<div class="empty-note" data-ifretry="1" style="flex:1 1 100%;cursor:pointer;">${
         _retrying
-          ? _NL
-            ? 'Scryfall antwoordt even niet \u2014 ik probeer het zo opnieuw. Tik om het nu te proberen.'
-            : 'No answer from Scryfall just now \u2014 trying again shortly. Tap to retry now.'
-          : _NL
-            ? 'Het lukt niet om deze op te halen. Tik om opnieuw te proberen.'
-            : 'Could not load these. Tap to retry.'
+          ? 'No answer from Scryfall just now \u2014 trying again shortly. Tap to retry now.'
+          : 'Could not load these. Tap to retry.'
       }</div>`;
   const lab = box.querySelector('[data-iflab]');
   if (lab && out)

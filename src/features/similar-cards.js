@@ -664,13 +664,7 @@ async function openSimilarCards(card, colorScope) {
       .sort(cmpSimilarity)
       .slice(0, 20)
       .map((e) => e.x);
-    simPaint(
-      list,
-      (appLang() === 'nl' ? 'Focus op ' : 'Focused on ') +
-        '<b>' +
-        escapeHtml(otagLabel(tag)) +
-        '</b>',
-    );
+    simPaint(list, 'Focused on ' + '<b>' + escapeHtml(otagLabel(tag)) + '</b>');
   };
   try {
     const f = frontFace(card);

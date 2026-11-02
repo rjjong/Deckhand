@@ -12,22 +12,17 @@ function searchSortList(list) {
 }
 
 function searchSortOptions() {
-  const NL = appLang() === 'nl';
   // Drop-up, bottom-up: the most used order sits at the foot, by the thumb.
   return [
-    ['name', 'asc', NL ? 'Naam A \u2192 Z' : 'Name A \u2192 Z'],
-    ['salt', 'asc', NL ? 'Salt: minst zout eerst' : 'Salt: least salty first'],
-    ['salt', 'desc', NL ? 'Salt: zoutste eerst' : 'Salt: saltiest first'],
-    ['cmc', 'desc', NL ? 'Mana value: hoog \u2192 laag' : 'Mana value: high \u2192 low'],
-    ['cmc', 'asc', NL ? 'Mana value: laag \u2192 hoog' : 'Mana value: low \u2192 high'],
-    ['eur', 'desc', NL ? 'Prijs: hoog \u2192 laag' : 'Price: high \u2192 low'],
-    ['eur', 'asc', NL ? 'Prijs: laag \u2192 hoog' : 'Price: low \u2192 high'],
-    [
-      'edhrec',
-      'desc',
-      NL ? 'Populariteit: minst gespeeld eerst' : 'Popularity: least played first',
-    ],
-    ['edhrec', 'asc', NL ? 'Populariteit: meest gespeeld eerst' : 'Popularity: most played first'],
+    ['name', 'asc', 'Name A \u2192 Z'],
+    ['salt', 'asc', 'Salt: least salty first'],
+    ['salt', 'desc', 'Salt: saltiest first'],
+    ['cmc', 'desc', 'Mana value: high \u2192 low'],
+    ['cmc', 'asc', 'Mana value: low \u2192 high'],
+    ['eur', 'desc', 'Price: high \u2192 low'],
+    ['eur', 'asc', 'Price: low \u2192 high'],
+    ['edhrec', 'desc', 'Popularity: least played first'],
+    ['edhrec', 'asc', 'Popularity: most played first'],
   ];
 }
 
@@ -115,11 +110,7 @@ async function loadSearchSalt() {
   };
   repaint();
   if (!todo.length) return;
-  toast(
-    appLang() === 'nl'
-      ? '\uD83E\uDDC2 Salt scores worden opgehaald\u2026'
-      : '\uD83E\uDDC2 Fetching salt scores\u2026',
-  );
+  toast('\uD83E\uDDC2 Fetching salt scores\u2026');
   let i = 0,
     done = 0;
   const worker = async () => {
@@ -173,7 +164,7 @@ function renderSearchResultsBox() {
               'Every match is off-color or not legal here — turn on “Show everything” under Advanced filters to see them.',
             )
           : state.searchFormat && state.searchFormat !== 'any'
-            ? `${appLang() === 'nl' ? 'Niets in ' + escapeHtml(fmtLabelOf(state.searchFormat)) + ' past bij deze zoekopdracht — het Format-filter staat op ' + escapeHtml(fmtLabelOf(state.searchFormat)) + '.' : 'Nothing legal in ' + escapeHtml(fmtLabelOf(state.searchFormat)) + ' matches this search — the Format filter is set to ' + escapeHtml(fmtLabelOf(state.searchFormat)) + '.'}<button type="button" class="ghost-btn" id="srAllFmts" style="display:block;width:100%;margin-top:10px;">${trS('Search all formats')}</button>`
+            ? `${'Nothing legal in ' + escapeHtml(fmtLabelOf(state.searchFormat)) + ' matches this search — the Format filter is set to ' + escapeHtml(fmtLabelOf(state.searchFormat)) + '.'}<button type="button" class="ghost-btn" id="srAllFmts" style="display:block;width:100%;margin-top:10px;">${trS('Search all formats')}</button>`
             : trS('No legal cards found for that search.')
       }
     </div>`;

@@ -20,8 +20,6 @@ for (const theme of ['dark', 'light'])
     test(`color scheme ${guild} in ${theme} mode stays readable`, async ({ page }, info) => {
       test.setTimeout(90000);
       await page.addInitScript(() => {
-        localStorage.setItem('admiral_app:welcomed', '1');
-        localStorage.setItem('admiral_app:lang', 'en');
         localStorage.setItem('admiral_app:seenVersion', '1.50');
       });
       await page.route('**/*', (route) => {

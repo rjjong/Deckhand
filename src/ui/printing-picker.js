@@ -216,9 +216,9 @@ async function openPrintingGrid(card, onPick, gOpts) {
           const lblCss = 'width:100%;flex:1 1 100%;border-bottom:2px solid var(--line);';
           let shelf = '';
           if (owned.length && i === 0)
-            shelf = `<div class="section-label" style="${lblCss}">${appLang() === 'nl' ? 'In je collectie' : 'In your collection'}</div>`;
+            shelf = `<div class="section-label" style="${lblCss}">${'In your collection'}</div>`;
           else if (owned.length && i === owned.length)
-            shelf = `<div class="section-label" style="${lblCss}">${appLang() === 'nl' ? 'Alle versies' : 'All printings'}</div>`;
+            shelf = `<div class="section-label" style="${lblCss}">${'All printings'}</div>`;
           const ownMark =
             owned.length && i < owned.length
               ? '<span class="pp-own" title="In your collection">✓</span>'

@@ -643,7 +643,7 @@ function _renderSpoilerBodyCore(loaded, failed) {
   }
   const fmtDayHead = (d) => {
     try {
-      return new Date(d + 'T00:00:00').toLocaleDateString(appLang() === 'nl' ? 'nl-NL' : 'en-US', {
+      return new Date(d + 'T00:00:00').toLocaleDateString('en-US', {
         weekday: 'long',
         month: 'long',
         day: 'numeric',

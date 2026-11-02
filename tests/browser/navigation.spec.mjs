@@ -3,8 +3,6 @@ import { mkdir } from 'node:fs/promises';
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
-    localStorage.setItem('admiral_app:welcomed', '1');
-    localStorage.setItem('admiral_app:lang', 'en');
     localStorage.setItem('admiral_app:seenVersion', '1.50');
   });
   // Exercise local UI without making background requests to external APIs.
@@ -489,19 +487,14 @@ test('Settings owns working preferences, sync and backup controls', async ({page
   page.on('pageerror',error=>errors.push(error.message));
   await page.getByRole('button',{name:'Open menu',exact:true}).click();
   await page.locator('#menuSettings').click();
-  await expect(page.locator('.settings-page .hub-card')).toHaveCount(6);
-  for(const [row,body] of [['startupRow','startupBody'],['langRow','languageBody'],['dataSourcesRow','dataSourcesBody'],['guildRow','guildBody'],['backupRow','backupBody']]){
+  await expect(page.locator('.settings-page .hub-card')).toHaveCount(5);
+  for(const [row,body] of [['startupRow','startupBody'],['dataSourcesRow','dataSourcesBody'],['guildRow','guildBody'],['backupRow','backupBody']]){
     await page.locator(`#${row}`).click();
     await expect(page.locator(`#${body}`)).toBeVisible();
     await page.locator(`#${row}`).click();
     await expect(page.locator(`#${body}`)).toBeHidden();
   }
-  await page.locator('#langRow').click();
-  await page.locator('[data-lang-choice="nl"]').click();
-  expect(await page.evaluate(()=>appLang())).toBe('nl');
-  await expect(page.locator('#brandTitle')).toHaveText('SETTINGS');
-  await page.locator('#langRow').click();
-  await page.locator('[data-lang-choice="en"]').click();
+  await expect(page.locator('#langRow, #languageBody, [data-lang-choice]')).toHaveCount(0);
   expect(await page.evaluate(()=>appLang())).toBe('en');
   await page.locator('#dataSourcesRow').click();
   await expect(page.locator('#bulkDlNow')).toBeVisible();
