@@ -598,6 +598,41 @@ html .app > main .page-searchbar input {
   min-width: 0;
 }
 
+html .folder-view-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  min-height: 44px;
+  padding: 6px 10px;
+  border: 1px solid var(--main-field-line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--main-text);
+  font:
+    600 12px/1.4 'Inter',
+    system-ui,
+    sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.folder-view-toggle .ib,
+.folder-view-toggle svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+
+.folder-view-toggle:hover {
+  border-color: var(--accent-ink);
+}
+
+.folder-view-toggle:focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 2px;
+}
+
 html .app > main .page-searchbar.sticky-searchbar {
   position: sticky;
   top: 0;

@@ -123,18 +123,6 @@ html.desk .brand-banner .compass.active {
   background: var(--brass-glow);
 }
 
-html.desk .page-cap {
-  top: var(--top-nav);
-  height: var(--cap-h);
-  left: 0;
-  right: 0;
-  padding: 0 var(--dl);
-}
-
-html.desk .page-cap .brand-txt {
-  font-size: 20px;
-}
-
 html.desk #capDeckCount {
   left: var(--dl) !important;
   font-size: 14px !important;
@@ -524,40 +512,11 @@ html.desk {
   --cap-h: 0px;
 }
 
-html.desk .page-cap {
-  top: 0 !important;
-  height: var(--top-nav) !important;
-  min-height: 0;
-  left: var(--capL, 280px) !important;
-  right: var(--capR, 680px) !important;
-  padding: 0 !important;
-  background: none !important;
-  border: none !important;
-  box-shadow: none !important;
-  z-index: 86;
-}
-
-html.desk .page-cap {
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-
 html.desk .page-cap > * {
   position: static !important;
   transform: none !important;
   flex: 0 0 auto;
   margin: 0 !important;
-}
-
-html.desk .page-cap > .brand-txt {
-  flex: 1 1 auto;
-  min-width: 0;
-  max-width: none !important;
-  font-size: 17px;
-  text-align: center;
-  line-height: 1.15;
 }
 
 html.desk .page-cap > .cap-note {
@@ -570,28 +529,6 @@ html.desk #capDeckCount {
 
 html.desk .overlay-inner:has(> .ov-nav) {
   position: relative;
-}
-
-html.desk .overlay-inner:has(> .ov-nav) > .ov-cap {
-  position: absolute !important;
-  top: 0;
-  left: var(--capL, 280px);
-  right: var(--capR, 680px);
-  height: var(--top-nav);
-  min-height: 0;
-  padding: 0 !important;
-  margin: 0 !important;
-  background: none !important;
-  border: none !important;
-  box-shadow: none !important;
-  z-index: 90;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-html.desk .overlay-inner:has(> .ov-nav) > .ov-cap .ov-title {
-  font-size: 17px;
 }
 
 /* a narrower window: the page buttons keep their icons, drop their words */

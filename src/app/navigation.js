@@ -193,7 +193,7 @@ function closeDeckFilterPanel(d, keepFilter) {
   }
   document.querySelectorAll('[data-panel]').forEach((x) => x.classList.remove('active'));
   const ch = document.getElementById('dockFilterChev');
-  if (ch) ch.textContent = '▾';
+  if (ch) ch.setAttribute('aria-expanded', 'false');
   if (!keepFilter) {
     state.dlFilter = { ci: [] };
     state.dlFilterOn = false;
@@ -493,7 +493,7 @@ function layoutPageViewport(page) {
   content.className = 'page-content tab-viewport';
   content.dataset.screen = state.screen;
   const bars =
-    '.searchbar, .browse-selects, .reco-themes, .deck-controls, .sp-jump, .adv-toggle, #colAdvBox, #spAdvBox, #spAdvToggle';
+    '.searchbar, .browse-selects, .reco-themes, .deck-controls, .trade-toolbar-shell, .sp-jump, .adv-toggle, #colAdvBox, #spAdvBox, #spAdvToggle';
   for (const child of [...page.children]) {
     const controls =
       (!child.classList.contains('page-searchbar') && child.matches(bars)) ||
@@ -575,19 +575,27 @@ function renderInner() {
    banner rides as a flex child UNDER the scroller, so sticky bottoms pin
    right above it and no padding arithmetic is needed. The top bar keeps
    only the page name, styled like every main page word. */
-function overlayCapHtml(title, extra) {
-  return /* HTML */ `<div class="topbar ov-cap app-overlay-header">
-    <button type="button" class="header-menu" data-app-menu aria-label="Open menu">
-      <img src="icon-192.png" alt="" width="36" height="36" />${backupBadgeHtml()}</button
-    ><button
-      type="button"
-      class="brand-txt two-line ov-title"
-      data-app-home
-      aria-label="Go to home"
-    >
-      ${escapeHtml(title)}</button
-    >${extra || ''}
-  </div>`;
+function appTitlebarHtml(className, contents) {
+  return /* HTML */ `<header class="app-titlebar ${className}">${contents}</header>`;
+}
+
+function overlayCapHtml(title, extra, subtitle) {
+  return /* HTML */ `${appTitlebarHtml(
+    'topbar ov-cap app-overlay-header',
+    /* HTML */ `
+      <button type="button" class="header-menu" data-app-menu aria-label="Open menu">
+        <img src="icon-192.png" alt="" width="36" height="36" />${backupBadgeHtml()}</button
+      ><button
+        type="button"
+        class="brand-txt two-line ov-title"
+        data-app-home
+        aria-label="Go to home"
+      >
+        ${escapeHtml(title)}</button
+      >${extra || ''}
+    `,
+  )}
+  ${subtitle ? `<div class="app-page-subtitle">${escapeHtml(subtitle)}</div>` : ''}`;
 }
 
 function primaryNavItems() {
@@ -739,12 +747,10 @@ function navHtml() {
     const _it = inspirationCapTitle();
     if (_it) title = _it;
   }
-  let editable = false;
   if (state.screen === 'decklist') {
     const d = getDeck(state.activeDeckId);
     if (d) {
       title = d.name || 'Untitled deck';
-      editable = true;
     }
   }
   if (state.screen === 'collection' && state.colFilter && state.colFilter.binder) {
@@ -764,50 +770,41 @@ function navHtml() {
     if (_cs) capInner = _cs;
   }
   const activeKey = activeNavKey();
-  return /* HTML */ `<header class="page-cap app-header">
-      <button
-        type="button"
-        class="header-menu ${['menu', 'settings', 'formatrules', 'banlists'].includes(state.screen) ? 'active' : ''}"
-        id="homeBtn"
-        data-app-menu
-        aria-label="Open menu"
-        title="Menu"
-      >
-        <img src="icon-192.png" alt="" width="36" height="36" />${backupBadgeHtml()}
-      </button>
-      <button
-        type="button"
-        class="brand-txt two-line"
-        id="brandTitle"
-        data-app-home
-        aria-label="Go to home"
-        title="Go to home"
-      >
-        <span id="brandTitleInner">${capInner}</span>
-      </button>
-      <div class="cap-tools">
-        ${netChipHtml()}
-        ${state.screen === 'search' ? '<button type="button" id="spoilersBtn" title="Spoilers from upcoming sets" aria-label="Spoilers">🔮</button>' : ''}
-        ${state.screen === 'spoilers' ? `<button type="button" id="spAdvToggle" class="header-filter" aria-label="Advanced spoiler filters" title="${trS('Advanced filters')}" aria-haspopup="dialog" aria-expanded="${state.spAdvOpen}">${ICONS.filter}</button>` : ''}
-        ${state.screen === 'draft' && state.draft?.phase !== 'setup' ? `<button type="button" id="draftResetBtn" class="header-filter" aria-label="${'Reset draft'}" title="${'Reset draft'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2.6 8.4M3 4v6h6"/></svg></button>` : ''}
-        ${(() => {
-          if (state.screen !== 'decklist') return '';
-          const dd = getDeck(state.activeDeckId);
-          if (!dd) return '';
-          const issues = checkDeckLegality(dd);
-          return /* HTML */ `<span
-            id="capDeckCount"
-            title="Tap to see the deck's legality check"
-            style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;font-family:'JetBrains Mono',monospace;color:${deckCountColor(deckCountState(dd, issues))};white-space:nowrap;cursor:pointer;padding:8px 6px 8px 0;"
-            >${deckCountLabel(dd)}${issues.length ? ' ⚠' : ''}</span
-          >`;
-        })()}
-        ${state.screen === 'collection' ? `<button type="button" id="tradeBtn" class="header-filter" aria-label="Trade calculator" title="${trS('Trade')}">${ICONS.trade}</button>` : ''}
-        ${state.screen === 'trade' ? `<button type="button" id="tradeConfirm" class="header-filter" aria-label="${trS('Confirm trade')}" title="${trS('Confirm trade')}"${state.trade?.a.length || state.trade?.b.length ? '' : ' disabled'}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></button><button type="button" id="tradeClear" class="header-filter" aria-label="${trS('Clear trade')}" title="${trS('Clear trade')}"${state.trade?.a.length || state.trade?.b.length ? '' : ' disabled'}>${ICONS.trash}</button>` : ''}
-        ${editable ? `<button type="button" class="icon-btn" id="renameDeckBtn" aria-label="Rename deck" title="Rename deck">${ICONS.edit || inlIco('edit', 18)}</button>` : ''}
-        ${state._capNote ? `<span class="cap-note${state.screen === 'collection' || state.screen === 'decklist' ? ' cap-tap' : ''}" id="capNoteBtn"${state.screen === 'decklist' ? ' role="button"' : ''}>${state._capNote}</span>` : ''}
-      </div>
-    </header>
+  return /* HTML */ `${appTitlebarHtml(
+      'page-cap app-header',
+      /* HTML */ `
+        <button
+          type="button"
+          class="header-menu ${['menu', 'settings', 'formatrules', 'banlists'].includes(state.screen) ? 'active' : ''}"
+          id="homeBtn"
+          data-app-menu
+          aria-label="Open menu"
+          title="Menu"
+        >
+          <img src="icon-192.png" alt="" width="36" height="36" />${backupBadgeHtml()}
+        </button>
+        <button
+          type="button"
+          class="brand-txt two-line"
+          id="brandTitle"
+          data-app-home
+          aria-label="Go to home"
+          title="Go to home"
+        >
+          <span id="brandTitleInner">${capInner}</span>
+        </button>
+        <div class="cap-tools">
+          ${netChipHtml()}
+          ${state.screen === 'search' ? '<button type="button" id="spoilersBtn" title="Spoilers from upcoming sets" aria-label="Spoilers">🔮</button>' : ''}
+          ${state.screen === 'spoilers' ? `<button type="button" id="spAdvToggle" class="header-filter" aria-label="Advanced spoiler filters" title="${trS('Advanced filters')}" aria-haspopup="dialog" aria-expanded="${state.spAdvOpen}">${ICONS.filter}</button>` : ''}
+          ${state.screen === 'draft' && state.draft?.phase !== 'setup' ? `<button type="button" id="draftResetBtn" class="header-filter" aria-label="${'Reset draft'}" title="${'Reset draft'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2.6 8.4M3 4v6h6"/></svg></button>` : ''}
+          ${state.screen === 'decklist' && getDeck(state.activeDeckId) ? `<button type="button" class="header-filter" id="menuBtn" aria-label="Deck actions" title="Deck actions" aria-haspopup="dialog" aria-expanded="${!!state.menuOpen}">${ICONS.dots}</button>` : ''}
+          ${state.screen === 'collection' ? `<button type="button" id="tradeBtn" class="header-filter" aria-label="Trade calculator" title="${trS('Trade')}">${ICONS.trade}</button>` : ''}
+          ${state.screen === 'trade' ? `<button type="button" id="tradeClear" class="header-filter" aria-label="${trS('Clear trade')}" title="${trS('Clear trade')}"${state.trade?.a.length || state.trade?.b.length ? '' : ' disabled'}>${ICONS.trash}</button>` : ''}
+          ${state._capNote ? `<span class="cap-note${state.screen === 'collection' || state.screen === 'decklist' ? ' cap-tap' : ''}" id="capNoteBtn"${state.screen === 'decklist' ? ' role="button"' : ''}>${state._capNote}</span>` : ''}
+        </div>
+      `,
+    )}
     <nav class="brand-banner app-navigation" aria-label="Main navigation">
       <div class="banner-tabs">
         ${items.map((it) => `<button type="button" class="banner-tab ${activeKey === it.k ? 'active' : ''}" data-page="${it.k}" title="${it.l}" aria-label="${it.l}"${activeKey === it.k ? ' aria-current="page"' : ''}>${it.i}<span class="tab-label">${it.l}</span></button>`).join('')}
@@ -914,31 +911,6 @@ document.addEventListener('click', (e) => {
   if (e.target && e.target.closest && e.target.closest('.nopr')) {
     toast(trS('Price not listed yet'));
   }
-  // The count in the cap ("100/100 \u26a0") answers when tapped with a
-  // toast: all clear, or the deck's actual issues (up to four, then a
-  // count of the rest).
-  if (
-    e.target &&
-    e.target.closest &&
-    e.target.closest('#capDeckCount') &&
-    state.screen === 'decklist'
-  ) {
-    const d = getDeck(state.activeDeckId);
-    if (d) {
-      const issues = checkDeckLegality(d);
-      if (!issues.length) toast('\u2713 ' + trS('Deck is legal.'));
-      else {
-        const texts = issues.map((i) => i.text || i.label || '').filter(Boolean);
-        const shown = texts.slice(0, 4);
-        const rest = texts.length - shown.length;
-        toast(
-          '\u26a0 ' +
-            shown.join('\n') +
-            (rest > 0 ? '\n' + trS('and') + ' ' + rest + ' ' + trS('more issues\u2026') : ''),
-        );
-      }
-    }
-  }
 });
 
 /* Drop-up menus and sheets dismiss on a downward swipe on their header —
@@ -1005,19 +977,6 @@ function wireNav() {
   const hb = document.getElementById('homeBtn');
   if (hb) {
     hb.addEventListener('contextmenu', (e) => e.preventDefault());
-  }
-  // Titles always return home; renaming has its own action.
-  if (state.screen === 'decklist') {
-    document.getElementById('renameDeckBtn')?.addEventListener('click', () => {
-      const d = getDeck(state.activeDeckId);
-      if (!d) return;
-      openInAppPrompt('Rename this deck', 'Deck name', d.name, (name) => {
-        if (name === null) return;
-        d.name = name.trim() || 'Untitled deck';
-        scheduleSave(d);
-        render();
-      });
-    });
   }
 }
 

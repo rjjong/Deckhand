@@ -57,6 +57,7 @@ resolveLegalSets()
 
 loadDecksIndex().then(async () => {
   if (state.screen === 'decks') render();
+  syncStart();
   // A share link keeps the splash up until the deck page itself is drawn —
   // flashing the home screen first made receivers doubt the link worked.
   // render() now sends the signal on the first painted frame; this is only a

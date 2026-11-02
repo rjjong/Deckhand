@@ -146,6 +146,7 @@ function openTradePrints(side, card) {
         set: chosen.set,
         set_name: chosen.set_name || '',
         cn: chosen.collector_number || '',
+        cardmarketUrl: tradeCardmarketUrl(chosen),
         img: cardImage(chosen),
         wb: chosen.border_color === 'white' ? 1 : 0,
         eur: printEur(chosen),

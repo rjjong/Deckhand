@@ -372,7 +372,7 @@ function lifeAutosave() {
     try {
       const L = state.life;
       if (!L.players || !L.players.length) return;
-      if (!L.gameId) L.gameId = Date.now().toString(36);
+      if (!L.gameId) L.gameId = 'g' + uid();
       const clean = L.players.map((p) => {
         const o = {};
         Object.keys(p).forEach((k) => {
@@ -851,7 +851,7 @@ function doRestartLife() {
   state.life._keepNames = (state.life.players || []).map((p) => p.name);
   state.life.players = null;
   state.life.history = [];
-  state.life.gameId = Date.now().toString(36); // 1.46: a new save slot
+  state.life.gameId = 'g' + uid(); // A distinct save slot across devices.
   state.life.setupDone = false;
   state.life.expandedIdx = null;
   state.life.turnIdx = null;

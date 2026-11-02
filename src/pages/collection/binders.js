@@ -913,10 +913,7 @@ async function openBinderArtPicker(binder) {
     document.getElementById('binderArtOverlay')?.remove();
   });
   el.innerHTML = /* HTML */ `<div class="overlay-inner">
-    <div class="topbar">
-      <button class="icon-btn" id="baClose">${ICONS.back}</button>
-      <div class="brand-txt" style="font-size:16px;">Choose Cover Art</div>
-    </div>
+    ${overlayCapHtml('Choose Cover Art', `<button type="button" class="header-filter" id="baClose" aria-label="Back">${ICONS.back}</button>`)}
     <main>
       <div id="baList" class="status"><div class="spinner"></div></div>
     </main>

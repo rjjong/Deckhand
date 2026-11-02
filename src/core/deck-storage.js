@@ -1,6 +1,20 @@
 // core / deck-storage
 
 let storageWarned = false;
+const deckStorageJobs = new Map();
+
+function queueDeckStorage(id, write) {
+  const previous = deckStorageJobs.get(id) || Promise.resolve();
+  const job = previous.catch(() => {}).then(write);
+  deckStorageJobs.set(id, job);
+  return job.finally(() => {
+    if (deckStorageJobs.get(id) === job) deckStorageJobs.delete(id);
+  });
+}
+
+async function waitForDeckStorage(id) {
+  while (deckStorageJobs.has(id)) await deckStorageJobs.get(id);
+}
 
 function lsAvailable() {
   try {
@@ -738,10 +752,11 @@ async function openDeckVersions(id) {
   );
 }
 
-async function persistDeck(d) {
-  try {
-    syncTouchDeck(d && d.id, false);
-  } catch (e) {}
+function persistDeck(d) {
+  return queueDeckStorage(d.id, () => persistDeckLocally(d));
+}
+
+async function persistDeckLocally(d) {
   const clean = {};
   Object.keys(d).forEach((k) => {
     if (k !== '_saveStatus') clean[k] = d[k];
@@ -756,6 +771,7 @@ async function persistDeck(d) {
   // write is confirmed, any old localStorage copy goes (frees the small store).
   if (await deckDbPutMany([[key, payload]])) {
     _deckDbOk = true;
+    syncTouchDeck(d.id, false);
     try {
       if (localStorage.getItem(key) !== null) localStorage.removeItem(key);
     } catch (e) {}
@@ -763,6 +779,7 @@ async function persistDeck(d) {
   }
   try {
     localStorage.setItem(LS_PREFIX + 'deck:' + d.id, payload);
+    syncTouchDeck(d.id, false);
   } catch (e) {
     if (e && e.name === 'QuotaExceededError') {
       // Emergency: compact every other deck (older saves may still be fat),
@@ -779,6 +796,7 @@ async function persistDeck(d) {
       } catch (_e) {}
       try {
         localStorage.setItem(LS_PREFIX + 'deck:' + d.id, payload);
+        syncTouchDeck(d.id, false);
         toast('Storage was full — everything was compacted and this deck IS saved.');
         return;
       } catch (e2) {
@@ -793,10 +811,11 @@ async function persistDeck(d) {
   }
 }
 
-async function deleteDeckStorage(id) {
-  try {
-    syncTouchDeck(id, true);
-  } catch (e) {}
+function deleteDeckStorage(id) {
+  return queueDeckStorage(id, () => deleteDeckLocally(id));
+}
+
+async function deleteDeckLocally(id) {
   // 1.27: the deck's last state stays as a version (60 days)
   try {
     const key = LS_PREFIX + 'deck:' + id;
@@ -826,4 +845,5 @@ async function deleteDeckStorage(id) {
   try {
     await deckDbDelete(LS_PREFIX + 'deck:' + id);
   } catch (e) {}
+  syncTouchDeck(id, true);
 }

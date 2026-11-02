@@ -170,6 +170,20 @@ function folderViewToggleLabel(page) {
     : viewIco('text') + trS('List view');
 }
 
+function folderViewToggleHtml(page) {
+  return /* HTML */ `<button type="button" class="folder-view-toggle" id="folderViewToggle">
+    ${folderViewToggleLabel(page)}
+  </button>`;
+}
+
+function wireFolderViewToggle(page) {
+  document.getElementById('folderViewToggle')?.addEventListener('click', () => {
+    setFolderView(page, folderView(page) === 'list' ? 'tiles' : 'list');
+    render();
+    document.getElementById('folderViewToggle')?.focus({ preventScroll: true });
+  });
+}
+
 /* The drop-up menu of a page's big \uFF0B -- My Decks and the collection
    alike: the same small sheet just above the button. Items: [id, html, fn]. */
 function openFabMenu(items) {
@@ -469,6 +483,7 @@ function homeHtml() {
   <main class="decks-page">
     <div class="searchbar page-searchbar decks-searchbar">
       <input id="deckFilter" placeholder="Search decks..." value="${escapeHtml(state.deckFilter || '')}">
+      ${folderViewToggleHtml('decks')}
     </div>
     <button class="deck-fab" id="deckFab" title="New">＋</button>
     ${crumb}
@@ -592,6 +607,7 @@ async function sweepDeckPrices() {
 }
 
 function wireHome() {
+  wireFolderViewToggle('decks');
   sweepDeckPrices();
   setTimeout(() => {
     if (state.screen === 'decks') saltFillDecks();
@@ -613,15 +629,6 @@ function wireHome() {
         ],
         // One Import: the sheet takes a pasted list AND loads a .txt file.
         ['fabImportDeck', mIco('file') + trS('Import'), () => openPasteListSheet()],
-        [
-          'fabView',
-          folderViewToggleLabel('decks'),
-          () => {
-            setFolderView('decks', folderView('decks') === 'list' ? 'tiles' : 'list');
-            render();
-            scrollToPageFoot();
-          },
-        ],
       ]);
     });
   }

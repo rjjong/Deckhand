@@ -2,14 +2,15 @@ import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
+import { createSyncStorage } from './sync-storage.mjs';
 
-// The small store interface used by the existing sync and AI handlers.
-// Conditional writes are single SQL statements, so concurrent sync requests
-// cannot silently overwrite each other's document revisions.
+// AI caches and legacy documents use the small key/value store. Device sync
+// uses dedicated tables and transactions through createSyncStorage().
 export function openStorage(path) {
   if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
   const db = new DatabaseSync(path);
   db.exec(`PRAGMA busy_timeout = 5000;
+    PRAGMA foreign_keys = ON;
     PRAGMA journal_mode = WAL;
     CREATE TABLE IF NOT EXISTS blobs (
       store TEXT NOT NULL,
@@ -54,5 +55,5 @@ export function openStorage(path) {
       async list() { return { blobs: list.all(name).map(row => ({ key: row.key })) }; }
     };
   }
-  return { store, close: () => db.close(), healthy: () => db.prepare('SELECT 1').get() };
+  return { store, sync: createSyncStorage(db), close: () => db.close(), healthy: () => db.prepare('SELECT 1').get() };
 }

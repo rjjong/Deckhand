@@ -114,7 +114,7 @@ export function watchFrontend() {
     clearTimeout(timer);
     timer = setTimeout(rebuild, 80);
   };
-  const watchers = ['src', 'styles', 'assets'].map((directory) =>
+  const watchers = ['src', 'styles', 'assets', 'shared'].map((directory) =>
     watch(resolve(root, directory), { recursive: true }, schedule),
   );
   return {

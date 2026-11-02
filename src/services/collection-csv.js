@@ -290,44 +290,45 @@ function openCollectionImport(presetBinder) {
   document.getElementById('colImportOverlay')?.remove();
   const el = document.createElement('div');
   el.id = 'colImportOverlay';
-  el.innerHTML = /* HTML */ ` <div class="appoint-sheet" style="max-width:460px;">
-    <div class="appoint-head">
-      <span>${'Import / export'}</span
-      ><button class="icon-btn" id="ciClose">${ICONS.close || '✕'}</button>
+  el.innerHTML = /* HTML */ `<div
+    class="appoint-sheet transfer-dialog"
+    role="dialog"
+    aria-label="Collection import / export"
+  >
+    ${transferHeaderHtml('Import / export', 'Move cards between your collection and other apps.', 'ciClose')}
+    <div class="transfer-body">
+      <p class="transfer-help">
+        Paste a card list or load a CSV from Moxfield, Archidekt, ManaBox, or Delver Lens.
+      </p>
+      <input type="file" id="ciFile" accept=".csv,.txt,text/csv,text/plain" style="display:none;" />
+      <label class="transfer-label" for="ciBinder">Import into</label>
+      <select id="ciBinder" class="deck-select"></select>
+      <label class="transfer-label" for="ciText">Card list or CSV</label>
+      <textarea
+        id="ciText"
+        class="bulk-textarea"
+        placeholder="1 Sol Ring&#10;2 Arcane Signet&#10;…"
+      ></textarea>
+      <button type="button" class="ghost-btn" id="ciPick">
+        ${inlIco('file')}${'Load a file (.csv / .txt)'}
+      </button>
+      <button type="button" class="primary-btn" id="ciGo">${inlIco('imp')}Import cards</button>
+      <div id="ciReport" class="transfer-report" role="status"></div>
+      <p class="transfer-help">No file yet? Scan your cards with a free app:</p>
+      <a
+        class="ghost-btn"
+        target="_blank"
+        rel="noopener"
+        href="${/iPhone|iPad|iPod/i.test(navigator.userAgent) ? 'https://apps.apple.com/app/manabox-mtg/id1460407674' : 'https://play.google.com/store/apps/details?id=skilldevs.com.manabox'}"
+        >ManaBox</a
+      >
+      ${/iPhone|iPad|iPod/i.test(navigator.userAgent) ? '' : `<a class="ghost-btn" target="_blank" rel="noopener" href="https://play.google.com/store/apps/details?id=delverlab.delverlens">Delver Lens</a>`}
+      <div class="transfer-export">
+        <button type="button" class="ghost-btn" id="ciExport">
+          ${inlIco('exp')}Export collection
+        </button>
+      </div>
     </div>
-    <p class="hint" style="margin:0 0 8px;">
-      ${'Paste a list (one card per line, e.g. 1 Sol Ring) or CSV text, or load a file from Moxfield, Archidekt, ManaBox or Delver Lens.'}
-    </p>
-    <input type="file" id="ciFile" accept=".csv,.txt,text/csv,text/plain" style="display:none;" />
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-      <label class="hint" style="flex:none;">${'Into:'}</label>
-      <select id="ciBinder" class="deck-select" style="flex:1;"></select>
-    </div>
-    <textarea
-      id="ciText"
-      class="bulk-textarea"
-      style="min-height:160px;"
-      placeholder="1 Sol Ring&#10;2 Arcane Signet&#10;…"
-    ></textarea>
-    <button class="ghost-btn" id="ciPick" style="width:100%;margin-top:8px;">
-      ${inlIco('file')}${'Load a file (.csv / .txt)'}
-    </button>
-    <button class="primary-btn" id="ciGo" style="margin-top:10px;">${'Import'}</button>
-    <div id="ciReport" class="hint" style="margin:8px 0 4px;min-height:18px;"></div>
-    <div class="hint" style="margin:6px 0 8px;text-align:center;">
-      ${'No file yet? Scan your cards with a free app:'}
-    </div>
-    <a
-      class="ghost-btn"
-      style="display:block;width:100%;box-sizing:border-box;text-align:center;text-decoration:none;margin-bottom:8px;"
-      target="_blank"
-      rel="noopener"
-      href="${/iPhone|iPad|iPod/i.test(navigator.userAgent) ? 'https://apps.apple.com/app/manabox-mtg/id1460407674' : 'https://play.google.com/store/apps/details?id=skilldevs.com.manabox'}"
-      >ManaBox</a
-    >
-    ${/iPhone|iPad|iPod/i.test(navigator.userAgent) ? '' : `<a class="ghost-btn" style="display:block;width:100%;box-sizing:border-box;text-align:center;text-decoration:none;" target="_blank" rel="noopener" href="https://play.google.com/store/apps/details?id=delverlab.delverlens">Delver Lens</a>`}
-    <hr style="border:none;border-top:2px solid var(--line);margin:12px 0;" />
-    <button class="ghost-btn" id="ciExport" style="width:100%;">${'Export collection'}</button>
   </div>`;
   document.body.appendChild(el);
   pushOverlay('colImport', () => {

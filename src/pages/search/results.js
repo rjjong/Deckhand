@@ -321,7 +321,7 @@ function searchRowHtml(c, d, opts) {
         <span style="display:flex;gap:6px;">
           ${canBeCommander ? `<button class="add-btn add-btn-slim" data-admiral="1" data-name="${encodeURIComponent(c.name)}" title="Set as ${fmtName(d)}">${modeGlyph()}</button>` : ''}
           ${showRm && !opts.noAdd ? `<button class="add-btn add-btn-slim add-btn-rm" data-rm="${encodeURIComponent(c.name)}" title="${trS('Remove from deck')}" aria-label="${trS('Remove from deck')}">\u2212</button>` : ''}
-          ${showAdd && !opts.noAdd ? `<button class="add-btn add-btn-slim" data-name="${encodeURIComponent(c.name)}" title="Add to Deck" ${disabled ? 'disabled' : ''}>+</button>` : ''}
+          ${showAdd && !opts.noAdd ? `<button class="add-btn add-btn-slim" data-name="${encodeURIComponent(c.name)}" title="${d ? 'Add to Deck' : 'Add card'}" aria-label="${d ? 'Add to Deck' : 'Add card'}" ${disabled ? 'disabled' : ''}>+</button>` : ''}
         </span>
       </div>
       ${opts.sub ? `<div class="st-decks">${escapeHtml(opts.sub)}</div>` : decksNoteHtml(opts.decks)}

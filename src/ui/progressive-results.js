@@ -127,7 +127,7 @@ function wireResultButtons(list, d, refreshFn, opts) {
     return true;
   };
   // d = a specific deck (pinned search, inspiration, browse-with-pin) → direct adds.
-  // d = null → every action asks which deck via the popup.
+  // d = null → Add offers deck and collection destinations in the popup.
   const _has = (nm) => list.some((x) => x.name === nm); // 1.7: only claim tiles whose card this list holds
   document
     .querySelectorAll('.add-btn[data-name]:not([data-mb]):not([data-admiral])')
@@ -142,7 +142,7 @@ function wireResultButtons(list, d, refreshFn, opts) {
           return;
         }
         if (d) addCardToDeckValidated(d, c, refreshFn);
-        else openDeckPickPopup(c, 'main', refreshFn);
+        else openDeckPickPopup(c, 'main', refreshFn, null, true);
       });
     });
   // 1.5: "-" takes one copy out of the pinned deck again

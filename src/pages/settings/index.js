@@ -391,7 +391,7 @@ function menuToolsHtml(preferences = false) {
         ${tile('guildRow', `<span id="guildCur">${manaIconSvg(g.main, 22)}${manaIconSvg(g.side, 22)}</span>`, 'Color scheme')}
       </div>
       <div class="settings-section">
-        ${tile('syncRow', SYNC_ICON, 'Sync', `<div class="l2">${syncState() ? 'Linked' : 'Several devices'}</div>`)}
+        ${tile('syncRow', SYNC_ICON, 'Sync', `<div class="l2">${syncState() ? 'Linked to this server' : 'Link your devices with a code'}</div>`)}
       </div>
       <div class="settings-section">
         <div id="backupBody" class="acc-up xt-body" hidden style="padding:4px 14px 2px;">
@@ -434,6 +434,7 @@ function menuToolsHtml(preferences = false) {
       </div>
     </section>`;
   return /* HTML */ ` <section class="menu-tools hub-actions" aria-label="Tools">
+    <div class="settings-section">${tile('lifeRow', ICONS.heart, 'Life tracker')}</div>
     <div class="settings-section">${tile('draftRow', ICONS.draft, 'Draft tools')}</div>
     <div class="settings-section">${tile('crRow', ICONS.gavel, 'Ask AI judge')}</div>
     <div class="settings-section">${tile('fmtRulesRow', ICONS.library, 'Format rules')}</div>

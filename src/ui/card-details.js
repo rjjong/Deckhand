@@ -655,35 +655,38 @@ function attachSwipeNav(el, onNext, onPrev, meta) {
 
 /* Both the deck editor and standalone card view share this page header. */
 function cardDetailsHeaderHtml(card) {
-  return /* HTML */ `<header class="topbar app-overlay-header card-details-header">
-      <button type="button" class="header-menu" data-app-menu aria-label="Open menu">
-        <img src="icon-192.png" alt="" width="36" height="36" />${backupBadgeHtml()}
-      </button>
-      <button type="button" class="brand-txt two-line" data-app-home aria-label="Go to home">
-        ${trS('Card Details')}
-      </button>
-      <div class="card-details-metrics">
-        <button
-          type="button"
-          class="card-details-metric"
-          id="csPrice"
-          aria-label="Price trend and history"
-        >
-          <span class="card-details-metric-label">${trS('Trend')}</span>
-          <span class="cp-val" data-card-price>…</span>
+  return /* HTML */ `${appTitlebarHtml(
+      'topbar app-overlay-header card-details-header',
+      /* HTML */ `
+        <button type="button" class="header-menu" data-app-menu aria-label="Open menu">
+          <img src="icon-192.png" alt="" width="36" height="36" />${backupBadgeHtml()}
         </button>
-        <button
-          type="button"
-          class="card-details-metric"
-          id="csSaltRow"
-          aria-label="Salt score"
-          disabled
-        >
-          <span class="card-details-metric-label">${trS('Salt')}</span>
-          <span class="cp-val" data-saltseat>—</span>
+        <button type="button" class="brand-txt two-line" data-app-home aria-label="Go to home">
+          ${trS('Card Details')}
         </button>
-      </div>
-    </header>
+        <div class="card-details-metrics">
+          <button
+            type="button"
+            class="card-details-metric"
+            id="csPrice"
+            aria-label="Price trend and history"
+          >
+            <span class="card-details-metric-label">${trS('Trend')}</span>
+            <span class="cp-val" data-card-price>…</span>
+          </button>
+          <button
+            type="button"
+            class="card-details-metric"
+            id="csSaltRow"
+            aria-label="Salt score"
+            disabled
+          >
+            <span class="card-details-metric-label">${trS('Salt')}</span>
+            <span class="cp-val" data-saltseat>—</span>
+          </button>
+        </div>
+      `,
+    )}
     <div class="card-details-subtitle">
       <h1 class="sheet-title">${escapeHtml(card.name)}</h1>
     </div>`;

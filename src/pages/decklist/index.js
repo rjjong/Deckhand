@@ -39,7 +39,7 @@ function dockTypeCounts(d) {
     .map((k) => {
       const n = all.filter((c) => (c.type_line || '').split('//')[0].includes(k)).length;
       return n
-        ? `<button class="dk-type" data-tt="${k}s">${DOCK_TYPE_ICONS[k]}<span>${n}</span></button>`
+        ? `<button type="button" class="deck-type-link" data-deck-type="${k === 'Sorcery' ? 'Sorceries' : k + 's'}">${DOCK_TYPE_ICONS[k]}<span>${k === 'Sorcery' ? 'Sorceries' : k + 's'}</span><strong>${n}</strong></button>`
         : '';
     })
     .filter(Boolean)
@@ -47,76 +47,38 @@ function dockTypeCounts(d) {
 }
 
 function deckMeterHtml(d) {
-  const total = d.cards.length + deckLeaders(d).length;
-  const over = d.cards.length > deckTotal(d) - 1;
-  const issues = checkDeckLegality(d);
-  const errors = issues.filter((i) => i.level === 'error').length;
-  const set = state.dockSet || 0;
-  let mid = '';
-  if (set === 0) {
-    if (state._dlSel && state._dlSel.size) {
-      // ＋ opens what to do with the picks: into the collection, or across
-      // the main deck / maybeboard line (both ways when both are picked).
-      mid = `<span style="flex:1;font-size:14px;">${state._dlSel.size} selected</span>
-        <button class="dk-tool" id="dlSelColl" title="${trS('Add to collection…')}">${ICONS.binder}</button>
-        <button class="dk-tool" id="dlSelMaybe" title="${Array.from(state._dlSel).some((k) => k.startsWith('main:')) ? trS('Move to ' + sideName(d)) : trS('Move to main deck')}">${ICONS.maybe}</button>
-        <button class="dk-tool" id="dlSelDel" title="Delete" style="color:var(--danger);">${ICONS.trash}</button>
-        <button class="dk-tool" id="dlSelX" title="Cancel">✕</button>`;
-    } else
-      mid = state.dlSearchOpen
-        ? // The tools left of the loupe step aside for a search bar; its ▾
-          // opens the full filter, like the Collection's bar.
-          `<div class="dock-search-wrap"><input id="dockSearchInput" class="dock-search" enterkeyhint="search" placeholder="${trS('Find in deck…')}" value="${escapeHtml(state.dlSearchQ || '')}" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="in-chev" id="dockFilterChev" title="${trS('Advanced filter')}">${state.dlPanel === 'dsearch' ? '▴' : '▾'}</button></div>
-        <button class="dk-tool active" id="dockSearchBtn" title="${trS('Search deck')}">${ICONS.search}</button>`
-        : `<button class="dk-tool" id="dockInspire" title="Inspiration">${ICONS.spark}</button>
-        <button class="dk-tool ${state.dlPanel === 'bulk' ? 'active' : ''}" data-panel="bulk" title="Bulk Edit">${ICONS.bulk}</button>
-        <button class="dk-tool" id="dockAddCards" title="Add Cards">${ICONS.plus}</button>
-        <button class="dk-tool" id="dockSearchBtn" title="${trS('Search deck')}">${ICONS.search}</button>
-        <button class="dk-tool" id="dlCatJump" title="${trS('Jump to section')}">${ICONS.burger}</button>`;
-  } else {
-    mid = dockTypeCounts(d) || '<span>Empty deck</span>';
-  }
-  // \u22EF at the far left, the tools after it, the \u203A chevron at the far right.
+  const selected = state._dlSel?.size || 0;
+  const move =
+    selected && Array.from(state._dlSel).some((k) => k.startsWith('main:'))
+      ? 'Move to ' + sideName(d)
+      : 'Move to main deck';
   return /* HTML */ `<div class="deck-dock" id="deckMeterRow">
-    <button class="icon-btn" id="menuBtn" title="${trS('Menu')}">${ICONS.dots}</button>
-    <div class="dk-mid">${mid}</div>
-    <button class="dk-arr" id="dockNext" ${state._dlSel && state._dlSel.size ? ' hidden' : ''}>
-      ${ICONS.chevRight}
-    </button>
-    ${state.menuOpen ? menuPopHtml() : ''}
+    ${
+      selected
+        ? `<div class="deck-selection" role="group" aria-label="Selected cards">
+      <strong>${selected} selected</strong>
+      <button type="button" id="dlSelColl" aria-label="Add selected cards to collection" title="Add to collection">${ICONS.binder}</button>
+      <button type="button" id="dlSelMaybe" aria-label="${move}" title="${move}">${ICONS.maybe}</button>
+      <button type="button" id="dlSelDel" class="deck-danger" aria-label="Remove selected cards" title="Remove cards">${ICONS.trash}</button>
+      <button type="button" id="dlSelX" aria-label="Cancel selection" title="Cancel selection">${ICONS.close}</button>
+    </div>`
+        : `<div class="deck-search-field">
+      <span class="deck-search-icon" aria-hidden="true">${ICONS.search}</span>
+      <input id="dockSearchInput" type="search" enterkeyhint="search" aria-label="Search this deck" placeholder="Search this deck…" value="${escapeHtml(state.dlSearchQ || '')}" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <button type="button" id="dockSearchBtn" aria-label="Clear deck search" title="Clear search" ${state.dlSearchQ || state.dlFilterOn ? '' : 'hidden'}>${ICONS.close}</button>
+      <button type="button" id="dockFilterChev" aria-label="Filter deck cards" title="Filter cards" aria-expanded="${state.dlPanel === 'dsearch'}">${ICONS.filter}</button>
+    </div>`
+    }
   </div>`;
 }
 
-/* The deck price arrives seconds after the page is drawn. This puts the
-   number into the corner in place -- no re-render, so nothing on the page
-   moves. .cap-note is absolutely positioned inside .page-cap (a fixed,
-   centred flex bar), so where the span sits in the DOM cannot shift the
-   title or anything else. */
+/* Patch the summary in place when background pricing completes. */
 function refreshCapPrice() {
   if (state.screen !== 'decklist') return;
   const d = getDeck(state.activeDeckId);
   if (!d) return;
-  const dv = deckPriceFromCache(d);
-  const txt =
-    dv && dv.total > 0
-      ? fmtEur(dv.total) + priceRingHtml(dv.complete, state._pricingDeck === d.id)
-      : '';
-  state._capNote = txt;
-  const cap = document.querySelector('.page-cap');
-  if (!cap) return;
-  let el = document.getElementById('capNoteBtn');
-  if (!txt) {
-    if (el) el.remove();
-    return;
-  }
-  if (!el) {
-    el = document.createElement('span');
-    el.className = 'cap-note cap-tap'; // a button: it opens the deck's prices
-    el.id = 'capNoteBtn';
-    el.setAttribute('role', 'button');
-    cap.appendChild(el);
-  }
-  el.innerHTML = txt; // carries the ring, which textContent would print literally
+  const el = document.getElementById('deckPriceValue');
+  if (el) el.innerHTML = deckSummaryPriceHtml(d);
 }
 
 function decklistPageHtml() {
@@ -125,45 +87,44 @@ function decklistPageHtml() {
     return /* HTML */ `<main>
       ${needDeckHtml('No deck open yet. Choose or create one from My Stuff.')}
     </main>`;
-  const _dv = deckPriceFromCache(d);
-  if (_dv && _dv.total > 0)
-    state._capNote = fmtEur(_dv.total) + priceRingHtml(_dv.complete, state._pricingDeck === d.id);
-  return /* HTML */ ` <main class="has-dock">
-    <div class="builder-tabs">
-      <button class="b-tab ${state.builderTab === 'list' ? 'active' : ''}" data-btab="list">
+  return /* HTML */ ` <main class="has-dock deck-workspace">
+    <div class="builder-tabs" role="group" aria-label="Deck pages">
+      <button
+        class="b-tab ${state.builderTab === 'list' ? 'active' : ''}"
+        data-btab="list"
+        aria-pressed="${state.builderTab === 'list'}"
+      >
         Decklist
       </button>
-      <button class="b-tab ${state.builderTab === 'stats' ? 'active' : ''}" data-btab="stats">
+      <button
+        class="b-tab ${state.builderTab === 'stats' ? 'active' : ''}"
+        data-btab="stats"
+        aria-pressed="${state.builderTab === 'stats'}"
+      >
         Stats
       </button>
-      <button class="b-tab ${state.builderTab === 'primer' ? 'active' : ''}" data-btab="primer">
+      <button
+        class="b-tab ${state.builderTab === 'primer' ? 'active' : ''}"
+        data-btab="primer"
+        aria-pressed="${state.builderTab === 'primer'}"
+      >
         Deck Log
       </button>
     </div>
+    ${deckSummaryHtml(d)}
+    <div id="legalityWrap">${legalityHtml(d)}</div>
     <div id="builderBody"></div>
     ${deckMeterHtml(d)}
-    <div id="legalityWrap">${legalityHtml(d)}</div>
+    <button
+      type="button"
+      class="deck-fab"
+      id="dockAddCards"
+      aria-label="Add cards to this deck"
+      title="Add cards"
+    >
+      ${ICONS.plus}
+    </button>
   </main>`;
-}
-
-function menuPopHtml() {
-  return /* HTML */ `<div class="menu-pop" id="menuPop">
-    <button id="mImpExp">Import / Export</button><button id="mSortBy">${trS('Sort by')} ⌄</button
-    ><button id="mFormat">Format ⌄</button><button id="mAddFolder">Move to folder…</button
-    ><button id="mDuplicate">Duplicate deck</button><button id="mVersions">${'Versions…'}</button
-    ><button id="mShare">Share deck</button>
-    <hr />
-    <button id="mDelete" class="danger">Delete deck</button>
-    <hr />
-    ${[
-      ['grid', viewIco('grid') + trS('Tile view')],
-      ['stack', viewIco('stack') + trS('Stack view')],
-      ['text', viewIco('text') + trS('Text view')],
-    ]
-      .filter((o) => o[0] !== dlView())
-      .map((o) => `<button data-dlview="${o[0]}">${o[1]}</button>`)
-      .join('')}
-  </div>`;
 }
 
 function checkCommanderLegality(d) {
@@ -350,6 +311,12 @@ function wireDecklistPage() {
     wireNeedDeck();
     return;
   }
+  document.getElementById('menuBtn')?.addEventListener('click', () => openDeckActions(d));
+  document.getElementById('dockAddCards')?.addEventListener('click', () => openAddCardsFor(d));
+  document.getElementById('capDeckCount')?.addEventListener('click', () => {
+    state.legalityOpen = !state.legalityOpen;
+    refreshLegality(d);
+  });
   if (deckIsConstructed(d)) {
     try {
       ensureFmtBans(deckFormat(d));

@@ -19,13 +19,8 @@ html .overlay.card-details-page > .overlay-inner {
 html .card-details-page > .overlay-inner > .card-details-header {
   position: relative !important;
   inset: auto !important;
-  height: auto !important;
   width: 100%;
   flex: none;
-  grid-template-columns: 44px minmax(0, 1fr) auto;
-  padding: calc(8px + env(safe-area-inset-top)) 14px 8px !important;
-  border-bottom: 1px solid var(--line) !important;
-  background: var(--ink) !important;
 }
 
 .card-details-header > .header-menu {

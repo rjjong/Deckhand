@@ -7,7 +7,7 @@
 - A Docker Compose command for checking Node and SQLite inside a container.
 
 The Node.js server provides `/api/...` routes for sync, AI assistance, news,
-and Scryfall requests. Sync documents and AI caches are stored in SQLite.
+and Scryfall requests. Sync records and AI caches are stored in SQLite.
 Open the hosted address below, not `index.html` directly.
 
 ## Start the app on this computer
@@ -54,6 +54,7 @@ assets/images/              Source image assets
 scripts/frontend-sources.mjs Ordered source list and public assets
 scripts/build-frontend.mjs   Frontend build and development watcher
 server/services/            Sync, AI judge, deck advice, and news handlers
+shared/sync-records.cjs      Sync schema shared by the browser bundle and server
 public/                     Generated website, bundles, and source maps
 ```
 
@@ -151,9 +152,9 @@ To switch back to the sample, set `DATA_DIR=./var/data-sample` in `.env`.
 
 ### Mobile navigation
 
-The logo at the top left opens Menu. Its cards provide draft tools, the AI
-judge, format rules, and ban lists, with Settings last. The life counter is
-available from the Life tab.
+The logo at the top left opens Menu. Its cards provide the life tracker, draft
+tools, the AI judge, format rules, and ban lists, with Settings last. The life
+tracker is also available from the Life tab in the bottom navigation.
 The interface is English-only; previous Dutch preferences fall back to English.
 First startup opens the chosen page directly without a guided introduction.
 Settings contains Startup page, Data sources, Color scheme, Sync, and Backup. Related controls
@@ -161,11 +162,20 @@ expand below their card. Notification options, feedback, What's new, About,
 app installation, and app sharing buttons have been removed. Tapping any main
 page title returns home. The five labeled bottom tabs are Decks,
 Collection, Search, Inspiration, and Life. Life opens a menu with new-game,
-resume, and restore actions. Deck renaming is now a separate pencil action
-beside the title. Device/browser Back continues to navigate the existing history.
+resume, and restore actions. A deck's title bar has its name and a Deck actions
+button; renaming lives in that menu. Device/browser Back continues to navigate
+the existing history.
 The bottom navigation is 60px tall, with 50px tab targets and additional space
 for the device's bottom safe area. Search toolbars sit directly below the
 measured title bar, including when its height changes.
+
+Main pages, overlays, card details, and filter screens use `appTitlebarHtml()`
+and `.app-titlebar`. `styles/overrides/headers.css` owns their shared 64px height
+(plus the top safe area), spacing, title font, theme ink, and full-width 1px darker
+bottom border, without a shadow. There are no page-specific borderless or shorter
+title bars. `overlayCapHtml()` supplies the menu logo and home action for tool
+pages; subtitles sit below the header. Titles fit inside a separate text span to
+keep button height from incorrectly shrinking the lettering.
 
 Search's filter icon opens advanced search full screen from the right.
 Spoilers uses the same icon at the top right of its title bar, opening its
@@ -180,7 +190,16 @@ All main pages, including Menu and Settings, scroll within a content viewport
 ending above the bottom tabs. Search, sort, set-selection, and deck controls
 stay below the title bar; the viewport starts beneath the lowest visible
 control bar. Decks and Collection have full-width search bars within their
-scrolling content.
+scrolling content. Decks has its list/tile view toggle beside the search input;
+Collection keeps the binder view toggle inside its advanced filters.
+Deck pages keep their tabs and deck search pinned below the title. The scrolling
+overview contains card counts, legality details, and deck value with a price-page
+link. Tiles, Stacks, List, and sorting controls sit above the card sections;
+the yellow Add cards button opens Search pinned to the active deck.
+Deck actions groups inspiration, bulk editing, section jumps, renaming, format,
+folders, sharing, versions, copies, and deletion. Filters and bulk editing fill
+the screen with their own headers and scrolling content. These controls live in
+`src/pages/decklist/controls.js`; deck styling lives in `styles/overrides/decklist.css`.
 Collection filters use the shared full-screen panel that slides in from the
 right, with reset/back controls and a floating search button. Collection's
 Trade action is a title-bar icon; its value stays beside the search input and
@@ -258,6 +277,100 @@ Browser data is tied to the address: localhost, a LAN IP, and a future HTTPS
 domain are different origins. Use the app's backup/restore tools or link your
 test devices using its sync code. This server stores linked sync data in SQLite;
 browser-only decks are not automatically copied to the server until sync is on.
+
+## Ask AI Judge with Groq Free
+
+Ask AI Judge calls Groq from the Node.js server. It does not run an AI model
+on your own hardware and does not use Gemini or Cerebras as fallback providers.
+Deck advice retains its separate provider configuration.
+
+1. Create a Groq account at <https://console.groq.com> and keep it on the **Free**
+   plan. Create an API key at <https://console.groq.com/keys>.
+2. Edit the server's ignored `.env` file locally:
+
+   ```dotenv
+   GROQ_API_KEY=your_key_here
+   GROQ_MODEL=openai/gpt-oss-120b
+   JUDGE_DAILY=20
+   JUDGE_GLOBAL=800
+   ```
+
+3. Restart `npm run dev` or `npm start`. With Docker, run
+   `docker compose up -d --build` to recreate the container with the configuration.
+4. Open **Menu → Ask AI Judge**. Tag relevant cards with `@` so their card text
+   and rulings accompany the question.
+
+There is no API parameter that forces free billing. The account must remain
+on Groq's Free plan; adding this key to a paid account would use that account's
+billing. Never put the key in browser code, synced settings, or a chat message.
+The server keeps it in its environment, and Compose passes it into the container.
+
+`openai/gpt-oss-120b` is the default; `GROQ_MODEL` selects one model, with no
+automatic model or provider fallback. GPT-OSS requests use strict structured
+output and a bounded completion. A conservative character budget limits context
+size, preserving whole selected excerpts; Groq's token limits remain authoritative.
+If the supplied context cannot fit, the app asks for a smaller question and
+still shows the local rules. The question and selected card/rules text are sent
+to Groq for processing.
+
+The server respects Groq's `Retry-After` after a 429 response. The cooldown is
+stored in SQLite and survives a restart. During the pause, cached answers remain
+available, while uncached questions show their relevant rules. Setup and API-key
+problems also show the rules with a useful status message.
+
+The app's default allowance is 20 AI attempts per device per UTC day and 800
+across the server. These are app limits, not a promise of Groq capacity; Groq
+also limits requests and tokens. Failed upstream attempts count against the app
+allowance, while cached answers do not. The cache identity includes the model,
+prompt, and supplied card/rules text, so changed source text gets a new answer.
+Rule numbers absent from the sent excerpts are removed and make an answer
+unverified; these answers are not cached as confident rulings.
+
+Check current model availability and quotas in the
+[Groq model documentation](https://console.groq.com/docs/models) and
+[Groq rate-limit documentation](https://console.groq.com/docs/rate-limits).
+Provider behavior is tested with mocked Groq responses in `tests/judge.test.mjs`
+and `tests/api-services.test.mjs`; browser failure handling is in
+`tests/browser/judge.spec.mjs`. Automated browser tests use no real AI keys.
+
+## Device sync
+
+Open **Settings → Sync → Create sync code** on the first device. On another
+device using this same server, choose **I already have a code** and enter it.
+The server generates a 24-character code; it stores a SHA-256 hash, never the
+code itself. There are no username/password fields, user accounts, or external
+sync services. Anyone with the code can access that sync space.
+
+`DATABASE_PATH` contains `sync_links` (hashed codes and revisions) and
+`sync_records` (individual changes). They share the application's persistent
+SQLite database and existing Docker volume. A transaction commits every sync
+batch, with deletion tombstones and a stable revision cursor for paged reads.
+Existing sync documents in the old SQLite `blobs` table are migrated on access;
+their codes and original documents are preserved.
+
+Sync records cover each deck, collection printing/condition/binder entry, binder,
+folder, preference, and saved game. Independent records merge. When the same
+record changes on two devices, the newer change timestamp wins; a tied timestamp
+keeps the server's current value. Joining prefers server records with matching
+identities and uploads local-only records. Deck versions retain local decks
+before remote replacement or deletion.
+
+Sync runs after startup, shortly after edits, on reconnect/foreground, and via a
+small revision check every 30 seconds while visible. Offline or failed uploads
+retain their pending markers. Unlinking cancels in-flight work and leaves local
+data intact. Settings include color scheme, startup page, and view preferences.
+Saved games sync as snapshots; receiving one does not change an active table.
+The Life page still displays the latest ten saves, without deleting older server
+records merely because they age out of that local view. Card-library downloads,
+image/price caches, the link itself, and device brightness are excluded.
+
+The same-origin `POST /api/sync` endpoint accepts `create`, `probe`, and `sync`
+operations. An unknown code returns 404 rather than creating a space. The shared
+record schema is in `shared/sync-records.cjs`; SQL operations are in
+`server/sync-storage.mjs`, and the client is in `src/services/sync.js`.
+`tests/sync.test.mjs` and `tests/browser/sync.spec.mjs` cover SQLite restart,
+migration, code isolation, two-device merging, deletions, offline edits,
+pagination, startup, concurrent edits, and unlinking.
 
 ## Node.js and npm
 

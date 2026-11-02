@@ -425,23 +425,24 @@ function bridge60Html(d) {
   const mu = deckMatchups(d).length;
   const desc = d.description
     ? escapeHtml(d.description).replace(/\n/g, '<br>')
-    : `<span class="hint" style="margin:0;">${trS('No description yet — write one on the Deck Log page.')}</span><button class="icon-btn dl-mini-add" id="descAddBtn" title="${escapeHtml(trS('A few lines about this deck — shown on the Decklist page.'))}">${ICONS.plus}</button>`;
+    : `<button type="button" class="deck-note-action" id="descAddBtn">${ICONS.edit}<span>Add deck description</span></button>`;
   return /* HTML */ `<div class="dl-bridge dl-bridge-60">
-      <div class="dl-bridge-adm dl60-left">
+      <div class="deck-note">
         <div class="dl-desc-text">${desc}</div>
       </div>
-      <div class="dl-bridge-desc dl60-log">
+      <div class="deck-game-summary">
         ${recent.length ? `<div class="dl60-form">${recent.map((g) => `<span class="glog-res ${g.res === 'W' ? 'w' : 'l'}">${g.res}</span>`).join('')}</div>` : ''}
         <div class="dl60-wr">
           ${st ? `${trS('Winrate')} <b>${st.winrate}%</b> · ${st.wins}–${st.losses}` : trS('No games logged yet.')}
         </div>
         ${mu ? `<button type="button" class="ghost-btn dl60-mu" id="dl60Mu">⚔ ${mu} ${trS(mu === 1 ? 'matchup plan' : 'matchup plans')}</button>` : ''}
-        <button type="button" class="dl60-logrow" id="bridgeLogGame">
-          <span class="icon-btn dl-mini-add">${ICONS.plus}</span><span>${trS('Log a game')}</span>
+        <button type="button" class="deck-note-action" id="bridgeLogGame">
+          ${ICONS.plus}<span>${trS('Log a game')}</span>
         </button>
       </div>
       <div id="dlPanelBox" class="${dlBoxClass()}">${dlPanelHtml(d)}</div>
     </div>
+    ${deckListToolsHtml()}
     <div id="decklistBox">${categorizedListHtml(d)}</div>`;
 }
 
@@ -458,7 +459,7 @@ function listTabHtml(d) {
           ${
             d.description
               ? escapeHtml(d.description).replace(/\n/g, '<br>')
-              : `<span class="hint" style="margin:0;">${trS('No description yet — write one on the Deck Log page.')}</span><button class="icon-btn dl-mini-add" id="descAddBtn" title="${escapeHtml(trS('A few lines about this deck — shown on the Decklist page.'))}">${ICONS.plus}</button>`
+              : `<button type="button" class="deck-note-action" id="descAddBtn">${ICONS.edit}<span>Add deck description</span></button>`
           }
         </div>
         ${(() => {
@@ -482,6 +483,7 @@ function listTabHtml(d) {
       </div>
       <div id="dlPanelBox" class="${dlBoxClass()}">${dlPanelHtml(d)}</div>
     </div>
+    ${deckListToolsHtml()}
     <div id="decklistBox">${categorizedListHtml(d)}</div>`;
 }
 
@@ -578,14 +580,14 @@ function dlPanelHtml(d) {
         mm.forEach((q, n) => lines.push((q > 1 ? q + ' ' : '') + n));
       }
     }
-    return /* HTML */ `<div class="panel-card">
-      <div class="panel-h" style="display:flex;align-items:center;">
-        <span>Bulk Edit</span><button type="button" class="icon-btn dl-panel-x">✕</button>
-      </div>
-      <textarea id="bulkText" class="bulk-textarea">${lines.join('\n')}</textarea>
-      <button class="primary-btn" id="applyBulkBtn">Check &amp; Save Changes</button>
-      <div id="bulkReport"></div>
-    </div>`;
+    return deckEditorPanelHtml(
+      'Bulk edit',
+      /* HTML */ `<div class="panel-card">
+        <textarea id="bulkText" class="bulk-textarea">${lines.join('\n')}</textarea>
+        <button class="primary-btn" id="applyBulkBtn">Check &amp; Save Changes</button>
+        <div id="bulkReport"></div>
+      </div>`,
+    );
   }
   if (state.dlPanel === 'dsearch') {
     const f = state.dlFilter || (state.dlFilter = { ci: [] });
@@ -595,137 +597,141 @@ function dlPanelHtml(d) {
     const colorOrder = ['W', 'U', 'B', 'R', 'G', 'C'];
     // 1.35: no Name field -- "Find in deck" in the dock already searches names
     if (f.name) f.name = '';
-    return /* HTML */ `<div
-      class="panel-card df-compact"
-      style="display:flex;flex-direction:column-reverse;"
-    >
-      ${advGoHtml('dfGo')}
-      <div class="adv-row">
-        <label>${trS('Oracle text')}${advInfo('oracle')}</label
-        ><input
-          id="dfText"
-          class="col-filter-input"
-          placeholder="${trS('Any text, e.g. draw a card')}"
-          value="${escapeHtml(f.text || '')}"
-          autocomplete="off"
-        />
-      </div>
-      <div class="adv-row">
-        <label>Type</label
-        ><input
-          id="dfType"
-          class="col-filter-input"
-          placeholder="${trS('e.g. Dragon, Equipment')}"
-          value="${escapeHtml(f.type || '')}"
-          autocomplete="off"
-        />
-      </div>
-      <div class="adv-row">
-        <label>${trS('Colors')}${advInfo('deckColors')}</label>
-        <div class="color-check-row">
-          ${colorOrder.map((c) => `<label class="ccheck"><input type="checkbox" data-dfci="${c}" ${f.ci && f.ci.includes(c) ? 'checked' : ''}><span class="mana-check">${manaIconSvg(c, 26)}</span></label>`).join('')}
-        </div>
-      </div>
-      <div class="adv-row">
-        <label>${trS('Mana Value')}</label>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <div style="flex:0 0 92px;">
-            ${cselectHtml(
-              'dfMvOp',
-              [
-                { v: '<=', l: '≤' },
-                { v: '=', l: '=' },
-                { v: '>=', l: '≥' },
-              ],
-              f.mvOp || '<=',
-              '≤',
-            )}
-          </div>
-          <input
-            id="dfMvVal"
+    return deckEditorPanelHtml(
+      'Deck filters',
+      /* HTML */ `<div class="panel-card df-compact">
+        ${advGoHtml('dfGo')}
+        <div class="adv-row">
+          <label>${trS('Oracle text')}${advInfo('oracle')}</label
+          ><input
+            id="dfText"
             class="col-filter-input"
-            type="number"
-            inputmode="numeric"
-            style="flex:1;"
-            value="${escapeHtml(f.mvVal || '')}"
-          />
-        </div>
-      </div>
-      <div class="adv-row">
-        <label>Tag${advInfo('tag')}</label>
-        <div class="otag-wrap">
-          <input
-            id="dfTag"
-            class="col-filter-input"
-            placeholder="Tag…"
-            value="${escapeHtml(f.tag || '')}"
+            placeholder="${trS('Any text, e.g. draw a card')}"
+            value="${escapeHtml(f.text || '')}"
             autocomplete="off"
           />
-          <div id="dfTagPop" class="otag-pop" hidden></div>
         </div>
-      </div>
-      <div class="panel-h" style="display:flex;align-items:center;">
-        <span>${trS('Search deck')}</span
-        ><button type="button" class="icon-btn dl-panel-x">✕</button>
-      </div>
-    </div>`;
+        <div class="adv-row">
+          <label>Type</label
+          ><input
+            id="dfType"
+            class="col-filter-input"
+            placeholder="${trS('e.g. Dragon, Equipment')}"
+            value="${escapeHtml(f.type || '')}"
+            autocomplete="off"
+          />
+        </div>
+        <div class="adv-row">
+          <label>${trS('Colors')}${advInfo('deckColors')}</label>
+          <div class="color-check-row">
+            ${colorOrder.map((c) => `<label class="ccheck"><input type="checkbox" data-dfci="${c}" ${f.ci && f.ci.includes(c) ? 'checked' : ''}><span class="mana-check">${manaIconSvg(c, 26)}</span></label>`).join('')}
+          </div>
+        </div>
+        <div class="adv-row">
+          <label>${trS('Mana Value')}</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <div style="flex:0 0 92px;">
+              ${cselectHtml(
+                'dfMvOp',
+                [
+                  { v: '<=', l: '≤' },
+                  { v: '=', l: '=' },
+                  { v: '>=', l: '≥' },
+                ],
+                f.mvOp || '<=',
+                '≤',
+              )}
+            </div>
+            <input
+              id="dfMvVal"
+              class="col-filter-input"
+              type="number"
+              inputmode="numeric"
+              style="flex:1;"
+              value="${escapeHtml(f.mvVal || '')}"
+            />
+          </div>
+        </div>
+        <div class="adv-row">
+          <label>Tag${advInfo('tag')}</label>
+          <div class="otag-wrap">
+            <input
+              id="dfTag"
+              class="col-filter-input"
+              placeholder="Tag…"
+              value="${escapeHtml(f.tag || '')}"
+              autocomplete="off"
+            />
+            <div id="dfTagPop" class="otag-pop" hidden></div>
+          </div>
+        </div>
+      </div>`,
+    );
   }
   if (state.dlPanel === 'impexp') {
     // First question first: which way is the list traveling? The choice
     // opens just that half — no more scrolling past export to reach import.
-    return /* HTML */ `<div class="panel-card">
-      <div class="panel-h" style="display:flex;align-items:center;">
-        <span>Import / Export</span><button type="button" class="icon-btn dl-panel-x">✕</button>
+    return /* HTML */ `<div
+      class="panel-card transfer-dialog"
+      role="dialog"
+      aria-label="Import / export"
+    >
+      ${transferHeaderHtml('Import / export', 'Save a copy or bring in a deck list.', '', 'dl-panel-x')}
+      <div class="transfer-body hub-actions">
+        ${menuCardHtml('ieChooseExport', ICONS.exp, 'Export deck', 'Copy, download, or print your deck list.')}
+        ${menuCardHtml('ieChooseImport', ICONS.imp, 'Import deck', 'Replace this deck from text or a file.')}
       </div>
-      <button
-        class="ghost-btn"
-        id="ieChooseExport"
-        style="width:100%;padding:16px 10px;font-size:15px;"
-      >
-        ⬆ ${trS('Export')}
-      </button>
-      <button
-        class="ghost-btn"
-        id="ieChooseImport"
-        style="width:100%;margin-top:10px;padding:16px 10px;font-size:15px;"
-      >
-        ⬇ ${trS('Import')}
-      </button>
     </div>`;
   }
   if (state.dlPanel === 'import') {
-    return /* HTML */ `<div class="panel-card">
-      <div class="panel-h" style="display:flex;align-items:center;">
-        <span>Import Deck</span><button type="button" class="icon-btn dl-panel-x">✕</button>
+    return /* HTML */ `<div
+      class="panel-card transfer-dialog"
+      role="dialog"
+      aria-label="Import deck"
+    >
+      ${transferHeaderHtml('Import deck', 'Paste a deck list or load a text file. Importing replaces this deck.', '', 'dl-panel-x')}
+      <div class="transfer-body">
+        <label class="transfer-label" for="importText">Deck list</label>
+        <textarea
+          id="importText"
+          class="bulk-textarea"
+          placeholder="${leaderLineLabel(d)}: ${deckFormat(d) === 'commander' ? "Atraxa, Praetors' Voice" : 'Admiral Beckett Brass'}&#10;Sol Ring&#10;..."
+        ></textarea>
+        <input type="file" id="importFile" accept=".txt,.dec,text/plain" style="display:none;" />
+        <button type="button" class="ghost-btn" id="importFileBtn">
+          ${inlIco('file')}${trS('Load a .txt file')}
+        </button>
+        <button type="button" class="primary-btn transfer-danger" id="applyImportBtn">
+          Replace deck
+        </button>
+        <div id="importReport" class="transfer-report" role="status"></div>
       </div>
-      <textarea
-        id="importText"
-        class="bulk-textarea"
-        placeholder="${leaderLineLabel(d)}: ${deckFormat(d) === 'commander' ? "Atraxa, Praetors' Voice" : 'Admiral Beckett Brass'}&#10;Sol Ring&#10;..."
-      ></textarea>
-      <input type="file" id="importFile" accept=".txt,.dec,text/plain" style="display:none;" />
-      <button class="ghost-btn" id="importFileBtn" style="width:100%;margin:8px 0 2px;">
-        ${inlIco('file')}${trS('Load a .txt file')}
-      </button>
-      <button class="primary-btn danger-fill" id="applyImportBtn">Replace Deck</button>
-      <div id="importReport"></div>
     </div>`;
   }
   if (state.dlPanel === 'export') {
     const fmt = state.exportFmt || 'plain';
     const text = buildExport(d, fmt);
-    return /* HTML */ `<div class="panel-card">
-      <div class="panel-h" style="display:flex;align-items:center;">
-        <span>Export Deck</span><button type="button" class="icon-btn dl-panel-x">✕</button>
-      </div>
-      <div class="seg" style="margin-bottom:10px;">
-        ${EXPORT_FORMATS.map((f) => `<button data-expfmt="${f.key}" class="${fmt === f.key ? 'active' : ''}">${f.label}</button>`).join('')}
-      </div>
-      <textarea class="bulk-textarea" id="exportText" readonly>${escapeHtml(text)}</textarea>
-      <div class="action-row">
-        <button class="ghost-btn" id="copyExport">Copy</button
-        ><button class="ghost-btn" id="proxyExport">${inlIco('printer')}Proxies</button
-        ><button class="ghost-btn" id="downloadExport">Download .${exportExt(fmt)}</button>
+    return /* HTML */ `<div
+      class="panel-card transfer-dialog"
+      role="dialog"
+      aria-label="Export deck"
+    >
+      ${transferHeaderHtml('Export deck', 'Choose a format, then copy or save your list.', '', 'dl-panel-x')}
+      <div class="transfer-body">
+        <div class="seg transfer-formats" role="group" aria-label="Export format">
+          ${EXPORT_FORMATS.map((f) => `<button data-expfmt="${f.key}" class="${fmt === f.key ? 'active' : ''}">${f.label}</button>`).join('')}
+        </div>
+        <label class="transfer-label" for="exportText">Deck list</label>
+        <textarea class="bulk-textarea" id="exportText" readonly>${escapeHtml(text)}</textarea>
+        <div class="transfer-actions">
+          <button type="button" class="ghost-btn" id="copyExport">${inlIco('copy')}Copy</button>
+          <button type="button" class="ghost-btn" id="proxyExport">
+            ${inlIco('printer')}Proxies
+          </button>
+          <button type="button" class="primary-btn" id="downloadExport">
+            ${inlIco('save')}Download .${exportExt(fmt)}
+          </button>
+        </div>
       </div>
     </div>`;
   }

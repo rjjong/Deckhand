@@ -94,7 +94,7 @@ export function createApp({ databasePath = resolve('./var/deckhand.dev.sqlite'),
         if (!Object.hasOwn({ sync, judge, deckai }, api)) return json(res, 404, { ok: false, error: 'not_found' });
         if (req.method !== 'POST') return json(res, 405, { ok: false, error: 'method' }, { allow: 'POST' });
         const body = await readBody(req, api === 'sync' ? 64 * 1024 * 1024 : 1024 * 1024);
-        const deps = api === 'sync' ? { store: storage.store('deckhand-sync') }
+        const deps = api === 'sync' ? { sync: storage.sync, legacy: storage.store('deckhand-sync') }
           : { store: storage.store, env, fetch: fetchImpl, ip: req.socket.remoteAddress || '' };
         const result = await handler(body, deps);
         if (api === 'deckai') result.json.v = DECKAI_V;

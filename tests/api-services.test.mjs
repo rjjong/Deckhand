@@ -66,12 +66,17 @@ test('local AI endpoints keep answers in SQLite across server restarts', async (
   const options = {
     databasePath: join(directory, 'app.sqlite'),
     dataDirectory: directory,
-    env: { GEMINI_API_KEY: 'test-key', GEMINI_MODEL: 'test-model' },
+    env: { GROQ_API_KEY: 'test-key', GEMINI_API_KEY: 'test-key', GEMINI_MODEL: 'test-model' },
     fetchImpl: async (url, options) => {
-      assert.equal(url, 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions');
       calls++;
       const request = JSON.parse(options.body);
       const judge = request.messages[0].content.includes('rules judge');
+      assert.equal(
+        url,
+        judge
+          ? 'https://api.groq.com/openai/v1/chat/completions'
+          : 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
+      );
       const content = judge
         ? {
             answer: 'Yes.',

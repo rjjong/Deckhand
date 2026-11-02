@@ -413,6 +413,7 @@ function wireMenuTools() {
   });
   ensureCmdrBans(!((state.cmdrBans || {}).names || []).length);
   document.getElementById('apkUpdBtn')?.addEventListener('click', () => openApkUpdateSheet());
+  document.getElementById('lifeRow')?.addEventListener('click', () => switchPage('life'));
   document.getElementById('draftRow')?.addEventListener('click', () => switchPage('draft'));
   document.getElementById('crRow')?.addEventListener('click', openCROverlay);
   document.getElementById('fullRulesToggle')?.addEventListener('click', () => {

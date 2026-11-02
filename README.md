@@ -7,6 +7,19 @@ Commander while keeping their cards, commanders, and folders.
 The Node.js server handles sync, AI requests, news, and Scryfall through `/api/`.
 Sync data and AI caches stay in SQLite; AI provider keys are optional.
 
+Ask AI Judge uses **Groq only**. Create a key from a [Groq Free account](https://console.groq.com/keys),
+put it in your server's `.env` as `GROQ_API_KEY=...`, and restart the server.
+Keep the account on the Free plan; billing tier is controlled by Groq.
+The default model is `openai/gpt-oss-120b`. Rate limits pause AI requests;
+cached answers and the app's relevant rules remain available. See
+[Groq setup](docs/DEVELOPMENT.md#ask-ai-judge-with-groq-free) for details.
+
+In **Settings → Sync**, create a sync code on your first device and enter it on
+your other devices using the same Deckhand server. Decks, collection (including
+binders), settings, and saved games sync automatically. There are no accounts or
+passwords; the server stores only a hash of the sync code. Offline edits stay
+local until the connection returns. Unlinking keeps the device's local data.
+
 Run the web app locally with Node.js 24 and SQLite:
 
 ```sh
@@ -35,11 +48,17 @@ The interface is English-only and opens without a first-start introduction.
 The title returns home. Content scrolls above the bottom tabs and below its
 fixed title and toolbars. Decks and Collection have full-width search bars
 that scroll with their pages.
+Main pages, full-screen tools, and filters share one themed title-bar style.
 Their add buttons share the same size and fixed bottom-right position.
+Open decks have a card-count and value overview, pinned search, card display controls,
+and a grouped Deck actions menu. Filters and bulk editing open full screen.
 Backup reminders appear in Menu and add an exclamation badge to the menu logo.
 Collection has a Trade icon in its title bar, a filtered value beside its search field,
 and the same full-screen sliding filters as Search.
+Collection's Add card opens Search. Each card's Add menu lists collection after the deck choices.
 Trade has two card lists with Add card actions and no separate page search.
+Each traded card has a Cardmarket link for its printing, with name search as a fallback for older entries.
+Confirm trade and the price difference stay in a bordered bar below the title as the cards scroll.
 Life opens a game menu with new, resume, and saved-game actions.
 Run `npm run test:mobile` for mobile and desktop browser checks.
 

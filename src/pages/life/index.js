@@ -10,7 +10,7 @@ function lifePageHtml() {
     </section>
     <section class="hub-actions" aria-label="Life tracker">
       ${playing ? `<button type="button" class="hub-card" id="lifeResume"><span class="hub-icon">${ICONS.heart}</span><span><strong>Resume game</strong><small>${state.life.players.length} players · Turn ${state.life.turnNum || 1}</small></span><span class="hub-arrow" aria-hidden="true">›</span></button>` : ''}
-      <button type="button" class="hub-card hub-primary" id="lifeNewGame">
+      <button type="button" class="hub-card" id="lifeNewGame">
         <span class="hub-icon">${ICONS.heart}</span
         ><span><strong>New game</strong><small>Pick a format and a table layout</small></span
         ><span class="hub-arrow" aria-hidden="true">›</span>

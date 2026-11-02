@@ -726,7 +726,7 @@ document.addEventListener('click', (e) => {
     const d = getDeck(state.activeDeckId);
     if (d) openLandSuggest(d);
   }
-  if (e.target && e.target.id === 'proxyExport') {
+  if (e.target?.closest?.('#proxyExport')) {
     const d = getDeck(state.activeDeckId);
     if (d) openProxySheet(d);
   }
@@ -788,6 +788,20 @@ const _fitCache = new Map();
 function fitTitleText(el) {
   try {
     if (!el || !el.isConnected || !el.clientWidth) return;
+    // The main title has its own canvas fitter. Overlay titles fit their text
+    // inside the shared header's fixed-size button, rather than measuring the button.
+    if (el.matches('.app-header > .brand-txt')) return;
+    if (el.matches('.app-titlebar > .brand-txt')) {
+      let text = el.querySelector(':scope > .app-title-text');
+      if (!text) {
+        text = document.createElement('span');
+        text.className = 'app-title-text two-line';
+        text.textContent = el.textContent.trim();
+        el.replaceChildren(text);
+      }
+      fitTitleText(text);
+      return;
+    }
     // Same words in the same space always settle at the same size.
     const key =
       el.className +

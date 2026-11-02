@@ -958,15 +958,7 @@ async function openShowcase(payload, opts) {
   }
   const count = (payload.c || []).length + (payload.a ? 1 : 0) + (payload.a2 ? 1 : 0);
   el.innerHTML = /* HTML */ `<div class="overlay-inner">
-    <div class="topbar" style="position:relative;">
-      <button class="icon-btn" id="scBack">${ICONS.back}</button>
-      <div class="tb-titles">
-        <div class="t1" style="font-size:19px;">${escapeHtml(payload.n || 'Shared Deck')}</div>
-        <div class="t2" style="font-size:15px;color:var(--ink-text);">
-          ${payload.by ? `Created by <strong style="color:var(--head-ink);">${escapeHtml(payload.by)}</strong>` : `${count} cards`}
-        </div>
-      </div>
-    </div>
+    ${overlayCapHtml(payload.n || 'Shared Deck', `<button type="button" class="header-filter" id="scBack" aria-label="Back">${ICONS.back}</button>`, payload.by ? `Created by ${payload.by}` : `${count} cards`)}
     <main>
       <div id="scBody">
         <div class="status">
@@ -1198,75 +1190,10 @@ async function renderShowcaseCards(payload, admiralCard) {
 }
 
 function syncTabsUI() {
-  document
-    .querySelectorAll('.b-tab')
-    .forEach((b) => b.classList.toggle('active', b.dataset.btab === state.builderTab));
-}
-
-function wireMenu(d) {
-  document.getElementById('mImpExp')?.addEventListener('click', () => {
-    popDeckMenu();
-    updateDeckMeter(d);
-    toggleDlPanel(d, 'impexp');
+  document.querySelectorAll('.b-tab').forEach((b) => {
+    b.classList.toggle('active', b.dataset.btab === state.builderTab);
+    b.setAttribute('aria-pressed', String(b.dataset.btab === state.builderTab));
   });
-  document.getElementById('mSortBy')?.addEventListener('click', () => {
-    popDeckMenu();
-    updateDeckMeter(d);
-    openModal('sort');
-  });
-  document.getElementById('mAddFolder')?.addEventListener('click', () => {
-    popDeckMenu();
-    render();
-    openFolderPicker(d);
-  });
-  document.getElementById('mFormat')?.addEventListener('click', () => {
-    popDeckMenu();
-    openFormatPicker(d);
-  });
-  document.getElementById('mDuplicate')?.addEventListener('click', () => {
-    popDeckMenu();
-    duplicateDeck(d);
-  });
-  document.getElementById('mVersions')?.addEventListener('click', () => {
-    popDeckMenu();
-    render();
-    openDeckVersions(d.id);
-  });
-  document.getElementById('mShare')?.addEventListener('click', () => {
-    popDeckMenu();
-    updateDeckMeter(d);
-    shareDeck(d);
-  });
-  document.getElementById('mDelete')?.addEventListener('click', () => {
-    popDeckMenu();
-    openModal('delete');
-  });
-  document.querySelectorAll('#menuPop [data-dlview]').forEach((b) =>
-    b.addEventListener('click', () => {
-      popDeckMenu();
-      setDlView(b.dataset.dlview);
-      updateDeckMeter(d);
-      refreshDecklistBox(d);
-    }),
-  );
-  document.addEventListener('click', closeMenuOnce, { once: true });
-}
-
-function popDeckMenu() {
-  // The open menu rides the overlay stack so the hardware back button can
-  // close it; every OTHER closing route must retire that entry the
-  // dismissAll way — popped directly, its history entry left inert (the
-  // state-driven ladder re-arms on every press).
-  const st = state.overlayStack;
-  if (st.length && st[st.length - 1].id === 'deckMenu') st.pop();
-  state.menuOpen = false;
-}
-
-function closeMenuOnce() {
-  if (state.menuOpen) {
-    popDeckMenu();
-    render();
-  }
 }
 
 async function duplicateDeck(d) {

@@ -415,10 +415,10 @@ test('menu keeps game tools and removes unwanted options', async ({page},info)=>
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
   await page.getByRole('button',{name:'Open menu',exact:true}).click();
-  for(const id of ['menuSettings','draftRow','crRow','fmtRulesRow','banListsRow']){
+  for(const id of ['menuSettings','lifeRow','draftRow','crRow','fmtRulesRow','banListsRow']){
     await expect(page.locator(`.menu-page #${id}`)).toHaveClass(/hub-card/);
   }
-  await expect(page.locator('#lifeRow, #syncRow, #backupRow, #langRow, #dataSourcesRow, #guildRow, #notifRow, #notifBody, #changelogBtn, #footFeedbackBtn, #aboutRow, #installAppRow, #shareAppRow')).toHaveCount(0);
+  await expect(page.locator('#syncRow, #backupRow, #langRow, #dataSourcesRow, #guildRow, #notifRow, #notifBody, #changelogBtn, #footFeedbackBtn, #aboutRow, #installAppRow, #shareAppRow')).toHaveCount(0);
   await expect(page.locator('.menu-page .hub-card').last()).toHaveAttribute('id','menuSettings');
   await expect(page.locator('.menu-page #fmtRulesBody, .menu-page #banListsBody')).toHaveCount(0);
   for(const [row,body,title] of [['fmtRulesRow','fmtRulesBody','FORMAT RULES'],['banListsRow','banListsBody','BAN LISTS']]){
@@ -430,6 +430,12 @@ test('menu keeps game tools and removes unwanted options', async ({page},info)=>
     await expect(page.locator('#brandTitle')).toHaveText('MENU');
     await expect(page.locator(`#${body}`)).toHaveCount(0);
   }
+  await page.locator('#lifeRow').click();
+  await expect(page.locator('.life-page')).toBeVisible();
+  await expect(page.locator('#brandTitle')).toHaveText('LIFE TRACKER');
+  await expect(page.locator('.app > .app-navigation').getByRole('button',{name:'Life',exact:true})).toHaveAttribute('aria-current','page');
+  await page.goBack();
+  await expect(page.locator('.menu-page #lifeRow')).toBeVisible();
   await page.locator('#crRow').click();
   await expect(page.locator('#crOverlay')).toBeVisible();
   await page.evaluate(()=>dismissAllOverlays());
@@ -449,6 +455,8 @@ test('Format Rules and Ban Lists are standalone pages with working details and p
   await page.getByRole('button',{name:'Open menu',exact:true}).click();
   await page.locator('#fmtRulesRow').click();
   await expect(page.locator('#brandTitle')).toHaveText('FORMAT RULES');
+  await expect(page.locator('.app-header')).toHaveCSS('border-bottom-width','1px');
+  await expect(page.locator('.app-header')).toHaveCSS('box-shadow','none');
   await expect(page.locator('.format-rules-page [data-fmtrule]')).toHaveCount(10);
   await page.locator('[data-fmtrule="commander"] .l1').click();
   await expect(page.locator('[data-fmtruletxt="commander"]')).toContainText('100-card singleton');
@@ -464,6 +472,8 @@ test('Format Rules and Ban Lists are standalone pages with working details and p
   await expect(page.locator('#brandTitle')).toHaveText('MENU');
   await page.locator('#banListsRow').click();
   await expect(page.locator('#brandTitle')).toHaveText('BAN LISTS');
+  await expect(page.locator('.app-header')).toHaveCSS('border-bottom-width','1px');
+  await expect(page.locator('.app-header')).toHaveCSS('box-shadow','none');
   await expect(page.locator('.ban-lists-page [data-banfmt]')).toHaveCount(9);
   await page.locator('[data-banfmt="commander"] .l1').click();
   const ban=page.locator('[data-banbox="commander"]');
@@ -605,6 +615,8 @@ test('Ask AI Judge keeps its question above navigation and reads answers from th
   const header=overlay.locator('.app-overlay-header');
   const nav=overlay.locator('.app-navigation');
   const icon=header.getByRole('button',{name:'Read the Comprehensive Rules'});
+  await expect(header).toHaveCSS('border-bottom-width','1px');
+  await expect(header).toHaveCSS('box-shadow','none');
   await expect(icon).toBeVisible();
   await expect(icon.locator('svg')).toHaveCount(1);
   expect(await icon.textContent()).toBe('');
@@ -620,6 +632,8 @@ test('Ask AI Judge keeps its question above navigation and reads answers from th
     const b=await body.boundingBox(), bar=await overlay.locator('.cr-bar').boundingBox();
     const q=await overlay.locator('#crQ').boundingBox(), action=await overlay.locator('#crJudge').boundingBox();
     expect(h.y).toBe(0);
+    expect(h.height).toBeCloseTo((await page.locator('.app > .app-header').boundingBox()).height,0);
+    expect(await header.locator('.ov-title').evaluate(el=>parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(15);
     expect(b.y).toBeCloseTo(h.y+h.height,0);
     expect(b.y+b.height).toBeCloseTo(bar.y,0);
     expect(bar.y+bar.height).toBeCloseTo(n.y,0);
@@ -713,6 +727,23 @@ test('Comprehensive Rules opens from the judge header and lists sections and mat
   const overlay=page.locator('#crOverlay'), body=overlay.locator('#crBody');
   await overlay.getByRole('button',{name:'Read the Comprehensive Rules'}).click();
   await expect(overlay.locator('.ov-title')).toHaveText('Comprehensive Rules');
+  const header=overlay.locator('.app-overlay-header');
+  await expect(header).toHaveCSS('border-bottom-width','1px');
+  await expect(header).toHaveCSS('box-shadow','none');
+  const original=page.viewportSize();
+  for(const size of [original,{width:320,height:480}]){
+    await page.setViewportSize(size);
+    const bounds=await header.boundingBox();
+    expect(bounds.height).toBeCloseTo((await page.locator('.app > .app-header').boundingBox()).height,0);
+    const title=await header.locator('.ov-title').boundingBox();
+    expect(await header.locator('.ov-title').evaluate(el=>parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(15);
+    expect(title.y).toBeGreaterThanOrEqual(bounds.y);
+    expect(title.y+title.height).toBeLessThanOrEqual(bounds.y+bounds.height);
+    expect((await body.boundingBox()).y).toBeCloseTo(bounds.y+bounds.height,0);
+    expect(await header.evaluate(el=>el.scrollHeight<=el.clientHeight)).toBe(true);
+  }
+  await page.screenshot({path:`var/previews/comprehensive-rules-header-${info.project.name}.png`});
+  await page.setViewportSize(original);
   await expect(body.locator('.cr-toc-row')).toHaveCount(40);
   await expect(body.locator('.hub-intro h1')).toHaveText('Know the rules.');
   await expect(body.locator('.cr-toc-row').first()).toHaveClass(/hub-card/);
@@ -747,7 +778,7 @@ test('every page scrolls only inside its content viewport', async ({page},info)=
     const header=await page.locator('.app-header').boundingBox();
     const nav=await page.locator('.app > .app-navigation').boundingBox();
     const bounds=await viewport.boundingBox();
-    const controls=page.locator('.app > main > .searchbar:visible, .app > main > div:has(> #deckFilter):visible, .app > main > .browse-selects:visible');
+    const controls=page.locator('.app > main > .page-controls:visible');
     const bars=await controls.evaluateAll(els=>els.map(el=>{const r=el.getBoundingClientRect();return {y:r.y,height:r.height};}));
     const contentTop=Math.max(header.y+header.height,...bars.map(bar=>bar.y+bar.height));
     expect(Math.abs(bounds.y-contentTop)).toBeLessThan(1);
@@ -824,6 +855,28 @@ test('Decks and Collection search bars fill the page width and scroll with conte
     await page.locator('.app-navigation').getByRole('button',{name,exact:true}).click();
     const input=page.locator(id);
     if(name==='Decks') await expect(input).toHaveAttribute('placeholder','Search decks...');
+    if(name==='Decks'){
+      const toggle=page.locator('.decks-searchbar #folderViewToggle');
+      await expect(toggle).toBeVisible();
+      const field=await input.boundingBox(), button=await toggle.boundingBox();
+      expect(button.x).toBeGreaterThan(field.x+field.width);
+      expect(button.y).toBeCloseTo(field.y,0);
+      expect(button.height).toBe(field.height);
+      await toggle.click();
+      await expect(toggle).toHaveText('Tile view');
+      expect(await page.evaluate(()=>localStorage.getItem(LS_PREFIX+'decksView'))).toBe('list');
+    } else {
+      await expect(page.locator('#folderViewToggle')).toHaveCount(0);
+      await page.locator('#colChev').click();
+      const filters=page.locator('#advancedSearchScreen');
+      await expect(filters.locator('#folderViewToggle')).toHaveText('List view');
+      await filters.locator('#folderViewToggle').click();
+      await expect(filters).toBeVisible();
+      await expect(filters.locator('#folderViewToggle')).toHaveText('Tile view');
+      expect(await page.evaluate(()=>localStorage.getItem(LS_PREFIX+'colView'))).toBe('list');
+      await filters.locator('#advancedSearchClose').click();
+      await expect(page.locator('#folderViewToggle')).toHaveCount(0);
+    }
     expect(await input.evaluate(el=>{
       const viewport=el.closest('.tab-viewport'), bar=el.closest('.searchbar');
       return !!viewport && Math.abs(bar.getBoundingClientRect().width-(viewport.clientWidth-32))<2;
@@ -917,6 +970,80 @@ test('Decks and Collection add buttons share the same size and fixed position', 
   await page.screenshot({path:`var/previews/collection-add-button-${info.project.name}.png`});
   await page.locator('#binderFab').click();
   await expect(page.locator('#bfAddCard')).toBeVisible();
+});
+
+test('Collection Add card opens Search and adds to the collection or selected binder', async ({page},info)=>{
+  const errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  await expect.poll(()=>page.evaluate(()=>state.homeLoaded)).toBe(true);
+  const card={id:'collection-add-fixture',oracle_id:'collection-add-oracle',name:'Collection Search Adept',
+    type_line:'Creature — Wizard',layout:'normal',cmc:2,mana_cost:'{1}{U}',colors:['U'],color_identity:['U'],
+    set:'tst',set_name:'Test set',collector_number:'7',rarity:'common',games:['paper'],
+    legalities:{commander:'legal',modern:'legal'},prices:{eur:'1.50',eur_foil:'2.00'},
+    image_uris:{normal:'/icon-192.png',large:'/icon-192.png',small:'/icon-192.png'}};
+  await page.route('**/api/scryfall/cards/search*',route=>route.fulfill({json:{object:'list',data:[card],has_more:false,total_cards:1}}));
+  for(const binder of [null,'collection-add-binder']){
+    await page.evaluate(()=>{
+      state.collection.items=[];
+      state.collection.binders=[{id:'collection-add-binder',name:'Trade binder'}];
+      state.decksIndex=[{id:'add-deck-a',name:'First deck',format:'modern',cards:[],updatedAt:2},
+        {id:'add-deck-b',name:'Second deck',format:'modern',cards:[],updatedAt:1}];
+    });
+    await page.locator('.app > .app-navigation').getByRole('button',{name:'Collection',exact:true}).click();
+    if(binder) await page.locator(`[data-binderopen="${binder}"]`).click();
+    await page.locator(binder?'#binderFab':'#colFab').click();
+    await page.locator(binder?'#bfAddCard':'#fabAddCard').click();
+    await expect(page.locator('#brandTitle')).toHaveText('SEARCH');
+    await expect(page.locator('#colAddSheet, #casQ')).toHaveCount(0);
+    expect(await page.evaluate(()=>state.searchPinnedDeckId)).toBeNull();
+    await page.locator('#searchName').fill(card.name);
+    await page.locator('#searchName').press('Enter');
+    const tile=page.locator(`#searchResultsBox .sr-tile[data-name="${encodeURIComponent(card.name)}"]`);
+    await tile.getByRole('button',{name:'Add card',exact:true}).click();
+    const picker=page.locator('#deckPickScrim');
+    const collection=picker.locator('[data-tocollection]');
+    await expect(collection).toBeVisible();
+    await expect(picker.locator('[data-deck]')).toHaveCount(2);
+    const list=await picker.locator('.deckpick-list').boundingBox();
+    const option=await collection.boundingBox(), cancel=await picker.locator('#dpCancel').boundingBox();
+    expect(option.y).toBeGreaterThanOrEqual(list.y+list.height);
+    expect(option.y+option.height).toBeLessThanOrEqual(cancel.y);
+    await mkdir('var/previews',{recursive:true});
+    await page.screenshot({path:`var/previews/collection-search-add-${binder?'binder':'all'}-${info.project.name}.png`});
+    await collection.click();
+    await expect(page.locator('#deckPickScrim')).toHaveCount(0);
+    await expect(page.locator('#acBinder')).toHaveValue(binder||'');
+    await page.locator('#acQty').fill('2');
+    await page.locator('#acAdd').click();
+    await expect(page.locator('#addCollOverlay')).toHaveCount(0);
+    const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('admiral_app:collection')).items);
+    expect(saved).toEqual([expect.objectContaining({name:card.name,qty:2,binder,set:'tst',cn:'7',cond:'NM'})]);
+    expect(await page.evaluate(()=>state.decksIndex.every(d=>!d.cards.length))).toBe(true);
+    await expect(page.locator('#brandTitle')).toHaveText('SEARCH');
+  }
+  expect(errors).toEqual([]);
+});
+
+test('Card Add keeps collection above Cancel with no decks or a long scrolling deck list', async ({page})=>{
+  for(const count of [0,24]){
+    await page.evaluate(count=>{
+      state.decksIndex=Array.from({length:count},(_,i)=>({id:'picker-'+i,name:'Deck '+i,format:'modern',cards:[]}));
+      openDeckPickPopup({name:'Collection picker fixture'},'main',null,null,true);
+    },count);
+    const picker=page.locator('#deckPickScrim');
+    const collection=picker.locator('[data-tocollection]');
+    await expect(picker.locator('[data-newdeck]')).toHaveCount(1);
+    await expect(picker.locator('[data-deck]')).toHaveCount(count);
+    await expect(collection).toBeInViewport();
+    await expect(picker.locator('#dpCancel')).toBeInViewport();
+    const list=await picker.locator('.deckpick-list').boundingBox();
+    const option=await collection.boundingBox(), cancel=await picker.locator('#dpCancel').boundingBox();
+    expect(option.y).toBeGreaterThanOrEqual(list.y+list.height);
+    expect(option.y+option.height).toBeLessThanOrEqual(cancel.y);
+    if(count) expect(await picker.locator('.deckpick-list').evaluate(el=>el.scrollHeight>el.clientHeight)).toBe(true);
+    await picker.locator('#dpCancel').click();
+    await expect(picker).toHaveCount(0);
+  }
 });
 
 test('Trade has no page search and retains its card editing actions', async ({page})=>{
@@ -1166,7 +1293,7 @@ test('Dimir Draft keeps button labels, timers and match results readable', async
   await checkContrast('.dr-p.win, #drClock, [data-dr="rt-go"], [data-dr="rt-plus"]');
 });
 
-test('Trade keeps its balance above menu cards and its actions in the title bar', async ({page},info)=>{
+test('Trade pins a bordered confirmation bar below its title and keeps its dialogs working', async ({page},info)=>{
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
   await expect.poll(()=>page.evaluate(()=>state.homeLoaded)).toBe(true);
@@ -1183,25 +1310,61 @@ test('Trade keeps its balance above menu cards and its actions in the title bar'
   await expect(main.locator('.trade-side .tool-heading-copy h2')).toHaveText(['You','Me']);
   await expect(main.locator('.trade-total')).toHaveText(['€5.00','€7.00']);
   await expect(main.locator('.trade-verdict')).toHaveText('You add €2.00');
-  const verdict=await main.locator('.trade-verdict').boundingBox();
-  const side=await main.locator('.trade-side').first().boundingBox();
-  expect(verdict.y+verdict.height).toBeLessThan(side.y);
-  expect(verdict.x+verdict.width).toBeCloseTo(side.x+side.width,0);
+  const toolbar=main.locator('.trade-toolbar');
+  const shell=main.locator(':scope > .trade-toolbar-shell.page-controls');
+  const viewport=main.locator('.page-content');
+  await expect(toolbar.getByRole('button',{name:'Confirm trade',exact:true})).toBeVisible();
+  await expect(toolbar.locator('#tradeConfirm svg')).toHaveCount(1);
+  await expect(viewport.locator('#tradeConfirm, .trade-verdict')).toHaveCount(0);
+  await expect(page.locator('.app-header #tradeConfirm')).toHaveCount(0);
+  await expect(page.locator('.app-header #tradeClear')).toBeVisible();
+  await expect(page.locator('.app-header #tradeClear svg')).toHaveCount(1);
+  await expect(page.locator('#tradeClear')).toHaveCSS('border-top-width','0px');
+  const surfaceStyle=el=>{
+    const css=getComputedStyle(el);
+    return {border:css.borderTop,borderRadius:css.borderRadius,background:css.backgroundColor};
+  };
+  expect(await toolbar.evaluate(surfaceStyle)).toEqual(await main.locator('.trade-side').first().evaluate(surfaceStyle));
+  const original=page.viewportSize();
+  for(const size of [original,{width:320,height:700}]){
+    await page.setViewportSize(size);
+    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    await expect(main.locator('.trade-side').first()).toBeVisible();
+    const bar=await toolbar.boundingBox();
+    const header=await page.locator('.app-header').boundingBox();
+    const side=await main.locator('.trade-side').first().boundingBox();
+    const confirm=await page.locator('#tradeConfirm').boundingBox();
+    const verdict=await main.locator('.trade-verdict').boundingBox();
+    expect(bar.y-header.y-header.height).toBeCloseTo(16,0);
+    expect(bar.x).toBeCloseTo(side.x,0);
+    expect(bar.width).toBeCloseTo(side.width,0);
+    expect(side.y-bar.y-bar.height).toBeCloseTo(16,0);
+    expect(confirm.x+confirm.width).toBeLessThanOrEqual(verdict.x);
+    expect(verdict.x+verdict.width).toBeLessThan(bar.x+bar.width);
+    expect(await viewport.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+    expect(await shell.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+  }
   for(const selector of ['[data-tradeadd="a"]','[data-tradeadd="b"]']){
     await expect(main.locator(selector)).toHaveClass(/hub-card/);
     await expect(main.locator(`${selector} .hub-icon svg`)).toHaveCount(1);
   }
-  for(const selector of ['#tradeConfirm','#tradeClear']){
-    await expect(page.locator(`.app-header ${selector}`)).toBeVisible();
-    await expect(page.locator(`.app-header ${selector} svg`)).toHaveCount(1);
-    await expect(page.locator(selector)).toHaveCSS('border-top-width','0px');
-    await expect(main.locator(selector)).toHaveCount(0);
-  }
-  const original=page.viewportSize();
-  await page.setViewportSize({width:320,height:700});
-  expect(await main.locator('.page-content').evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
   await page.setViewportSize(original);
-  await main.locator('.page-content').evaluate(el=>el.scrollTop=0);
+  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+  await viewport.evaluate(el=>{
+    const filler=document.createElement('div');
+    filler.style.cssText='height:1400px;flex-shrink:0';
+    el.append(filler);
+  });
+  const pinned=await toolbar.boundingBox();
+  const shellBounds=await shell.boundingBox();
+  const contentBounds=await viewport.boundingBox();
+  expect(contentBounds.y).toBeCloseTo(shellBounds.y+shellBounds.height,0);
+  await page.mouse.move(contentBounds.x+contentBounds.width/2,contentBounds.y+contentBounds.height/2);
+  await page.mouse.wheel(0,450);
+  await expect.poll(()=>viewport.evaluate(el=>el.scrollTop)).toBeGreaterThan(0);
+  expect(await toolbar.boundingBox()).toEqual(pinned);
+  await expect(toolbar.getByRole('button',{name:'Confirm trade',exact:true})).toBeInViewport();
+  await viewport.evaluate(el=>el.scrollTop=0);
   await mkdir('var/previews',{recursive:true});
   await page.screenshot({path:`var/previews/trade-menu-style-${info.project.name}.png`});
   await page.locator('#tradeClear').click();
@@ -1726,7 +1889,8 @@ test('Card Details keeps its title, metrics, subtitle and menu visible above scr
     for(const metric of [price,salt]){
       const bounds=await metric.boundingBox();
       expect(bounds.x).toBeGreaterThanOrEqual(t.x+t.width);
-      expect(bounds.x+bounds.width).toBeLessThanOrEqual(h.x+h.width-14);
+      const padding=await header.evaluate(el=>parseFloat(getComputedStyle(el).paddingRight));
+      expect(bounds.x+bounds.width).toBeLessThanOrEqual(h.x+h.width-padding);
       await expect(metric).toBeInViewport();
     }
     expect(await subtitle.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);

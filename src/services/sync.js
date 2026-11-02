@@ -1,62 +1,45 @@
-// services / sync
-
-/* ---- Backup: one file with everything, kept wherever the player likes ----
-   No server of our own: the file goes to Android's share sheet (Google
-   Drive, Nextcloud, Dropbox, mail ...) or to Downloads, and comes back in
-   through the file picker, which reaches the same clouds. */
-/* ===================== 1.26 SYNC BETWEEN DEVICES =====================
-   A link code ties devices together; the local server's SQLite database
-   keeps one shared document. Every synced piece -- each deck, the
-   collection, folders, tags, printings, settings -- carries the time this
-   device last changed it; the newest change wins, piece by piece.
-   A probe every few minutes costs a few bytes; data only moves when
-   something changed. Caches, prices and device-only switches never sync. */
-const SYNC_KEYS = new Set([
-  'collection',
-  'folders',
-  'globalTags',
-  'printPrefs',
-  'printPrefsPlaced',
-  'trade',
-  'priceWatch',
-  'draftNames',
-  'authorName',
-  'lang',
-  'settings:app',
-  'budgetFloor',
-  'lifeFmt',
-]);
-
+// Code-only sync with this app's server. SQLite is the shared source; the
+// browser remains usable offline. Each deck, collection row, preference,
+// folder and saved game is a separate last-change-wins record.
+const SYNC_KEYS = new Set(SYNC_SOURCES);
 const SYNC_URL = '/api/sync';
-
+const _lsSetRaw = Storage.prototype.setItem;
+const _lsDelRaw = Storage.prototype.removeItem;
 let _syncQuiet = 0,
   _syncTimer = null,
   _syncBusy = false,
-  _syncMetaT = null;
-
-const _lsSetRaw = Storage.prototype.setItem,
-  _lsDelRaw = Storage.prototype.removeItem;
+  _syncLinking = false,
+  _syncGeneration = 0;
+let _syncController = null,
+  _syncClock = 0;
 
 function syncState() {
-  if (!state._syncSt) {
+  if (state._syncSt === undefined) {
     try {
       state._syncSt = JSON.parse(localStorage.getItem(LS_PREFIX + 'syncState') || 'null');
-    } catch (e) {}
+    } catch {
+      state._syncSt = null;
+    }
   }
   return state._syncSt || null;
 }
 
 function syncSaveState() {
-  try {
-    _lsSetRaw.call(localStorage, LS_PREFIX + 'syncState', JSON.stringify(state._syncSt || null));
-  } catch (e) {}
+  _lsSetRaw.call(localStorage, LS_PREFIX + 'syncState', JSON.stringify(state._syncSt || null));
+  syncPaintStatus();
+}
+
+function syncPaintStatus() {
+  const label = document.querySelector('#syncRow .hub-copy > div.l2');
+  if (label)
+    label.textContent = syncState() ? 'Linked to this server' : 'Link your devices with a code';
 }
 
 function syncMeta() {
   if (!state._syncMeta) {
     try {
-      state._syncMeta = JSON.parse(localStorage.getItem(LS_PREFIX + 'syncMeta') || '{}') || {};
-    } catch (e) {
+      state._syncMeta = JSON.parse(localStorage.getItem(LS_PREFIX + 'syncMeta') || '{}');
+    } catch {
       state._syncMeta = {};
     }
   }
@@ -64,463 +47,647 @@ function syncMeta() {
 }
 
 function syncSaveMeta() {
-  clearTimeout(_syncMetaT);
-  _syncMetaT = setTimeout(() => {
-    try {
-      _lsSetRaw.call(localStorage, LS_PREFIX + 'syncMeta', JSON.stringify(syncMeta()));
-    } catch (e) {}
-  }, 300);
-}
-
-function syncNoteChange(k, del) {
-  if (_syncQuiet) return;
-  const m = syncMeta();
-  m[k] = del ? { t: Date.now(), d: 1 } : { t: Date.now() };
-  syncSaveMeta();
-  if (syncState()) syncSoon(6000);
-}
-
-function syncTouchDeck(id, del) {
-  if (id) syncNoteChange('deck:' + id, del);
-}
-
-// Every write to a synced key is noted (decks are noted where they are saved).
-try {
-  Storage.prototype.setItem = function (k, v) {
-    _lsSetRaw.call(this, k, v);
-    try {
-      if (
-        this === window.localStorage &&
-        typeof k === 'string' &&
-        k.indexOf(LS_PREFIX) === 0 &&
-        SYNC_KEYS.has(k.slice(LS_PREFIX.length))
-      )
-        syncNoteChange(k.slice(LS_PREFIX.length), false);
-    } catch (e) {}
-  };
-  Storage.prototype.removeItem = function (k) {
-    _lsDelRaw.call(this, k);
-    try {
-      if (
-        this === window.localStorage &&
-        typeof k === 'string' &&
-        k.indexOf(LS_PREFIX) === 0 &&
-        SYNC_KEYS.has(k.slice(LS_PREFIX.length))
-      )
-        syncNoteChange(k.slice(LS_PREFIX.length), true);
-    } catch (e) {}
-  };
-} catch (e) {}
-
-function syncSoon(ms) {
-  clearTimeout(_syncTimer);
-  _syncTimer = setTimeout(() => {
-    syncRun('change');
-  }, ms || 6000);
-}
-
-function syncNewCode() {
-  const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  const b = new Uint8Array(16);
-  crypto.getRandomValues(b);
-  let c = '';
-  for (let i = 0; i < 16; i++) c += A[b[i] % 32];
-  return c.match(/.{4}/g).join('-');
-}
-
-function syncCleanCode(c) {
-  return String(c || '')
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, '');
-}
-
-function syncNiceCode(c) {
-  const x = syncCleanCode(c);
-  return (x.match(/.{1,4}/g) || []).join('-');
-}
-
-async function syncCall(body) {
-  const st = syncState();
-  const ctl = new AbortController();
-  const to = setTimeout(() => ctl.abort(), 30000);
+  // Merge writes from another tab before storing, and flush immediately so
+  // closing the app cannot lose an offline edit's change marker.
+  let fresh = {};
   try {
-    const r = await fetch(SYNC_URL, {
+    fresh = JSON.parse(localStorage.getItem(LS_PREFIX + 'syncMeta') || '{}');
+  } catch {}
+  const meta = syncMeta();
+  for (const [key, value] of Object.entries(fresh))
+    if (syncRecordAllowed(key) && value.t > (meta[key]?.t || 0)) meta[key] = value;
+  _lsSetRaw.call(localStorage, LS_PREFIX + 'syncMeta', JSON.stringify(meta));
+}
+
+function syncNoteChanges(changes) {
+  if (_syncQuiet || !changes.length) return;
+  const meta = syncMeta();
+  _syncClock = Math.max(
+    Date.now(),
+    _syncClock + 1,
+    ...changes.map(([key]) => (meta[key]?.t || 0) + 1),
+  );
+  for (const [key, deleted] of changes)
+    if (syncRecordAllowed(key)) meta[key] = deleted ? { t: _syncClock, d: 1 } : { t: _syncClock };
+  syncSaveMeta();
+  if (syncState()) syncSoon(1500);
+}
+
+function syncTouchDeck(id, deleted) {
+  if (id) syncNoteChanges([['deck:' + id, deleted]]);
+}
+
+function syncTrackStorage(source, before, after) {
+  if (_syncQuiet || !SYNC_KEYS.has(source) || before === after) return;
+  let old, next;
+  try {
+    next = syncProjectStorage(source, after);
+  } catch {
+    // Let the normal loader recover malformed local data; never upload it.
+    return;
+  }
+  try {
+    old = syncProjectStorage(source, before);
+  } catch {
+    old = Object.create(null);
+  }
+  const rotatingGames =
+    source === 'lifeSaves' &&
+    Object.keys(next).length >= 10 &&
+    Object.keys(next).some((key) => !Object.hasOwn(old, key));
+  const changes = [];
+  for (const key of new Set([...Object.keys(old), ...Object.keys(next)])) {
+    if (old[key] === next[key]) continue;
+    // The Life page keeps the ten most recent games locally. Evicting an
+    // older game from that view must not erase another device's save.
+    if (rotatingGames && !Object.hasOwn(next, key)) continue;
+    changes.push([key, !Object.hasOwn(next, key)]);
+  }
+  syncNoteChanges(changes);
+}
+
+try {
+  Storage.prototype.setItem = function (key, value) {
+    const tracked =
+      this === window.localStorage &&
+      typeof key === 'string' &&
+      key.startsWith(LS_PREFIX) &&
+      SYNC_KEYS.has(key.slice(LS_PREFIX.length));
+    const before = tracked ? this.getItem(key) : null;
+    _lsSetRaw.call(this, key, value);
+    if (tracked) syncTrackStorage(key.slice(LS_PREFIX.length), before, String(value));
+  };
+  Storage.prototype.removeItem = function (key) {
+    const tracked =
+      this === window.localStorage &&
+      typeof key === 'string' &&
+      key.startsWith(LS_PREFIX) &&
+      SYNC_KEYS.has(key.slice(LS_PREFIX.length));
+    const before = tracked ? this.getItem(key) : null;
+    _lsDelRaw.call(this, key);
+    if (tracked) syncTrackStorage(key.slice(LS_PREFIX.length), before, null);
+  };
+} catch {}
+
+function syncSoon(ms = 1500) {
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(() => syncRun('change'), ms);
+}
+
+function syncCleanCode(code) {
+  return String(code || '')
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]/g, '');
+}
+function syncNiceCode(code) {
+  return (syncCleanCode(code).match(/.{1,4}/g) || []).join('-');
+}
+
+async function syncCall(body, code = syncState()?.code, signal) {
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  signal?.addEventListener('abort', abort, { once: true });
+  if (signal?.aborted) controller.abort();
+  const timeout = setTimeout(abort, 30000);
+  try {
+    const response = await fetch(SYNC_URL, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(Object.assign({ code: st && st.code }, body)),
-      signal: ctl.signal,
+      body: JSON.stringify({ ...body, ...(code ? { code } : {}) }),
+      signal: controller.signal,
       cache: 'no-store',
     });
-    let j = null;
-    try {
-      j = await r.json();
-    } catch (e) {}
-    if (!r.ok || !j || !j.ok) throw new Error((j && j.error) || 'http ' + r.status);
-    return j;
+    const result = await response.json();
+    if (!response.ok || !result.ok) throw new Error(result.error || 'http ' + response.status);
+    return result;
   } finally {
-    clearTimeout(to);
+    clearTimeout(timeout);
+    signal?.removeEventListener('abort', abort);
   }
 }
 
-// The current value of a synced piece on this device (null = gone).
-function syncValueOf(k) {
-  if (k.indexOf('deck:') === 0) {
-    const d = (state.decksIndex || []).find((x) => x.id === k.slice(5));
-    if (!d) return null;
-    const c = {};
-    Object.keys(d).forEach((x) => {
-      if (x !== '_saveStatus') c[x] = d[x];
-    });
-    return JSON.stringify(slimDeckForSave(c));
+function syncSnapshot() {
+  const out = Object.create(null);
+  for (const deck of state.decksIndex || []) {
+    const clean = { ...deck };
+    delete clean._saveStatus;
+    out['deck:' + deck.id] = JSON.stringify(slimDeckForSave(clean));
   }
-  try {
-    return localStorage.getItem(LS_PREFIX + k);
-  } catch (e) {
-    return null;
+  for (const source of SYNC_SOURCES) {
+    let raw = localStorage.getItem(LS_PREFIX + source);
+    if (source === 'settings:app' && raw == null)
+      raw = JSON.stringify({
+        theme: state.theme,
+        guild: state.guild,
+        startupPage: state.startupPage,
+      });
+    Object.assign(out, syncProjectStorage(source, raw));
   }
-}
-
-function syncPending() {
-  const st = syncState(),
-    m = syncMeta(),
-    out = {};
-  if (!st) return out;
-  const sent = st.sent || {};
-  Object.keys(m).forEach((k) => {
-    if (!k.startsWith('deck:') && !SYNC_KEYS.has(k)) return;
-    if (!(m[k].t > (sent[k] || 0))) return;
-    const v = m[k].d ? null : syncValueOf(k);
-    out[k] = v == null ? { t: m[k].t, del: 1 } : { t: m[k].t, v };
-  });
   return out;
 }
 
-// Note every piece already on this device, so a new link carries it.
-// t = 1 (the creator: "old but present"); t = 0.5 for a device that joins, so
-// anything the cloud already holds wins, and what only this device has is
-// still sent up.
-function syncSeed(t) {
-  const m = syncMeta();
-  (state.decksIndex || []).forEach((d) => {
-    const k = 'deck:' + d.id;
-    if (!m[k]) m[k] = { t };
-  });
-  SYNC_KEYS.forEach((k) => {
-    try {
-      if (!m[k] && localStorage.getItem(LS_PREFIX + k) != null) m[k] = { t };
-    } catch (e) {}
-  });
-  syncSaveMeta();
-}
-
-async function syncApply(changes) {
-  const m = syncMeta(),
-    keys = Object.keys(changes || {});
-  let decks = 0,
-    other = new Set();
-  _syncQuiet++;
-  try {
-    for (const k of keys) {
-      const c = changes[k];
-      if (m[k] && !(c.t > m[k].t)) continue; // ours is as new or newer
-      if (k.indexOf('deck:') === 0) {
-        const id = k.slice(5);
-        const i = (state.decksIndex || []).findIndex((x) => x.id === id);
-        if (c.del) {
-          if (i >= 0) dvNoteDeck(state.decksIndex[i], 'deleted');
-          if (i >= 0) state.decksIndex.splice(i, 1);
-          if (state.activeDeckId === id) state.activeDeckId = null;
-          try {
-            await deleteDeckStorage(id);
-          } catch (e) {}
-        } else {
-          let d = null;
-          try {
-            d = JSON.parse(c.v);
-          } catch (e) {}
-          if (!d || !d.id) continue;
-          if (i >= 0) dvNoteDeck(state.decksIndex[i], 'presync'); // 1.27: what was here, kept
-          dvNote(d.id, d.name, 'sync', c.v, (d.cards || []).length);
-          if (i >= 0) state.decksIndex[i] = d;
-          else state.decksIndex.push(d);
-          try {
-            if (!(await deckDbPutMany([[LS_PREFIX + k, c.v]])))
-              localStorage.setItem(LS_PREFIX + k, c.v);
-          } catch (e) {}
-        }
-        decks++;
-      } else if (SYNC_KEYS.has(k)) {
-        try {
-          if (c.del) localStorage.removeItem(LS_PREFIX + k);
-          else localStorage.setItem(LS_PREFIX + k, c.v);
-        } catch (e) {}
-        other.add(k);
-      } else continue;
-      m[k] = c.del ? { t: c.t, d: 1 } : { t: c.t };
-      const st = syncState();
-      if (st) {
-        st.sent = st.sent || {};
-        st.sent[k] = c.t;
-      }
-    }
-  } finally {
-    _syncQuiet--;
+async function syncReadSnapshot() {
+  let persisted;
+  // A local save may finish while IndexedDB is returning an older read.
+  // Retry in that case so each value travels with its own change marker.
+  for (;;) {
+    while (deckStorageJobs.size) await Promise.all([...deckStorageJobs.values()]);
+    const before = JSON.stringify(
+      Object.entries(syncMeta()).filter(([key]) => key.startsWith('deck:')),
+    );
+    persisted = await deckDbAll();
+    const after = JSON.stringify(
+      Object.entries(syncMeta()).filter(([key]) => key.startsWith('deck:')),
+    );
+    if (!deckStorageJobs.size && before === after) break;
   }
-  syncSaveMeta();
-  if (!decks && !other.size) return 0;
-  // the app's memory follows its storage
-  try {
-    if (other.has('collection')) state.collection = loadCollection();
-  } catch (e) {}
-  try {
-    if (other.has('folders')) state.folders = loadFolders();
-  } catch (e) {}
-  try {
-    if (other.has('globalTags')) state.globalTags = loadGlobalTags();
-  } catch (e) {}
-  try {
-    if (other.has('printPrefs')) state._printPrefs = null;
-  } catch (e) {}
-  try {
-    if (other.has('settings:app')) loadSettings();
-  } catch (e) {}
-  try {
-    state._ownedSet = null;
-  } catch (e) {}
-  if (decks)
-    try {
-      state.decksIndex.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-    } catch (e) {}
-  return decks + other.size;
+  const snapshot = syncSnapshot();
+  // IndexedDB is authoritative for saved decks, including edits from another
+  // tab. Do not publish a stale in-memory copy under that tab's new timestamp.
+  for (const key of Object.keys(snapshot)) if (key.startsWith('deck:')) delete snapshot[key];
+  for (const [key, raw] of Object.entries(persisted || {})) {
+    const name = key.startsWith(LS_PREFIX) ? key.slice(LS_PREFIX.length) : key;
+    if (name.startsWith('deck:'))
+      snapshot[name] = typeof raw === 'string' ? raw : JSON.stringify(raw);
+  }
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key?.startsWith(LS_PREFIX + 'deck:') && snapshot[key.slice(LS_PREFIX.length)] == null)
+      snapshot[key.slice(LS_PREFIX.length)] = localStorage.getItem(key);
+  }
+  return { values: snapshot, meta: JSON.parse(JSON.stringify(syncMeta())) };
 }
 
-/* One round: a few-byte probe when nothing changed here; otherwise send
-   what changed and take back what changed elsewhere, in pages. */
-async function syncRun(why) {
-  const st = syncState();
-  if (!st || !st.code || _syncBusy) return null;
-  if (typeof navigator !== 'undefined' && navigator.onLine === false) return null;
+function syncValueOf(key) {
+  return syncSnapshot()[key] ?? null;
+}
+
+function syncPending(snapshot = syncSnapshot(), metadata = syncMeta()) {
+  const linked = syncState(),
+    out = Object.create(null);
+  if (!linked) return out;
+  for (const [key, meta] of Object.entries(metadata)) {
+    if (!syncRecordAllowed(key) || !(meta.t > (linked.sent?.[key] || 0))) continue;
+    // A saved game may have aged out of the device's ten-game view.
+    if (key.startsWith('saved-game:') && !meta.d && snapshot[key] == null) continue;
+    out[key] =
+      meta.d || snapshot[key] == null ? { t: meta.t, del: 1 } : { t: meta.t, v: snapshot[key] };
+  }
+  return out;
+}
+
+function syncSeed(t, snapshot = syncSnapshot()) {
+  const meta = syncMeta();
+  for (const key of Object.keys(snapshot))
+    if (syncRecordAllowed(key) && !meta[key]) meta[key] = { t };
+  syncSaveMeta();
+}
+
+function syncSessionValid(linked, generation) {
+  if (syncState() !== linked || generation !== _syncGeneration) throw new Error('cancelled');
+}
+
+async function syncApply(changes, linked = syncState(), generation = _syncGeneration) {
+  if (!linked) return 0;
+  const meta = syncMeta();
+  let applied = 0;
+  const rest = {};
+  for (const [key, change] of Object.entries(changes || {})) {
+    if (
+      !syncRecordAllowed(key) ||
+      !change ||
+      !Number.isFinite(change.t) ||
+      (!change.del && !syncRecordValid(key, change.v))
+    )
+      continue;
+    syncSessionValid(linked, generation);
+    if ((meta[key]?.t || 0) > change.t) continue;
+    if (!key.startsWith('deck:')) {
+      rest[key] = change;
+      continue;
+    }
+    const id = key.slice(5);
+    await syncFlushDeck(id);
+    syncSessionValid(linked, generation);
+    if ((meta[key]?.t || 0) > change.t) continue;
+    const index = state.decksIndex.findIndex((deck) => deck.id === id);
+    const deck = index >= 0 ? state.decksIndex[index] : null;
+    const value = change.del ? null : JSON.parse(change.v);
+    const clean = deck ? { ...deck } : null;
+    if (clean) delete clean._saveStatus;
+    const identical = !change.del && clean && JSON.stringify(slimDeckForSave(clean)) === change.v;
+    if (!identical) {
+      if (deck) await dvNoteDeck(deck, change.del ? 'deleted' : 'presync');
+      syncSessionValid(linked, generation);
+      if ((meta[key]?.t || 0) > change.t) continue;
+      if (change.del) {
+        await deckDbDelete(LS_PREFIX + key);
+        _lsDelRaw.call(localStorage, LS_PREFIX + key);
+        await syncFlushDeck(id);
+        syncSessionValid(linked, generation);
+        if ((meta[key]?.t || 0) > change.t) {
+          const latest = state.decksIndex.find((item) => item.id === id);
+          if (latest) await persistDeck(latest);
+          continue;
+        }
+        const currentIndex = state.decksIndex.findIndex((item) => item.id === id);
+        if (currentIndex >= 0) state.decksIndex.splice(currentIndex, 1);
+        if (state.activeDeckId === id) state.activeDeckId = null;
+      } else {
+        if (!(await deckDbPutMany([[LS_PREFIX + key, change.v]])))
+          _lsSetRaw.call(localStorage, LS_PREFIX + key, change.v);
+        await syncFlushDeck(id);
+        syncSessionValid(linked, generation);
+        if ((meta[key]?.t || 0) > change.t) {
+          const latest = state.decksIndex.find((item) => item.id === id);
+          if (latest) await persistDeck(latest);
+          else await deckDbDelete(LS_PREFIX + key);
+          continue;
+        }
+        const currentIndex = state.decksIndex.findIndex((item) => item.id === id);
+        if (currentIndex >= 0) state.decksIndex[currentIndex] = value;
+        else state.decksIndex.push(value);
+      }
+      applied++;
+    }
+    meta[key] = change.del ? { t: change.t, d: 1 } : { t: change.t };
+    linked.sent[key] = change.t;
+  }
+  // Re-read after asynchronous deck writes so an edit made while they were
+  // saving is considered before applying collection/settings/game records.
+  const snapshot = syncSnapshot(),
+    sources = new Set();
+  for (const [key, change] of Object.entries(rest)) {
+    syncSessionValid(linked, generation);
+    if ((meta[key]?.t || 0) > change.t) continue;
+    const value = change.del ? undefined : change.v;
+    if (snapshot[key] !== value) {
+      if (change.del) delete snapshot[key];
+      else snapshot[key] = value;
+      sources.add(syncRecordSource(key));
+      applied++;
+    }
+  }
+  for (const source of sources) {
+    const value = syncRestoreStorage(source, snapshot, localStorage.getItem(LS_PREFIX + source));
+    if (value == null) _lsDelRaw.call(localStorage, LS_PREFIX + source);
+    else _lsSetRaw.call(localStorage, LS_PREFIX + source, value);
+  }
+  for (const [key, change] of Object.entries(rest)) {
+    if ((meta[key]?.t || 0) > change.t) continue;
+    meta[key] = change.del ? { t: change.t, d: 1 } : { t: change.t };
+    linked.sent[key] = change.t;
+  }
+  if (sources.has('collection')) state.collection = loadCollection();
+  if (sources.has('folders')) state.folders = loadFolders();
+  if (sources.has('globalTags')) state.globalTags = loadGlobalTags();
+  if (sources.has('printPrefs')) state._printPrefs = null;
+  if (sources.has('trade')) {
+    state.trade = null;
+    loadTrade();
+  }
+  if (sources.has('priceWatch')) state._pw = null;
+  if (sources.has('settings:app')) {
+    state.theme = 'dark';
+    state.guild = 'izzet';
+    await loadSettings();
+  }
+  state._ownedSet = null;
+  state.decksIndex.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  syncSaveMeta();
+  return applied;
+}
+
+async function syncFlushDeck(id) {
+  await waitForDeckStorage(id);
+  const deck = state.decksIndex.find((item) => item.id === id);
+  if (deck?._saveStatus === 'saving') {
+    clearTimeout(saveTimers[id]);
+    await persistDeck(deck);
+    deck._saveStatus = 'saved';
+  }
+}
+
+async function syncFlushDecks() {
+  for (const deck of state.decksIndex || []) await syncFlushDeck(deck.id);
+}
+
+async function syncRun(why = 'manual') {
+  const linked = syncState(),
+    generation = _syncGeneration;
+  if (!linked?.code || _syncBusy || !state.homeLoaded || navigator.onLine === false) return null;
   _syncBusy = true;
-  let got = 0;
+  _syncController = new AbortController();
+  let applied = 0;
   try {
-    let pend = syncPending();
-    if (!Object.keys(pend).length) {
-      const pr = await syncCall({ op: 'probe' });
-      if ((pr.rev || 0) === (st.rev || 0)) {
-        st.last = Date.now();
+    await syncFlushDecks();
+    const captured = await syncReadSnapshot();
+    const snapshot = captured.values;
+    syncSessionValid(linked, generation);
+    if (linked.protocol !== 2) {
+      const old = syncMeta();
+      state._syncMeta = {};
+      // Old links keep their code and data, but restart the revision stream
+      // after converting monolithic collection/settings records.
+      for (const key of Object.keys(snapshot))
+        state._syncMeta[key] = { t: old[key]?.t || old[syncRecordSource(key)]?.t || 1 };
+      for (const [key, entry] of Object.entries(old))
+        if (syncRecordAllowed(key) && entry.d) state._syncMeta[key] = entry;
+      _lsSetRaw.call(localStorage, LS_PREFIX + 'syncMeta', JSON.stringify(state._syncMeta));
+      linked.protocol = 2;
+      linked.rev = 0;
+      linked.sent = {};
+      captured.meta = JSON.parse(JSON.stringify(syncMeta()));
+    }
+    const pending = syncPending(snapshot, captured.meta);
+    if (!Object.keys(pending).length) {
+      const probe = await syncCall({ op: 'probe' }, linked.code, _syncController.signal);
+      syncSessionValid(linked, generation);
+      if (probe.rev === linked.rev) {
+        linked.last = Date.now();
+        linked.err = null;
         syncSaveState();
+        if (Object.keys(syncPending()).length) syncSoon(1500);
         return 0;
       }
     }
-    // send in parcels of ~3 MB
     const parcels = [];
-    let cur = {},
-      size = 0;
-    Object.keys(pend).forEach((k) => {
-      const len = (pend[k].v ? pend[k].v.length : 0) + 60;
-      if (size && size + len > 3000000) {
-        parcels.push(cur);
-        cur = {};
-        size = 0;
+    let parcel = {},
+      bytes = 0;
+    for (const [key, value] of Object.entries(pending)) {
+      const length = new TextEncoder().encode(JSON.stringify(value)).length + key.length;
+      if (bytes && bytes + length > 3_000_000) {
+        parcels.push(parcel);
+        parcel = {};
+        bytes = 0;
       }
-      cur[k] = pend[k];
-      size += len;
-    });
-    parcels.push(cur);
-    const since = st.rev || 0;
-    let res = null;
-    for (const parcel of parcels) {
-      res = await syncCall({ op: 'sync', since, changes: parcel });
-      st.sent = st.sent || {};
-      Object.keys(parcel).forEach((k) => {
-        st.sent[k] = parcel[k].t;
-      });
-      got += await syncApply(res.changes);
+      parcel[key] = value;
+      bytes += length;
+    }
+    parcels.push(parcel);
+    const since = linked.rev || 0;
+    let response;
+    for (const changes of parcels) {
+      response = await syncCall(
+        { op: 'sync', since, changes },
+        linked.code,
+        _syncController.signal,
+      );
+      syncSessionValid(linked, generation);
+      applied += await syncApply({ ...response.changes, ...response.current }, linked, generation);
+      for (const [key, value] of Object.entries(changes))
+        linked.sent[key] = Math.max(linked.sent[key] || 0, value.t);
       syncSaveState();
     }
-    let guard = 0;
-    while (res && res.more && guard++ < 50) {
-      res = await syncCall({ op: 'sync', since, changes: {}, after: res.more });
-      got += await syncApply(res.changes);
+    let pages = 0;
+    while (response.more) {
+      if (++pages > 100) throw new Error('pagination');
+      response = await syncCall(
+        { op: 'sync', since, after: response.more },
+        linked.code,
+        _syncController.signal,
+      );
+      syncSessionValid(linked, generation);
+      applied += await syncApply(response.changes, linked, generation);
+      syncSaveState();
     }
-    st.rev = res ? res.rev || 0 : st.rev;
-    st.last = Date.now();
-    st.err = null;
+    linked.rev = response.rev;
+    linked.last = Date.now();
+    linked.err = null;
     syncSaveState();
-    if (got) {
-      const typing =
-        document.activeElement && /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName);
-      if (!state.overlayStack.length && !typing) {
-        try {
-          render();
-        } catch (e) {}
-      }
-      if (why !== 'start' || got) toast('☁ Updated from your other device.');
+    if (
+      applied &&
+      !state.overlayStack.length &&
+      !/^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName)
+    )
+      render();
+    if (Object.keys(syncPending()).length) syncSoon(1500);
+    return applied;
+  } catch (error) {
+    if (generation === _syncGeneration && syncState() === linked) {
+      linked.err = error.name === 'AbortError' ? 'connection' : error.message;
+      syncSaveState();
     }
-    // more changes may have come in while this round ran
-    if (Object.keys(syncPending()).length) syncSoon(4000);
-    return got;
-  } catch (e) {
-    st.err = String((e && e.message) || e);
-    syncSaveState();
     return null;
   } finally {
     _syncBusy = false;
-    const lb = document.getElementById('syncLastLine');
-    if (lb) lb.textContent = syncLastLabel();
+    _syncController = null;
+    const label = document.getElementById('syncLastLine');
+    if (label) label.textContent = syncLastLabel();
   }
 }
 
 function syncLastLabel() {
-  const st = syncState();
-  if (!st) return '';
-  if (st.err && /code|store|404|http 5/.test(st.err))
-    return '⚠ Sync is not working yet (' + st.err + ')';
-  if (!st.last) return 'Not synced yet';
-  const min = Math.round((Date.now() - st.last) / 60000);
-  return (
-    'Last synced: ' +
-    (min < 1
-      ? 'just now'
-      : min < 60
-        ? min + ' min'
-        : new Date(st.last).toLocaleString('en-GB', {
-            day: 'numeric',
-            month: 'short',
-            hour: '2-digit',
-            minute: '2-digit',
-          }))
-  );
+  const linked = syncState();
+  if (!linked) return 'Not linked';
+  if (linked.err === 'code_not_found') return 'This code was not found on this server.';
+  if (linked.err) return 'Sync could not connect. Your local changes are kept for retry.';
+  if (!linked.last) return 'Not synced yet';
+  return 'Last synced: ' + new Date(linked.last).toLocaleString('en-GB');
 }
 
-async function syncLink(code, creator) {
-  state._syncSt = { code: syncCleanCode(code), rev: 0, sent: {}, last: 0, at: Date.now() };
-  syncSaveState();
-  syncSeed(creator ? 1 : 0.5);
-  const r = await syncRun('link');
-  return r;
+async function syncLink(code, creator = false) {
+  if (_syncBusy || _syncLinking) throw new Error('Sync is already running.');
+  if (!creator && !/^[A-Z0-9]{16,40}$/.test(syncCleanCode(code))) throw new Error('code');
+  _syncLinking = true;
+  const generation = _syncGeneration;
+  try {
+    if (!state.homeLoaded) await loadDecksIndex();
+    await syncFlushDecks();
+    const response = await syncCall(
+      { op: creator ? 'create' : 'probe' },
+      creator ? null : syncCleanCode(code),
+    );
+    const { values: snapshot } = await syncReadSnapshot();
+    if (_syncGeneration !== generation) throw new Error('cancelled');
+    _syncGeneration++;
+    state._syncSt = {
+      protocol: 2,
+      code: syncCleanCode(creator ? response.code : code),
+      rev: 0,
+      sent: {},
+      last: 0,
+    };
+    state._syncMeta = {};
+    _lsSetRaw.call(localStorage, LS_PREFIX + 'syncMeta', '{}');
+    syncSeed(creator ? 1 : 0.5, { ...snapshot, ...syncSnapshot() });
+    syncSaveState();
+    return await syncRun('link');
+  } finally {
+    _syncLinking = false;
+  }
 }
 
 function syncUnlink() {
+  _syncGeneration++;
+  clearTimeout(_syncTimer);
+  _syncController?.abort();
   state._syncSt = null;
-  try {
-    _lsDelRaw.call(localStorage, LS_PREFIX + 'syncState');
-  } catch (e) {}
+  _lsDelRaw.call(localStorage, LS_PREFIX + 'syncState');
+  syncPaintStatus();
 }
 
-// Background rhythm: at start, when the app comes back into view, and a
-// tiny probe every three minutes while it is open.
+async function syncStart() {
+  if (syncState()) return syncRun('start');
+}
 setInterval(() => {
   if (document.visibilityState === 'visible' && syncState()) syncRun('tick');
-}, 180000);
-
+}, 30000);
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && syncState()) syncSoon(800);
+  if (document.visibilityState === 'visible' && syncState()) syncSoon(500);
 });
-
 window.addEventListener('online', () => {
-  if (syncState()) syncSoon(1500);
+  if (syncState()) syncSoon(500);
+});
+window.addEventListener('storage', (event) => {
+  if (event.key === LS_PREFIX + 'syncMeta') {
+    let incoming = {};
+    try {
+      incoming = JSON.parse(event.newValue || '{}');
+    } catch {}
+    const meta = syncMeta();
+    for (const [key, entry] of Object.entries(incoming || {}))
+      if (syncRecordAllowed(key) && entry.t > (meta[key]?.t || 0)) meta[key] = entry;
+    if (syncState()) syncSoon(1000);
+  }
+  if (event.key === LS_PREFIX + 'syncState') {
+    let linked = null;
+    try {
+      linked = JSON.parse(event.newValue || 'null');
+    } catch {}
+    if ((linked?.code || null) !== (syncState()?.code || null)) {
+      _syncGeneration++;
+      _syncController?.abort();
+      state._syncSt = linked;
+      state._syncMeta = null;
+      syncPaintStatus();
+      if (linked) syncSoon(1000);
+    }
+  }
 });
 
-/* Extras -> Sync: link this device, show the code, sync now, unlink. */
 function openSyncSheet() {
-  const st = syncState();
+  const linked = syncState();
   document.getElementById('syncSheet')?.remove();
-  const el = document.createElement('div');
-  el.className = 'deckpick-scrim';
-  el.id = 'syncSheet';
-  el.style.zIndex = 205;
-  el.style.alignItems = 'flex-end';
-  const body = st
-    ? `
-    <div class="br-actions bk-actions">
-      <button type="button" class="primary-btn" id="syncNow">↻ ${'Sync now'}</button>
-      <button type="button" class="ghost-btn" id="syncShare">${'Share or copy the code'}</button>
-      <button type="button" class="ghost-btn" id="syncOff">${'Unlink this device'}</button>
+  const root = document.createElement('div');
+  root.id = 'syncSheet';
+  root.className = 'deckpick-scrim';
+  root.innerHTML = /* HTML */ `<section
+    class="deckpick transfer-dialog sync-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Sync devices"
+  >
+    ${transferHeaderHtml('Sync devices', 'Decks, collection, settings, and saved games.', 'syncClose')}
+    <div class="transfer-body">
+      <p>Your devices sync through this Deckhand server. No account or password is needed.</p>
+      ${
+        linked
+          ? `<p id="syncLastLine" role="status">${escapeHtml(syncLastLabel())}</p>
+        <div class="sync-code" id="syncCodeTxt">${escapeHtml(syncNiceCode(linked.code))}</div>
+        <p class="hint">Enter this code on another device running this server. Anyone with the code can access the synced data.</p>
+        <div class="sync-actions"><button type="button" class="primary-btn" id="syncNow">Sync now</button>
+        <button type="button" class="ghost-btn" id="syncShare">Copy sync code</button>
+        <button type="button" class="ghost-btn" id="syncOff">Unlink this device</button></div>`
+          : `<p>Create a code on your first device. On your other devices, join with that same code. Matching records from the server take precedence when joining; local-only cards, decks, and games are added.</p>
+        <div class="sync-actions"><button type="button" class="primary-btn" id="syncNew">Create sync code</button>
+        <button type="button" class="ghost-btn" id="syncJoin">I already have a code</button></div>`
+      }
+      <p class="hint sync-status" id="syncActionStatus" role="status"></p>
     </div>
-    <div class="bk-hint">${'Enter this code on your other device: Menu → Settings → Sync → <b>I already have a code</b>. Keep it to yourself: whoever has it sees your decks and collection.'}</div>
-    <div class="sync-code" id="syncCodeTxt">${escapeHtml(syncNiceCode(st.code))}</div>
-    <div class="br-title"><b>☁ ${'Linked'}</b><span id="syncLastLine">${escapeHtml(syncLastLabel())}</span></div>`
-    : `
-    <div class="br-actions bk-actions">
-      <button type="button" class="primary-btn" id="syncNew">＋ ${'Start a new link'}</button>
-      <button type="button" class="ghost-btn" id="syncJoin">${'I already have a code'}</button>
-    </div>
-    <div class="bk-hint">${'<b>First device:</b> start a new link — you get a code.<br><b>Next devices:</b> choose “I already have a code”. There, what the cloud already holds wins; decks that exist only on that device are kept. Make a backup first, to be safe.'}</div>
-    <div class="br-title"><b>☁ ${'Sync between devices'}</b><span>${'Decks, collection, binders, tags and settings — on your phone, tablet and PC at once.'}</span></div>`;
-  el.innerHTML = /* HTML */ `<div class="deckpick br-sheet bk-sheet">${body}</div>`;
-  brSheetOpen(el, 'syncSheet');
-  const close = () => brSheetClose('syncSheet');
-  el.addEventListener('click', (e) => {
-    if (e.target === el) close();
+  </section>`;
+  brSheetOpen(root, 'syncSheet', () => {
+    if (state.screen === 'settings') render();
   });
-  const busy = (b, on) => {
-    if (b) {
-      b.disabled = on;
-      b.style.opacity = on ? '0.6' : '';
+  const close = () => brSheetClose('syncSheet');
+  root.querySelector('#syncClose').addEventListener('click', close);
+  root.addEventListener('click', (event) => {
+    if (event.target === root) close();
+  });
+  wireAppDialogKeys(root, close);
+  root.querySelector('#syncClose').focus({ preventScroll: true });
+  const run = async (button, task, reopen = false) => {
+    if (!button) return;
+    const activeSheet = document.getElementById('syncSheet');
+    const buttons = activeSheet.querySelectorAll('.sync-actions button:not(#syncOff)');
+    buttons.forEach((item) => {
+      item.disabled = true;
+    });
+    const status = document.getElementById('syncActionStatus');
+    status.textContent = 'Syncing…';
+    try {
+      const result = await task();
+      if (result === null) throw new Error(syncState()?.err || 'connection');
+      status.textContent = 'Synced with this server.';
+      if (
+        reopen &&
+        activeSheet.isConnected &&
+        document.getElementById('syncSheet') === activeSheet
+      ) {
+        close();
+        await brAfterPop();
+        openSyncSheet();
+      }
+    } catch (error) {
+      status.textContent =
+        error.message === 'code_not_found'
+          ? 'Code not found. Check the code and that both devices use the same server.'
+          : error.message === 'code'
+            ? 'Enter the sync code shown on your other device.'
+            : 'Sync failed. Local changes are kept for retry when this server is available.';
+      if (
+        reopen &&
+        syncState() &&
+        activeSheet.isConnected &&
+        document.getElementById('syncSheet') === activeSheet
+      ) {
+        close();
+        await brAfterPop();
+        openSyncSheet();
+      }
+    } finally {
+      buttons.forEach((item) => {
+        item.disabled = false;
+      });
     }
   };
-  const report = (r) => {
-    const s2 = syncState();
-    if (r === null && s2 && s2.err) toast('⚠ Sync failed: ' + s2.err);
-    else toast('☁ Synced.');
-  };
-  el.querySelector('#syncNew')?.addEventListener('click', async (e) => {
-    busy(e.currentTarget, true);
-    const r = await syncLink(syncNewCode(), true);
-    report(r);
+  root
+    .querySelector('#syncNew')
+    ?.addEventListener('click', (event) =>
+      run(event.currentTarget, () => syncLink(null, true), true),
+    );
+  root
+    .querySelector('#syncNow')
+    ?.addEventListener('click', (event) => run(event.currentTarget, () => syncRun('manual')));
+  root.querySelector('#syncJoin')?.addEventListener('click', async () => {
     close();
     await brAfterPop();
-    openSyncSheet();
-  });
-  el.querySelector('#syncJoin')?.addEventListener('click', async () => {
-    close();
-    await brAfterPop();
-    openInAppPrompt('Link code', 'XXXX-XXXX-XXXX-XXXX', '', async (v) => {
-      if (v == null) return;
-      if (syncCleanCode(v).length !== 16) {
-        toast('That code is not right — 16 characters.');
-        return;
-      }
-      toast('☁ Linking…');
-      const r = await syncLink(v, false);
-      report(r);
+    openInAppPrompt('Sync code', 'XXXX-XXXX-XXXX-XXXX-XXXX-XXXX', '', async (value) => {
+      if (value == null) return;
       openSyncSheet();
+      const button = document.getElementById('syncJoin');
+      await run(button, () => syncLink(value, false), true);
     });
   });
-  el.querySelector('#syncNow')?.addEventListener('click', async (e) => {
-    busy(e.currentTarget, true);
-    const r = await syncRun('manual');
-    busy(e.currentTarget, false);
-    report(r);
-  });
-  el.querySelector('#syncShare')?.addEventListener('click', async () => {
-    const code = syncNiceCode(syncState().code);
+  root.querySelector('#syncShare')?.addEventListener('click', async () => {
     try {
-      if (navigator.share) {
-        await navigator.share({ title: 'Deckhand sync', text: code });
-        return;
-      }
-    } catch (err) {
-      if (err && err.name === 'AbortError') return;
-    }
-    try {
-      await navigator.clipboard.writeText(code);
-      toast('Code copied.');
-    } catch (err) {
-      toast(code);
+      await navigator.clipboard.writeText(syncNiceCode(syncState().code));
+      toast('Sync code copied.');
+    } catch {
+      toast('Select the sync code to copy it.');
     }
   });
-  el.querySelector('#syncOff')?.addEventListener('click', () => {
+  root.querySelector('#syncOff')?.addEventListener('click', () =>
     openInAppConfirm(
-      'This device stops syncing. Everything on it now stays.',
-      (ok) => {
-        if (!ok) return;
-        syncUnlink();
-        close();
-        toast('Unlinked.');
+      'This device will stop syncing. Data already saved here stays on this device.',
+      (confirmed) => {
+        if (confirmed) {
+          syncUnlink();
+          close();
+        }
       },
-      { ok: 'Unlink' },
-    );
-  });
+      { title: 'Unlink device', ok: 'Unlink' },
+    ),
+  );
 }

@@ -12,9 +12,6 @@ html #crOverlay > .app-overlay-header {
   inset: auto !important;
   flex: none;
   width: 100%;
-  height: auto !important;
-  padding-top: calc(8px + env(safe-area-inset-top)) !important;
-  background: var(--ink);
 }
 
 html #crOverlay #crBody {

@@ -11,16 +11,7 @@ html.desk {
 html .app > .app-header.page-cap {
   position: fixed;
   inset: 0 0 auto !important;
-  height: auto !important;
-  min-height: 64px;
-  display: grid !important;
-  grid-template-columns: 44px minmax(0, 1fr) minmax(44px, auto);
-  gap: 10px;
-  padding: calc(env(safe-area-inset-top) + 8px) 14px 8px !important;
-  background: var(--ink) !important;
-  border-bottom: 1px solid var(--line) !important;
   z-index: 86;
-  box-shadow: 0 3px 20px rgb(0 0 0 / 0.12) !important;
 }
 .header-menu {
   position: relative;
@@ -239,13 +230,6 @@ html .app-navigation .banner-tab.active::before {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
 }
-.app-overlay-header {
-  display: grid !important;
-  grid-template-columns: 44px minmax(0, 1fr) auto;
-  gap: 10px;
-  padding: 8px 14px !important;
-  min-height: 64px;
-}
 /* Keep header buttons in their grid cells instead of the legacy overlay positions. */
 .app-overlay-header > button {
   position: static !important;
@@ -258,9 +242,7 @@ html .overlay .overlay-inner:has(> .app-navigation) > .app-overlay-header {
   position: relative !important;
   inset: auto !important;
   width: 100%;
-  height: auto !important;
   order: -9 !important;
-  background: var(--ink) !important;
 }
 html .app > main.hub-page {
   justify-content: flex-start !important;

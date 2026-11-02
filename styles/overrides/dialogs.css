@@ -5,7 +5,7 @@ html :is(.deckpick-scrim, .modal-backdrop, .cj-notice) {
   backdrop-filter: blur(6px);
 }
 
-html :is(.deckpick, .modal-sheet, .menu-pop) {
+html :is(.deckpick, .modal-sheet, .menu-pop, .transfer-dialog) {
   --ink-text: var(--main-text);
   --sub-text: var(--main-sub);
   --sub-text-2: var(--main-sub-2);
@@ -57,6 +57,11 @@ html :is(.deckpick .dp-row, .deckpick .dp-cancel, .modal-actions .cancel) {
   background: transparent;
   color: var(--ink-text);
   min-height: 44px;
+}
+
+.deckpick .dp-collection {
+  flex-shrink: 0;
+  margin-top: 10px;
 }
 
 html :is(.deckpick .primary-btn, .modal-actions .confirm) {

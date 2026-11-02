@@ -51,7 +51,6 @@ function refreshDecklistBox(d) {
     const want = fromTop;
     if (Math.abs(se.scrollTop - want) > 1) se.scrollTop = want;
   }
-  updateDeckMeter(d); // the dock's Main x/y and Maybe counts follow every refresh
   updateDeckMeter(d);
 }
 
@@ -363,6 +362,7 @@ function updateDeckMeter(d) {
     wireMeterRow(d);
   }
   refreshLegality(d);
+  refreshCapPrice();
 }
 
 function refreshLegality(d) {
@@ -371,265 +371,89 @@ function refreshLegality(d) {
   refreshCapDeckCount(d);
 }
 
-/* The count in the top page cap follows every add, cut and maybeboard move
-   live: same math as the initial render, patched into the span in place.
-   Riding refreshLegality means every path that refreshes the deck's
-   legality line (all card mutations) refreshes the cap for free. */
+/* Keep overview counts and legality in sync with card edits. */
 function refreshCapDeckCount(d) {
-  try {
-    const el = document.getElementById('capDeckCount');
-    if (!el || state.screen !== 'decklist') return;
-    const dd = d && d.id === state.activeDeckId ? d : getDeck(state.activeDeckId);
-    if (!dd) return;
-    const issues = checkDeckLegality(dd);
-    el.style.color = deckCountColor(deckCountState(dd, issues));
-    el.textContent = deckCountLabel(dd) + (issues.length ? ' \u26A0' : '');
-  } catch (err) {}
-}
-
-/* Type counts wider than their strip (8 types, a big system font): the
-   counts step down a pixel at a time until they fit, never below 9px;
-   anything still left over scrolls sideways. */
-function fitDockTypes() {
-  const strip = document.querySelector('#deckMeterRow .dk-mid');
-  const items = strip ? Array.from(strip.querySelectorAll('.dk-type')) : [];
-  if (!items.length) return;
-  let fs = parseFloat(getComputedStyle(items[0]).fontSize) || 13,
-    n = 0;
-  while (strip.scrollWidth > strip.clientWidth + 1 && fs > 9 && n++ < 10) {
-    fs -= 1;
-    items.forEach((b) => {
-      b.style.fontSize = fs + 'px';
-    });
+  if (state.screen !== 'decklist') return;
+  const deck = d?.id === state.activeDeckId ? d : getDeck(state.activeDeckId);
+  if (!deck) return;
+  const value = document.getElementById('deckCardCountValue');
+  if (value) value.textContent = deckSummaryCount(deck);
+  const issues = checkDeckLegality(deck);
+  const status = document.getElementById('deckLegalityStatus');
+  if (status) {
+    status.textContent = issues.length
+      ? `${issues.length} issue${issues.length === 1 ? '' : 's'} · Review`
+      : 'Legal deck · Review';
+    status.classList.toggle('needs-review', !!issues.length);
   }
+  const hint = document.getElementById('deckCountHint');
+  if (hint)
+    hint.textContent = deckIsConstructed(deck)
+      ? `${ensureMaybeboard(deck).length} in sideboard`
+      : 'Including commander';
+  document
+    .getElementById('capDeckCount')
+    ?.setAttribute('aria-expanded', String(!!state.legalityOpen));
 }
 
 function wireMeterRow(d) {
-  // 1.45 desk: the Menu drops down right under its own button
-  if (isDesk())
-    requestAnimationFrame(() => {
-      const mp = document.querySelector('#deckMeterRow .menu-pop'),
-        mb = document.getElementById('menuBtn');
-      if (mp && mb) {
-        mp.style.left = mb.offsetLeft + 'px';
-        mp.style.right = 'auto';
-        mp.style.top = mb.offsetTop + mb.offsetHeight + 6 + 'px';
-      }
-    });
-  try {
-    document.body.classList.toggle(
-      'dl-searching',
-      !!state.dlSearchOpen && state.screen === 'decklist',
-    );
-  } catch (e) {}
-  try {
-    fitDockTypes();
-    requestAnimationFrame(fitDockTypes);
-  } catch (e) {}
-  document.getElementById('menuBtn')?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (state.menuOpen) {
-      popDeckMenu();
-    } else {
-      state.menuOpen = true;
-      pushOverlay('deckMenu', () => {
-        state.menuOpen = false;
-        try {
-          const dd = getDeck(state.activeDeckId);
-          if (dd) updateDeckMeter(dd);
-        } catch (err) {}
-      });
-    }
-    updateDeckMeter(d);
-  });
-  // The tools bar: every button opens what its bridge ancestor used to.
-  document
-    .querySelectorAll('#deckMeterRow [data-panel]')
-    .forEach((b) => b.addEventListener('click', () => toggleDlPanel(d, b.dataset.panel)));
-  // The jump menu: one square tool left of the chevron (it used to float
-  // round over the list). From Stats or Deck Log it first goes to the list.
-  document.getElementById('dlCatJump')?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const anchor = e.currentTarget;
-    const open = () => {
-      const heads = Array.from(document.querySelectorAll('.cat-group > .cat-head'));
-      const items = heads
-        .map((h) => {
-          const t = h.querySelector('.t');
-          // 1.40: a folded section (the Maybeboard starts folded) opens first,
-          // then its name lands at the foot with its cards above it
-          return {
-            label: t ? t.textContent.trim() : '—',
-            fn: () => {
-              const key = h.dataset.cat;
-              const go = () => {
-                let nh = null;
-                try {
-                  nh = document.querySelector('.cat-head[data-cat="' + CSS.escape(key) + '"]');
-                } catch (e) {}
-                (nh || h).scrollIntoView({ behavior: 'smooth', block: 'end' });
-              };
-              if (key && state.collapsed[key]) {
-                state.collapsed[key] = false;
-                refreshDecklistBox(d);
-                requestAnimationFrame(() => requestAnimationFrame(go));
-              } else go();
-            },
-          };
-        })
-        .filter((x) => x.label && x.label !== '—');
-      // The menu mirrors the page: the deck reads bottom-up, so the list
-      // flips — Creatures at the menu's foot, Maybeboard at its head.
-      items.reverse();
-      if (items.length) openTileMenu(document.getElementById('dlCatJump') || anchor, items);
-    };
-    if (state.builderTab !== 'list') {
-      state.builderTab = 'list';
-      state.dlPanel = null;
-      try {
-        renderBuilderBody(d);
-        syncTabsUI();
-      } catch (err) {}
-      requestAnimationFrame(open);
-      return;
-    }
-    open();
-  });
-  document.getElementById('dockInspire')?.addEventListener('click', () => {
-    state.inspireDeckId = d.id;
-    switchPage('inspiration');
-  });
-  document.getElementById('dockAddCards')?.addEventListener('click', () => openAddCardsFor(d));
-  document.querySelectorAll('.dk-type').forEach((b) =>
-    b.addEventListener('click', () => {
-      // A tap on a type count JUMPS to that category and names it — the map
-      // also repairs the old "Sorcerys" toast.
-      const names = {
-        Creatures: 'Creatures',
-        Instants: 'Instants',
-        Sorcerys: 'Sorceries',
-        Artifacts: 'Artifacts',
-        Enchantments: 'Enchantments',
-        Planeswalkers: 'Planeswalkers',
-        Battles: 'Battles',
-        Lands: 'Lands',
-      };
-      const want = names[b.dataset.tt] || b.dataset.tt;
-      const heads = Array.from(document.querySelectorAll('.cat-group > .cat-head'));
-      const hit = heads.find((h) => {
-        const t = h.querySelector('.t');
-        return t && t.textContent.trim().toLowerCase().startsWith(want.toLowerCase());
-      });
-      if (hit) hit.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      toast(want);
-    }),
-  );
-  // The loupe opens the find bar (cursor in it at once); tapped again it
-  // closes the bar -- and the full filter with it.
-  document.getElementById('dockSearchBtn')?.addEventListener('click', () => {
-    if (state.dlSearchOpen) {
-      closeNameSuggest();
-      if (state.dlPanel === 'dsearch') toggleDlPanel(d, 'dsearch');
-      state.dlFilter = { ci: [] };
-      state.dlFilterOn = false;
-      state.dlSearchOpen = false;
-      state.dlSearchQ = '';
-      updateDeckMeter(d);
-      refreshDecklistBox(d);
-      scrollToPageFoot();
-      return;
-    }
-    if (state.builderTab !== 'list') {
-      state.builderTab = 'list';
-      state.dlPanel = null;
-      try {
-        renderBuilderBody(d);
-        syncTabsUI();
-      } catch (err) {}
-    }
-    if (state.dlPanel && state.dlPanel !== 'dsearch') {
-      try {
-        toggleDlPanel(d, state.dlPanel);
-      } catch (err) {}
-    }
+  const input = document.getElementById('dockSearchInput');
+  input?.addEventListener('input', () => {
+    state.dlSearchQ = input.value;
     state.dlSearchOpen = true;
-    refreshDecklistBox(d);
-    state._dlSearchFocus = true;
-    updateDeckMeter(d); // last: it puts the cursor in the new bar
-    scrollToPageFoot();
-  });
-  document.getElementById('dockFilterChev')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    closeNameSuggest();
-    // 1.35: the keyboard goes down ONCE, before the panel opens; once it is
-    // gone the page settles on its foot again.
-    try {
-      document.activeElement && document.activeElement.blur && document.activeElement.blur();
-    } catch (err) {}
-    toggleDlPanel(d, 'dsearch');
-    const ch = document.getElementById('dockFilterChev');
-    if (ch) ch.textContent = state.dlPanel === 'dsearch' ? '▴' : '▾';
-    if (state.dlPanel === 'dsearch')
-      setTimeout(() => {
-        try {
-          scrollToPageFoot();
-        } catch (err) {}
-      }, 380);
-  });
-  {
-    const dsi = document.getElementById('dockSearchInput');
-    if (dsi) {
-      // Filter AS YOU TYPE: only the list body repaints, so the input (and
-      // the phone keyboard) stay exactly where they are.
-      dsi.addEventListener('input', () => {
-        state.dlSearchQ = dsi.value;
-        const box = document.getElementById('decklistBox');
-        if (box) {
-          box.innerHTML = categorizedListHtml(d);
-          wireDecklistInteractions(d);
-        }
-        scrollToPageFoot();
-      });
-      dsi.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          try {
-            dsi.blur();
-          } catch (err) {}
-        }
-      });
-      if (state._dlSearchFocus) {
-        state._dlSearchFocus = false;
-        requestAnimationFrame(() => {
-          try {
-            dsi.focus();
-            dsi.setSelectionRange(dsi.value.length, dsi.value.length);
-          } catch (e) {}
-        });
-      }
+    showDeckList(d);
+    const box = document.getElementById('decklistBox');
+    if (box) {
+      box.innerHTML = categorizedListHtml(d);
+      wireDecklistInteractions(d);
+      box.scrollIntoView({ block: 'start' });
     }
-  }
-  document.getElementById('dockNext')?.addEventListener('click', () => {
-    state.dockSet = ((state.dockSet || 0) + 1) % 2;
-    updateDeckMeter(d);
+    const clear = document.getElementById('dockSearchBtn');
+    if (clear) clear.hidden = !state.dlSearchQ && !state.dlFilterOn;
   });
-  document.getElementById('dlSelX')?.addEventListener('click', () => dlSelClear());
-  const selN = () => (state._dlSel ? state._dlSel.size : 0);
-  // 1.40: no hidden menu -- the binder adds to the collection, the
-  // maybeboard button moves the picks (deck cards to the maybeboard; a
-  // pick of maybeboard cards only goes to the deck)
+  input?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      input.blur();
+    }
+  });
+  document.getElementById('dockSearchBtn')?.addEventListener('click', () => {
+    closeNameSuggest();
+    state.dlSearchQ = '';
+    state.dlSearchOpen = false;
+    state.dlFilter = { ci: [] };
+    state.dlFilterOn = false;
+    if (state.dlPanel === 'dsearch') toggleDlPanel(d, 'dsearch');
+    refreshDecklistBox(d);
+    document.getElementById('dockSearchInput')?.focus();
+  });
+  document.getElementById('dockFilterChev')?.addEventListener('click', () => {
+    document.activeElement?.blur?.();
+    closeNameSuggest();
+    state.dlSearchOpen = true;
+    toggleDlPanel(d, 'dsearch');
+    document
+      .getElementById('dockFilterChev')
+      ?.setAttribute('aria-expanded', String(state.dlPanel === 'dsearch'));
+  });
+  document.getElementById('dlSelX')?.addEventListener('click', dlSelClear);
   document
     .getElementById('dlSelColl')
     ?.addEventListener('click', () => openAddManyToCollection(dlSelCards(d), () => dlSelClear()));
   document.getElementById('dlSelMaybe')?.addEventListener('click', () => {
-    const keys = Array.from(state._dlSel || []);
-    dlSelApply(d, keys.some((k) => k.startsWith('main:')) ? 'maybe' : 'main');
+    const toSide = [...(state._dlSel || [])].some((key) => key.startsWith('main:'));
+    dlSelApply(d, toSide ? 'maybe' : 'main');
   });
-  document.getElementById('dlSelDel')?.addEventListener('click', () =>
-    openInAppConfirm(`Delete ${selN()} card${selN() === 1 ? '' : 's'} from the deck?`, (ok) => {
-      if (ok) dlSelApply(d, 'del');
-    }),
-  );
+  document.getElementById('dlSelDel')?.addEventListener('click', () => {
+    const n = state._dlSel?.size || 0;
+    openInAppConfirm(
+      `Remove ${n} card${n === 1 ? '' : 's'} from the deck?`,
+      (ok) => {
+        if (ok) dlSelApply(d, 'del');
+      },
+      { title: 'Remove cards', danger: true, ok: 'Remove' },
+    );
+  });
   // Bracket chip: refine with 2-card combos when the fast lane answers
   (async () => {
     try {
@@ -648,9 +472,4 @@ function wireMeterRow(d) {
       chip.textContent = `⚔ Bracket ~${e.b} · ${e.gc} GC`;
     } catch (err) {}
   })();
-  document.getElementById('dockMainCount')?.addEventListener('click', () => {
-    state.dockCount = state.dockCount === 'maybe' ? 'main' : 'maybe';
-    updateDeckMeter(d);
-  });
-  if (state.menuOpen) wireMenu(d);
 }

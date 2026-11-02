@@ -34,42 +34,45 @@ test('SQLite persists across restart and conditional writes reject stale version
   assert.equal(await db.store('other').get('key'), null);
 });
 
-test('sync retries concurrent writes and preserves newer values and deletion tombstones', async t => {
+test('sync commits concurrent writes and retains deletion tombstones', async t => {
   const db = openStorage(':memory:');
   t.after(() => db.close());
-  const ctx = { store: db.store('deckhand-sync') };
-  // No more than five overlapping writers: the existing handler retries five times.
-  const results = await Promise.all(Array.from({ length: 4 }, (_, i) => sync({
-    op: 'sync', code, changes: { ['deck' + i]: { t: i + 1, v: 'value' + i } }
+  const ctx = { sync: db.sync };
+  const code = (await sync({ op: 'create' }, ctx)).json.code;
+  const value = id => JSON.stringify({ id, name: id, cards: [] });
+  const results = await Promise.all(Array.from({ length: 20 }, (_, i) => sync({
+    op: 'sync', code, changes: { ['deck:' + i]: { t: i + 1, v: value(String(i)) } }
   }, ctx)));
   assert.ok(results.every(r => r.status === 200));
   let result = await sync({ op: 'sync', code, since: 0 }, ctx);
-  assert.equal(Object.keys(result.json.changes).length, 4);
-  assert.equal(result.json.rev, 4);
-  await sync({ op: 'sync', code, changes: { deck0: { t: 20, del: 1 } } }, ctx);
-  await sync({ op: 'sync', code, changes: { deck0: { t: 10, v: 'stale' } } }, ctx);
-  result = await sync({ op: 'sync', code, since: 4 }, ctx);
-  assert.deepEqual(result.json.changes.deck0, { t: 20, del: 1 });
+  assert.equal(Object.keys(result.json.changes).length, 20);
+  assert.equal(result.json.rev, 20);
+  await sync({ op: 'sync', code, changes: { 'deck:0': { t: 40, del: 1 } } }, ctx);
+  const rejected = await sync({ op: 'sync', code, since: 21, changes: { 'deck:0': { t: 10, v: value('0') } } }, ctx);
+  assert.deepEqual(rejected.json.current['deck:0'], { t: 40, del: 1 });
+  result = await sync({ op: 'sync', code, since: 20 }, ctx);
+  assert.deepEqual(result.json.changes['deck:0'], { t: 40, del: 1 });
   const invalid = JSON.parse('{"__proto__":{"t":50,"v":"bad"},"constructor":{"t":50,"v":"bad"}}');
-  await sync({ op: 'sync', code, changes: invalid }, ctx);
-  result = await sync({ op: 'sync', code, since: 0 }, ctx);
-  assert.equal(Object.hasOwn(result.json.changes, '__proto__'), false);
-  assert.equal(Object.hasOwn(result.json.changes, 'constructor'), false);
+  assert.equal((await sync({ op: 'sync', code, changes: invalid }, ctx)).status, 400);
 });
 
-test('sync paginates large documents without losing the remaining entries', async t => {
+test('sync pagination keeps a stable revision while another device writes', async t => {
   const db = openStorage(':memory:');
   t.after(() => db.close());
-  const ctx = { store: db.store('deckhand-sync') };
-  const value = 'x'.repeat(2_000_000);
-  await sync({ op: 'sync', code, changes: { a: { t: 1, v: value }, b: { t: 2, v: value } } }, ctx);
+  const ctx = { sync: db.sync };
+  const code = (await sync({ op: 'create' }, ctx)).json.code;
+  const value = id => JSON.stringify({ id, cards: [], description: 'x'.repeat(2_000_000) });
+  await sync({ op: 'sync', code, changes: { 'deck:a': { t: 1, v: value('a') }, 'deck:b': { t: 2, v: value('b') } } }, ctx);
   const first = await sync({ op: 'sync', code, since: 0 }, ctx);
-  assert.deepEqual(Object.keys(first.json.changes), ['a']);
+  assert.deepEqual(Object.keys(first.json.changes), ['deck:a']);
   assert.ok(first.json.more);
+  await sync({ op: 'sync', code, changes: { 'deck:c': { t: 3, v: value('c') } } }, ctx);
   const second = await sync({ op: 'sync', code, since: 0, after: first.json.more }, ctx);
-  assert.deepEqual(Object.keys(second.json.changes), ['b']);
+  assert.deepEqual(Object.keys(second.json.changes), ['deck:b']);
   assert.equal(second.json.more, null);
   assert.equal(second.json.rev, first.json.rev);
+  const newer = await sync({ op: 'sync', code, since: second.json.rev }, ctx);
+  assert.deepEqual(Object.keys(newer.json.changes), ['deck:c']);
 });
 
 test('sample download is bounded and local data requests never download bulk files', async t => {
@@ -144,10 +147,12 @@ test('HTTP serves the frontend, protects source/secrets, and supports local API 
   assert.equal((await post('/api/sync', null)).status, 400);
   assert.equal((await post('/api/sync', { code, op: 'probe' }, { origin: 'https://another.invalid' })).status, 403);
   assert.equal((await post('/api/sync', { op: 'probe', code: 'short' })).status, 400);
-  let response = await post('/api/sync', { op: 'sync', code, changes: { deck: { t: 1, v: 'saved' } } });
+  const syncCode = (await (await post('/api/sync', { op: 'create' })).json()).code;
+  const deck = JSON.stringify({ id: 'http', cards: [], name: 'Saved' });
+  let response = await post('/api/sync', { op: 'sync', code: syncCode, changes: { 'deck:http': { t: 1, v: deck } } });
   assert.equal(response.status, 200);
-  response = await post('/api/sync', { op: 'sync', code, since: 0 });
-  assert.deepEqual((await response.json()).changes.deck, { t: 1, v: 'saved' });
+  response = await post('/api/sync', { op: 'sync', code: syncCode, since: 0 });
+  assert.deepEqual((await response.json()).changes['deck:http'], { t: 1, v: deck });
   response = await post('/api/judge', { q: 'Can this card attack?' });
   assert.equal(response.status, 503);
   assert.equal((await response.json()).error, 'nokey');

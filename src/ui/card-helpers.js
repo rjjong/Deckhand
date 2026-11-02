@@ -462,13 +462,7 @@ function openHistoryOverlay(d) {
   const renderIt = () => {
     const log = ensureChangelog(d);
     el.innerHTML = /* HTML */ `<div class="overlay-inner">
-      <div class="topbar" style="position:relative;">
-        <button class="icon-btn" id="histBack">${ICONS.back}</button>
-        <div class="tb-titles">
-          <div class="t1">History</div>
-          <div class="t2">${escapeHtml(d.name)}</div>
-        </div>
-      </div>
+      ${overlayCapHtml('History', `<button type="button" class="header-filter" id="histBack" aria-label="Back">${ICONS.back}</button>`, d.name)}
       <main style="max-width:560px;margin:0 auto;width:100%;">
         ${log.length ? log.map(histRowHtml).join('') : `<div class="empty-note">No changes logged yet — history starts recording from now on.</div>`}
       </main>

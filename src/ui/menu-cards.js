@@ -19,3 +19,20 @@ function toolPanelHeadingHtml(icon, title, detail, extra) {
     ${extra || ''}
   </div>`;
 }
+
+function transferHeaderHtml(title, detail, closeId = '', closeClass = '') {
+  return /* HTML */ `<header class="transfer-heading">
+    <div>
+      <h2>${escapeHtml(title)}</h2>
+      <p>${escapeHtml(detail)}</p>
+    </div>
+    <button
+      type="button"
+      class="transfer-close ${closeClass}"
+      ${closeId ? ` id="${closeId}"` : ''}
+      aria-label="Close import/export"
+    >
+      ${ICONS.close}
+    </button>
+  </header>`;
+}

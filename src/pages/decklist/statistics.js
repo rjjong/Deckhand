@@ -1230,21 +1230,8 @@ function toggleDlPanel(d, panelKey) {
       ),
     );
   wireDlPanel(d);
-  // The panel ELEMENT anchors the view: scrollIntoView with a
-  // scroll-margin that clears the dock stack — immune to whichever
-  // scroller the page uses, retried past the keyboard's animation.
-  const snapPanel = () => {
-    try {
-      const b = document.getElementById('dlPanelBox');
-      if (b) {
-        b.scrollTop = b.scrollHeight;
-        b.scrollIntoView({ block: 'end' });
-      }
-    } catch (e) {}
-  };
-  snapPanel();
-  setTimeout(snapPanel, 160);
-  setTimeout(snapPanel, 480);
+  // Full-screen tools and transfer dialogs own their scrolling content.
+  pBox.querySelector('.deck-editor-body, .transfer-body')?.scrollTo(0, 0);
 }
 
 function wireBuilderBody(d) {
@@ -1277,6 +1264,7 @@ function wireBuilderBody(d) {
       render();
     });
     ensureDeckPriced(d);
+    wireDeckListTools(d);
     wireDlPanel(d);
     wireDecklistInteractions(d);
   } else if (state.builderTab === 'stats') {
@@ -1411,6 +1399,11 @@ function wireBuilderBody(d) {
 }
 
 function wireDlPanel(d) {
+  const editor = document.querySelector('.deck-editor-screen');
+  if (editor) {
+    wireAppDialogKeys(editor, () => history.back());
+    editor.querySelector('.dl-panel-x')?.focus({ preventScroll: true });
+  }
   document.querySelector('.dl-panel-x')?.addEventListener('click', () => {
     try {
       history.back();
@@ -1581,8 +1574,8 @@ function wireDlPanel(d) {
       );
   } else if (state.dlPanel === 'import') {
     // Load a downloaded deck list (.txt) straight into the paste box — the
-    // person reviews it there and presses Replace Deck themselves; the red
-    // button stays the one deliberate, destructive step.
+    // person reviews it there and presses Replace deck themselves; replacing
+    // the deck remains a separate, confirmed action.
     document
       .getElementById('importFileBtn')
       ?.addEventListener('click', () => document.getElementById('importFile')?.click());

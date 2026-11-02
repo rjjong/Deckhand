@@ -230,7 +230,51 @@ html[data-main='U'][data-side='B']
 }
 
 .trade-page .trade-row .tl {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
   margin-top: 4px;
+}
+
+.trade-page .trade-row .tr-eur {
+  color: var(--ink-text);
+  background: none;
+  -webkit-text-fill-color: currentColor;
+}
+
+.trade-page .tr-market {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex: none;
+  min-height: 36px;
+  margin-left: auto;
+  padding: 6px 8px;
+  border: 1px solid color-mix(in srgb, var(--ink-text) 22%, transparent);
+  border-radius: 8px;
+  color: var(--ink-text);
+  background: transparent;
+  font:
+    600 12px/1.4 'Inter',
+    system-ui,
+    sans-serif;
+  text-decoration: none;
+}
+
+.trade-page .tr-market svg {
+  width: 15px;
+  height: 15px;
+}
+
+.trade-page .tr-market:hover {
+  border-color: var(--accent-ink);
+}
+
+.trade-page .tr-market:focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 2px;
 }
 
 .trade-page .tr-qty {
@@ -253,13 +297,63 @@ html .app > main.trade-page > .page-content {
   gap: 16px;
 }
 
-.trade-page .trade-overview {
+/* Match the cards' scrollbar gutter while keeping the summary outside their scroll area. */
+html .app > main.trade-page > .trade-toolbar-shell {
+  width: calc(100% + 44px);
+  margin: 0 -22px;
+  padding: 16px 22px;
+  overflow: hidden;
+  scrollbar-gutter: stable;
+}
+
+html .trade-page .trade-toolbar {
   display: flex;
-  justify-content: flex-end;
-  padding-top: 16px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 12px;
+}
+
+.trade-page .trade-confirm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  flex: none;
+  min-height: 44px;
+  margin: 0;
+  padding: 6px 2px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ink-text);
+  font:
+    600 13px/1.4 'Inter',
+    system-ui,
+    sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+
+.trade-page .trade-confirm svg {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  color: var(--accent-ink);
+}
+
+.trade-page .trade-confirm:focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 2px;
+}
+
+.trade-page .trade-confirm:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 html .trade-page .trade-verdict {
+  min-width: 0;
   color: var(--ink-text);
   font-size: 14px;
   line-height: 1.6;

@@ -3,17 +3,17 @@
    The app sends: the question, the cards tagged with @ (oracle text and
    official rulings, from the phone's own card database) and the Comprehensive
    Rules that its local search found for the question. This function asks a
-   free AI service to answer from THAT material only, and returns
+   Groq to answer from THAT material only, and returns
      { ok, answer, reasoning, cites: ["603.2", ...], confident, provider, cached }.
 
-   Free first: Google Gemini (GEMINI_API_KEY, 1.16), then Groq (GROQ_API_KEY),
-   then Cerebras (CEREBRAS_API_KEY) -- each only when its key is set. No credit card on those accounts = no bill, ever; when
-   the free quota is used up the app falls back to its own rule search.
+   Use a Groq Free account. Billing tier is controlled by Groq, not an API
+   request option. There are no alternate providers or automatic retries.
+   A rate limit pauses requests; the app still shows its local rule search.
 
    Guards, because a public endpoint is a free AI for anyone who finds it:
    - size limits on everything that comes in;
-   - JUDGE_DAILY (default 20) questions per device per day, and
-     JUDGE_GLOBAL (default 800) for the whole app per day (SQLite);
+   - JUDGE_DAILY (default 20) attempts per device per day, and
+     JUDGE_GLOBAL (default 800) attempts for the whole app per day (SQLite);
    - the same question about the same cards comes from the cache, free.
    The rules text and system prompt live HERE, so a caller cannot change
    the instructions. */
@@ -23,24 +23,27 @@ const MAX_Q = 500,
   MAX_CARDS = 5,
   MAX_RULES = 40,
   MAX_RULE_CHARS = 18000,
-  MAX_CARD_CHARS = 2500;
+  MAX_CARD_CHARS = 2500,
+  MAX_PROMPT_CHARS = 14000;
 
-const GROQ_MODELS = ['openai/gpt-oss-120b', 'llama-3.3-70b-versatile'];
-// 1.16: Google Gemini first (GEMINI_API_KEY, free in Google AI Studio). Its
-// own models in turn; GEMINI_MODEL (comma-separated) overrides the list.
-export const GEMINI_URL =
-  'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
-const GEMINI_MODELS = ['gemini-3.8-flash', 'gemini-2.5-flash'];
-const listOf = (v) =>
-  String(v || '')
-    .split(',')
-    .map((x) => x.trim())
-    .filter(Boolean);
-const CEREBRAS_MODELS = ['gpt-oss-120b', 'llama-3.3-70b'];
+export const DEFAULT_GROQ_MODEL = 'openai/gpt-oss-120b';
+const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const modelOf = (env) => env.GROQ_MODEL?.trim() || DEFAULT_GROQ_MODEL;
+const REPLY_SCHEMA = {
+  type: 'object',
+  properties: {
+    answer: { type: 'string' },
+    reasoning: { type: 'string' },
+    cites: { type: 'array', items: { type: 'string' } },
+    confident: { type: 'boolean' },
+  },
+  required: ['answer', 'reasoning', 'cites', 'confident'],
+  additionalProperties: false,
+};
 
 export function systemPrompt() {
   return [
-    'You are a certified Magic: The Gathering rules judge answering a player at the table.',
+    'You are a Magic: The Gathering rules judge assistant answering a player at the table.',
     'Use ONLY the Comprehensive Rules excerpts and card texts/rulings given in the user message. Do not rely on memory of other rules or cards.',
     'Card texts are the official Oracle text. Official rulings for a card outrank your own reading.',
     'Read every card text word for word. Words such as card, token, permanent, spell, creature and player have exact rules meanings (for example 108.2: a token is not a card). A trigger only happens when the event matches its wording exactly.',
@@ -66,10 +69,10 @@ export function clean(body) {
     .map((c) => ({
       name: String((c && c.name) || '').slice(0, 150),
       type: String((c && c.type) || '').slice(0, 150),
-      oracle: String((c && c.oracle) || '').slice(0, 1500),
+      oracle: String((c && c.oracle) || '').slice(0, MAX_PROMPT_CHARS + 1),
       rulings: (Array.isArray(c && c.rulings) ? c.rulings : [])
         .slice(0, 12)
-        .map((r) => String(r || '').slice(0, 400)),
+        .map((r) => String(r || '').slice(0, MAX_PROMPT_CHARS + 1)),
     }))
     .filter((c) => c.name);
   let room = MAX_RULE_CHARS;
@@ -85,18 +88,22 @@ export function clean(body) {
   return { q, lang, cards, rules };
 }
 
-export function userMessage(c) {
-  let cardTxt = c.cards
+export function userMessage(
+  c,
+  maxChars = MAX_PROMPT_CHARS - systemPrompt().length,
+  readRules = [],
+) {
+  const cardTxt = c.cards
     .map((k) => {
       let s = `${k.name}${k.type ? ' — ' + k.type : ''}\n${k.oracle}`;
-      if (k.rulings.length)
-        s += '\nOfficial rulings:\n' + k.rulings.map((r) => '- ' + r).join('\n');
+      for (const ruling of k.rulings) {
+        const text = '\nOfficial ruling: ' + ruling;
+        if (s.length + text.length <= MAX_CARD_CHARS) s += text;
+      }
       return s;
     })
     .join('\n\n');
-  if (cardTxt.length > MAX_CARD_CHARS * MAX_CARDS)
-    cardTxt = cardTxt.slice(0, MAX_CARD_CHARS * MAX_CARDS);
-  return [
+  let message = [
     'QUESTION:',
     c.q,
     '',
@@ -104,8 +111,19 @@ export function userMessage(c) {
     cardTxt || '(none tagged)',
     '',
     'COMPREHENSIVE RULES EXCERPTS:',
-    c.rules.map((r) => r.n + ' ' + r.t).join('\n'),
   ].join('\n');
+  if (message.length > maxChars) return null;
+  let included = 0;
+  for (const rule of c.rules) {
+    const text = '\n' + rule.n + ' ' + rule.t;
+    if (message.length + text.length > maxChars) continue;
+    message += text;
+    readRules.push(rule.n);
+    included++;
+  }
+  // Keep whole excerpts and card texts. Ask for a smaller question when
+  // no supplied rule fits, instead of silently sending a partial rule.
+  return c.rules.length && !included ? null : message;
 }
 
 /* The model's reply -> our shape. Tolerates prose around the JSON. */
@@ -142,25 +160,31 @@ export function parseReply(text) {
       .trim()
       .slice(0, 2000),
     cites,
-    confident: o.confident !== false,
+    confident: o.confident === true,
   };
 }
 
-async function chat(fetchImpl, url, key, model, sys, user, jsonMode = true) {
-  const gem = /^gemini/.test(model);
-  // Gemini thinks before it answers and counts that in max_tokens: more room
+async function chat(fetchImpl, key, model, sys, user) {
+  const gpt = /^openai\/gpt-oss-(20|120)b$/.test(model);
   const req = {
     model,
     temperature: 0.1,
-    max_tokens: gem ? 6000 : 1200,
+    max_completion_tokens: 2048,
+    stream: false,
     messages: [
       { role: 'system', content: sys },
       { role: 'user', content: user },
     ],
   };
-  if (jsonMode) {
-    req.response_format = { type: 'json_object' };
-    if (gem) req.reasoning_effort = 'medium';
+  req.response_format = gpt
+    ? {
+        type: 'json_schema',
+        json_schema: { name: 'judge_answer', strict: true, schema: REPLY_SCHEMA },
+      }
+    : { type: 'json_object' };
+  if (gpt) {
+    req.reasoning_effort = 'medium';
+    req.include_reasoning = false;
   }
   // one slow model must not eat the whole wait: give up on it after 28 s
   const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
@@ -171,70 +195,48 @@ async function chat(fetchImpl, url, key, model, sys, user, jsonMode = true) {
         } catch (e) {}
       }, 28000)
     : null;
-  let res;
   try {
-    res = await fetchImpl(url, {
+    const res = await fetchImpl(GROQ_URL, {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: 'Bearer ' + key },
       body: JSON.stringify(req),
       signal: ctl ? ctl.signal : undefined,
     });
+    if (!res.ok) {
+      const e = new Error('http ' + res.status);
+      e.status = res.status;
+      const retry = res.headers.get('retry-after');
+      const seconds =
+        retry &&
+        (Number.isFinite(Number(retry)) ? Number(retry) : (Date.parse(retry) - Date.now()) / 1000);
+      e.retryAfter = Math.max(1, Math.ceil(seconds || 60));
+      throw e;
+    }
+    const j = await res.json();
+    const choice = j?.choices?.[0];
+    return choice?.finish_reason === 'length' ? '' : choice?.message?.content || '';
   } finally {
     if (tm) clearTimeout(tm);
   }
-  // a model that does not do JSON mode: once more without it (the prompt asks for JSON anyway)
-  if (res.status === 400 && jsonMode) return chat(fetchImpl, url, key, model, sys, user, false);
-  if (!res.ok) {
-    const e = new Error('http ' + res.status);
-    e.status = res.status;
-    throw e;
-  }
-  const j = await res.json();
-  return (
-    (j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || ''
-  );
 }
 
-/* Each provider, each model in turn, until one answers in shape. */
-export async function askProviders(env, fetchImpl, sys, user) {
-  const lanes = [];
-  if (env.GEMINI_API_KEY)
-    lanes.push({
-      name: 'gemini',
-      url: GEMINI_URL,
-      key: env.GEMINI_API_KEY,
-      models: env.GEMINI_MODEL ? listOf(env.GEMINI_MODEL) : GEMINI_MODELS,
-    });
-  if (env.GROQ_API_KEY)
-    lanes.push({
-      name: 'groq',
-      url: 'https://api.groq.com/openai/v1/chat/completions',
-      key: env.GROQ_API_KEY,
-      models: env.GROQ_MODEL ? [env.GROQ_MODEL] : GROQ_MODELS,
-    });
-  if (env.CEREBRAS_API_KEY)
-    lanes.push({
-      name: 'cerebras',
-      url: 'https://api.cerebras.ai/v1/chat/completions',
-      key: env.CEREBRAS_API_KEY,
-      models: env.CEREBRAS_MODEL ? [env.CEREBRAS_MODEL] : CEREBRAS_MODELS,
-    });
-  if (!lanes.length) return { error: 'nokey' };
-  let last = 'down';
-  for (const ln of lanes)
-    for (const m of ln.models) {
-      try {
-        const out = parseReply(await chat(fetchImpl, ln.url, ln.key, m, sys, user));
-        if (out) return Object.assign(out, { provider: ln.name, model: m });
-        last = 'shape';
-      } catch (e) {
-        last = e && e.status === 429 ? 'quota' : 'down';
-        // Groq's 429 holds for all its models today: next provider. Gemini
-        // counts per model, so its next model still has room.
-        if (e && e.status === 429 && ln.name !== 'gemini') break;
-      }
-    }
-  return { error: last };
+/* One Groq request. Quota errors never switch providers or retry models. */
+export async function askGroq(env, fetchImpl, sys, user) {
+  const key = env.GROQ_API_KEY?.trim();
+  if (!key) return { error: 'nokey' };
+  if (typeof user !== 'string' || user.length + sys.length > MAX_PROMPT_CHARS)
+    return { error: 'context' };
+  const model = modelOf(env);
+  try {
+    const out = parseReply(await chat(fetchImpl, key, model, sys, user));
+    return out ? { ...out, provider: 'groq', model } : { error: 'shape' };
+  } catch (e) {
+    if (e.status === 429) return { error: 'quota', retryAfter: e.retryAfter };
+    if (e.status === 401 || e.status === 403) return { error: 'key' };
+    if (e.status === 404) return { error: 'model' };
+    if (e.status === 413) return { error: 'context' };
+    return { error: 'down' };
+  }
 }
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -245,15 +247,11 @@ export async function handle(body, deps) {
   const env = deps.env || {};
   const c = clean(body);
   if (c.q.length < 4) return { status: 400, json: { ok: false, error: 'empty' } };
+  const sys = systemPrompt(),
+    readRules = [],
+    user = userMessage(c, MAX_PROMPT_CHARS - sys.length, readRules);
   const dev = sha(String((body && body.device) || '') + '|' + (deps.ip || '')).slice(0, 24);
-  const cacheKey = sha(
-    JSON.stringify([
-      'v2',
-      c.lang,
-      c.q.toLowerCase().replace(/\s+/g, ' '),
-      c.cards.map((k) => k.name.toLowerCase()).sort(),
-    ]),
-  );
+  const cacheKey = sha(JSON.stringify(['groq-v3', modelOf(env), sys, user]));
   const cache = deps.store ? deps.store('judge-cache') : null;
   const count = deps.store ? deps.store('judge-count') : null;
   // 1. asked before: free and instant
@@ -262,6 +260,8 @@ export async function handle(body, deps) {
     if (hit && hit.answer)
       return { status: 200, json: Object.assign({ ok: true, cached: true }, hit) };
   } catch (e) {}
+  if (!env.GROQ_API_KEY?.trim()) return { status: 503, json: { ok: false, error: 'nokey' } };
+  if (!user) return { status: 400, json: { ok: false, error: 'context' } };
   // 2. limits
   const day = today(),
     perDev = +env.JUDGE_DAILY || 20,
@@ -276,15 +276,44 @@ export async function handle(body, deps) {
   } catch (e) {}
   if (devN >= perDev) return { status: 429, json: { ok: false, error: 'limit', limit: perDev } };
   if (allN >= all) return { status: 429, json: { ok: false, error: 'quota' } };
-  // 3. ask
-  const out = await askProviders(env, deps.fetch, systemPrompt(), userMessage(c));
-  if (out.error)
-    return { status: out.error === 'nokey' ? 503 : 502, json: { ok: false, error: out.error } };
   try {
+    const cooldown = count && (await count.get('groq-cooldown'));
+    if (cooldown?.until > Date.now())
+      return {
+        status: 429,
+        json: {
+          ok: false,
+          error: 'quota',
+          retryAfter: Math.ceil((cooldown.until - Date.now()) / 1000),
+        },
+      };
+    // Attempts consume the local budget too: malformed responses and provider
+    // failures must not allow unlimited requests against the free allowance.
     if (count) {
       await count.setJSON('d|' + day + '|' + dev, { n: devN + 1 });
       await count.setJSON('g|' + day, { n: allN + 1 });
     }
+  } catch (e) {}
+  // 3. ask
+  const out = await askGroq(env, deps.fetch, sys, user);
+  if (out.error) {
+    if (out.error === 'quota' && count) {
+      try {
+        await count.setJSON('groq-cooldown', { until: Date.now() + out.retryAfter * 1000 });
+      } catch (e) {}
+    }
+    return {
+      status: out.error === 'quota' ? 429 : 502,
+      json: { ok: false, ...out, left: Math.max(0, perDev - devN - 1) },
+    };
+  }
+  const allowed = new Set(readRules);
+  if (out.cites.some((number) => !allowed.has(number))) {
+    out.confident = false;
+    out.cites = out.cites.filter((number) => allowed.has(number));
+  }
+  out.readRules = readRules;
+  try {
     // only answers the AI is sure of are kept for the next player
     if (cache && out.confident)
       await cache.setJSON(cacheKey, {
@@ -294,6 +323,7 @@ export async function handle(body, deps) {
         confident: out.confident,
         provider: out.provider,
         model: out.model,
+        readRules,
         t: Date.now(),
       });
   } catch (e) {}

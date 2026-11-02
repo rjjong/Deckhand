@@ -1,87 +1,11 @@
 // pages / collection / add-card
 
 /* ---- Add to collection: printing, condition, amount, binder ---- */
-function openColAddCardSheet() {
-  let el = document.getElementById('colAddSheet');
-  if (!el) {
-    el = document.createElement('div');
-    el.className = 'overlay';
-    el.id = 'colAddSheet';
-  }
-  document.body.appendChild(el); // (re)append — a reused overlay must rise above ones opened after it
-  pushOverlay('colAddSheet', () => {
-    document.getElementById('colAddSheet')?.remove();
-  });
-  // Like every other page: the cap on top, the results growing up from the
-  // search field, the search field right above the app's own nav bar.
-  el.innerHTML = /* HTML */ `<div class="overlay-inner">
-    ${overlayCapHtml(trS('Add card'))}
-    <main id="casMain" style="padding:12px 14px;display:flex;flex-direction:column;">
-      <div id="casResults" style="margin-top:auto;">
-        <p class="hint" style="text-align:center;margin:0 0 6px;">
-          ${trS('Search Scryfall and file it into a binder')}
-        </p>
-      </div>
-    </main>
-    <div class="searchbar cas-bar">
-      <input
-        id="casQ"
-        enterkeyhint="search"
-        placeholder="${trS('Card name…')}"
-        autocomplete="off"
-      />
-    </div>
-    ${overlayNavHtml()}
-  </div>`;
-  wireOverlayNav(el);
-  const doS = async () => {
-    const q = (document.getElementById('casQ')?.value || '').trim();
-    const box = document.getElementById('casResults');
-    if (!q || !box) return;
-    box.innerHTML = '<div class="status"><div class="spinner"></div></div>';
-    try {
-      const r = await sfFetch(
-        `${SF_BASE}/cards/search?unique=cards&q=${encodeURIComponent(q + ' game:paper')}`,
-      );
-      if (!r.ok) {
-        box.innerHTML = '<p class="hint">No cards found.</p>';
-        return;
-      }
-      const d = await r.json();
-      const rows = (d.data || []).slice(0, 10);
-      box.innerHTML = /* HTML */ `<div class="col-addlist">
-        ${rows.map((c, i) => `<button class="col-addrow" data-ai="${i}"><span>${escapeHtml(c.name)}</span><span class="hint">${escapeHtml(c.type_line || '')}</span></button>`).join('')}
-      </div>`;
-      box.querySelectorAll('.col-addrow').forEach((btn) =>
-        btn.addEventListener('click', () => {
-          openAddToCollection(rows[+btn.dataset.ai]);
-        }),
-      );
-      // Bottom-up: the best match sits right above the search field.
-      const m = document.getElementById('casMain');
-      if (m) m.scrollTop = m.scrollHeight;
-    } catch (e) {
-      box.innerHTML = '<p class="hint">Search failed — try again.</p>';
-    }
-  };
-  let casT = null;
-  document.getElementById('casQ').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      clearTimeout(casT);
-      doS();
-    }
-  });
-  document.getElementById('casQ').addEventListener('input', () => {
-    clearTimeout(casT);
-    casT = setTimeout(() => {
-      if ((document.getElementById('casQ')?.value || '').trim().length >= 3) doS();
-    }, 450);
-  });
-  requestAnimationFrame(() => {
-    try {
-      document.getElementById('casQ').focus();
-    } catch (e) {}
-  });
+function openCollectionCardSearch() {
+  state.searchDeckId = null;
+  state.searchPinnedDeckId = null;
+  state._pinArm = false;
+  switchPage('search');
 }
 
 /* Several cards into the collection at once (a multi-select's ＋ menu): one

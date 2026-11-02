@@ -69,6 +69,13 @@ async function refreshTradePrices() {
               : (f.name === it.name || String(f.name).split(' // ')[0] === it.name) &&
                 (!it.set || String(f.set) === String(it.set).toLowerCase());
           if (!hit) return;
+          if (f.purchase_uris?.cardmarket) {
+            const marketUrl = tradeCardmarketUrl(f);
+            if (it.cardmarketUrl !== marketUrl) {
+              it.cardmarketUrl = marketUrl;
+              changed = true;
+            }
+          }
           const p = f.prices || {};
           const raw = it.foil ? p.eur_foil || p.eur : p.eur || p.eur_foil;
           const e = raw ? parseFloat(raw) : NaN;
@@ -95,6 +102,20 @@ function tradeSideTotal(side) {
   return side.reduce((t, it) => t + (it.eur != null ? it.eur * it.qty : 0), 0);
 }
 
+function tradeCardmarketUrl(card) {
+  try {
+    const url = new URL(card.cardmarketUrl || card.purchase_uris?.cardmarket);
+    if (
+      url.protocol === 'https:' &&
+      ['cardmarket.com', 'www.cardmarket.com'].includes(url.hostname)
+    )
+      return url.href;
+  } catch (e) {}
+  const url = new URL('https://www.cardmarket.com/en/Magic/Products/Search');
+  url.searchParams.set('searchString', card.name || '');
+  return url.href;
+}
+
 function tradeRowsHtml(key) {
   const rows = state.trade[key];
   if (!rows.length)
@@ -103,12 +124,46 @@ function tradeRowsHtml(key) {
     </p>`;
   return rows
     .map(
-      (it, i) => `<div class="trade-row">
-    <img src="${it.img || ''}" alt="" data-tprev="${key}:${i}">
-    <div class="tr-body"><div class="nm">${escapeHtml(it.name)}</div><div class="tl">${escapeHtml((it.set || '').toUpperCase())}${it.cn ? ' #' + escapeHtml(it.cn) : ''} · ${it.eur != null ? `<span class="tr-eur">€${it.eur.toFixed(2)}</span>` : '—'}</div></div>
-    <div class="tr-qty"><button data-tq="${key}:${i}:-1">−</button><span>×${it.qty}</span><button data-tq="${key}:${i}:1">＋</button></div>
-    <button class="icon-btn tr-del" data-tdel="${key}:${i}">✕</button>
-  </div>`,
+      (it, i) =>
+        /* HTML */ `<div class="trade-row">
+          <img src="${it.img || ''}" alt="" data-tprev="${key}:${i}" />
+          <div class="tr-body">
+            <div class="nm">${escapeHtml(it.name)}</div>
+            <div class="tl">
+              <span>
+                ${escapeHtml((it.set || '').toUpperCase())}${it.cn ? ' #' + escapeHtml(it.cn) : ''}
+                · ${it.eur != null ? `<span class="tr-eur">€${it.eur.toFixed(2)}</span>` : '—'}
+              </span>
+              <a
+                class="tr-market"
+                href="${escapeHtml(tradeCardmarketUrl(it))}"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="${escapeHtml('View ' + it.name + ' on Cardmarket (opens in a new tab)').replace(/"/g, '&quot;')}"
+              >
+                Cardmarket
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M14 3h7v7M10 14 21 3" />
+                  <path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" />
+                </svg>
+              </a>
+            </div>
+          </div>
+          <div class="tr-qty">
+            <button data-tq="${key}:${i}:-1">−</button>
+            <span>×${it.qty}</span>
+            <button data-tq="${key}:${i}:1">＋</button>
+          </div>
+          <button class="icon-btn tr-del" data-tdel="${key}:${i}">✕</button>
+        </div>`,
     )
     .join('');
 }
@@ -137,13 +192,34 @@ function tradePageHtml() {
     <button type="button" class="hub-card trade-add" data-tradeadd="${key}"><span class="hub-icon" aria-hidden="true">${ICONS.plus}</span><span class="hub-copy"><strong>${trS('Add card')}</strong><small>${'Choose the exact printing'}</small></span><span class="hub-arrow" aria-hidden="true">›</span></button>
   </section>`;
   return /* HTML */ `<main class="hub-page tools-page trade-page">
-    <div class="trade-overview">
-      <div
-        class="trade-verdict ${even ? 'even' : ''}"
-        role="status"
-        aria-label="${'Trade difference'}"
-      >
-        ${verdict}
+    <div class="trade-toolbar-shell">
+      <div class="panel-card trade-toolbar" role="group" aria-label="Trade summary">
+        <button
+          type="button"
+          id="tradeConfirm"
+          class="trade-confirm"
+          ${state.trade.a.length || state.trade.b.length ? '' : ' disabled'}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m5 12 4 4L19 6" />
+          </svg>
+          <span>${trS('Confirm trade')}</span>
+        </button>
+        <div
+          class="trade-verdict ${even ? 'even' : ''}"
+          role="status"
+          aria-label="${'Trade difference'}"
+        >
+          ${verdict}
+        </div>
       </div>
     </div>
     <section class="hub-actions tool-sections" aria-label="${'Trade cards'}">

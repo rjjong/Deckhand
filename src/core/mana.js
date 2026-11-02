@@ -206,10 +206,7 @@ async function openCardPeek(name) {
       class="overlay-inner"
       style="display:flex;flex-direction:column;"
     >
-      <div class="topbar">
-        <button class="icon-btn" id="peekClose">✕</button>
-        <div class="tb-titles"><div class="t1 name2">${escapeHtml(cardish.name || name)}</div></div>
-      </div>
+      ${overlayCapHtml(cardish.name || name, `<button type="button" class="header-filter" id="peekClose" aria-label="Close">${ICONS.close}</button>`)}
       <main style="display:flex;align-items:center;justify-content:center;padding:14px;">
         <img
           class="${wbClass(cardish)}"

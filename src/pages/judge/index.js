@@ -1063,20 +1063,35 @@ function openCROverlay(startMode) {
     setCount();
     if (res && res.ok) {
       res._cards = g.cards.map((k) => k.name);
-      res._read = g.rules;
+      res._read = res.readRules
+        ? g.rules.filter((rule) => res.readRules.includes(rule.n))
+        : g.rules;
       body.innerHTML = judgeAnswerHtml(res, rules, query);
       body.scrollTop = 0;
       return;
     }
     // no judge: say why, and show what the app found itself
+    const retry = res?.retryAfter;
+    const retryText =
+      Number.isFinite(retry) && retry > 0
+        ? ` Try again in about ${Math.ceil(retry / 60)} minute${Math.ceil(retry / 60) === 1 ? '' : 's'}.`
+        : ' Please try again later.';
     const why =
       res && res.error === 'limit'
         ? `You have asked the judge your ${res.limit || ''} questions for today. More tomorrow. Below, what the rules themselves say.`
         : res && res.error === 'nokey'
-          ? 'The judge is not set up yet. Below, what the rules themselves say.'
-          : res && res.error === 'offline'
-            ? 'No connection to the judge. Below, what the rules themselves say.'
-            : 'The judge cannot be reached right now. Below, what the rules themselves say.';
+          ? 'Ask AI Judge needs a Groq API key on this server. Below, what the rules themselves say.'
+          : res && res.error === 'quota'
+            ? `The AI question allowance is temporarily exhausted.${retryText} Below, what the rules themselves say.`
+            : res && res.error === 'key'
+              ? 'Groq could not accept the server’s API key. Below, what the rules themselves say.'
+              : res && res.error === 'model'
+                ? 'The selected Groq model is unavailable. Below, what the rules themselves say.'
+                : res && res.error === 'context'
+                  ? 'This question needs too much card or rules text. Try asking about fewer cards. Below, what the rules themselves say.'
+                  : res && res.error === 'offline'
+                    ? 'No connection to the judge. Below, what the rules themselves say.'
+                    : 'The judge cannot be reached right now. Below, what the rules themselves say.';
     const toks = crTokens(query);
     body.innerHTML =
       `<p class="hint" style="margin:4px 12px 8px;">⚠ ${escapeHtml(why)}</p>` +

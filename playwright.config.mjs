@@ -14,6 +14,6 @@ export default defineConfig({
     command: 'node server/index.mjs',
     url: 'http://127.0.0.1:3100/api/health',
     reuseExistingServer: false,
-    env: { HOST: '127.0.0.1', PORT: '3100', DATABASE_PATH: './var/browser-tests.sqlite', DATA_DIR: './var/data-sample' }
+    env: { HOST: '127.0.0.1', PORT: '3100', DATABASE_PATH: './var/browser-tests.sqlite', DATA_DIR: './var/data-sample', GROQ_API_KEY: '', GEMINI_API_KEY: '', CEREBRAS_API_KEY: '' }
   }
 });

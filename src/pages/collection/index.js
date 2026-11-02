@@ -197,6 +197,9 @@ function collectionAdvancedPanelHtml() {
   const colorOrder = ['W', 'U', 'B', 'R', 'G', 'C'];
   return /* HTML */ `<div class="adv-panel" id="colAdvBox">
     <div id="colAdvPanel" style="display:flex;flex-direction:column;">
+      <div class="adv-row collection-view-setting">
+        <label>Binder view</label>${folderViewToggleHtml('col')}
+      </div>
       <div class="adv-row">
         <label>Name</label
         ><input
@@ -345,6 +348,7 @@ function artCropFrom(img) {
 }
 
 function wireCollectionPage() {
+  wireFolderViewToggle('col');
   requestAnimationFrame(() => requestAnimationFrame(fitColTileHeight));
   ensureBinderFaces();
   document.querySelectorAll('[data-brinfo]').forEach((btn) => {
@@ -399,7 +403,7 @@ function wireCollectionPage() {
         [
           'bfAddCard',
           `<span class="ib">${ICONS.search}</span>${trS('Add card')}`,
-          () => openColAddCardSheet(),
+          openCollectionCardSearch,
         ],
         ['bfImport', mIco('file') + trS('Import'), () => openCollectionImport(bid)],
       ].concat(
@@ -425,7 +429,7 @@ function wireCollectionPage() {
         [
           'fabAddCard',
           `<span class="ib">${ICONS.search}</span>${trS('Add card')}`,
-          () => openColAddCardSheet(),
+          openCollectionCardSearch,
         ],
         [
           'fabAddBinder',
@@ -443,23 +447,11 @@ function wireCollectionPage() {
           },
         ],
         ['fabImport', mIco('file') + trS('Import'), () => openCollectionImport()],
-      ]
-        .concat(
-          ruledBinders().length
-            ? [['fabResort', '↻ ' + 'Re-sort binders', () => binderResort()]]
-            : [],
-        )
-        .concat([
-          [
-            'fabView',
-            folderViewToggleLabel('col'),
-            () => {
-              setFolderView('col', folderView('col') === 'list' ? 'tiles' : 'list');
-              render();
-              scrollToPageFoot();
-            },
-          ],
-        ]),
+      ].concat(
+        ruledBinders().length
+          ? [['fabResort', '↻ ' + 'Re-sort binders', () => binderResort()]]
+          : [],
+      ),
     );
   });
   document

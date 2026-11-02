@@ -1,145 +1,83 @@
-/* Deckhand sync: one shared document per link code, stored in SQLite.
-   No accounts and no keys to set up: the link code IS the key. Only its
-   SHA-256 hash is ever used as the storage name, so the store never holds
-   a code that would let someone in.
-
-   The document: { rev, keys: { <name>: { t, r, v } | { t, r, del:1 } } }
-     t = when the device changed that piece (its own clock), the newest wins
-     r = the document revision in which the piece last changed here
-
-   Two calls, both POST JSON:
-     { op:'probe', code }                         -> { rev }   (a few bytes)
-     { op:'sync', code, since, changes, after }   -> { rev, changes, more }
-       changes in : what this device changed since it last sent
-       changes out: every piece with r > since that the device did not just
-                    send, at most ~3.5 MB per answer; `more` is the cursor
-                    for the next page (send it back as `after`).
-
-   Testable: handle(body, { store }) with a fake store. */
+/* Code-only synchronization on this server. Codes are bearer secrets; only
+   their SHA-256 hashes are stored. There are no accounts or credentials. */
 import crypto from 'node:crypto';
+import records from '../../shared/sync-records.cjs';
 
-const PAGE = 3_500_000; // characters per answer page
-const MAX_DOC = 60_000_000; // a whole account, generously
-const MAX_KEY = 160;
+const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
 export function idOf(code) {
-  const c = String(code || '')
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, '');
-  if (c.length < 16 || c.length > 40) return null;
+  if (typeof code !== 'string' || !/^[A-Z0-9\s-]+$/i.test(code)) return null;
+  const clean = code.toUpperCase().replace(/[\s-]/g, '');
+  if (clean.length < 16 || clean.length > 40) return null;
   return crypto
     .createHash('sha256')
-    .update('deckhand-sync:' + c)
+    .update('deckhand-sync:' + clean)
     .digest('hex');
 }
 
-async function readDoc(store, id) {
-  let doc = null,
-    etag = null;
-  try {
-    if (typeof store.getWithMetadata === 'function') {
-      const r = await store.getWithMetadata(id, { type: 'json' });
-      if (r) {
-        doc = r.data;
-        etag = r.etag || null;
-      }
-    } else {
-      doc = await store.get(id, { type: 'json' });
-    }
-  } catch (e) {
-    doc = null;
-  }
-  if (!doc || typeof doc !== 'object' || !doc.keys) doc = { rev: 0, keys: {} };
-  return { doc, etag };
-}
-
-async function writeDoc(store, id, doc, etag) {
-  const opts = { metadata: { rev: doc.rev } };
-  if (etag) opts.onlyIfMatch = etag;
-  else opts.onlyIfNew = true;
-  const res = await store.setJSON(id, doc, opts);
-  // Conditional writes report a conflict when another request wrote first.
-  return !(res && res.modified === false);
-}
-
 export async function handle(body, ctx) {
-  const store = ctx && ctx.store;
-  if (!store) return { status: 503, json: { ok: false, error: 'store' } };
-  const id = idOf(body && body.code);
+  if (!ctx?.sync) return { status: 503, json: { ok: false, error: 'store' } };
+  if (!body || typeof body !== 'object' || Array.isArray(body))
+    return { status: 400, json: { ok: false, error: 'request' } };
+  if (body.op === 'create') {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const code = [...crypto.randomBytes(24)]
+        .map((byte) => ALPHABET[byte % ALPHABET.length])
+        .join('');
+      if (ctx.sync.create(idOf(code)))
+        return {
+          status: 201,
+          json: { ok: true, code: code.match(/.{4}/g).join('-'), rev: 0, protocol: 2 },
+        };
+    }
+    return { status: 503, json: { ok: false, error: 'busy' } };
+  }
+  const id = idOf(body.code);
   if (!id) return { status: 400, json: { ok: false, error: 'code' } };
-  const op = body.op;
-
-  if (op === 'probe') {
-    try {
-      if (typeof store.getMetadata === 'function') {
-        const m = await store.getMetadata(id);
-        if (m && m.metadata && m.metadata.rev != null)
-          return { status: 200, json: { ok: true, rev: +m.metadata.rev || 0 } };
-        if (!m) return { status: 200, json: { ok: true, rev: 0 } };
-      }
-    } catch (e) {}
-    const { doc } = await readDoc(store, id);
-    return { status: 200, json: { ok: true, rev: doc.rev || 0 } };
+  if (body.op !== 'probe' && body.op !== 'sync')
+    return { status: 400, json: { ok: false, error: 'op' } };
+  if (ctx.sync.probe(id) === null && ctx.legacy) {
+    const old = await ctx.legacy.get(id);
+    if (old && typeof old === 'object' && old.keys) ctx.sync.migrate(id, old);
   }
-
-  if (op !== 'sync') return { status: 400, json: { ok: false, error: 'op' } };
-  const since = Math.max(0, +body.since || 0);
-  const incoming = body.changes && typeof body.changes === 'object' ? body.changes : {};
-
-  let doc, applied;
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const got = await readDoc(store, id);
-    doc = got.doc;
-    applied = new Set();
-    const newRev = (doc.rev || 0) + 1;
-    for (const k of Object.keys(incoming)) {
-      if (typeof k !== 'string' || !k || k.length > MAX_KEY) continue;
-      if (k === '__proto__' || k === 'constructor' || k === 'prototype') continue;
-      const c = incoming[k];
-      if (!c || typeof c.t !== 'number' || !isFinite(c.t)) continue;
-      const cur = doc.keys[k];
-      if (cur && !(c.t > cur.t)) continue; // the newest change wins
-      if (c.del) doc.keys[k] = { t: c.t, r: newRev, del: 1 };
-      else if (typeof c.v === 'string') doc.keys[k] = { t: c.t, r: newRev, v: c.v };
-      else continue;
-      applied.add(k);
-    }
-    if (!applied.size) break;
-    doc.rev = newRev;
-    if (JSON.stringify(doc).length > MAX_DOC)
-      return { status: 413, json: { ok: false, error: 'size' } };
-    if (await writeDoc(store, id, doc, got.etag)) break;
-    if (attempt === 4) return { status: 409, json: { ok: false, error: 'busy' } };
+  const rev = ctx.sync.probe(id);
+  if (rev === null) return { status: 404, json: { ok: false, error: 'code_not_found' } };
+  if (body.op === 'probe') return { status: 200, json: { ok: true, rev, protocol: 2 } };
+  const since = body.since ?? 0;
+  const changes = body.changes ?? {};
+  const after = body.after ?? null;
+  if (
+    !Number.isSafeInteger(since) ||
+    since < 0 ||
+    !changes ||
+    typeof changes !== 'object' ||
+    Array.isArray(changes) ||
+    (after &&
+      (!Number.isSafeInteger(after.r) ||
+        after.r < since ||
+        !Number.isSafeInteger(after.until) ||
+        after.until < after.r ||
+        typeof after.k !== 'string')) ||
+    (after && Object.keys(changes).length)
+  )
+    return { status: 400, json: { ok: false, error: 'request' } };
+  for (const [key, change] of Object.entries(changes)) {
+    if (
+      !records.syncRecordAllowed(key) ||
+      !change ||
+      !Number.isFinite(change.t) ||
+      change.t <= 0 ||
+      change.t > Number.MAX_SAFE_INTEGER ||
+      (!change.del &&
+        (!records.syncRecordValid(key, change.v) || Buffer.byteLength(change.v) > 16_000_000))
+    )
+      return { status: 400, json: { ok: false, error: 'change' } };
   }
-
-  // Everything newer than what the device has seen, page by page.
-  const after = body.after && typeof body.after === 'object' ? body.after : null;
-  const list = Object.keys(doc.keys)
-    .filter((k) => doc.keys[k].r > since && !applied.has(k))
-    .sort((a, b) => doc.keys[a].r - doc.keys[b].r || (a < b ? -1 : a > b ? 1 : 0));
-  const out = {};
-  let size = 0,
-    more = null,
-    started = !after;
-  for (const k of list) {
-    const e = doc.keys[k];
-    if (!started) {
-      if (e.r > after.r || (e.r === after.r && k > after.k)) started = true;
-      else continue;
-    }
-    const piece = e.del ? { t: e.t, del: 1 } : { t: e.t, v: e.v };
-    const len = (e.v ? e.v.length : 0) + k.length + 40;
-    if (size && size + len > PAGE) {
-      more = true;
-      break;
-    }
-    out[k] = piece;
-    size += len;
+  try {
+    const result = ctx.sync.exchange(id, { since, changes, after });
+    return { status: 200, json: { ok: true, ...result, protocol: 2 } };
+  } catch (error) {
+    if (error.status) return { status: error.status, json: { ok: false, error: error.message } };
+    throw error;
   }
-  if (more) {
-    // the cursor names the LAST piece sent
-    const lastK = Object.keys(out).pop();
-    more = { r: doc.keys[lastK].r, k: lastK };
-  }
-  return { status: 200, json: { ok: true, rev: doc.rev || 0, changes: out, more } };
 }

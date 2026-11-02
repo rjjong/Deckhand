@@ -131,30 +131,33 @@ function advancedSearchScreenHtml() {
     aria-modal="true"
     aria-labelledby="advancedSearchTitle"
   >
-    <header class="advanced-search-header">
-      <button type="button" id="advancedSearchClose" aria-label="${back}" title="${trS('Back')}">
-        ${ICONS.back}
-      </button>
-      <h1 id="advancedSearchTitle">${title}</h1>
-      <button
-        type="button"
-        id="advancedSearchReset"
-        aria-label="${'Reset search filters'}"
-        title="${'Reset'}"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
+    ${appTitlebarHtml(
+      'advanced-search-header',
+      /* HTML */ `
+        <button type="button" id="advancedSearchClose" aria-label="${back}" title="${trS('Back')}">
+          ${ICONS.back}
+        </button>
+        <h1 id="advancedSearchTitle">${title}</h1>
+        <button
+          type="button"
+          id="advancedSearchReset"
+          aria-label="${'Reset search filters'}"
+          title="${'Reset'}"
         >
-          <path d="M3 10a9 9 0 1 1 2.6 8.4M3 4v6h6" />
-        </svg>
-      </button>
-    </header>
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M3 10a9 9 0 1 1 2.6 8.4M3 4v6h6" />
+          </svg>
+        </button>
+      `,
+    )}
     <div id="advancedSearchBody">
       ${browse ? browseFiltersHtml() : collection ? collectionAdvancedPanelHtml() : spoilers ? spoilerAdvancedPanelHtml() : `<div class="adv-row"><label for="advName">${trS('Name')}</label><input id="advName" type="text" value="${escapeHtml(state.searchName)}" placeholder="Card name…"></div>${advancedPanelHtml()}`}
     </div>

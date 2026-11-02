@@ -15,6 +15,8 @@ services:
       GEMINI_MODEL: ${GEMINI_MODEL:-}
       GROQ_MODEL: ${GROQ_MODEL:-}
       CEREBRAS_MODEL: ${CEREBRAS_MODEL:-}
+      JUDGE_DAILY: ${JUDGE_DAILY:-20}
+      JUDGE_GLOBAL: ${JUDGE_GLOBAL:-800}
     volumes:
       - deckhand-data:/app/var
     healthcheck:

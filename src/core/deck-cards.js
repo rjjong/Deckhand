@@ -256,10 +256,10 @@ function openDeckPickPopup(card, mode, refreshFn, pairWith, withCollection) {
     <div class="deckpick-list">
       ${mode === 'reco' && isLegendary(card) && hasPowerToughness(card) && isNonlandFront(card) && !isBanned(card) ? `<button class="dp-row" data-asadmiral="1"><div class="dp-txt">${modeGlyph()} As ${fmtName()}<div class="dp-meta">Build around ${escapeHtml(card.name)} — recommendations in its own colors, pick cards, launch a deck</div></div></button>` : ''}
       ${mode === 'reco' ? `<button class="dp-row" data-anycolors="1"><div class="dp-txt">Any colors<div class="dp-meta">No color restriction</div></div></button><div id="recoColorPick"></div>` : ''}
-      ${withCollection ? `<button class="dp-row" data-tocollection="1"><div class="dp-txt"><span class="ib">${ICONS.collection}</span>${trS('Collection')}<div class="dp-meta">${trS('Add to collection')}</div></div></button>` : ''}
       ${mode !== 'reco' ? `<button class="dp-row" data-newdeck="1"><div class="dp-txt">＋ New deck<div class="dp-meta">Create a fresh deck and add ${escapeHtml(nm)} to it</div></div></button>` : ''}
       ${mode !== 'reco' ? deckPickRowsHtml() : ''}
     </div>
+    ${withCollection ? `<button type="button" class="dp-row dp-collection" data-tocollection="1"><span class="ib" aria-hidden="true">${ICONS.collection}</span><div class="dp-txt">${trS('Add to collection')}<div class="dp-meta">Choose printing, quantity, and binder</div></div></button>` : ''}
     <button class="dp-cancel" id="dpCancel">Cancel</button>
   </div>`;
   document.body.appendChild(el);
@@ -350,7 +350,7 @@ function openDeckPickPopup(card, mode, refreshFn, pairWith, withCollection) {
     };
     paintPick();
   }
-  el.querySelectorAll('.dp-row').forEach((row) => {
+  el.querySelectorAll('.deckpick-list .dp-row').forEach((row) => {
     row.addEventListener('click', () => {
       if (row.dataset.asadmiral) {
         closeDeckPickPopup();
