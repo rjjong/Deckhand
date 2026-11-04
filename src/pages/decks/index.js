@@ -1163,41 +1163,51 @@ function openDeck(id) {
 
 function openPasteListSheet(opts) {
   opts = opts || {};
+  const trigger = document.activeElement;
   setTimeout(() => {
     document.getElementById('appointOverlay')?.remove();
     const el = document.createElement('div');
     el.id = 'appointOverlay';
-    el.innerHTML = /* HTML */ ` <div class="appoint-sheet" style="max-width:480px;">
-      <div class="appoint-head">
-        <span>${modeGlyph()} ${trS('Import')}</span
-        ><button class="icon-btn" id="appointClose" style="flex:none;">
-          ${ICONS.close || '✕'}
+    el.className = 'deck-import-overlay';
+    el.innerHTML = /* HTML */ `<div
+      class="appoint-sheet transfer-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Import deck"
+    >
+      ${transferHeaderHtml('Import deck', 'Create a deck from a card list or a text file.', 'appointClose')}
+      <div class="transfer-body">
+        <label class="transfer-label" for="pasteDeckName">Deck name</label>
+        <input
+          type="text"
+          id="pasteDeckName"
+          placeholder="Deck name"
+          maxlength="${MAX_DECK_NAME_LENGTH}"
+          autocomplete="off"
+        />
+        <label class="transfer-label" for="pasteDeckText">Card list</label>
+        <textarea
+          id="pasteDeckText"
+          class="bulk-textarea"
+          placeholder="1 Card Name&#10;1 Another Card&#10;…"
+          aria-describedby="pasteDeckHelp"
+        ></textarea>
+        <p class="transfer-help" id="pasteDeckHelp">
+          Start with <code>${leaderLineLabel({ format: 'commander' })}: Card Name</code>
+          to choose a commander, or choose one later in the deck.
+        </p>
+        <input type="file" id="pasteDeckFile" accept=".txt,.dec,text/plain" hidden />
+        <button type="button" class="ghost-btn" id="pasteDeckFileBtn">
+          ${inlIco('file')}${trS('Load a .txt file')}
         </button>
+        <button type="button" class="primary-btn" id="pasteCreateBtn">Create deck</button>
       </div>
-      <p class="hint" style="margin:0 0 8px;">
-        ${`A first line <span style="font-family:'JetBrains Mono',monospace;">${leaderLineLabel({ format: 'commander' })}: Card Name</span> appoints the leader — otherwise appoint one later from the deck.`}
-      </p>
-      <input
-        id="pasteDeckName"
-        style="width:100%;margin:0 0 8px;box-sizing:border-box;background:var(--field);border:1.5px solid var(--field-line);border-radius:8px;color:var(--ink-text);padding:9px 10px;font-family:Inter;font-size:15px;"
-        value=""
-        placeholder="Deck name"
-      />
-      <textarea
-        id="pasteDeckText"
-        class="bulk-textarea"
-        style="min-height:180px;"
-        placeholder="${'1 Card Name&#10;1 Another Card&#10;…'}"
-      ></textarea>
-      <input type="file" id="pasteDeckFile" accept=".txt,.dec,text/plain" style="display:none;" />
-      <button class="ghost-btn" id="pasteDeckFileBtn" style="width:100%;margin-top:8px;">
-        ${inlIco('file')}${trS('Load a .txt file')}
-      </button>
-      <button class="primary-btn" id="pasteCreateBtn" style="margin-top:10px;">Create deck</button>
     </div>`;
     document.body.appendChild(el);
     pushOverlay('appoint', () => {
       document.getElementById('appointOverlay')?.remove();
+      const target = trigger?.isConnected ? trigger : document.getElementById('deckFab');
+      target?.focus({ preventScroll: true });
     });
     // 1.26: a list pasted with Ctrl+V arrives filled in
     if (opts.text) {
@@ -1208,6 +1218,7 @@ function openPasteListSheet(opts) {
       if (!e.target.closest('.appoint-sheet')) closeTopOverlay();
     });
     document.getElementById('appointClose').addEventListener('click', () => closeTopOverlay());
+    wireAppDialogKeys(el, () => closeTopOverlay());
     document
       .getElementById('pasteDeckFileBtn')
       ?.addEventListener('click', () => document.getElementById('pasteDeckFile')?.click());
@@ -1270,7 +1281,7 @@ function createNewDeck(name, fmt, cmd, partner) {
     state.screen === 'decks' && !isFmtFolder(state.folderNav) ? state.folderNav || null : null;
   const d = {
     id: uid(),
-    name: name || 'Untitled deck',
+    name: normalizeDeckName(name),
     admiral: null,
     cards: [],
     maybeboard: [],

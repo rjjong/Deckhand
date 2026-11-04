@@ -417,73 +417,11 @@ ${escapeHtml(local.notes)}</textarea>
       .catch(() => {});
 }
 
-/* The 60s have no command zone: the header gives its left half to the
-   deck's description and its right half to the play log. */
-function bridge60Html(d) {
-  const st = logStatsFor(d);
-  const recent = (d.playLog || []).slice(-8);
-  const mu = deckMatchups(d).length;
-  const desc = d.description
-    ? escapeHtml(d.description).replace(/\n/g, '<br>')
-    : `<button type="button" class="deck-note-action" id="descAddBtn">${ICONS.edit}<span>Add deck description</span></button>`;
-  return /* HTML */ `<div class="dl-bridge dl-bridge-60">
-      <div class="deck-note">
-        <div class="dl-desc-text">${desc}</div>
-      </div>
-      <div class="deck-game-summary">
-        ${recent.length ? `<div class="dl60-form">${recent.map((g) => `<span class="glog-res ${g.res === 'W' ? 'w' : 'l'}">${g.res}</span>`).join('')}</div>` : ''}
-        <div class="dl60-wr">
-          ${st ? `${trS('Winrate')} <b>${st.winrate}%</b> · ${st.wins}–${st.losses}` : trS('No games logged yet.')}
-        </div>
-        ${mu ? `<button type="button" class="ghost-btn dl60-mu" id="dl60Mu">⚔ ${mu} ${trS(mu === 1 ? 'matchup plan' : 'matchup plans')}</button>` : ''}
-        <button type="button" class="deck-note-action" id="bridgeLogGame">
-          ${ICONS.plus}<span>${trS('Log a game')}</span>
-        </button>
-      </div>
-      <div id="dlPanelBox" class="${dlBoxClass()}">${dlPanelHtml(d)}</div>
-    </div>
-    ${deckListToolsHtml()}
-    <div id="decklistBox">${categorizedListHtml(d)}</div>`;
-}
-
+/* The overview contains deck identity and review; controls sit above the cards. */
 function listTabHtml(d) {
-  if (deckIsConstructed(d)) return bridge60Html(d);
-  return /* HTML */ `<div class="dl-bridge">
-      <div class="dl-bridge-adm">
-        ${leaderZoneHtml(d)}
-        <div class="dl-leader-cat">${leaderNoun(deckFormat(d), deckLeaders(d).length > 1)}</div>
-      </div>
-      <div class="dl-bridge-desc">
-        ${deckKind(d) === 'cmdr' ? `<div class="dl-bracket" id="dlBracket" title="Estimate from Game Changers and 2-card combos">⚔ Bracket ~${bracketEstimate(d, null).b} · ${bracketEstimate(d, null).gc} GC</div>` : ''}
-        <div class="dl-desc-text">
-          ${
-            d.description
-              ? escapeHtml(d.description).replace(/\n/g, '<br>')
-              : `<button type="button" class="deck-note-action" id="descAddBtn">${ICONS.edit}<span>Add deck description</span></button>`
-          }
-        </div>
-        ${(() => {
-          const st = logStatsFor(d);
-          return /* HTML */ `<div class="dl-winrate">
-              <button
-                class="icon-btn dl-mini-add"
-                id="bridgeLogGame"
-                title="${escapeHtml(trS('Log a game'))}"
-                style="margin-left:0;"
-              >
-                ${ICONS.plus}</button
-              ><span
-                >${st ? `${trS('Winrate')} <b>${st.winrate}%</b> · ${st.wins}–${st.losses}` : trS('No games logged yet.')}</span
-              >
-            </div>
-            <div class="dl-leader-cat" style="visibility:hidden;margin-top:0;" aria-hidden="true">
-              &nbsp;
-            </div>`;
-        })()}
-      </div>
-      <div id="dlPanelBox" class="${dlBoxClass()}">${dlPanelHtml(d)}</div>
-    </div>
-    ${deckListToolsHtml()}
+  return /* HTML */ `${deckSummaryHtml(d)}
+    <div id="dlPanelBox" class="${dlBoxClass()}">${dlPanelHtml(d)}</div>
+    ${deckListToolsHtml(d)}
     <div id="decklistBox">${categorizedListHtml(d)}</div>`;
 }
 
@@ -499,6 +437,7 @@ function _deckFilterPredicate(d, f) {
     has(f.type) ||
     has(f.tag) ||
     has(f.mvVal) ||
+    f.curveOnly ||
     (f.ci && f.ci.length)
   ))
     return null;
@@ -532,18 +471,25 @@ function _deckFilterPredicate(d, f) {
       if (!textQ.every((re) => re.test(ot))) return false;
     }
     if (f.ci && f.ci.length) {
-      const raw =
-        c.color_identity && c.color_identity.join ? c.color_identity.join('') : (e && e.ci) || '';
-      const set = raw.toUpperCase();
-      for (const col of f.ci) {
-        if (col === 'C') {
-          if (set !== '') return false;
-        } else if (!set.includes(col)) return false;
+      if (f.colorMode === 'symbols' || f.colorMode === 'production') {
+        const colors = f.colorMode === 'symbols' ? manaCostGroups(c) : producedManaOf(c);
+        if (!f.ci.every((color) => colors.includes(color))) return false;
+      } else {
+        const raw =
+          c.color_identity && c.color_identity.join ? c.color_identity.join('') : (e && e.ci) || '';
+        const set = raw.toUpperCase();
+        for (const col of f.ci) {
+          if (col === 'C') {
+            if (set !== '') return false;
+          } else if (!set.includes(col)) return false;
+        }
       }
     }
+    if (f.curveOnly && !countsForCurve(c)) return false;
     if (has(f.mvVal)) {
-      const mv = c.cmc != null ? c.cmc : e ? e.mv || 0 : null;
+      let mv = c.cmc != null ? c.cmc : e ? e.mv || 0 : null;
       if (mv == null) return false;
+      if (f.curveOnly) mv = Math.round(mv);
       const v = +f.mvVal;
       const op = f.mvOp || '=';
       if (op === '<=' ? !(mv <= v) : op === '>=' ? !(mv >= v) : mv !== v) return false;
@@ -582,11 +528,29 @@ function dlPanelHtml(d) {
     }
     return deckEditorPanelHtml(
       'Bulk edit',
-      /* HTML */ `<div class="panel-card">
-        <textarea id="bulkText" class="bulk-textarea">${lines.join('\n')}</textarea>
-        <button class="primary-btn" id="applyBulkBtn">Check &amp; Save Changes</button>
-        <div id="bulkReport"></div>
+      /* HTML */ `<div class="panel-card bulk-editor-card">
+        <div class="bulk-editor-intro">
+          <h2>${escapeHtml(d.name || 'Untitled deck')}</h2>
+          <p id="bulkEditHelp">
+            Edit card names and quantities. Keep the section labels to preserve your deck layout.
+          </p>
+        </div>
+        <label for="bulkText" class="bulk-editor-label">Card list</label>
+        <textarea
+          id="bulkText"
+          class="bulk-textarea"
+          aria-describedby="bulkEditHelp"
+          spellcheck="false"
+          autocapitalize="off"
+          autocomplete="off"
+        >
+${escapeHtml(lines.join('\n'))}</textarea>
+        <div id="bulkReport" class="bulk-editor-report" role="status"></div>
       </div>`,
+      {
+        className: 'deck-bulk-screen',
+        footer: `<div class="bulk-editor-actions"><button type="button" class="primary-btn" id="applyBulkBtn">Check &amp; save changes</button></div>`,
+      },
     );
   }
   if (state.dlPanel === 'dsearch') {
@@ -594,7 +558,19 @@ function dlPanelHtml(d) {
     // Row-for-row the Collection's Advanced filter: labels down the left,
     // fields on the right, the hand-drawn mana icons as checkboxes, and the
     // ≤/=/≥ choice as a page-style dropdown — one filter language app-wide.
-    const colorOrder = ['W', 'U', 'B', 'R', 'G', 'C'];
+    const colorMode = f.colorMode || 'identity';
+    const colorOrder = ['W', 'U', 'B', 'R', 'G', 'C'].concat(
+      colorMode === 'symbols' ? ['GEN'] : [],
+    );
+    const colorNames = {
+      W: 'White',
+      U: 'Blue',
+      B: 'Black',
+      R: 'Red',
+      G: 'Green',
+      C: 'Colorless',
+      GEN: 'Generic',
+    };
     // 1.35: no Name field -- "Find in deck" in the dock already searches names
     if (f.name) f.name = '';
     return deckEditorPanelHtml(
@@ -602,7 +578,7 @@ function dlPanelHtml(d) {
       /* HTML */ `<div class="panel-card df-compact">
         ${advGoHtml('dfGo')}
         <div class="adv-row">
-          <label>${trS('Oracle text')}${advInfo('oracle')}</label
+          <label>${trS('Oracle text')}</label
           ><input
             id="dfText"
             class="col-filter-input"
@@ -622,9 +598,22 @@ function dlPanelHtml(d) {
           />
         </div>
         <div class="adv-row">
-          <label>${trS('Colors')}${advInfo('deckColors')}</label>
+          <label>Color matching</label>
+          ${cselectHtml(
+            'dfColorMode',
+            [
+              { v: 'identity', l: 'Color identity' },
+              { v: 'symbols', l: 'Mana symbols' },
+              { v: 'production', l: 'Mana production' },
+            ],
+            colorMode,
+            'Color identity',
+          )}
+        </div>
+        <div class="adv-row">
+          <label>${trS('Colors')}</label>
           <div class="color-check-row">
-            ${colorOrder.map((c) => `<label class="ccheck"><input type="checkbox" data-dfci="${c}" ${f.ci && f.ci.includes(c) ? 'checked' : ''}><span class="mana-check">${manaIconSvg(c, 26)}</span></label>`).join('')}
+            ${colorOrder.map((c) => `<label class="ccheck"><input type="checkbox" data-dfci="${c}" aria-label="${colorNames[c]}" ${f.ci && f.ci.includes(c) ? 'checked' : ''}><span class="mana-check">${manaIconSvg(c, 26)}</span></label>`).join('')}
           </div>
         </div>
         <div class="adv-row">
@@ -648,12 +637,16 @@ function dlPanelHtml(d) {
               type="number"
               inputmode="numeric"
               style="flex:1;"
-              value="${escapeHtml(f.mvVal || '')}"
+              value="${escapeHtml(f.mvVal ?? '')}"
             />
           </div>
         </div>
+        <label class="deck-curve-filter">
+          <input type="checkbox" id="dfCurveOnly" ${f.curveOnly ? 'checked' : ''} />
+          <span>Mana curve cards only</span>
+        </label>
         <div class="adv-row">
-          <label>Tag${advInfo('tag')}</label>
+          <label>Tag</label>
           <div class="otag-wrap">
             <input
               id="dfTag"
@@ -667,21 +660,6 @@ function dlPanelHtml(d) {
         </div>
       </div>`,
     );
-  }
-  if (state.dlPanel === 'impexp') {
-    // First question first: which way is the list traveling? The choice
-    // opens just that half — no more scrolling past export to reach import.
-    return /* HTML */ `<div
-      class="panel-card transfer-dialog"
-      role="dialog"
-      aria-label="Import / export"
-    >
-      ${transferHeaderHtml('Import / export', 'Save a copy or bring in a deck list.', '', 'dl-panel-x')}
-      <div class="transfer-body hub-actions">
-        ${menuCardHtml('ieChooseExport', ICONS.exp, 'Export deck', 'Copy, download, or print your deck list.')}
-        ${menuCardHtml('ieChooseImport', ICONS.imp, 'Import deck', 'Replace this deck from text or a file.')}
-      </div>
-    </div>`;
   }
   if (state.dlPanel === 'import') {
     return /* HTML */ `<div
@@ -1211,15 +1189,4 @@ function cardTileHtml(card, idx, loc, qty) {
       alt="${escapeHtml(card.name)}"
     />${qty && qty > 1 ? `<span class="vg-qty">×${qty}</span>` : ''}${cardBadgesHtml(card)}${gcMarkHtml(card)}
   </div>`;
-}
-
-/* Open or close a stats drill-down without moving what was tapped: the list
-   grows UPWARD from it (bottom-up), the tapped symbol or bar stays put. */
-function statKeepPlace(anchor, fn) {
-  const t0 = anchor ? anchor.getBoundingClientRect().top : null;
-  fn();
-  if (anchor && t0 != null) {
-    const dy = anchor.getBoundingClientRect().top - t0;
-    if (Math.abs(dy) > 1) pageScroller().scrollBy(0, dy);
-  }
 }

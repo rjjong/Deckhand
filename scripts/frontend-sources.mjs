@@ -2,6 +2,7 @@
 export const scripts = [
   'src/core/formats.js',
   'src/core/state.js',
+  'src/ui/search-fields.js',
   'src/ui/controls.js',
   'src/ui/price-slider.js',
   'src/core/cards.js',
@@ -48,6 +49,9 @@ export const scripts = [
   'src/features/combos.js',
   'src/features/prices-and-rules.js',
   'src/features/similar-cards.js',
+  'src/features/scanner/matching.js',
+  'src/features/scanner/vision.js',
+  'src/features/scanner/index.js',
   'src/pages/inspiration/deck.js',
   'src/pages/inspiration/themes.js',
   'src/services/inspiration-art.js',
@@ -112,6 +116,8 @@ export const styles = [
   'styles/navigation.css',
   'styles/overrides/viewports.css',
   'styles/overrides/card-details.css',
+  'styles/overrides/printing-picker.css',
+  'styles/overrides/saltiest-cards.css',
   'styles/overrides/judge.css',
   'styles/overrides/draft-trade.css',
   'styles/overrides/dialogs.css',
@@ -119,7 +125,12 @@ export const styles = [
   'styles/overrides/life.css',
   'styles/overrides/readability.css',
   'styles/overrides/decklist.css',
+  'styles/overrides/bulk-editor.css',
+  'styles/overrides/deck-prices.css',
+  'styles/overrides/game-log.css',
+  'styles/overrides/search-fields.css',
   'styles/overrides/headers.css',
+  'styles/overrides/scanner.css',
 ];
 
 export const media = ['assets/images/deckhand-badge.webp'];

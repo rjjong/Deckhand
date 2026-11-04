@@ -116,6 +116,41 @@ function tradeCardmarketUrl(card) {
   return url.href;
 }
 
+// A Cardmarket page loads many resources of its own. Avoid bursts of new
+// pages from repeated taps, including after reloading or using another tab.
+document.addEventListener('click', guardCardmarketNavigation, true);
+document.addEventListener('auxclick', guardCardmarketNavigation, true);
+
+function guardCardmarketNavigation(event) {
+  if (
+    (event.type === 'click' && event.button !== 0) ||
+    (event.type === 'auxclick' && event.button !== 1)
+  )
+    return;
+  const link = event.target?.closest?.('a.tr-market');
+  if (!link) return;
+  const key = 'deckhand:cardmarket-next-open';
+  const current = Date.now();
+  let next = guardCardmarketNavigation.next || 0;
+  try {
+    next = Math.max(next, Number(localStorage.getItem(key)) || 0);
+  } catch (e) {}
+  if (next > current) {
+    event.preventDefault();
+    event.stopPropagation();
+    toast(
+      'Please wait ' +
+        Math.ceil((next - current) / 1000) +
+        ' seconds before opening another Cardmarket page.',
+    );
+    return;
+  }
+  guardCardmarketNavigation.next = current + 10000;
+  try {
+    localStorage.setItem(key, String(current + 10000));
+  } catch (e) {}
+}
+
 function tradeRowsHtml(key) {
   const rows = state.trade[key];
   if (!rows.length)

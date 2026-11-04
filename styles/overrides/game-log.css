@@ -1,0 +1,168 @@
+/* Game logging shares the rounded, themed transfer-dialog surface. */
+
+html #logGameOverlay {
+  --game-log-top: max(16px, env(safe-area-inset-top));
+  --game-log-bottom: max(16px, env(safe-area-inset-bottom));
+  align-items: center;
+  padding: var(--game-log-top) 16px var(--game-log-bottom);
+  backdrop-filter: blur(6px);
+}
+
+html #logGameOverlay .game-log-dialog {
+  max-width: 520px;
+  min-height: 0;
+  max-height: calc(100dvh - var(--game-log-top) - var(--game-log-bottom));
+  justify-content: flex-start;
+  padding: 0;
+  overflow: hidden;
+}
+
+html #logGameOverlay .glog-form {
+  flex: 1;
+  gap: 14px;
+  margin: 0;
+}
+
+html #logGameOverlay .glog-frow {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 10px;
+}
+
+html #logGameOverlay .glog-lbl {
+  color: var(--main-text);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+html #logGameOverlay .seg {
+  gap: 6px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+html #logGameOverlay .seg button {
+  padding: 10px 6px;
+  text-shadow: none;
+}
+
+html #logGameOverlay :is(.seg button, .cselect-btn, .opp-chip, input, textarea) {
+  --ink-text: var(--main-text);
+  --sub-text: var(--main-sub);
+  border: 1px solid var(--transfer-line);
+  background: var(--main-field);
+  color: var(--main-text);
+  -webkit-text-fill-color: currentColor;
+}
+
+html #logGameOverlay :is(input, textarea)::placeholder {
+  color: var(--main-sub);
+  opacity: 1;
+}
+
+html #logGameOverlay .seg button.active {
+  border-color: var(--gold);
+  background: var(--gold);
+  color: #241a04;
+}
+
+html #logGameOverlay .glog-num {
+  width: 100%;
+  min-height: 44px;
+  font:
+    400 16px/1.4 'Inter',
+    system-ui,
+    sans-serif;
+}
+
+html #logGameOverlay #lgNote {
+  min-height: 100px;
+  max-height: none;
+  font:
+    400 14px/1.6 'Inter',
+    system-ui,
+    sans-serif;
+}
+
+html #logGameOverlay .cselect-btn {
+  justify-content: space-between;
+  width: 100%;
+  text-align: left;
+}
+
+html #logGameOverlay .glog-form .cselect > .cselect-panel {
+  --ink-text: var(--main-text);
+  --sub-text: var(--main-sub);
+  --line: var(--transfer-line);
+  position: static !important;
+  inset: auto !important;
+  transform: none !important;
+  max-height: min(38dvh, 320px) !important;
+  min-width: 0;
+  margin-top: 8px;
+  padding: 6px;
+  border: 1px solid var(--transfer-line);
+  border-radius: 12px;
+  background: var(--main-field);
+  box-shadow: none;
+}
+
+html #logGameOverlay .cselect:not(.cs-cardgrid) .cselect-panel {
+  flex-direction: column !important;
+}
+
+html #logGameOverlay .cs-cardgrid .cselect-panel {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+html #logGameOverlay .cselect-panel .cselect-search {
+  order: -1 !important;
+  top: 0;
+  bottom: auto;
+}
+
+html #logGameOverlay .cselect-opt {
+  color: var(--main-text);
+  background: none;
+}
+
+html #logGameOverlay .cselect-opt.sel {
+  color: var(--accent-ink);
+  outline-color: var(--accent-ink);
+  background: color-mix(in srgb, var(--accent-ink) 8%, transparent);
+}
+
+html #logGameOverlay .opp-chips:empty {
+  display: none;
+}
+
+.game-log-actions {
+  flex: none;
+  padding: 16px 20px;
+  border-top: 1px solid var(--transfer-line);
+}
+
+.game-log-actions button {
+  width: 100%;
+}
+
+#logGameOverlay :is(button, input, textarea):focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 2px;
+}
+
+@media (max-width: 379px) {
+  html #logGameOverlay .glog-frow {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  html #logGameOverlay :is(.transfer-heading, .transfer-body, .game-log-actions) {
+    padding: 16px;
+  }
+}

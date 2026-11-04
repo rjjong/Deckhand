@@ -679,22 +679,10 @@ function addPairToDeckValidated(d, pr, refreshFn) {
   return a && b;
 }
 
-/* A fetch that fails by TIMING OUT can hang a page for a minute-plus per
-   attempt. Every batch POST goes through this instead: answer within the
-   window or be aborted, so the fallback paths get their turn immediately. */
+/* Batch POSTs share the card API queue and its cooldown. Their timeout starts
+   when dispatched, so waiting behind other lookups cannot abort them early. */
 async function postWithTimeout(url, body, ms) {
-  const ctl = new AbortController();
-  const timer = setTimeout(() => ctl.abort(), ms || 10000);
-  try {
-    return await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-      signal: ctl.signal,
-    });
-  } finally {
-    clearTimeout(timer);
-  }
+  return sfPost(url, body, ms);
 }
 
 async function resolveNameChunk(chunk) {

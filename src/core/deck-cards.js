@@ -359,7 +359,7 @@ function openDeckPickPopup(card, mode, refreshFn, pairWith, withCollection) {
       }
       if (row.dataset.newdeck) {
         closeDeckPickPopup();
-        openInAppPrompt('New deck', 'Deck name', '', (name) => {
+        openDeckNamePrompt('New deck', '', (name) => {
           if (name === null) return; // cancelled
           // Born with its format stamped, so it lands in its own format folder.
           const nd = {

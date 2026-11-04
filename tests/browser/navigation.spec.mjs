@@ -317,6 +317,18 @@ test('Life tracks Monarch and Initiative independently with crown and torch badg
   await edit(0);
   await card(0).getByRole('button',{name:'Monarch',exact:true}).click();
   await card(0).getByRole('button',{name:'Initiative',exact:true}).click();
+  await expect(card(0).locator('.focus-name .lmonarch')).toBeVisible();
+  await expect(card(0).locator('.focus-name .linitiative')).toBeVisible();
+  const roleControls=await card(0).locator('.lf-extras').evaluate(el=>{
+    const torch=el.querySelector('[data-linitiative]'), dungeon=el.querySelector('[data-ldungeon]');
+    return {torchTop:torch.offsetTop,dungeonTop:dungeon.offsetTop,
+      gap:dungeon.offsetLeft-torch.offsetLeft-torch.offsetWidth,
+      position:getComputedStyle(torch).position};
+  });
+  expect(roleControls.position).toBe('static');
+  expect(roleControls.torchTop).toBe(roleControls.dungeonTop);
+  expect(roleControls.gap).toBeGreaterThanOrEqual(0);
+  expect(roleControls.gap).toBeLessThanOrEqual(12);
   await expect(card(0).getByRole('button',{name:'Monarch',exact:true})).toHaveAttribute('aria-pressed','true');
   await expect(card(0).getByRole('button',{name:'Initiative',exact:true})).toHaveAttribute('aria-pressed','true');
   await mkdir('var/previews',{recursive:true});
@@ -324,9 +336,23 @@ test('Life tracks Monarch and Initiative independently with crown and torch badg
   await done();
   await expect(card(0).getByRole('img',{name:'Monarch',exact:true})).toBeVisible();
   await expect(card(0).getByRole('img',{name:'Initiative',exact:true})).toBeVisible();
+  await expect(card(0).locator('.life-player-name .life-role-icon')).toHaveCount(2);
+  await expect(card(0).locator('.lval-row .life-role-icon')).toHaveCount(0);
+  await expect.poll(()=>card(0).locator('.life-player-name').evaluate(el=>el.scrollWidth>el.clientWidth+1)).toBe(false);
+  const nameRoles=await card(0).locator('.life-player-name').evaluate(el=>{
+    const name=el.querySelector('.pname-input'), roles=el.querySelector('.life-roles');
+    return {nameRight:name.offsetLeft+name.offsetWidth,rolesLeft:roles.offsetLeft,
+      nameCenter:name.offsetTop+name.offsetHeight/2,rolesCenter:roles.offsetTop+roles.offsetHeight/2,
+      overflow:el.scrollWidth>el.clientWidth+1,client:el.clientWidth,scroll:el.scrollWidth,
+      nameWidth:name.offsetWidth,rolesWidth:roles.offsetWidth};
+  });
+  expect(nameRoles.rolesLeft).toBeGreaterThanOrEqual(nameRoles.nameRight);
+  expect(Math.abs(nameRoles.nameCenter-nameRoles.rolesCenter)).toBeLessThanOrEqual(1);
+  expect(nameRoles.overflow,JSON.stringify(nameRoles)).toBe(false);
   const crown=await card(0).locator('.lmonarch').boundingBox(), torch=await card(0).locator('.linitiative').boundingBox();
   expect(crown.x+crown.width<=torch.x || torch.x+torch.width<=crown.x || crown.y+crown.height<=torch.y || torch.y+torch.height<=crown.y).toBe(true);
   await edit(1);
+  await expect(card(0).locator('.dmg-overlay .life-player-name .life-role-icon')).toHaveCount(2);
   await card(1).getByRole('button',{name:'Initiative',exact:true}).click();
   await done();
   await expect(card(0).locator('.linitiative')).toHaveCount(0);
@@ -920,7 +946,7 @@ test('backup reminder lives in Menu and the logo badge clears after snoozing or 
   await expect(page.locator('#backupNote')).toHaveCount(0);
 });
 
-test('Collection puts Trade in its title bar and its value beside the search input', async ({page},info)=>{
+test('Collection puts Trade in its title bar and keeps its search free of the total value', async ({page},info)=>{
   await page.evaluate(()=>{
     state.collection.items=[{name:'Sol Ring',type_line:'Artifact',qty:2,eur:5,set:'tst',cond:'NM',rarity:'common',img:'/icon-192.png',legal_cmd:'legal'}];
     switchPage('collection');
@@ -931,17 +957,9 @@ test('Collection puts Trade in its title bar and its value beside the search inp
   await expect(trade).toHaveAccessibleName('Trade calculator');
   await expect(trade.locator('svg')).toHaveCount(1);
   await expect(page.locator('.searchbar #tradeBtn')).toHaveCount(0);
-  const value=page.locator('.searchbar #capNoteBtn');
-  await expect(value).toHaveText('€10.00');
+  await expect(page.locator('.searchbar #capNoteBtn, .searchbar .collection-value')).toHaveCount(0);
   await expect(page.locator('.app-header #capNoteBtn')).toHaveCount(0);
-  const input=await page.locator('#colSearchQ').boundingBox(), stat=await value.boundingBox();
-  expect(stat.x).toBeGreaterThan(input.x+input.width);
-  expect(Math.abs(stat.y+stat.height/2-input.y-input.height/2)).toBeLessThan(1);
   await page.screenshot({path:`var/previews/collection-title-actions-${info.project.name}.png`});
-  await value.click();
-  await expect(page.locator('#phOverlay')).toBeVisible();
-  await expect(page.locator('#phOverlay .ov-title')).toHaveText('Collection Value');
-  await page.evaluate(()=>dismissAllOverlays());
   await trade.click();
   await expect(page.locator('#brandTitle')).toHaveText('TRADE');
 });
@@ -1438,31 +1456,27 @@ test('Collection value follows name and advanced filters, quantities and binder 
     ];
     switchPage('collection');
   });
-  const value=page.locator('.collection-value'), query=page.locator('#colSearchQ');
-  await expect(value).toHaveText('€20.00');
+  const value=()=>page.evaluate(()=>fmtEur(collectionTotalValue(collectionValueItems()))), query=page.locator('#colSearchQ');
+  await expect.poll(value).toBe('€20.00');
   await query.fill('Sol');
-  await expect(value).toHaveText('€10.00');
+  await expect.poll(value).toBe('€10.00');
   await query.fill('No matching card');
-  await expect(value).toHaveText('€0.00');
+  await expect.poll(value).toBe('€0.00');
   await query.fill('');
-  await expect(value).toHaveText('€20.00');
+  await expect.poll(value).toBe('€20.00');
   await page.locator('#colChev').click();
   await page.locator('#colTypeText').fill('Artifact');
   await page.locator('#advGo').click();
-  await expect(value).toHaveText('€16.00');
-  await value.click();
-  await expect(page.locator('#phOverlay .ov-title')).toHaveText('Collection Value');
-  await expect(page.locator('#phOverlay')).toContainText('€16.00');
+  await expect.poll(value).toBe('€16.00');
   expect(await page.evaluate(()=>priceHistOf('__col:all').at(-1)?.[1])).toBe(20);
-  await page.evaluate(()=>dismissAllOverlays());
   await page.locator('#colChev').click();
   await page.locator('#advancedSearchReset').click();
   await page.locator('#advGo').click();
-  await expect(value).toHaveText('€20.00');
+  await expect.poll(value).toBe('€20.00');
   await page.locator('[data-binderopen="value-fixture"]').click();
-  await expect(value).toHaveText('€10.00');
+  await expect.poll(value).toBe('€10.00');
   await query.fill('Forest');
-  await expect(value).toHaveText('€0.00');
+  await expect.poll(value).toBe('€0.00');
 });
 
 test('only supported formats appear in rules, search, collection and life setup', async ({page})=>{
@@ -1814,6 +1828,10 @@ test('Search uses Collection-style spacing with an integrated bar that stays vis
       padding:style.padding,border:style.borderBottomWidth,shadow:style.boxShadow,
       fillsWidth:Math.abs(rect.width-(viewport.clientWidth-32))<2};
   });
+  expect(await bar.evaluate(el=>{
+    const rect=el.getBoundingClientRect(),bounds=el.closest('.tab-viewport').getBoundingClientRect();
+    return Math.abs((rect.left-bounds.left)-(bounds.right-rect.right));
+  })).toBeLessThan(1);
   expect(geometry).toMatchObject(collection);
   expect(geometry.fillsWidth).toBe(true);
   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
@@ -2152,6 +2170,7 @@ test('Inspiration integrates and pins its search bar with space above scrolling 
     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
     await viewport.evaluate(el=>el.scrollTop=0);
     const initial=await bar.boundingBox(), bounds=await viewport.boundingBox();
+    expect(initial.x-bounds.x).toBeCloseTo(bounds.x+bounds.width-initial.x-initial.width,1);
     expect(initial.y-bounds.y).toBeCloseTo(12,0);
     expect(await bar.evaluate(el=>Math.abs(el.getBoundingClientRect().width-(el.closest('.tab-viewport').clientWidth-32)))).toBeLessThan(2);
     await viewport.evaluate(el=>el.scrollTop=500);
@@ -2196,7 +2215,8 @@ test('Search and Spoilers scroll only between the title and tab bars', async ({ 
     const nav = await page.locator('.app > .app-navigation').boundingBox();
     const bounds = await viewport.boundingBox();
     const controls = await page.locator(screen==='search'?'.searchbar':'.sp-jump').boundingBox();
-    const contentTop = screen==='search' ? header.y + header.height : controls.y + controls.height;
+    const controlsBottomMargin = screen==='search' ? 0 : await page.locator('.sp-jump').evaluate(el=>parseFloat(getComputedStyle(el).marginBottom));
+    const contentTop = screen==='search' ? header.y + header.height : controls.y + controls.height + controlsBottomMargin;
     expect(Math.abs(bounds.y - contentTop)).toBeLessThan(1);
     expect(Math.abs(bounds.y + bounds.height - nav.y)).toBeLessThan(1);
     await expect(viewport).toHaveCSS('overflow-y','auto');
@@ -2445,19 +2465,99 @@ test('PWA metadata is explicit and rejected service-worker updates are handled',
   expect(errors).toEqual([]);
 });
 
-test('custom install buttons are absent and the native install prompt is not intercepted', async ({page})=>{
-  const offer=()=>page.evaluate(()=>{
+test('menu install waits for a click, consumes each browser offer once and hides after installation', async ({page})=>{
+  expect(await page.evaluate(()=>{
+    window.installCalls=0;
     const event=new Event('beforeinstallprompt',{cancelable:true});
+    event.prompt=()=>{window.installCalls++;return Promise.resolve({outcome:'dismissed'});};
+    event.userChoice=Promise.resolve({outcome:'dismissed'});
     window.dispatchEvent(event);
     return event.defaultPrevented;
-  });
-  expect(await offer()).toBe(false);
-  await expect(page.locator('#installPill, #installAppRow')).toHaveCount(0);
+  })).toBe(true);
+  expect(await page.evaluate(()=>window.installCalls)).toBe(0);
   await page.getByRole('button',{name:'Open menu',exact:true}).click();
-  await expect(page.locator('#installPill, #installAppRow')).toHaveCount(0);
+  const install=page.locator('#menuInstallApp');
+  await expect(install).toHaveClass(/hub-card/);
+  await expect(page.locator('.menu-page .hub-card').last()).toHaveAttribute('id','menuSettings');
+  await install.click();
+  await expect(install).toBeEnabled();
+  expect(await page.evaluate(()=>window.installCalls)).toBe(1);
+  await install.click();
+  await expect(page.getByRole('dialog',{name:'Install Deckhand'})).toBeVisible();
+  expect(await page.evaluate(()=>window.installCalls)).toBe(1);
+  await page.getByRole('button',{name:'Got it',exact:true}).click();
+  await expect(install).toBeFocused();
+  await page.evaluate(()=>{
+    const event=new Event('beforeinstallprompt',{cancelable:true});
+    event.prompt=()=>{window.installCalls++;return Promise.resolve({outcome:'accepted'});};
+    event.userChoice=Promise.resolve({outcome:'accepted'});
+    window.dispatchEvent(event);
+  });
+  await install.click();
+  expect(await page.evaluate(()=>window.installCalls)).toBe(2);
+  await page.evaluate(()=>window.dispatchEvent(new Event('appinstalled')));
+  await expect(install).toHaveCount(0);
   await page.locator('#menuSettings').click();
-  expect(await offer()).toBe(false);
-  await expect(page.locator('#installPill, #installAppRow')).toHaveCount(0);
+  await page.getByRole('button',{name:'Open menu',exact:true}).click();
+  await expect(install).toHaveCount(0);
+});
+
+test('menu install prevents duplicate prompts and handles a rejected browser prompt', async ({page})=>{
+  const errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  await page.evaluate(()=>{
+    window.installCalls=0;
+    const event=new Event('beforeinstallprompt',{cancelable:true});
+    event.prompt=()=>{window.installCalls++;return new Promise(resolve=>{window.finishInstall=resolve;});};
+    event.userChoice=Promise.resolve({outcome:'dismissed'});
+    window.dispatchEvent(event);
+  });
+  await page.locator('#homeBtn').click();
+  await page.locator('#menuInstallApp').click();
+  await expect(page.locator('#menuInstallApp')).toBeDisabled();
+  await page.evaluate(()=>document.getElementById('menuInstallApp').click());
+  expect(await page.evaluate(()=>window.installCalls)).toBe(1);
+  await page.evaluate(()=>window.finishInstall({outcome:'dismissed'}));
+  await expect(page.locator('#menuInstallApp')).toBeEnabled();
+  await page.evaluate(()=>{
+    const event=new Event('beforeinstallprompt',{cancelable:true});
+    event.prompt=()=>Promise.reject(new Error('Installation unavailable'));
+    window.dispatchEvent(event);
+  });
+  await page.locator('#menuInstallApp').click();
+  await expect(page.getByRole('dialog',{name:'Install Deckhand'})).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#modalRoot')).toHaveCount(0);
+  await expect(page.locator('#menuInstallApp')).toBeFocused();
+  expect(errors).toEqual([]);
+});
+
+test('menu install gives themed Safari instructions and phone Back closes them', async ({page},info)=>{
+  await page.evaluate(()=>Object.defineProperty(navigator,'userAgent',{value:'Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 Version/26.0 Mobile Safari/604.1',configurable:true}));
+  await page.locator('#homeBtn').click();
+  await page.locator('#menuInstallApp').click();
+  const help=page.getByRole('dialog',{name:'Install Deckhand'});
+  await expect(help).toHaveClass(/app-dialog/);
+  await expect(help.locator('ol')).toContainText('Add to Home Screen');
+  await expect(help.locator('ol')).toContainText('Open as Web App');
+  await expect(help).toContainText('Safari');
+  await mkdir('var/previews',{recursive:true});
+  await page.screenshot({path:`var/previews/install-app-${info.project.name}.png`});
+  await page.goBack();
+  await expect(help).toHaveCount(0);
+  await expect(page.locator('.menu-page')).toBeVisible();
+});
+
+test('menu install explains insecure addresses and is hidden inside installed apps', async ({page})=>{
+  await page.locator('#homeBtn').click();
+  await page.evaluate(()=>Object.defineProperty(window,'isSecureContext',{value:false,configurable:true}));
+  await page.locator('#menuInstallApp').click();
+  await expect(page.getByRole('dialog',{name:'HTTPS needed'})).toContainText('secure HTTPS address');
+  await page.getByRole('button',{name:'Got it',exact:true}).click();
+  await page.evaluate(()=>Object.defineProperty(navigator,'standalone',{value:true,configurable:true}));
+  await page.locator('#menuSettings').click();
+  await page.locator('#homeBtn').click();
+  await expect(page.locator('#menuInstallApp')).toHaveCount(0);
 });
 
 test('a stopped local server pauses API calls and recovers through the health endpoint', async ({ page }) => {

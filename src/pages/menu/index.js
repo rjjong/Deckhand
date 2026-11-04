@@ -8,7 +8,11 @@ function menuPageHtml() {
       <p>A place for your preferences, tools, and everything behind the cards.</p>
     </section>
     ${menuNoticeHtml()} ${menuToolsHtml()}
+    <section class="hub-actions" aria-label="Card scanner">
+      ${menuCardHtml('menuScanCards', SCANNER_ICON, 'Scan cards', 'Experimental · Scan several cards from a photo or camera')}
+    </section>
     <section class="hub-actions menu-settings" aria-label="Settings">
+      ${pwaInstallCardHtml()}
       <button type="button" class="hub-card" id="menuSettings">
         <span class="hub-icon">${ICONS.settings}</span
         ><span><strong>Settings</strong><small>Preferences, sync &amp; backups</small></span
@@ -20,7 +24,9 @@ function menuPageHtml() {
 }
 
 function wireMenuPage() {
+  document.getElementById('menuScanCards')?.addEventListener('click', openCardScanner);
   wireMenuNotice();
+  document.getElementById('menuInstallApp')?.addEventListener('click', installPwa);
   document.getElementById('menuSettings')?.addEventListener('click', () => switchPage('settings'));
   const credits = document.getElementById('appFootNote');
   const cell = document.getElementById('appFootCell');

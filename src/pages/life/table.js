@@ -113,6 +113,13 @@ function lifeRolesHtml(p) {
   </div>`;
 }
 
+function lifePlayerNameHtml(p, idx, editable = true) {
+  return `<div class="life-player-name">
+    ${editable ? `<input class="pname-input" data-idx="${idx}" aria-label="Player ${idx + 1} name" value="${escapeHtml(p.name).replace(/"/g, '&quot;')}" size="${Math.max(4, Math.min(14, p.name.length || 8))}">` : `<span class="life-name-text">${escapeHtml(p.name)}</span>`}
+    ${lifeRolesHtml(p)}
+  </div>`;
+}
+
 function lifeCardHtml(p, idx, count) {
   const rot = state.life.rotate ? (lifeLayout().rot[idx] ?? seatRotation(idx, count)) : 0;
   const open = state.life.expandedIdx === idx;
@@ -135,6 +142,7 @@ function lifeCardHtml(p, idx, count) {
           class="dmg-overlay ${lethalDmg() && taken >= lethalDmg() ? 'lethal' : ''}"
           data-dmgfrom="${idx}"
         >
+          ${lifePlayerNameHtml(p, idx, false)}
           <div class="tap-zone left" data-dmgside="minus"><span class="tap-glyph">−</span></div>
           <div class="tap-zone right" data-dmgside="plus"><span class="tap-glyph">+</span></div>
           <div class="lval-row">
@@ -162,7 +170,9 @@ function lifeCardHtml(p, idx, count) {
         <div class="tap-zone right" data-poison="${idx}" data-side="plus"><span class="tap-glyph">+</span></div>`
               : ''
           }
-          <div class="focus-name">${escapeHtml(p.name)}</div>
+          <div class="focus-name life-focus-name">
+            <span class="life-name-text">${escapeHtml(p.name)}</span>${lifeRolesHtml(p)}
+          </div>
           ${
             pz
               ? `<div class="pz-label">${phyrexianSvg(15)}<span>Poison</span></div>
@@ -224,15 +234,9 @@ function lifeCardHtml(p, idx, count) {
         <div class="tap-zone right" data-idx="${idx}" data-side="plus">
           <span class="tap-glyph">+</span>
         </div>
-        <input
-          class="pname-input"
-          data-idx="${idx}"
-          value="${escapeHtml(p.name)}"
-          size="${Math.max(4, Math.min(14, p.name.length || 8))}"
-        />
+        ${lifePlayerNameHtml(p, idx)}
         ${p.dg ? `<div class="ldungeon">${DUNGEON_SVG}<span>${escapeHtml(p.dg.room)}</span></div>` : ''}
         <div class="lval-row">
-          ${lifeRolesHtml(p)}
           <span
             class="ldelta minus ${p._delta < 0 ? 'show' : ''} ${p._delta < 0 && p._deltaFresh ? 'pop' : ''}"
             >${p._delta < 0 ? '−' + Math.abs(p._delta) : ''}</span

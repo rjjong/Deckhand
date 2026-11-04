@@ -1186,60 +1186,6 @@ main.card-detail > div:nth-child(2) {
   text-align: center;
 }
 
-.salt-grid {
-  display: flex;
-  flex-wrap: wrap-reverse;
-  gap: 12px 10px;
-  padding: 4px 0;
-}
-
-.salt-grid > .salt-tile {
-  width: calc(50% - 5px);
-}
-
-#saltOverlay main {
-  display: flex;
-  flex-direction: column;
-}
-
-#saltOverlay main > .salt-grid {
-  margin-top: auto;
-}
-
-.salt-tile {
-  cursor: pointer;
-}
-
-.salt-tile img {
-  width: 100%;
-  display: block;
-  border-radius: 10px;
-  aspect-ratio: 63/88;
-  object-fit: cover;
-  background: var(--field);
-}
-
-.salt-noimg {
-  border: 1.5px solid var(--pop-line);
-  border-radius: 10px;
-  aspect-ratio: 63/88;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px;
-  text-align: center;
-  font-size: 13.5px;
-  color: var(--ink-text);
-}
-
-.salt-meta {
-  text-align: center;
-  color: var(--brass);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13.5px;
-  margin-top: 4px;
-}
-
 .edh-jump-row.insp-jump {
   position: fixed;
   right: 14px;

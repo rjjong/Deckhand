@@ -111,8 +111,10 @@ means the local server needs to be started again. Use `npm run dev` in this
 checkout and keep that terminal running. The app shows a Server offline
 indicator, pauses API requests, and checks `/api/health` every twelve seconds
 until the server returns. Service-worker update failures are handled while
-offline. Installation is available through the browser's own controls; the app
-has no custom install button and does not intercept the native install prompt.
+offline. Menu has an Install app card above Settings. It opens the browser's
+install prompt when available, or themed manual instructions (including Safari
+on iPhone/iPad). HTTP LAN addresses show an HTTPS requirement instead. The card
+is hidden when running as an installed web app or in the native Android app.
 
 Only download the sample once, or when deliberately refreshing it. It requests
 30 named cards in one Scryfall call, with a 512 KiB response limit. It writes
@@ -159,12 +161,14 @@ The interface is English-only; previous Dutch preferences fall back to English.
 First startup opens the chosen page directly without a guided introduction.
 Settings contains Startup page, Data sources, Color scheme, Sync, and Backup. Related controls
 expand below their card. Notification options, feedback, What's new, About,
-app installation, and app sharing buttons have been removed. Tapping any main
+app sharing buttons have been removed. Tapping any main
 page title returns home. The five labeled bottom tabs are Decks,
 Collection, Search, Inspiration, and Life. Life opens a menu with new-game,
 resume, and restore actions. A deck's title bar has its name and a Deck actions
 button; renaming lives in that menu. Device/browser Back continues to navigate
 the existing history.
+Deck names are limited to 99 characters in create, import, and rename fields,
+and normalized on load/save, including copies and synced decks.
 The bottom navigation is 60px tall, with 50px tab targets and additional space
 for the device's bottom safe area. Search toolbars sit directly below the
 measured title bar, including when its height changes.
@@ -193,18 +197,53 @@ control bar. Decks and Collection have full-width search bars within their
 scrolling content. Decks has its list/tile view toggle beside the search input;
 Collection keeps the binder view toggle inside its advanced filters.
 Deck pages keep their tabs and deck search pinned below the title. The scrolling
-overview contains card counts, legality details, and deck value with a price-page
-link. Tiles, Stacks, List, and sorting controls sit above the card sections;
-the yellow Add cards button opens Search pinned to the active deck.
-Deck actions groups inspiration, bulk editing, section jumps, renaming, format,
-folders, sharing, versions, copies, and deletion. Filters and bulk editing fill
-the screen with their own headers and scrolling content. These controls live in
+overview places commander/partner cards on the left, with format, Commander bracket
+estimate, issue review, and description on the right. Constructed decks omit the
+commander area and bracket. Game logging stays in Deck Log. The Cards toolbar
+contains deck count and value, the Tiles/Stacks/List dropdown, and sorting; price
+opens the deck's price page and Review expands the legality details.
+Deck Prices uses themed summary cards, budget fields, and card rows in
+`styles/overrides/deck-prices.css`. Its single content viewport opens at the top,
+with totals and budgets before the price filter and card list. Cards read from
+most to least expensive, below the shared title bar and above bottom navigation.
+The game-log form reuses the themed transfer-dialog header and controls, with
+a scrolling body and pinned Save action. Its styles live in
+`styles/overrides/game-log.css`; dropdowns read from the top, and form values
+survive local redraws. The castability summary vertically centers its text
+beside the percentage.
+Stats mana-curve bars and color-distribution controls return to Decklist with
+their criteria applied through Advanced Filters. Mana-value filters retain the
+curve's land exclusions and 6+ bucket; color matching distinguishes identity,
+cost symbols, and mana production. These choices remain editable in the filter
+panel. A chart selection replaces earlier search/filter criteria so the list
+shows the selected group. Stats has no combo section. Recent Changes and full
+history use the same light button borders.
+Promoting a card from the main deck or maybeboard refreshes the whole editor
+after its details close, keeping commander artwork, partners, counts, and the
+overview in sync while preserving the active search.
+The yellow Add cards button opens Search pinned to the active deck.
+Deck actions places a Rename icon beside the deck title and groups inspiration,
+bulk editing, format, folders, sharing, versions, copies, and deletion. Separate
+Import deck and Export deck buttons open their respective dialogs directly. Card-type
+links jump directly to their deck groups. Filters and bulk editing fill
+the screen with their own headers and scrolling content, covering the pinned
+controls and Add button. Bulk Edit has a themed text editor and a pinned yellow
+Check & save action, styled in `styles/overrides/bulk-editor.css`. The deck's
+search, tabs, and Add button are hidden while full-screen tools are open.
+The editor and navigation remain inert until the panel
+closes; closing restores keyboard focus. These controls live in
 `src/pages/decklist/controls.js`; deck styling lives in `styles/overrides/decklist.css`.
 Collection filters use the shared full-screen panel that slides in from the
 right, with reset/back controls and a floating search button. Collection's
-Trade action is a title-bar icon; its value stays beside the search input and
-follows the active filters, quantities, and binder scope. The Collection Value
-page keeps filtered snapshots separate from the whole collection's history.
+Trade action is a title-bar icon. The collection total is omitted from the search
+bar; collection valuation and historical data remain available in the data model.
+`src/ui/search-fields.js` enhances page, popup, tag, combo, and dropdown search
+fields in place, retaining their input state and handlers. Their shared field
+styles are in `styles/overrides/search-fields.css`. Pinned search surfaces use
+the same viewport-aligned background fade as their pages, with the field surface
+and outline painted above that fade.
+Search viewports reserve equal scrollbar space on both sides to center their
+fields and results. Page search icons use the same left padding as deck search.
 Backup reminders live in Menu and put an exclamation badge on the logo until
 the reminder is snoozed or a backup is saved.
 The document stays still. Opening controls and refreshing lists preserve the
@@ -231,15 +270,34 @@ advanced search opens its own full-screen panel, dropdowns open below their
 controls, and lists read in their normal order.
 
 The browser uses `/api/scryfall/...`. All Scryfall GETs and collection POSTs
-share one server queue, with at least 250ms between request starts. Duplicate
-GETs coalesce; successful searches are cached for ten minutes, catalogues for
-24 hours, in a bounded memory cache. These query caches reset on restart.
-The downloaded card/rulings files remain on disk across restarts.
+share one server queue across tabs and devices, with at least 500ms between
+request starts. Duplicate GETs and identical POSTs coalesce. Searches and
+autocomplete results are cached for 30 minutes; card details, collection POSTs,
+sets and catalogues for 24 hours. Random cards bypass the response cache.
+The bounded response cache (100 entries / 20 MiB), request counters and cooldown
+are stored in SQLite and survive restarts. Downloaded card/rulings files also
+remain on disk.
 
-On 429, the queue stops sending upstream requests for at least sixty seconds,
-or longer if Scryfall's Retry-After header requires it. The browser stops
-retrying its queued jobs during that cooldown. This cannot prevent rate limits
-caused by other applications sharing the same internet address.
+The server allows at most 600 upstream requests per UTC hour and 3,000 per UTC
+day. Cache hits do not consume this budget and remain available during pauses.
+On 403, 429 or an HTML/Cloudflare challenge, upstream requests stop: the default
+pause is 15 minutes and grows after repeated refusals. Numeric and HTTP-date
+Retry-After values are respected, with a minimum pause of one minute. Network,
+server and invalid-response failures also pause upstream traffic. Redirects are
+not followed, and card lookups reject destinations outside the configured API.
+
+The browser shares the API cooldown through localStorage, including across
+reloads, and stops queued GETs and POSTs. Price refreshes keep cached prices
+after refusals without scheduling automatic retries. Collection repricing runs
+at most once every 24 hours.
+
+Deckhand does not scrape Cardmarket: prices come from Scryfall or the local card
+library. Cardmarket links open only after an explicit click, with ten seconds
+between opens to limit bursts of new pages. These are application safeguards,
+not a published Cardmarket allowance or a guarantee against blocks. Other apps,
+open Cardmarket pages and devices sharing your internet address can still
+generate traffic. An existing block must expire or be resolved with the site;
+repeatedly reloading the blocked page can extend a rate-limit block.
 
 Unreleased-set probes, full tile-art prewarming, and random-card startup
 prefetching are disabled for self-hosted sessions. Random cards use the local
@@ -251,8 +309,8 @@ Runtime configuration advertises available local data files. Missing prices,
 tags, combos, and metagame datasets are skipped rather than fetched on startup.
 No placeholder data is generated to pretend these optional datasets exist.
 
-AI features require your own optional keys in `.env`; missing keys produce an
-unavailable response. The old feedback form, bundled Android APK, and web push
+AI features require the local Ollama service; an unavailable model produces a
+clear message while the relevant rules remain visible. The old feedback form, bundled Android APK, and web push
 service have been removed. Phone installation uses the web app.
 
 ## Reach it from another device
@@ -278,60 +336,54 @@ domain are different origins. Use the app's backup/restore tools or link your
 test devices using its sync code. This server stores linked sync data in SQLite;
 browser-only decks are not automatically copied to the server until sync is on.
 
-## Ask AI Judge with Groq Free
+## Local AI Judge and deck advice
 
-Ask AI Judge calls Groq from the Node.js server. It does not run an AI model
-on your own hardware and does not use Gemini or Cerebras as fallback providers.
-Deck advice retains its separate provider configuration.
+Both AI features use Ollama on your server. There are no remote AI providers, keys, automatic model fallbacks, or paid requests.
 
-1. Create a Groq account at <https://console.groq.com> and keep it on the **Free**
-   plan. Create an API key at <https://console.groq.com/keys>.
-2. Edit the server's ignored `.env` file locally:
+The pinned default is `qwen3:4b-instruct-2507-q4_K_M`, a 2.5 GB text model chosen to leave room on a 4 GB GPU.
+The runtime uses a 4096-token context, one inference at a time, a queue of at most three waiting requests and a ten-second queue wait limit.
+Inference has a 75-second deadline; a busy server returns a clear message rather than starting more concurrent models.
+The smaller model has less reasoning capacity than large hosted models. Judge answers remain grounded in tagged Oracle texts and selected rules; unsupported citations are removed and mark an answer uncertain.
 
-   ```dotenv
-   GROQ_API_KEY=your_key_here
-   GROQ_MODEL=openai/gpt-oss-120b
-   JUDGE_DAILY=20
-   JUDGE_GLOBAL=800
-   ```
+For Docker:
 
-3. Restart `npm run dev` or `npm start`. With Docker, run
-   `docker compose up -d --build` to recreate the container with the configuration.
-4. Open **Menu → Ask AI Judge**. Tag relevant cards with `@` so their card text
-   and rulings accompany the question.
+```sh
+docker compose up -d --build
+docker compose exec ollama ollama pull qwen3:4b-instruct-2507-q4_K_M
+```
 
-There is no API parameter that forces free billing. The account must remain
-on Groq's Free plan; adding this key to a paid account would use that account's
-billing. Never put the key in browser code, synced settings, or a chat message.
-The server keeps it in its environment, and Compose passes it into the container.
+For native development, install [Ollama](https://docs.ollama.com), pull the same model, and put these in `.env`:
 
-`openai/gpt-oss-120b` is the default; `GROQ_MODEL` selects one model, with no
-automatic model or provider fallback. GPT-OSS requests use strict structured
-output and a bounded completion. A conservative character budget limits context
-size, preserving whole selected excerpts; Groq's token limits remain authoritative.
-If the supplied context cannot fit, the app asks for a smaller question and
-still shows the local rules. The question and selected card/rules text are sent
-to Groq for processing.
+```dotenv
+OLLAMA_URL=http://127.0.0.1:11434
+OLLAMA_MODEL=qwen3:4b-instruct-2507-q4_K_M
+OLLAMA_TIMEOUT_MS=75000
+JUDGE_DAILY=20
+JUDGE_GLOBAL=800
+```
 
-The server respects Groq's `Retry-After` after a 429 response. The cooldown is
-stored in SQLite and survives a restart. During the pause, cached answers remain
-available, while uncached questions show their relevant rules. Setup and API-key
-problems also show the rules with a useful status message.
+Compose sets its own private `http://ollama:11434` address and publishes no Ollama port. `OLLAMA_NO_CLOUD=1` disables Ollama cloud features.
+Only loopback, supported Docker hostnames and private IPv4 addresses are accepted; cloud model names are rejected.
+Ollama's model volume persists between releases and is deliberately excluded from app-data backups because it can be downloaded again.
+SQLite caches incorporate the selected local model, current card text, rules and prompt. Old hosted-model answers are not reused.
 
-The app's default allowance is 20 AI attempts per device per UTC day and 800
-across the server. These are app limits, not a promise of Groq capacity; Groq
-also limits requests and tokens. Failed upstream attempts count against the app
-allowance, while cached answers do not. The cache identity includes the model,
-prompt, and supplied card/rules text, so changed source text gets a new answer.
-Rule numbers absent from the sent excerpts are removed and make an answer
-unverified; these answers are not cached as confident rulings.
+See [Ollama structured outputs](https://docs.ollama.com/capabilities/structured-outputs), [hardware support](https://docs.ollama.com/gpu), and [server GPU setup](SERVER.md#local-ai-and-gpu-acceleration).
 
-Check current model availability and quotas in the
-[Groq model documentation](https://console.groq.com/docs/models) and
-[Groq rate-limit documentation](https://console.groq.com/docs/rate-limits).
-Provider behavior is tested with mocked Groq responses in `tests/judge.test.mjs`
-and `tests/api-services.test.mjs`; browser failure handling is in
-`tests/browser/judge.spec.mjs`. Automated browser tests use no real AI keys.
+## Experimental multi-card scanner
+
+Open **Collection → + → Scan cards** or **Menu → Scan cards**. Use a live camera capture or choose up to six photos.
+Each frame can contain up to eight separated cards, with all corners visible on a contrasting background. Browser camera permission requires HTTPS or localhost.
+
+OpenCV.js detects quadrilateral card outlines and corrects perspective. Tesseract.js reads the English name at the top, including a second orientation attempt when needed.
+Names are matched against the downloaded local library. Users can correct OCR, choose from candidate matches, skip cards, and review the selection before the normal collection-add confirmation.
+This identifies names, not exact printings, sets, languages, foil status or condition. Sleeves, glare, unusual frames, tiny cards and overlapping cards reduce accuracy.
+The UI visibly labels the feature **Experimental**.
+
+All libraries, OCR workers, WebAssembly and English training data are served by Deckhand and loaded only when scanning starts.
+Images are processed on the device and are not uploaded. Camera tracks stop on close, navigation, backgrounding or a late permission response after closing.
+Third-party license notices are included in `/assets/scanner/`. See [OpenCV.js](https://github.com/TechStark/opencv-js) and [Tesseract.js](https://github.com/naptha/tesseract.js).
+
+`tests/browser/scanner.spec.mjs` exercises actual multi-card contour detection and OCR, review, collection insertion and camera cleanup, without external services.
 
 ## Device sync
 
@@ -486,6 +538,11 @@ deletion tombstones, pagination, bounded sample downloads, and HTTP routes.
 
 ## Run the app in Docker, here or on the future machine
 
+For the configured Ubuntu server at `192.168.2.50`, use the
+[server guide](SERVER.md). It deploys the current working tree, preserves shared
+data and configuration, and configures daily backups. The commands below
+describe a separate local Docker instance with its own sample data.
+
 After Docker is installed:
 
 ```sh
@@ -510,11 +567,9 @@ Compose publishes only on localhost by default. Set `BIND_ADDRESS=0.0.0.0` in
 `.env` for intentional LAN access to the Docker deployment; `HOST` is always
 `0.0.0.0` inside the container so the published port works.
 
-On the future machine, clone this fork with these changes, create `.env`
-from `.env.example`, and run the same Compose commands. No Node or SQLite
-installation on that host is necessary. Set up private HTTPS access and
-backups before making it your everyday instance. Export any browser-only
-decks before moving to the new address, then restore them there.
+No Node or SQLite installation on the Docker host is necessary. Export any
+browser-only decks before moving to another address, then restore them there
+or connect both instances with the same sync code.
 
 For a consistent native SQLite backup while the server runs:
 
@@ -524,5 +579,6 @@ sqlite3 var/deckhand.dev.sqlite ".backup 'var/deckhand-backup.sqlite'"
 
 Back up the resulting snapshot, not just the live main database file while
 WAL writes are active. The server database does not include unsynced browser
-data. Docker image execution still needs verification after Docker is installed
-on this computer; the native Node HTTP and SQLite tests have passed.
+data. The Ubuntu server uses the same online-backup mechanism for scheduled
+and pre-update snapshots. Local Docker installation on this development PC
+is independent of the server's Docker installation.

@@ -1,0 +1,181 @@
+/* The printing picker uses the app's header, menu surfaces and one scroller. */
+html #printOverlay {
+  --ink-text: var(--main-text);
+  --sub-text: var(--main-sub);
+  --line: color-mix(in srgb, var(--main-text) 18%, transparent);
+  background: var(--page-backdrop);
+  color: var(--main-text);
+}
+
+html #printOverlay > .overlay-inner {
+  padding-bottom: 0;
+  overflow: hidden;
+}
+
+html #printOverlay .app-navigation {
+  position: relative !important;
+  inset: auto !important;
+  order: 1 !important;
+  flex: none;
+}
+
+html #printOverlay .printing-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 16px;
+  width: 100%;
+  max-width: 900px;
+  min-height: 0;
+  margin: 0 auto;
+  padding: 16px 16px 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable both-edges;
+  overflow-anchor: none;
+}
+
+html #printOverlay .printing-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--main-text) 4%, var(--ink));
+  color: var(--main-text);
+  font:
+    600 14px/1.4 'Inter',
+    system-ui,
+    sans-serif;
+  cursor: pointer;
+}
+
+.printing-action .inl-ico {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  color: var(--accent-ink);
+}
+
+.printing-action .inl-ico svg {
+  width: 22px;
+  height: 22px;
+}
+
+.printing-empty {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--main-text) 4%, var(--ink));
+  text-align: center;
+}
+
+.printing-empty p {
+  margin: 0 0 16px;
+  color: var(--main-text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+html #printOverlay .pp-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+}
+
+.pp-section {
+  grid-column: 1 / -1;
+  margin: 4px 0 0;
+  padding: 0 0 10px;
+  border-bottom: 1px solid var(--line);
+  color: var(--main-text);
+  font:
+    600 15px/1.4 'Cinzel',
+    serif;
+}
+
+html #printOverlay .pp-wrap {
+  min-width: 0;
+}
+
+html #printOverlay .ta-tile {
+  --ink-text: var(--main-text);
+  --sub-text: var(--main-sub);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--main-text) 4%, var(--ink));
+  color: var(--main-text);
+}
+
+#printOverlay .pp-imghold {
+  width: 100%;
+}
+
+html #printOverlay .st-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 5px;
+  padding: 12px;
+}
+
+#printOverlay .tp-set {
+  overflow-wrap: anywhere;
+  line-height: 1.4;
+}
+
+html #printOverlay .st-price {
+  margin-top: auto;
+  padding-top: 3px;
+  background: none;
+  color: var(--accent-ink);
+  -webkit-text-fill-color: currentColor;
+  font:
+    600 14px/1.4 'JetBrains Mono',
+    monospace;
+}
+
+html #printOverlay .pp-foil {
+  top: 8px;
+  right: 8px;
+  min-height: 36px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  background: var(--ink);
+  color: var(--main-text);
+  -webkit-text-fill-color: currentColor;
+  text-shadow: none;
+  font:
+    600 11px/1.3 'Inter',
+    system-ui,
+    sans-serif;
+}
+
+#printOverlay span.pp-foil {
+  pointer-events: none;
+}
+
+html #printOverlay .pp-own {
+  background: var(--gold);
+  color: #241a04;
+}
+
+#printOverlay :is(.printing-action, .ta-tile, button.pp-foil):focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 3px;
+}
+
+@media (min-width: 700px) {
+  html #printOverlay .pp-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

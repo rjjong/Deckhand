@@ -1,0 +1,148 @@
+/* Shared deck-style search fields, including fields created by popup widgets. */
+html .app-search-field,
+html .app .page-searchbar.app-search-field {
+  --search-field-line: color-mix(in srgb, var(--main-text) 26%, transparent);
+  --search-field-fill: color-mix(in srgb, var(--main-text) 4%, var(--ink));
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 0 4px 0 12px !important;
+  box-sizing: border-box;
+  border: 1px solid var(--search-field-line) !important;
+  border-radius: 12px !important;
+  background: var(--search-field-fill) !important;
+  box-shadow: none !important;
+  color: var(--main-text);
+}
+
+html .app-search-field:focus-within,
+html .app .page-searchbar.app-search-field:focus-within {
+  --search-field-line: var(--accent-ink);
+}
+
+/* Reserve matching scrollbar space so fields and results stay centered. */
+html .app .tab-viewport:has(> .page-searchbar.app-search-field) {
+  scrollbar-gutter: stable both-edges;
+}
+
+html .app-search-field > input {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 6px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  outline: none;
+  background: none !important;
+  box-shadow: none !important;
+  color: var(--main-text) !important;
+  font:
+    400 14px/1.4 'Inter',
+    system-ui,
+    sans-serif;
+}
+
+html .app-search-field > input::placeholder {
+  color: var(--main-sub);
+  opacity: 1;
+}
+
+.app-search-field > input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.app-search-icon {
+  display: flex;
+  align-items: center;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--main-text);
+}
+
+.app-search-icon svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+
+html .app-search-field > button:not(.sel-fab) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: auto;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  gap: 6px;
+  padding: 8px !important;
+  border: 0 !important;
+  border-radius: 9px;
+  background: none !important;
+  box-shadow: none !important;
+  color: var(--main-text) !important;
+  font:
+    600 12px/1.4 'Inter',
+    system-ui,
+    sans-serif;
+  white-space: nowrap;
+}
+
+html .app-search-field > button::after {
+  content: none !important;
+}
+
+html.desk .app-search-field.searchbar > button[title]:not(.in-chev):not(.sel-fab) {
+  padding: 8px !important;
+}
+
+html .app-search-field > button[hidden] {
+  display: none !important;
+}
+
+.app-search-field > button svg {
+  width: 22px;
+  height: 22px;
+}
+
+html .cr-qwrap.app-search-field {
+  padding: 0 !important;
+  align-items: stretch;
+}
+
+/* Every pinned search surface uses the same viewport-aligned page fade. */
+html .app > main:has(.app-search-field),
+html .overlay:has(.app-search-field),
+html .app .deck-workspace .deck-controls,
+html #crOverlay .cr-bar,
+html .app .page-searchbar.app-search-field.sticky-searchbar::before {
+  background: var(--page-backdrop);
+  background-attachment: fixed;
+}
+
+html #crOverlay .cr-bar {
+  border-top: 0;
+}
+
+/* Paint the sticky field above its full-width fading backdrop. */
+html .app .page-searchbar.app-search-field.sticky-searchbar::before {
+  z-index: -2;
+}
+
+html .app .page-searchbar.app-search-field.sticky-searchbar::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  pointer-events: none;
+  border: 1px solid var(--search-field-line);
+  border-radius: inherit;
+  background: var(--search-field-fill);
+}

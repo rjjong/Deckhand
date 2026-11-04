@@ -106,6 +106,21 @@ function countsForCurve(c) {
   return true;
 }
 
+function manaCostGroups(card) {
+  const type = (card.type_line || card.card_faces?.[0]?.type_line || '').split('//')[0];
+  if (/\bLand\b/i.test(type)) return [];
+  const symbols = (rawManaCost(card).match(/\{([^}]+)\}/g) || []).map((symbol) =>
+    symbol.slice(1, -1),
+  );
+  if (!symbols.length) return [];
+  if (symbols.every((symbol) => /^\d+$|^X$/i.test(symbol))) return ['GEN'];
+  return [
+    ...new Set(
+      symbols.flatMap((symbol) => symbol.split('/')).filter((part) => /^[WUBRGC]$/.test(part)),
+    ),
+  ];
+}
+
 function manaSymbolCounts(cards) {
   // GEN counts generic pips ONLY from truly colourless cards — costs made of
   // nothing but numerals (and X): Sol Ring's {1} counts, but the {3} in

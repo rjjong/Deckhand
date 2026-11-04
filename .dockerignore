@@ -9,3 +9,6 @@ data
 *.log
 Deckhand.apk
 deckhand-android.zip
+public
+test-results
+playwright-report

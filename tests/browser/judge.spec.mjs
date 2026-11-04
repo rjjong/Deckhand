@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('Groq setup and quota failures show relevant rules without asking for browser credentials', async ({
+test('Local model setup and capacity failures show relevant rules without asking for browser credentials', async ({
   page,
 }) => {
   let result;
@@ -17,10 +17,10 @@ test('Groq setup and quota failures show relevant rules without asking for brows
   await page.goto('/');
   await expect.poll(() => page.evaluate(() => state.homeLoaded)).toBe(true);
   for (const [status, body, text] of [
-    [503, { error: 'nokey' }, 'needs a Groq API key on this server'],
+    [503, { error: 'notconfigured' }, 'local judge is not set up on this server'],
     [429, { error: 'quota', retryAfter: 120 }, 'Try again in about 2 minutes'],
-    [502, { error: 'key' }, 'Groq could not accept the server’s API key'],
-    [502, { error: 'model' }, 'selected Groq model is unavailable'],
+    [503, { error: 'busy' }, 'answering another question'],
+    [502, { error: 'model' }, 'local judge model is not downloaded'],
     [400, { error: 'context' }, 'Try asking about fewer cards'],
   ]) {
     result = { status, body };

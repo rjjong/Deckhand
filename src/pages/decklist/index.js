@@ -62,7 +62,7 @@ function deckMeterHtml(d) {
       <button type="button" id="dlSelDel" class="deck-danger" aria-label="Remove selected cards" title="Remove cards">${ICONS.trash}</button>
       <button type="button" id="dlSelX" aria-label="Cancel selection" title="Cancel selection">${ICONS.close}</button>
     </div>`
-        : `<div class="deck-search-field">
+        : `<div class="deck-search-field app-search-field">
       <span class="deck-search-icon" aria-hidden="true">${ICONS.search}</span>
       <input id="dockSearchInput" type="search" enterkeyhint="search" aria-label="Search this deck" placeholder="Search this deck…" value="${escapeHtml(state.dlSearchQ || '')}" autocomplete="off" autocapitalize="off" spellcheck="false">
       <button type="button" id="dockSearchBtn" aria-label="Clear deck search" title="Clear search" ${state.dlSearchQ || state.dlFilterOn ? '' : 'hidden'}>${ICONS.close}</button>
@@ -111,8 +111,6 @@ function decklistPageHtml() {
         Deck Log
       </button>
     </div>
-    ${deckSummaryHtml(d)}
-    <div id="legalityWrap">${legalityHtml(d)}</div>
     <div id="builderBody"></div>
     ${deckMeterHtml(d)}
     <button
@@ -313,10 +311,6 @@ function wireDecklistPage() {
   }
   document.getElementById('menuBtn')?.addEventListener('click', () => openDeckActions(d));
   document.getElementById('dockAddCards')?.addEventListener('click', () => openAddCardsFor(d));
-  document.getElementById('capDeckCount')?.addEventListener('click', () => {
-    state.legalityOpen = !state.legalityOpen;
-    refreshLegality(d);
-  });
   if (deckIsConstructed(d)) {
     try {
       ensureFmtBans(deckFormat(d));

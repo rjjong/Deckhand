@@ -349,6 +349,7 @@ function appBackStep(viaHistory) {
     const box = document.getElementById('dlPanelBox');
     if (box) {
       box.className = '';
+      syncDeckEditorModal();
       const d = getDeck(state.activeDeckId);
       if (d) {
         box.innerHTML = dlPanelHtml(d);
@@ -365,24 +366,11 @@ function appBackStep(viaHistory) {
           scrollToPageFoot();
         }
         const _chv = document.getElementById('dockFilterChev');
-        if (_chv) _chv.textContent = '▾';
+        _chv?.setAttribute('aria-expanded', 'false');
+        document
+          .getElementById(wasSearch ? 'dockFilterChev' : 'menuBtn')
+          ?.focus({ preventScroll: true });
       }
-      rearm({ screen: state.screen }, '#' + state.screen);
-      return true;
-    }
-  }
-  // Stats drill-downs (a tapped mana-value column, color symbol, or
-  // production bar) consume the back press first: one press sweeps them
-  // all closed. The on-screen back button rides the same ladder.
-  if (state.screen === 'decklist' && state.builderTab === 'stats') {
-    const open = ['curveDetail', 'msDetail']
-      .map((id) => document.getElementById(id))
-      .filter((b) => b && b.innerHTML.trim());
-    if (open.length) {
-      open.forEach((b) => {
-        if (b._clear) b._clear();
-        else b.innerHTML = '';
-      });
       rearm({ screen: state.screen }, '#' + state.screen);
       return true;
     }

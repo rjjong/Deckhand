@@ -59,26 +59,6 @@ function searchPageHtml() {
    First child of the column-reverse panel = the panel's FOOT, bottom-left
    under the Name row; position:sticky keeps it at the bottom edge while the
    panel scrolls. It lives inside the panel, so a folded panel has none. */
-/* 1.35: the small i-buttons behind the harder filters (a toast explains). */
-function advInfo(key) {
-  const T = {
-    tags: 'Scryfall function tags: what a card does (removal, ramp, tutor\u2026). Pick several: a card must have them all.',
-    tag: 'Scryfall function tag: what a card does (removal, ramp, tutor\u2026).',
-    oracle:
-      'Each word may appear anywhere in the rules text. Put quotes (") around words for an exact phrase.',
-    colors: 'The colours of the card itself, from its mana cost.',
-    ident:
-      'Every colour in the cost and the rules text. That decides whether a card fits a commander deck.',
-    cost: 'Symbols the mana cost must contain, for example {2}{G}{G}.',
-    price: 'Cardmarket price. Leave the right thumb on \u221e for no upper limit.',
-    allDeck:
-      'Off: only cards this deck may hold. On: everything, off-colour and not legal included.',
-    allFmt: 'Off: only cards legal in the chosen format. On: everything.',
-    deckColors: 'Colour identity: every colour in the card\u2019s cost and rules text.',
-  };
-  return infoBtnHtml(T[key] || '');
-}
-
 function advGoHtml(id, extra) {
   return /* HTML */ `<div class="adv-go-row">
     <button

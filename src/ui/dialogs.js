@@ -25,7 +25,13 @@ function wireAppDialogKeys(el, close) {
   });
 }
 
-function openInAppPrompt(title, placeholder, initial, onOk) {
+function openDeckNamePrompt(title, initial, onOk) {
+  openInAppPrompt(title, 'Deck name', normalizeDeckName(initial, ''), onOk, {
+    maxLength: MAX_DECK_NAME_LENGTH,
+  });
+}
+
+function openInAppPrompt(title, placeholder, initial, onOk, options = {}) {
   // Contract: null on cancel, the typed value on OK.
   const trigger = document.activeElement;
   document.getElementById('inAppPrompt')?.remove();
@@ -65,7 +71,10 @@ function openInAppPrompt(title, placeholder, initial, onOk) {
     onOk(v);
   };
   const close = () => finish(null);
-  const ok = () => finish(document.getElementById('iapInput').value);
+  const ok = () => {
+    const value = document.getElementById('iapInput').value;
+    finish(Number.isInteger(options.maxLength) ? value.slice(0, options.maxLength) : value);
+  };
   document.getElementById('iapCancel').addEventListener('click', close);
   document.getElementById('iapOk').addEventListener('click', ok);
   el.addEventListener('click', (e) => {
@@ -73,6 +82,7 @@ function openInAppPrompt(title, placeholder, initial, onOk) {
   });
   wireAppDialogKeys(el, close);
   const inp = document.getElementById('iapInput');
+  if (Number.isInteger(options.maxLength)) inp.maxLength = options.maxLength;
   inp.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -151,13 +161,55 @@ function openTileMenu(anchorEl, items) {
     .join('');
   document.body.appendChild(pop);
   const r = anchorEl.getBoundingClientRect();
-  pop.style.position = 'fixed';
-  const below = r.bottom + 4;
-  const room = window.innerHeight - below - 90;
-  pop.style.top = (room >= 120 ? below : Math.max(72, r.top - pop.offsetHeight - 4)) + 'px';
-  pop.style.maxHeight = Math.max(120, room) + 'px';
+  const viewport = window.visualViewport;
+  const left = (viewport?.offsetLeft || 0) + 8;
+  const right = left + (viewport?.width || window.innerWidth) - 16;
+  const viewportTop = viewport?.offsetTop || 0;
+  const viewportBottom = viewportTop + (viewport?.height || window.innerHeight);
+  let top = viewportTop + 8,
+    bottom = viewportBottom - 8;
+  document.querySelectorAll('.app-titlebar, .app-navigation').forEach((bar) => {
+    const rect = bar.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    if (
+      bar.classList.contains('app-titlebar') &&
+      rect.top <= viewportTop + 1 &&
+      rect.bottom > viewportTop
+    )
+      top = Math.max(top, rect.bottom + 8);
+    if (
+      bar.classList.contains('app-navigation') &&
+      rect.bottom >= viewportBottom - 1 &&
+      rect.top < viewportBottom
+    )
+      bottom = Math.min(bottom, rect.top - 8);
+  });
+  if (bottom - top < 44) {
+    top = viewportTop + 8;
+    bottom = viewportBottom - 8;
+  }
+  const availableHeight = Math.max(1, bottom - top);
+  Object.assign(pop.style, {
+    position: 'fixed',
+    top: '0px',
+    left: '0px',
+    right: 'auto',
+    width: 'max-content',
+    minWidth: Math.min(170, right - left) + 'px',
+    maxWidth: Math.max(1, right - left) + 'px',
+    maxHeight: 'none',
+  });
+  // Measure the full menu before choosing its side. The limit belongs to the
+  // viewport, not to the space below an anchor that may be near the bottom.
+  const height = Math.min(pop.getBoundingClientRect().height, availableHeight);
+  const below = Math.max(top, r.bottom + 4),
+    above = Math.min(bottom, r.top - 4);
+  const y = bottom - below >= height ? below : above - top >= height ? above - height : r.top;
+  pop.style.maxHeight = availableHeight + 'px';
+  pop.style.top = Math.max(top, Math.min(y, bottom - height)) + 'px';
   pop.scrollTop = 0;
-  pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 8 - pop.offsetWidth)) + 'px';
+  pop.style.left =
+    Math.max(left, Math.min(r.left, right - pop.getBoundingClientRect().width)) + 'px';
   pop.style.zIndex = 200;
   items.forEach((it, i) =>
     pop.querySelector(`[data-i="${i}"]`).addEventListener('click', () => {

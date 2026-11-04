@@ -294,7 +294,7 @@ const CHANGELOG_HISTORY = [
   {
     v: '1.16',
     d: '2026-10-19',
-    en: ['AI judge and cuts run on Gemini', 'AI cuts read your whole deck'],
+    en: ['AI judge and cuts run on your server', 'AI cuts read your whole deck'],
   },
   {
     v: '1.15',

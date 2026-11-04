@@ -8,7 +8,7 @@ test('AI endpoints normalize obsolete language choices to English', () => {
     assert.equal(cleanJudge({ q: 'Can I cast this?', lang }).lang, 'en');
     const deck = cleanDeck({ lang });
     assert.equal(deck.lang, 'en');
-    assert.match(judgePrompt(lang), /Write in English\./);
+    assert.match(judgePrompt(lang), /(?:Write|Reply) in English/);
     assert.match(deckPrompt(deck), /Write in plain English/);
     assert.doesNotMatch(judgePrompt(lang) + deckPrompt(deck), /Dutch/);
   }

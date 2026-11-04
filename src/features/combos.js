@@ -32,52 +32,6 @@ function wireCombosButton(el, card) {
   })();
 }
 
-async function wireDeckCombosPanel(d) {
-  // Stef's spec: the Stats page shows HOW MANY 2-, 3- and 4-card combos the
-  // deck holds; one tap opens the combo page (2-card combos at the foot —
-  // sortCombos orders by size first). Counts ride the fast combo lane, so
-  // they never wait for the big card index.
-  const body = document.getElementById('deckCombosBody');
-  if (!body) return;
-  try {
-    const ix = await combosReady();
-    if (!ix || !ix.combos || !ix.combos.length) {
-      body.textContent = trS('Combo data arrives with a coming weekly update.');
-      return;
-    }
-    const names = new Set(
-      d.cards
-        .map((c) => String(c.name).toLowerCase())
-        .concat(deckLeaders(d).map((c) => String(c.name).toLowerCase())),
-    );
-    const found = (combosInNames(ix, names) || []).filter(
-      (c) => c.nm.length >= 2 && c.nm.length <= 4,
-    );
-    if (!found.length) {
-      body.textContent = trS('No known combos in this deck.');
-      return;
-    }
-    const by = { 2: 0, 3: 0, 4: 0 };
-    found.forEach((c) => {
-      by[c.nm.length]++;
-    });
-    const u = 'card';
-    body.innerHTML = /* HTML */ `<button
-      type="button"
-      class="ghost-btn"
-      id="deckCombosOpen"
-      style="width:100%;"
-    >
-      <b>${by[2]}</b> × 2-${u} · <b>${by[3]}</b> × 3-${u} · <b>${by[4]}</b> × 4-${u}
-    </button>`;
-    document
-      .getElementById('deckCombosOpen')
-      ?.addEventListener('click', () => openCombosOverlay(d.name + ' — combos', found));
-  } catch (e) {
-    body.textContent = '—';
-  }
-}
-
 function combosWithCard(ix, name) {
   if (!ix || !ix.comboByName) return null; // data not synced yet
   const idxs = ix.comboByName.get(String(name).toLowerCase()) || [];

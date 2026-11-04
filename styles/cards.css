@@ -207,7 +207,7 @@
 
 .cast-score {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
 }
 
@@ -304,33 +304,6 @@
   border-radius: 6px;
   padding: 1px 6px;
   font-weight: 700;
-}
-
-/* Stats drill-downs: a full-width row, label at the FOOT (by the tapped
-   symbol or bar), cards above it -- the visual-grid already wraps upward. */
-
-.st-detail {
-  display: flex;
-  flex-direction: column-reverse;
-  gap: 8px;
-  width: 100%;
-  margin: 0;
-}
-
-.st-detail:empty {
-  display: none;
-}
-
-.ms-grid > .st-detail {
-  grid-column: 1 / -1;
-}
-
-.st-detail .chip-label {
-  margin: 0;
-}
-
-#curveDetail.st-detail {
-  margin: 0 0 14px;
 }
 
 .ms-cell {
@@ -756,13 +729,6 @@ span.tag-chip.tag-scry:not(:has(button)) {
   padding: 7px 11px;
 }
 /* rides ON the page cap: stays above it (cap is 80 now) */
-
-#deckCombosPanel .panel-h svg {
-  width: 12px;
-  height: 12px;
-  vertical-align: -2px;
-  margin-right: 3px;
-}
 
 .overlay[id^='cardSheetOverlay_bg'] .cs-combos-btn {
   display: none !important;

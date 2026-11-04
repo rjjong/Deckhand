@@ -390,7 +390,7 @@ async function openMetaDeck(fmt, a) {
 }
 
 function copyMetaDeck(fmt, a, find) {
-  openInAppPrompt(trS('Name your new deck'), trS('Deck name'), a.name, (name) => {
+  openDeckNamePrompt(trS('Name your new deck'), a.name, (name) => {
     if (name === null) return;
     const ev = a.event || {};
     const d = {

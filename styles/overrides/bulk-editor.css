@@ -1,0 +1,118 @@
+/* Full-screen bulk editing uses the menu's surfaces and a pinned save action. */
+
+.deck-bulk-screen .deck-editor-body {
+  padding-bottom: 20px;
+}
+
+html .deck-bulk-screen .bulk-editor-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bulk-editor-intro h2 {
+  margin: 0;
+  color: var(--main-text);
+  font:
+    600 22px/1.4 'Cinzel',
+    serif;
+  overflow-wrap: anywhere;
+}
+
+.bulk-editor-intro p {
+  margin: 10px 0 0;
+  color: var(--main-sub);
+  font:
+    400 13px/1.7 'Inter',
+    system-ui,
+    sans-serif;
+}
+
+.bulk-editor-label {
+  color: var(--main-text);
+  font:
+    600 12px/1.5 'Inter',
+    system-ui,
+    sans-serif;
+}
+
+html .deck-bulk-screen #bulkText {
+  width: 100%;
+  height: clamp(280px, 50dvh, 560px);
+  min-height: 240px;
+  max-height: none;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--main-text) 24%, transparent);
+  border-radius: 12px;
+  background: var(--main-field);
+  color: var(--main-text);
+  -webkit-text-fill-color: currentColor;
+  box-shadow: none;
+  font:
+    400 14px/1.65 'JetBrains Mono',
+    monospace;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+html .deck-bulk-screen #bulkText:focus {
+  outline: none;
+  border-color: var(--accent-ink);
+}
+
+.deck-bulk-screen .deck-editor-footer {
+  flex: none;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid color-mix(in srgb, var(--main-text) 18%, transparent);
+  background: var(--ink);
+}
+
+.bulk-editor-actions {
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+html .deck-bulk-screen #applyBulkBtn {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--gold);
+  color: #241a04;
+  -webkit-text-fill-color: currentColor;
+  text-shadow: none;
+  font:
+    600 14px/1.4 'Inter',
+    system-ui,
+    sans-serif;
+}
+
+.bulk-editor-report:empty {
+  display: none;
+}
+
+.bulk-editor-report .report-list {
+  border: 1px solid color-mix(in srgb, var(--main-text) 18%, transparent);
+  border-radius: 12px;
+}
+
+.bulk-editor-report .report-row {
+  border-bottom-width: 1px;
+}
+
+.bulk-editor-report .report-row.ok span:last-child {
+  color: var(--success-ink);
+}
+
+.bulk-editor-report .report-row:is(.bad, .notfound) span:last-child {
+  color: var(--danger-ink);
+}
+
+@media (max-width: 379px) {
+  html .deck-bulk-screen .bulk-editor-card {
+    padding: 16px;
+  }
+}

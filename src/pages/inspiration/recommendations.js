@@ -1648,7 +1648,7 @@ function addRecoPicksToDeck(d) {
 function createDeckFromReco() {
   const R = state.reco;
   if (!R || !R.selected.size) return;
-  openInAppPrompt('Name your new deck', 'Deck name', R.admiral.name, (name) => {
+  openDeckNamePrompt('Name your new deck', R.admiral.name, (name) => {
     if (name === null) return; // cancelled
     const picks = R.pool.filter((c) => R.selected.has(c.name));
     const d = {

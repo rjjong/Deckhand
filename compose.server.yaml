@@ -1,0 +1,9 @@
+# Apply after compose.yaml. Keep persistent data outside release directories.
+services:
+  deckhand:
+    volumes:
+      - type: bind
+        source: /srv/deckhand/data
+        target: /app/var
+        bind:
+          create_host_path: false

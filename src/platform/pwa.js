@@ -1,5 +1,119 @@
 // platform / pwa
 
+let pwaInstallOffer = null;
+let pwaInstallBusy = false;
+let pwaInstalled = false;
+const pwaDisplayMode = window.matchMedia(
+  '(display-mode: standalone), (display-mode: minimal-ui), (display-mode: fullscreen)',
+);
+
+function pwaIsInstalled() {
+  return pwaInstalled || pwaDisplayMode.matches || navigator.standalone === true || inAndroidApp();
+}
+
+function pwaInstallCardHtml() {
+  if (pwaIsInstalled()) return '';
+  return menuCardHtml(
+    'menuInstallApp',
+    ICONS.phone,
+    'Install app',
+    'Add Deckhand to your home screen',
+  );
+}
+
+function updatePwaInstallMenu() {
+  const button = document.getElementById('menuInstallApp');
+  if (pwaIsInstalled()) {
+    button?.remove();
+  } else if (button) {
+    button.disabled = pwaInstallBusy;
+    button.setAttribute('aria-busy', String(pwaInstallBusy));
+  } else if (document.querySelector('.menu-page')) {
+    render();
+  }
+}
+
+window.addEventListener('beforeinstallprompt', (event) => {
+  if (!window.isSecureContext || pwaIsInstalled() || typeof event.prompt !== 'function') return;
+  event.preventDefault();
+  pwaInstallOffer = event;
+  updatePwaInstallMenu();
+});
+
+window.addEventListener('appinstalled', () => {
+  pwaInstalled = true;
+  pwaInstallOffer = null;
+  updatePwaInstallMenu();
+});
+pwaDisplayMode.addEventListener('change', updatePwaInstallMenu);
+
+async function installPwa() {
+  if (pwaInstallBusy || pwaIsInstalled()) return;
+  if (!window.isSecureContext || !pwaInstallOffer) {
+    openModal('installApp', { returnFocus: document.activeElement });
+    return;
+  }
+  // Consume the event once, and call prompt() directly from the user's click.
+  const offer = pwaInstallOffer;
+  pwaInstallOffer = null;
+  pwaInstallBusy = true;
+  updatePwaInstallMenu();
+  try {
+    await offer.prompt();
+    await offer.userChoice;
+  } catch (e) {
+    if (!pwaIsInstalled()) openModal('installApp', { returnFocus: document.activeElement });
+  } finally {
+    pwaInstallBusy = false;
+    updatePwaInstallMenu();
+  }
+}
+
+function renderPwaInstallHelp(el) {
+  const ios =
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  let title = 'Install Deckhand';
+  let message = 'Use your browser’s menu to add Deckhand as an app.';
+  let steps = [
+    'Open the browser menu (⋮ or …).',
+    'Choose Install app or Add to home screen, if offered.',
+    'Confirm to add Deckhand. If the option is missing, try Chrome or Edge.',
+  ];
+  if (!window.isSecureContext) {
+    title = 'HTTPS needed';
+    message =
+      'App installation needs a secure HTTPS address. Set up HTTPS for this server, then open that address and tap Install app again.';
+    steps = [];
+  } else if (ios) {
+    message = 'Add Deckhand to your home screen using Safari.';
+    steps = [
+      'Open this page in Safari.',
+      'Tap Share. If it is hidden, open More (…).',
+      'Choose Add to Home Screen. Turn on Open as Web App if shown, then tap Add.',
+    ];
+  }
+  el.innerHTML = /* HTML */ `<div class="modal-backdrop deckpick-scrim" id="mbd">
+    <div
+      class="deckpick app-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="installHelpTitle"
+      aria-describedby="installHelpMessage"
+    >
+      <span class="hub-icon dialog-icon" aria-hidden="true">${ICONS.phone}</span>
+      <h2 id="installHelpTitle">${title}</h2>
+      <p class="iac-msg" id="installHelpMessage">${message}</p>
+      ${steps.length ? `<ol class="iac-msg install-steps">${steps.map((step) => `<li>${step}</li>`).join('')}</ol>` : ''}
+      <div class="dialog-actions">
+        <button type="button" class="primary-btn dialog-primary" id="cancelBtn">Got it</button>
+      </div>
+    </div>
+  </div>`;
+  wireAppDialogKeys(el, closeModal);
+  el.querySelector('#cancelBtn').focus({ preventScroll: true });
+}
+
 // Register the service worker for offline/app-like behavior — only when
 // hosted (service workers don't exist for file:// pages, and the app must
 // keep working when shared as a bare file).

@@ -466,13 +466,11 @@ function renderCardSheet(d, card, loc, idx) {
     refreshDecklistBox(d);
   });
   document.getElementById('csMakeCommander')?.addEventListener('click', () => {
-    // Promote from within the deck: this card leaves its board slot, and the
-
+    // Both the card list and command zone change, including partner eligibility.
     const arr = loc === 'maybe' ? d.maybeboard : d.cards;
     arr.splice(idx, 1);
     promoteToCommander(d, card);
-    closeTopOverlay();
-    refreshDecklistBox(d);
+    closeOverlayThen(() => render());
   });
   document.getElementById('csAddPartner')?.addEventListener('click', () => {
     closeOverlayThen(() => openPartnerSearch(d));

@@ -45,7 +45,7 @@ function refreshDecklistBox(d) {
   const fromTop = se.scrollTop;
   if (box) {
     box.innerHTML = categorizedListHtml(d);
-    wireDecklistInteractions(d);
+    wireDecklistInteractions(d, box);
   }
   if (box && state.screen === 'decklist') {
     const want = fromTop;
@@ -219,16 +219,16 @@ function openPartnerSearch(d, onDone, opts) {
   input.addEventListener('input', draw);
 }
 
-function wireDecklistInteractions(d) {
-  document.getElementById('dlEmptyAdd')?.addEventListener('click', () => openAddCardsFor(d));
-  document.getElementById('pairAddBtn')?.addEventListener('click', (e) => {
+function wireDecklistInteractions(d, root = document) {
+  root.querySelector('#dlEmptyAdd')?.addEventListener('click', () => openAddCardsFor(d));
+  root.querySelector('#pairAddBtn')?.addEventListener('click', (e) => {
     e.stopPropagation();
     openPartnerSearch(d);
   });
-  document.getElementById('findCommanderBtn')?.addEventListener('click', () => {
+  root.querySelector('#findCommanderBtn')?.addEventListener('click', () => {
     openAppointSearch(d);
   });
-  document.querySelectorAll('.cat-head').forEach((h) => {
+  root.querySelectorAll('.cat-head').forEach((h) => {
     h.addEventListener('click', () => {
       const key = h.dataset.cat;
       // The heading you tapped keeps its exact place on screen; the section
@@ -251,7 +251,7 @@ function wireDecklistInteractions(d) {
   });
   // LONG-PRESS a card = start multi-select; short taps then toggle more.
   // Main-deck and maybeboard cards select; leaders stay out of it.
-  document.querySelectorAll('.vg-card img, .vg-card .vg-hit').forEach((img) => {
+  root.querySelectorAll('.vg-card img, .vg-card .vg-hit').forEach((img) => {
     const parent = img.closest('[data-idx]');
     if (!parent) return;
     const idx = +parent.dataset.idx;
@@ -391,8 +391,14 @@ function refreshCapDeckCount(d) {
     hint.textContent = deckIsConstructed(deck)
       ? `${ensureMaybeboard(deck).length} in sideboard`
       : 'Including commander';
+  const issue = document.getElementById('deckIssueText');
+  if (issue)
+    issue.textContent = issues[0]?.text || issues[0]?.label || 'No deck-building issues found.';
   document
     .getElementById('capDeckCount')
+    ?.setAttribute('aria-expanded', String(!!state.legalityOpen));
+  document
+    .getElementById('deckReview')
     ?.setAttribute('aria-expanded', String(!!state.legalityOpen));
 }
 
@@ -405,7 +411,7 @@ function wireMeterRow(d) {
     const box = document.getElementById('decklistBox');
     if (box) {
       box.innerHTML = categorizedListHtml(d);
-      wireDecklistInteractions(d);
+      wireDecklistInteractions(d, box);
       box.scrollIntoView({ block: 'start' });
     }
     const clear = document.getElementById('dockSearchBtn');

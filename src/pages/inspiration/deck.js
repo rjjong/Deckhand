@@ -1019,7 +1019,7 @@ async function deckAiAsk(payload) {
     try {
       ctl && ctl.abort();
     } catch (e) {}
-  }, 58000);
+  }, 100000);
   try {
     const res = await fetch('/api/deckai', {
       method: 'POST',
@@ -1074,31 +1074,12 @@ function deckAiLeftSet(n) {
   } catch (e) {}
 }
 
-/* Which AI answered: the strong model, or the smaller reserve one when the
-   strong one was busy (the reserve reasons less deeply). */
-/* A model id as people read it: gemini-2.5-pro -> Gemini 2.5 Pro. */
-function deckAiModelName(m) {
-  m = String(m || '');
-  if (/^gemini/i.test(m))
-    return m
-      .replace(/^gemini-/i, 'Gemini ')
-      .replace(/-/g, ' ')
-      .replace(
-        /\b(pro|flash|lite|preview|latest|argon)\b/gi,
-        (w) => w.charAt(0).toUpperCase() + w.slice(1),
-      );
-  if (/gpt-oss/.test(m)) return 'GPT-OSS 120B';
-  if (/llama/i.test(m)) return 'Llama 3.3';
-  return m;
+function deckAiModelName(model) {
+  return /^qwen3:4b/i.test(model || '') ? 'Local Qwen3 4B' : String(model || 'Local model');
 }
 
 function deckAiModelHtml(res) {
-  const m = String((res && res.model) || '');
-  if (!m) return '';
-  const reserve = /llama/i.test(m);
-  return /* HTML */ `<span class="ai-via"
-    >${reserve ? 'reserve model (Llama 3.3) \u2014 the strong AI was busy' : escapeHtml(deckAiModelName(m))}${res.cached ? ' \u00b7 earlier answer' : ''}</span
-  >`;
+  return `<span class="ai-via">${escapeHtml(deckAiModelName(res?.model))}${res?.cached ? ' · earlier answer' : ''}</span>`;
 }
 
 function deckAiErrText(res) {
@@ -1111,17 +1092,18 @@ function deckAiErrText(res) {
   if (!tried && res && res.http)
     tail = `\n(server: http ${res.http}${res.http === 404 ? ' \u2014 the AI function is not on the site' : ''}${res.raw ? ': ' + res.raw : ''})`;
   else if (!tried && res && res.old) tail = '\n(server: an older version of the AI function)';
-  if (res && Array.isArray(res.keys) && !res.keys.includes('gemini'))
-    tail += '\n(server: no Gemini key found)';
-  if (e === 'quota')
-    return 'The AI is busy: the free per-minute limit is used up. Try again in a minute.' + tail;
+  if (e === 'quota') return 'The server’s AI allowance is used up. Try again later.';
+  if (e === 'busy') return 'The local AI is answering another question. Try again shortly.';
+  if (e === 'timeout') return 'The local AI took too long. Try a smaller list of cards.';
+  if (e === 'context') return 'This deck needs more context than the local model can read.';
+  if (e === 'model') return 'The local model has not been downloaded on the server yet.';
   if (e === 'shape') return 'The AI gave an answer the app could not read. Try again.' + tail;
   if (e === 'down' && tried)
     return 'The AI can\u2019t be reached right now. Try again in a while.' + tail;
   if (e === 'limit')
     return `Your ${res.limit || ''} AI analyses for today are used up. More tomorrow.`;
-  if (e === 'offline') return 'No connection. The AI needs the internet.';
-  if (e === 'nokey') return 'The AI is not set up yet.';
+  if (e === 'offline') return 'No connection to your Deckhand server.';
+  if (e === 'notconfigured') return 'The AI is not set up yet.';
   return 'The AI can’t be reached right now. Try again in a while.' + tail;
 }
 
@@ -1247,7 +1229,7 @@ function deckAiCutsPayload(d, plan) {
       : null;
   const landsOver = plan.tpl.land && plan.counts.land > plan.tpl.land;
   const rank = new Map(plan.list.map((x, i) => [x.card.name, i]));
-  const CAP = 100; // 1.16: Gemini reads the whole deck; the server trims for the reserve
+  const CAP = 100; // The server fits the weakest candidates into the local context.
   const seen = new Set(),
     cands = [],
     others = [];

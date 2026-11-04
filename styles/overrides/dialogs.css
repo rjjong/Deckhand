@@ -59,6 +59,19 @@ html :is(.deckpick .dp-row, .deckpick .dp-cancel, .modal-actions .cancel) {
   min-height: 44px;
 }
 
+/* Give cancellation a distinct red tint in the card destination picker. */
+html :is(#deckPickScrim, #deckPickPopup) .dp-cancel {
+  background: color-mix(in srgb, var(--danger-ink) 6%, var(--ink));
+  border-color: color-mix(in srgb, var(--danger-ink) 55%, transparent);
+  color: color-mix(in srgb, var(--danger-ink) 70%, var(--main-text));
+  -webkit-text-fill-color: currentColor;
+}
+
+html :is(#deckPickScrim, #deckPickPopup) .dp-cancel:is(:hover, :focus-visible) {
+  background: color-mix(in srgb, var(--danger-ink) 10%, var(--ink));
+  border-color: var(--danger-ink);
+}
+
 .deckpick .dp-collection {
   flex-shrink: 0;
   margin-top: 10px;
@@ -113,6 +126,14 @@ html .app-dialog .iac-msg {
   color: var(--sub-text);
   font-size: 14px;
   line-height: 1.8;
+}
+
+.app-dialog .install-steps {
+  padding-left: 22px;
+}
+
+.app-dialog .install-steps li + li {
+  margin-top: 8px;
 }
 
 html .app-dialog input {

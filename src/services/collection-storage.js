@@ -22,13 +22,10 @@ function loadCollection() {
    graphs finally track the market instead of the import date. */
 async function repriceCollectionDaily() {
   try {
-    // Every six hours rather than once per calendar day: Scryfall syncs
-    // Cardmarket once a day at its own hour, and a reprice that ran just
-    // before that sync kept yesterday's value until tomorrow -- while the
-    // card sheet, which asks fresh, already showed today's.
+    // Price data is cached daily; opening the collection is not a live-price poll.
     const KEY = LS_PREFIX + 'colRepriceAt';
     const last = parseInt(localStorage.getItem(KEY) || '0', 10) || 0;
-    if (Date.now() - last < 6 * 3600 * 1000) return;
+    if (Date.now() - last < 24 * 3600 * 1000) return;
     const today = String(Date.now());
     const items = state.collection && state.collection.items;
     if (!items || !items.length) return;

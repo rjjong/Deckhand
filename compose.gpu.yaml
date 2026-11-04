@@ -1,0 +1,4 @@
+# Optional: apply after compose.yaml once NVIDIA drivers and Toolkit work.
+services:
+  ollama:
+    gpus: all

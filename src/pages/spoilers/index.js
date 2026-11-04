@@ -1211,6 +1211,7 @@ async function duplicateDeck(d) {
 function renderBuilderBody(d) {
   const box = document.getElementById('builderBody');
   if (!box) return;
+  box.classList.toggle('deck-log', state.builderTab === 'primer');
   if (state.builderTab === 'list') box.innerHTML = listTabHtml(d);
   else if (state.builderTab === 'stats') box.innerHTML = statsTabHtml(d);
   else box.innerHTML = primerTabHtml(d);

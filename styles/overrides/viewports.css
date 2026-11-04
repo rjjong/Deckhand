@@ -389,7 +389,6 @@ html
     .sp-feed,
     .sp-group,
     #cotdBox,
-    .st-detail,
     .home-news,
     .tag-drop,
     .tag-drop-list,
@@ -644,14 +643,16 @@ html .app > main .page-searchbar.sticky-searchbar {
 html .app > main .page-searchbar.sticky-searchbar::before {
   content: '';
   position: absolute;
-  inset: -12px -16px -16px;
+  /* Cover the field border and subpixel rounding at the title-bar edge. */
+  inset: -14px -16px -16px;
   z-index: -1;
   background: var(--ink);
 }
 
-/* Match the reserved six-pixel scrollbar gutter to the pinned surface. */
+/* Clip scrolling cards below the search field's top margin on every edge. */
 
 html .tab-viewport:has(> .sticky-searchbar) {
+  clip-path: inset(12px 0 0);
   background: linear-gradient(var(--ink), var(--ink)) right top / 6px 100% no-repeat;
 }
 
@@ -761,6 +762,7 @@ html .collection-page .collection-value {
 
 .reference-page .reference-list {
   padding-top: 12px;
+  border-top: 0;
 }
 
 .reference-page .settings-row > div {
@@ -774,4 +776,5 @@ html .collection-page .collection-value {
 
 html .app > main#spMainPage > .sp-jump {
   margin-top: 12px;
+  margin-bottom: 12px !important;
 }

@@ -66,17 +66,12 @@ test('local AI endpoints keep answers in SQLite across server restarts', async (
   const options = {
     databasePath: join(directory, 'app.sqlite'),
     dataDirectory: directory,
-    env: { GROQ_API_KEY: 'test-key', GEMINI_API_KEY: 'test-key', GEMINI_MODEL: 'test-model' },
+    env: { OLLAMA_URL: 'http://ollama:11434' },
     fetchImpl: async (url, options) => {
       calls++;
       const request = JSON.parse(options.body);
-      const judge = request.messages[0].content.includes('rules judge');
-      assert.equal(
-        url,
-        judge
-          ? 'https://api.groq.com/openai/v1/chat/completions'
-          : 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',
-      );
+      const judge = request.messages[1].content.startsWith('QUESTION:');
+      assert.equal(url, 'http://ollama:11434/api/chat');
       const content = judge
         ? {
             answer: 'Yes.',
@@ -88,7 +83,7 @@ test('local AI endpoints keep answers in SQLite across server restarts', async (
             plan: 'Draw cards.',
             cuts: [{ name: 'Clunky Spell', why: 'Too expensive for this plan.' }],
           };
-      return Response.json({ choices: [{ message: { content: JSON.stringify(content) } }] });
+      return Response.json({ done: true, done_reason: 'stop', message: { content: JSON.stringify(content) } });
     },
   };
   let app = createApp(options);

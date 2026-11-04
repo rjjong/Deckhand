@@ -1,0 +1,185 @@
+/* The experimental scanner uses the app's title bar and menu surfaces. */
+html #cardScannerOverlay {
+  z-index: 210;
+}
+html #cardScannerOverlay > .scanner-screen {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  padding: 0;
+  overflow: hidden;
+  background: var(--page-backdrop);
+  color: var(--main-text);
+  --ink-text: var(--main-text);
+  --sub-text: var(--main-sub);
+  --scanner-line: color-mix(in srgb, var(--main-text) 24%, transparent);
+}
+.scanner-screen > .app-titlebar {
+  position: relative !important;
+}
+html #cardScannerOverlay .scanner-body {
+  display: block;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  width: 100%;
+  max-width: 900px;
+  margin: auto;
+  padding: 20px 16px 28px !important;
+  box-sizing: border-box;
+  overscroll-behavior: contain;
+}
+.scanner-intro h1 {
+  font:
+    600 24px/1.4 'Cinzel',
+    serif;
+  margin: 14px 0;
+}
+.scanner-intro p,
+#scannerStatus,
+.scanner-credits {
+  font:
+    400 13px/1.7 'Inter',
+    sans-serif;
+  color: var(--main-sub);
+}
+.scanner-badge {
+  display: inline-block;
+  border: 1px solid var(--accent-ink);
+  border-radius: 20px;
+  padding: 4px 10px;
+  color: var(--accent-ink);
+  font:
+    600 12px/1.5 'Inter',
+    sans-serif;
+}
+.scanner-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0;
+}
+.scanner-actions .hub-card {
+  min-width: 0;
+  justify-content: center;
+  padding: 14px 8px;
+  color: var(--main-text);
+}
+.scanner-actions svg {
+  flex: none;
+  width: 24px;
+  height: 24px;
+}
+.scanner-preview {
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--ink);
+  border: 1px solid var(--scanner-line);
+}
+.scanner-preview :is(video, canvas) {
+  display: block;
+  width: 100%;
+  max-height: 50dvh;
+  object-fit: contain;
+}
+html #cardScannerOverlay [hidden] {
+  display: none !important;
+}
+.scanner-results {
+  display: grid;
+  gap: 12px;
+}
+.scanner-result {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr);
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--scanner-line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--main-text) 4%, var(--ink));
+}
+.scanner-result > img {
+  width: 80px;
+  border-radius: 8px;
+}
+.scanner-result label {
+  display: block;
+  margin-bottom: 6px;
+  font:
+    600 12px/1.5 'Inter',
+    sans-serif;
+}
+.scanner-match-label {
+  margin-top: 10px;
+}
+html #cardScannerOverlay .scanner-result :is(input, select, .nsel-btn) {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 8px;
+  box-sizing: border-box;
+  border: 1px solid var(--scanner-line);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--main-text) 4%, var(--ink));
+  color: var(--main-text);
+  font:
+    400 14px/1.5 'Inter',
+    sans-serif;
+}
+.scanner-result small {
+  display: block;
+  margin-top: 8px;
+  color: var(--main-sub);
+  font:
+    400 12px/1.5 'Inter',
+    sans-serif;
+}
+.scanner-footer {
+  flex: none;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--scanner-line);
+  background: var(--ink);
+}
+html .scanner-screen .primary-btn {
+  width: 100%;
+  max-width: 868px;
+  display: block;
+  min-height: 46px;
+  padding: 12px 16px;
+  margin: 12px auto 0;
+  border: 0;
+  border-radius: 12px;
+  background: var(--gold);
+  color: #241a04;
+  font:
+    600 14px/1.5 'Inter',
+    sans-serif;
+}
+html .scanner-screen .scanner-footer .primary-btn {
+  margin-top: 0;
+}
+.scanner-screen button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.scanner-credits a {
+  color: var(--accent-ink);
+}
+
+html #nselPop.scanner-options {
+  border: 1px solid color-mix(in srgb, var(--main-text) 24%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--main-text) 5%, var(--ink));
+  color: var(--main-text);
+}
+html #nselPop.scanner-options .cselect-opt {
+  min-height: 44px;
+  border-color: color-mix(in srgb, var(--main-text) 18%, transparent);
+  border-bottom-width: 1px;
+  color: var(--main-text);
+}
+html #nselPop.scanner-options .cselect-opt.on {
+  color: var(--accent-ink);
+}

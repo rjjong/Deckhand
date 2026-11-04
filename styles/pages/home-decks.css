@@ -136,7 +136,7 @@
   align-items: center;
   gap: 10px;
   width: min(300px, 80%);
-  margin: 2px 0 6px;
+  margin: 2px auto 6px;
   z-index: 1;
 }
 

@@ -11,21 +11,22 @@ import { handle as sync } from './services/sync.mjs';
 import { handle as judge } from './services/judge.mjs';
 import { handle as deckai, DECKAI_V } from './services/deckai.mjs';
 import { handle as news } from './services/news.mjs';
+import { scannerAssets } from '../scripts/scanner-assets.mjs';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const STATIC = new Map([
+  ...scannerAssets.map(({ target }) => ['/' + target, 'public/' + target]),
   ['/', 'index.html'], ['/index.html', 'index.html'], ['/sw.js', 'sw.js'],
   ...['app.js', 'app.css', 'app.js.map', 'app.css.map', 'images/deckhand-badge.webp']
     .map(name => ['/assets/' + name, 'public/assets/' + name]),
   ['/manifest.json', 'manifest.json'], ['/version.json', 'version.json'],
   ['/favicon.ico', 'icon-192.png'],
   ...['icon-192.png', 'icon-512.png', 'icon-512-maskable.png', 'apple-touch-icon.png',
-    'og-image.png', 'badge-d.png', 'screenshot-decklist.png', 'screenshot-inspiration.png',
-    'screenshot-life.png'].map(name => ['/' + name, name])
+    'og-image.png', 'badge-d.png'].map(name => ['/' + name, name])
 ]);
 const MIME = { html: 'text/html; charset=utf-8', css: 'text/css; charset=utf-8', js: 'text/javascript; charset=utf-8',
   json: 'application/json; charset=utf-8', txt: 'text/plain; charset=utf-8',
-  png: 'image/png', webp: 'image/webp', map: 'application/json; charset=utf-8', gz: 'application/gzip' };
+  png: 'image/png', webp: 'image/webp', map: 'application/json; charset=utf-8', gz: 'application/gzip', wasm: 'application/wasm' };
 
 function json(res, status, body, headers = {}) {
   res.writeHead(status, { 'content-type': MIME.json, 'cache-control': 'no-store',
@@ -57,7 +58,7 @@ export function createApp({ databasePath = resolve('./var/deckhand.dev.sqlite'),
   dataDirectory = resolve('./var/data-sample'), env = process.env, fetchImpl = fetch } = {}) {
   const storage = openStorage(databasePath);
   const cache = createDataCache({ directory: dataDirectory });
-  const scryfall = createScryfallClient({ fetchImpl });
+  const scryfall = createScryfallClient({ fetchImpl, store: storage.store('scryfall-http') });
   let newsCache, newsPending;
   const server = createServer(async (req, res) => {
     try {

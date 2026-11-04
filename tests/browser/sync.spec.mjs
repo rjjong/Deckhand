@@ -67,6 +67,67 @@ async function openSync(page) {
   await expect(page.getByRole('dialog', { name: 'Sync devices', exact: true })).toBeVisible();
 }
 
+test('sync code entry keeps separators visible and formats typing and deletion', async ({
+  page,
+}, info) => {
+  await prepare(page);
+  await openSync(page);
+  await page.locator('#syncJoin').click();
+  const input = page.locator('#iapInput');
+  await expect(input).toBeFocused();
+  await expect(page.locator('.sync-code-mask')).toHaveText('____-____-____-____-____-____');
+  await input.pressSequentially('abcdefghi');
+  await expect(input).toHaveValue('ABCD-EFGH-I');
+  await input.evaluate((field) => field.setSelectionRange(5, 5));
+  await input.press('Backspace');
+  await expect(input).toHaveValue('ABCE-FGHI');
+  await input.evaluate((field) => field.setSelectionRange(4, 4));
+  await input.press('Delete');
+  await expect(input).toHaveValue('ABCE-GHI');
+  await input.press('ControlOrMeta+A');
+  await input.press('Backspace');
+  await expect(input).toHaveValue('');
+  await expect(page.locator('.sync-code-mask')).toHaveText('____-____-____-____-____-____');
+  await input.pressSequentially('abcd-efgh-jklm-npqr-stuv-wxyz');
+  await expect(input).toHaveValue('ABCD-EFGH-JKLM-NPQR-STUV-WXYZ');
+  await mkdir('var/previews', { recursive: true });
+  await page.screenshot({ path: `var/previews/sync-code-entry-${info.project.name}.png` });
+});
+
+test('sync code entry accepts whole pasted codes and sends only code characters', async ({
+  page,
+}) => {
+  await prepare(page);
+  await openSync(page);
+  await page.locator('#syncJoin').click();
+  const input = page.locator('#iapInput');
+  await expect(input).toBeFocused();
+  const code = 'ABCD-EFGH-JKLM-NPQR-STUV-WXYZ';
+  for (const text of [
+    code,
+    code.toLowerCase().replaceAll('-', ''),
+    '  ' + code.replaceAll('-', ' — ') + '\n',
+  ]) {
+    await input.evaluate((field, text) => {
+      field.select();
+      const data = new DataTransfer();
+      data.setData('text/plain', text);
+      field.dispatchEvent(
+        new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: data }),
+      );
+    }, text);
+    await expect(input).toHaveValue(code);
+  }
+  const requests = [];
+  await page.route('**/api/sync', (route) => {
+    requests.push(route.request().postDataJSON());
+    return route.fulfill({ status: 404, json: { ok: false, error: 'code_not_found' } });
+  });
+  await page.locator('#iapOk').click();
+  await expect(page.locator('#syncActionStatus')).toContainText('Code not found.');
+  expect(requests).toEqual([{ op: 'probe', code: code.replaceAll('-', '') }]);
+});
+
 test('code-only sync merges two devices and propagates decks, collection, settings and saved games', async ({
   page,
   browser,
@@ -83,7 +144,7 @@ test('code-only sync merges two devices and propagates decks, collection, settin
   await openSync(page);
   await page.locator('#syncNew').click();
   await expect(page.locator('#syncCodeTxt')).toBeVisible();
-  const code = await page.locator('#syncCodeTxt').textContent();
+  const code = await page.locator('#syncCodeTxt').inputValue();
   expect(code).toMatch(/^(?:[A-Z2-9]{4}-){5}[A-Z2-9]{4}$/);
   await expect(page.locator('#syncLastLine')).toContainText('Last synced:');
   const second = await browser.newContext({
@@ -98,7 +159,7 @@ test('code-only sync merges two devices and propagates decks, collection, settin
     await other.locator('#syncJoin').click();
     await other.locator('#iapInput').fill(code.toLowerCase());
     await other.locator('#iapOk').click();
-    await expect(other.locator('#syncCodeTxt')).toHaveText(code);
+    await expect(other.locator('#syncCodeTxt')).toHaveValue(code);
     await expect
       .poll(() => other.evaluate(() => state.decksIndex.map((d) => d.id).sort()))
       .toEqual(['sync-First', 'sync-Second']);
@@ -262,13 +323,13 @@ test('a code stays available when its first upload fails and Sync now retries it
   await openSync(page);
   await page.locator('#syncNew').click();
   await expect(page.locator('#syncCodeTxt')).toBeVisible();
-  const code = await page.locator('#syncCodeTxt').textContent();
+  const code = await page.locator('#syncCodeTxt').inputValue();
   await expect(page.locator('#syncLastLine')).toContainText('could not connect');
   expect(await page.evaluate(() => Object.keys(syncPending()).length)).toBeGreaterThan(0);
   fail = false;
   await page.locator('#syncNow').click();
   await expect(page.locator('#syncActionStatus')).toContainText('Synced with this server.');
-  await expect(page.locator('#syncCodeTxt')).toHaveText(code);
+  await expect(page.locator('#syncCodeTxt')).toHaveValue(code);
   expect(await page.evaluate(() => syncState().err)).toBeNull();
 });
 

@@ -1,0 +1,171 @@
+/* Salt rankings use the app's surfaces and read from rank one downward. */
+html #saltOverlay {
+  --ink-text: var(--main-text);
+  --sub-text: var(--main-sub);
+  --line: color-mix(in srgb, var(--main-text) 18%, transparent);
+  background: var(--page-backdrop);
+  color: var(--main-text);
+}
+
+html #saltOverlay > .overlay-inner {
+  padding-bottom: 0;
+  overflow: hidden;
+}
+
+html #saltOverlay .app-navigation {
+  position: relative !important;
+  inset: auto !important;
+  order: 1 !important;
+  flex: none;
+}
+
+html #saltOverlay .salt-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  max-width: 900px;
+  min-height: 0;
+  margin: 0 auto;
+  padding: 16px 16px 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable both-edges;
+  overflow-anchor: none;
+}
+
+.salt-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  flex: none;
+  gap: 16px;
+}
+
+.salt-tile,
+.salt-empty {
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--main-text) 4%, var(--ink));
+  color: var(--main-text);
+  text-align: left;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.salt-tile {
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+}
+
+.salt-art {
+  display: block;
+  flex: none;
+  width: 100%;
+  aspect-ratio: 63 / 88;
+  overflow: hidden;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--main-text) 4%, var(--ink));
+}
+
+.salt-art img,
+.salt-noimg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.salt-noimg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--main-sub);
+}
+
+.salt-noimg svg {
+  width: 48px;
+  height: 48px;
+}
+
+html #saltOverlay .salt-meta {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 10px;
+  width: 100%;
+  padding: 12px;
+  background: none;
+  color: var(--main-text);
+  -webkit-text-fill-color: currentColor;
+  text-shadow: none;
+}
+
+.salt-name {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.salt-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: auto;
+  font:
+    600 12px/1.4 'JetBrains Mono',
+    monospace;
+}
+
+.salt-rank {
+  color: var(--main-sub);
+  -webkit-text-fill-color: currentColor;
+}
+
+.salt-score {
+  color: var(--accent-ink);
+  -webkit-text-fill-color: currentColor;
+}
+
+.salt-empty {
+  flex: none;
+  padding: 20px;
+  text-align: center;
+}
+
+.salt-empty p {
+  margin: 0 0 16px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.salt-retry {
+  width: 100%;
+  min-height: 44px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--ink);
+  color: var(--main-text);
+  font:
+    600 14px/1.4 'Inter',
+    system-ui,
+    sans-serif;
+  cursor: pointer;
+}
+
+#saltOverlay :is(.salt-tile, .salt-retry):focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 3px;
+}
+
+@media (min-width: 700px) {
+  .salt-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

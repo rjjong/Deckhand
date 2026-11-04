@@ -5,6 +5,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Script } from 'node:vm';
 import { scripts, styles, media, staticFiles } from './frontend-sources.mjs';
+import { scannerAssets } from './scanner-assets.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const outputDirectory = resolve(root, 'public/assets');
@@ -78,6 +79,9 @@ export async function buildFrontend() {
     ),
     ...staticFiles.map(async (file) =>
       writeChanged(resolve(root, 'public', file), await readFile(resolve(root, file))),
+    ),
+    ...scannerAssets.map(async ({ source, target }) =>
+      writeChanged(resolve(root, 'public', target), await readFile(resolve(root, source))),
     ),
   ]);
   return {

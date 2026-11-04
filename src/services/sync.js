@@ -144,6 +144,57 @@ function syncNiceCode(code) {
   return (syncCleanCode(code).match(/.{1,4}/g) || []).join('-');
 }
 
+function openSyncCodePrompt(onOk) {
+  openInAppPrompt('Sync code', '', '', onOk, { maxLength: 49 });
+  const input = document.getElementById('iapInput');
+  input.autocapitalize = 'characters';
+  input.spellcheck = false;
+  input.setAttribute('aria-describedby', 'syncCodeHint');
+  const entry = document.createElement('div');
+  entry.className = 'sync-code-entry';
+  input.before(entry);
+  entry.appendChild(input);
+  const mask = document.createElement('span');
+  mask.className = 'sync-code-mask';
+  mask.setAttribute('aria-hidden', 'true');
+  entry.appendChild(mask);
+  const hint = document.createElement('p');
+  hint.id = 'syncCodeHint';
+  hint.className = 'iac-msg';
+  hint.textContent = 'Paste your full code, or type it. Dashes are added automatically.';
+  entry.after(hint);
+  const clean = (value) => value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const format = () => {
+    const start = clean(input.value.slice(0, input.selectionStart)).length;
+    const end = clean(input.value.slice(0, input.selectionEnd)).length;
+    // New codes have 24 characters. Keep accepting older 16–40 character codes.
+    input.value = syncNiceCode(clean(input.value).slice(0, 40));
+    const caret = (length) =>
+      Math.min(input.value.length, length + Math.floor(Math.max(0, length - 1) / 4));
+    input.setSelectionRange(caret(start), caret(end));
+    const template = '____-____-____-____-____-____';
+    mask.textContent = ' '.repeat(input.value.length) + template.slice(input.value.length);
+  };
+  input.addEventListener('input', format);
+  input.addEventListener('paste', (event) => {
+    const text = event.clipboardData?.getData('text/plain');
+    if (text == null) return;
+    event.preventDefault();
+    input.setRangeText(clean(text), input.selectionStart, input.selectionEnd, 'end');
+    format();
+  });
+  input.addEventListener('keydown', (event) => {
+    if (input.selectionStart !== input.selectionEnd) return;
+    const caret = input.selectionStart;
+    // Deleting beside a separator removes a code character on the first press.
+    if (event.key === 'Backspace' && input.value[caret - 1] === '-')
+      input.setSelectionRange(caret - 1, caret - 1);
+    if (event.key === 'Delete' && input.value[caret] === '-')
+      input.setSelectionRange(caret + 1, caret + 1);
+  });
+  format();
+}
+
 async function syncCall(body, code = syncState()?.code, signal) {
   const controller = new AbortController();
   const abort = () => controller.abort();
@@ -274,6 +325,7 @@ async function syncApply(changes, linked = syncState(), generation = _syncGenera
     const index = state.decksIndex.findIndex((deck) => deck.id === id);
     const deck = index >= 0 ? state.decksIndex[index] : null;
     const value = change.del ? null : JSON.parse(change.v);
+    if (value) value.name = normalizeDeckName(value.name);
     const clean = deck ? { ...deck } : null;
     if (clean) delete clean._saveStatus;
     const identical = !change.del && clean && JSON.stringify(slimDeckForSave(clean)) === change.v;
@@ -295,8 +347,9 @@ async function syncApply(changes, linked = syncState(), generation = _syncGenera
         if (currentIndex >= 0) state.decksIndex.splice(currentIndex, 1);
         if (state.activeDeckId === id) state.activeDeckId = null;
       } else {
-        if (!(await deckDbPutMany([[LS_PREFIX + key, change.v]])))
-          _lsSetRaw.call(localStorage, LS_PREFIX + key, change.v);
+        const serialized = JSON.stringify(value);
+        if (!(await deckDbPutMany([[LS_PREFIX + key, serialized]])))
+          _lsSetRaw.call(localStorage, LS_PREFIX + key, serialized);
         await syncFlushDeck(id);
         syncSessionValid(linked, generation);
         if ((meta[key]?.t || 0) > change.t) {
@@ -585,7 +638,7 @@ function openSyncSheet() {
       ${
         linked
           ? `<p id="syncLastLine" role="status">${escapeHtml(syncLastLabel())}</p>
-        <div class="sync-code" id="syncCodeTxt">${escapeHtml(syncNiceCode(linked.code))}</div>
+        <input class="sync-code" id="syncCodeTxt" aria-label="Sync code" value="${escapeHtml(syncNiceCode(linked.code))}" readonly spellcheck="false" autocomplete="off" />
         <p class="hint">Enter this code on another device running this server. Anyone with the code can access the synced data.</p>
         <div class="sync-actions"><button type="button" class="primary-btn" id="syncNow">Sync now</button>
         <button type="button" class="ghost-btn" id="syncShare">Copy sync code</button>
@@ -663,19 +716,42 @@ function openSyncSheet() {
   root.querySelector('#syncJoin')?.addEventListener('click', async () => {
     close();
     await brAfterPop();
-    openInAppPrompt('Sync code', 'XXXX-XXXX-XXXX-XXXX-XXXX-XXXX', '', async (value) => {
+    openSyncCodePrompt(async (value) => {
       if (value == null) return;
       openSyncSheet();
       const button = document.getElementById('syncJoin');
       await run(button, () => syncLink(value, false), true);
     });
   });
-  root.querySelector('#syncShare')?.addEventListener('click', async () => {
-    try {
-      await navigator.clipboard.writeText(syncNiceCode(syncState().code));
+  const codeField = root.querySelector('#syncCodeTxt');
+  codeField?.addEventListener('click', () => codeField.select());
+  root.querySelector('#syncShare')?.addEventListener('click', () => {
+    const copied = () => {
+      root.querySelector('#syncActionStatus').textContent = 'Sync code copied.';
       toast('Sync code copied.');
+    };
+    const fallback = () => {
+      codeField.focus({ preventScroll: true });
+      codeField.select();
+      codeField.setSelectionRange(0, codeField.value.length);
+      try {
+        if (document.execCommand('copy')) {
+          copied();
+          return;
+        }
+      } catch {}
+      root.querySelector('#syncActionStatus').textContent =
+        'Code selected. Use Copy from your device’s text selection menu.';
+      toast('Code selected. Choose Copy from the selection menu.');
+    };
+    // HTTP LAN origins have no Clipboard API. Keep this fallback in the
+    // click handler so browsers can recognize the user's copy gesture.
+    try {
+      if (window.isSecureContext && navigator.clipboard?.writeText)
+        navigator.clipboard.writeText(codeField.value).then(copied, fallback);
+      else fallback();
     } catch {
-      toast('Select the sync code to copy it.');
+      fallback();
     }
   });
   root.querySelector('#syncOff')?.addEventListener('click', () =>

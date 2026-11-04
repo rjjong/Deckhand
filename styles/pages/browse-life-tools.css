@@ -426,15 +426,6 @@
   pointer-events: none;
 }
 
-@container (min-width: 300px) {
-  .lf-extras {
-    bottom: 12px;
-    width: calc(132px + 2 * 54px);
-    gap: 0;
-    justify-content: space-between;
-  }
-}
-
 .lf-x {
   pointer-events: auto;
   display: inline-flex;

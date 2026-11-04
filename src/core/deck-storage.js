@@ -1,5 +1,15 @@
 // core / deck-storage
 
+const MAX_DECK_NAME_LENGTH = 99;
+
+function normalizeDeckName(value, fallback = 'Untitled deck') {
+  // Match input maxlength (UTF-16 units), without leaving half an emoji.
+  return (String(value ?? '').trim() || fallback)
+    .slice(0, MAX_DECK_NAME_LENGTH)
+    .replace(/[\uD800-\uDBFF]$/u, '')
+    .trimEnd();
+}
+
 let storageWarned = false;
 const deckStorageJobs = new Map();
 
@@ -365,7 +375,9 @@ async function loadDecksIndex() {
   try {
     (state.decksIndex || []).forEach((d) => {
       const was = d.format;
-      if (deckFormat(d) !== was) persistDeck(d);
+      const oldName = d.name;
+      d.name = normalizeDeckName(d.name);
+      if (deckFormat(d) !== was || d.name !== oldName) persistDeck(d);
     });
   } catch (e) {}
   state.homeLoaded = true;
@@ -455,6 +467,7 @@ function slimDeckForSave(clean) {
     s[k] = clean[k];
   });
   s.format = deckFormat(s);
+  s.name = normalizeDeckName(s.name);
   if (Array.isArray(s.cards)) s.cards = s.cards.map(slimCard);
   if (Array.isArray(s.maybeboard)) s.maybeboard = s.maybeboard.map(slimCard);
   if (s.admiral) s.admiral = slimCard(s.admiral);
@@ -753,6 +766,7 @@ async function openDeckVersions(id) {
 }
 
 function persistDeck(d) {
+  d.name = normalizeDeckName(d.name);
   return queueDeckStorage(d.id, () => persistDeckLocally(d));
 }
 

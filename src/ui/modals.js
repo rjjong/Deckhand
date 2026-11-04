@@ -8,8 +8,10 @@ function openModal(type, extra) {
 }
 
 function closeModal() {
+  const trigger = state.modal?.returnFocus;
   state.modal = null;
   renderModal();
+  if (trigger?.isConnected) trigger.focus({ preventScroll: true });
 }
 
 function renderModal() {
@@ -26,6 +28,8 @@ function renderModal() {
   const m = state.modal;
   if (m.type === 'lifeSetup') {
     renderLifeSetup(el, m);
+  } else if (m.type === 'installApp') {
+    renderPwaInstallHelp(el);
   } else if (m.type === 'sort') {
     el.innerHTML = /* HTML */ `<div class="modal-backdrop" id="mbd">
       <div class="modal-sheet">
@@ -70,7 +74,12 @@ function renderModal() {
     el.innerHTML = /* HTML */ `<div class="modal-backdrop" id="mbd">
       <div class="modal-sheet nd-sheet">
         <h3>New Deck</h3>
-        <input id="newDeckName" placeholder="Deck name" autofocus />
+        <input
+          id="newDeckName"
+          placeholder="Deck name"
+          maxlength="${MAX_DECK_NAME_LENGTH}"
+          autofocus
+        />
         <div class="otag-wrap" style="margin-bottom:10px;">
           <button
             type="button"

@@ -1014,6 +1014,7 @@ try {
       _enhQ = false;
       hardenInputs();
       enhanceSelects();
+      enhanceSearchFields();
     });
   };
   new MutationObserver(enh).observe(document.body, { childList: true, subtree: true });
@@ -1028,6 +1029,7 @@ try {
   );
   hardenInputs();
   enhanceSelects();
+  enhanceSearchFields();
 } catch (e) {}
 
 function fitTitleBars() {

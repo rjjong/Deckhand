@@ -275,55 +275,60 @@ function deckPriceSums(rows) {
 
 function openDeckPricePage(d) {
   if (!d) return;
-
+  const trigger = document.activeElement;
   document.getElementById('deckPriceOverlay')?.remove();
   const el = document.createElement('div');
-  el.className = 'overlay';
+  el.className = 'overlay deck-prices-page';
   el.id = 'deckPriceOverlay';
+  el.setAttribute('role', 'dialog');
+  el.setAttribute('aria-modal', 'true');
+  el.setAttribute('aria-label', 'Deck prices');
   const b0 = d.budget || {};
   const fmtIn = (v) => (typeof v === 'number' && v > 0 ? v.toFixed(2) : '');
   const filt = { lo: 0, hi: null };
-  // Written foot-first: main is column-reverse, so the summary (with the
-  // budgets and the coin button) lands at the foot, the list above it.
   el.innerHTML = /* HTML */ `<div class="overlay-inner">
-    ${overlayCapHtml('Prices' + ' · ' + d.name)}
-    <main>
-      <div class="panel-card" id="dppSum">
+    ${overlayCapHtml('Prices', `<button type="button" class="header-filter" id="dppClose" aria-label="Back to deck">${ICONS.back}</button>`, d.name)}
+    <main class="deck-prices-content tab-viewport">
+      <section class="panel-card" id="dppSum" aria-label="Deck value and budgets">
         <div class="dpp-grid" id="dppStats"></div>
-        <div class="dpp-grid" style="margin-top:10px;">
-          <label class="dpp-k" for="dppCard">${'Card budget'}</label>
-          <label class="dpp-k" for="dppDeck">${'Deck budget'}</label>
-          <input
-            class="dpp-in"
-            id="dppCard"
-            inputmode="decimal"
-            enterkeyhint="done"
-            autocomplete="off"
-            placeholder="€ —"
-            value="${fmtIn(b0.card)}"
-          />
-          <input
-            class="dpp-in"
-            id="dppDeck"
-            inputmode="decimal"
-            enterkeyhint="done"
-            autocomplete="off"
-            placeholder="€ —"
-            value="${fmtIn(b0.deck)}"
-          />
+        <h2 class="dpp-budget-heading">Budgets</h2>
+        <div class="dpp-budget-grid">
+          <label class="dpp-field" for="dppCard"
+            ><span class="dpp-k">Card budget</span>
+            <input
+              class="dpp-in"
+              id="dppCard"
+              inputmode="decimal"
+              enterkeyhint="done"
+              autocomplete="off"
+              placeholder="€ —"
+              value="${fmtIn(b0.card)}"
+            />
+          </label>
+          <label class="dpp-field" for="dppDeck"
+            ><span class="dpp-k">Deck budget</span>
+            <input
+              class="dpp-in"
+              id="dppDeck"
+              inputmode="decimal"
+              enterkeyhint="done"
+              autocomplete="off"
+              placeholder="€ —"
+              value="${fmtIn(b0.deck)}"
+            />
+          </label>
         </div>
-        <button type="button" class="ghost-btn dpp-alt" id="dppAlt">
-          ${ICONS.coins}<span>${'Budget alternatives'}</span>
-        </button>
-      </div>
-      <div class="panel-card">
+        ${menuCardHtml('dppAlt', ICONS.coins, 'Budget alternatives', 'Find lower-priced cards for this deck')}
+      </section>
+      <section class="panel-card" id="dppCards" aria-label="Cards by price">
         <div class="dpp-head">
-          <div class="panel-h" style="margin:0 0 6px;">${'Cards by price'}</div>
+          <h2>Cards by price</h2>
           <span class="dpp-cnt" id="dppCnt"></span>
         </div>
-        <div class="dpp-box" id="dppList"></div>
+        <div class="dpp-filter-label">Price range</div>
         ${priceSliderHtml('dppSlider', 0, null)}
-      </div>
+        <div class="dpp-box" id="dppList"></div>
+      </section>
     </main>
     ${overlayNavHtml()}
   </div>`;
@@ -331,7 +336,16 @@ function openDeckPricePage(d) {
   wireOverlayNav(el);
   pushOverlay('deckprice', () => {
     document.getElementById('deckPriceOverlay')?.remove();
+    const target = trigger?.isConnected
+      ? trigger
+      : state.screen === 'decklist' && state.activeDeckId === d.id
+        ? document.getElementById('capNoteBtn')
+        : null;
+    target?.focus({ preventScroll: true });
   });
+  el.querySelector('#dppClose').addEventListener('click', closeTopOverlay);
+  wireAppDialogKeys(el, closeTopOverlay);
+  el.querySelector('#dppClose').focus({ preventScroll: true });
   const main = el.querySelector('main'),
     box = el.querySelector('#dppList');
   let shown = [];
@@ -345,33 +359,34 @@ function openDeckPricePage(d) {
         ? rows.filter((r) => typeof r.eur === 'number' && r.eur > bud.card + 1e-9).length
         : 0;
     const left = bud.deck != null ? bud.deck - sums.total : null;
-    el.querySelector('#dppStats').innerHTML = /* HTML */ ` <div class="dpp-k">
-        ${'Average per card'}
+    el.querySelector('#dppStats').innerHTML = /* HTML */ `<div class="dpp-metric">
+        <span class="dpp-k">Average per card</span>
+        <strong class="dpp-v">${sums.priced ? fmtEur(sums.avg) : '—'}</strong>
+        <span class="dpp-note${overCards ? ' over' : ''}">
+          ${overCards ? overCards + ' over budget' : sums.unknown ? sums.unknown + ' not known yet' : ''}
+        </span>
       </div>
-      <div class="dpp-k">${'Deck total'}</div>
-      <div class="dpp-v">${sums.priced ? fmtEur(sums.avg) : '—'}</div>
-      <div class="dpp-v${overDeck ? ' over' : ''}">${fmtEur(sums.total)}</div>
-      <div class="dpp-note${overCards ? ' over' : ''}">
-        ${overCards ? overCards + ' over budget' : sums.unknown ? sums.unknown + ' not known yet' : ''}
-      </div>
-      <div class="dpp-note${overDeck ? ' over' : ''}">
-        ${left == null ? '' : overDeck ? fmtEur(-left) + ' over' : fmtEur(left) + ' left'}
+      <div class="dpp-metric">
+        <span class="dpp-k">Deck total</span>
+        <strong class="dpp-v${overDeck ? ' over' : ''}">${fmtEur(sums.total)}</strong>
+        <span class="dpp-note${overDeck ? ' over' : ''}">
+          ${left == null ? '' : overDeck ? fmtEur(-left) + ' over' : fmtEur(left) + ' left'}
+        </span>
       </div>`;
     shown = rows.filter((r) => {
       if (typeof r.eur !== 'number') return filt.lo <= 0 && filt.hi == null; // unknown prices only in the full range
       return r.eur >= filt.lo - 1e-9 && (filt.hi == null || r.eur <= filt.hi + 1e-9);
     });
     el.querySelector('#dppCnt').textContent = shown.length + ' / ' + rows.length;
-    // Most expensive first in the markup = at the foot of the reversed box.
+    // Most expensive first, reading downward through the list.
     box.innerHTML =
       shown
         .map((r, i) => {
           const over = bud.card != null && typeof r.eur === 'number' && r.eur > bud.card + 1e-9;
-          return `<div class="dpp-row${over ? ' over' : ''}" data-dpp="${i}" role="button"><span class="dpp-nm">${r.qty > 1 ? `<span class="dpp-q">${r.qty}×</span>` : ''}${escapeHtml(r.card.name)}</span><span class="dpp-eur">${typeof r.eur === 'number' ? fmtEur(r.eur) : '—'}</span></div>`;
+          return `<button type="button" class="dpp-row${over ? ' over' : ''}" data-dpp="${i}"><span class="dpp-nm">${r.qty > 1 ? `<span class="dpp-q">${r.qty}×</span>` : ''}${escapeHtml(r.card.name)}</span><span class="dpp-eur">${typeof r.eur === 'number' ? fmtEur(r.eur) : '—'}</span></button>`;
         })
         .join('') ||
       `<div class="hint" style="text-align:center;margin:10px 0;">${'No cards in this price range.'}</div>`;
-    box.scrollTop = box.scrollHeight; // the foot: in a reversed box that is where it starts
   };
   paint();
   box.addEventListener('click', (e) => {
@@ -427,11 +442,7 @@ function openDeckPricePage(d) {
     });
   });
   el.querySelector('#dppAlt').addEventListener('click', () => openBudgetOverlay(d));
-  // Opens at the foot: the summary, right above the bar.
-  requestAnimationFrame(() => {
-    main.scrollTop = main.scrollHeight;
-    box.scrollTop = box.scrollHeight;
-  });
+  main.scrollTop = 0;
   // Cards the phone had no price for yet: fetch, then fill in place.
   if (!deckPriceFromCache(d).complete) {
     ensureDeckPriced(d)
@@ -986,34 +997,47 @@ async function openBanCardPreview(btn) {
   btn.textContent = orig;
 }
 
-/* The community's 100 saltiest cards, from EDHREC's top-salt page (same
-   week cache as everything EDHREC). Bottom-up, per the charter: saltiest at
-   the FOOT where the eye starts, sweeter climbing upward — the page opens
-   scrolled to the bottom. Two columns, salt score under each card image,
-   standard app navigation beneath. */
+/* EDHREC's salt rankings read from the highest rank down through one viewport. */
 async function openSaltiestOverlay() {
-  pushOverlay('saltiest', () => {
-    document.getElementById('saltOverlay')?.remove();
-  });
   let el = document.getElementById('saltOverlay');
   if (!el) {
     el = document.createElement('div');
     el.className = 'overlay';
     el.id = 'saltOverlay';
   }
+  el._saltObserver?.disconnect();
+  const session = {};
+  el._saltSession = session;
+  const current = () => el.isConnected && el._saltSession === session;
+  const trigger = document.activeElement;
   document.body.appendChild(el);
-  el.innerHTML = /* HTML */ `<div class="overlay-inner">
-    ${overlayCapHtml('Saltiest Cards')}
-    <main>
-      <div class="status"><div class="spinner"></div></div>
+  pushOverlay('saltiest', () => {
+    el._saltObserver?.disconnect();
+    el.remove();
+    if (trigger?.isConnected) trigger.focus({ preventScroll: true });
+  });
+  el.innerHTML = /* HTML */ `<div
+    class="overlay-inner"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Saltiest Cards"
+  >
+    ${overlayCapHtml('Saltiest Cards', `<button type="button" class="header-filter" id="saltClose" aria-label="Close saltiest cards">${ICONS.back}</button>`)}
+    <main class="salt-content">
+      <div class="status" role="status">
+        <div class="spinner"></div>
+        Loading salt rankings…
+      </div>
     </main>
     ${overlayNavHtml()}
   </div>`;
   wireOverlayNav(el);
+  el.querySelector('#saltClose').addEventListener('click', closeTopOverlay);
   let ix = null;
   try {
     ix = await bulkIndexReady();
   } catch (e) {}
+  if (!current()) return;
   let rows = [];
   try {
     const data = await edhrecFetchJson('/pages/top/salt.json');
@@ -1035,97 +1059,103 @@ async function openSaltiestOverlay() {
       .filter((r) => r.name);
   } catch (e) {}
   const main = el.querySelector('main');
-  if (!main || !document.getElementById('saltOverlay')) return; // closed while loading
+  if (!main || !current()) return;
   if (!rows.length) {
-    main.innerHTML = /* HTML */ `<div class="error-note">
-      Couldn't reach EDHREC's salt list. Check your connection and try again.
+    main.innerHTML = /* HTML */ `<div class="salt-empty">
+      <p role="status">Couldn’t load EDHREC’s salt rankings.</p>
+      <button type="button" class="salt-retry">Try again</button>
     </div>`;
+    main.querySelector('.salt-retry').addEventListener('click', openSaltiestOverlay);
     return;
   }
-  // Bottom-up: rank 1 is written FIRST into a wrap-reverse grid, so it sits
-  // bottom-left, by the thumb; the list climbs upward from there.
   const ordered = rows.slice();
   const fetched = {};
+  const pending = new Map();
+  async function lookup(name, background) {
+    const entry = ix?.byName?.get(name.toLowerCase());
+    if (entry) return bulkToCardish(entry);
+    if (fetched[name]) return fetched[name];
+    if (pending.has(name)) return pending.get(name);
+    if (!current()) return null;
+    const work = (async () => {
+      try {
+        const response = await sfFetch(
+          SF_BASE + '/cards/named?exact=' + encodeURIComponent(name),
+          0,
+          background,
+        );
+        if (!response.ok) return null;
+        return (fetched[name] = await response.json());
+      } catch (e) {
+        return null;
+      }
+    })();
+    pending.set(name, work);
+    try {
+      return await work;
+    } finally {
+      pending.delete(name);
+    }
+  }
   main.innerHTML = /* HTML */ `<div class="salt-grid">
     ${ordered
       .map((r) => {
         const entry = ix && ix.byName ? ix.byName.get(String(r.name).toLowerCase()) : null;
         const img = entry
-          ? `<img src="${cardImage(bulkToCardish(entry))}" alt="${escapeHtml(r.name)}" loading="lazy">`
-          : `<div class="salt-noimg">${escapeHtml(r.name)}</div>`;
-        return `<div class="salt-tile" role="button" tabindex="0" data-saltn="${escapeHtml(r.name)}">${img}
-      <div class="salt-meta">#${r.rank} · 🧂 ${r.salt != null ? r.salt.toFixed(2) : '—'}</div>
-    </div>`;
+          ? `<img src="${cardImage(bulkToCardish(entry))}" alt="" loading="lazy">`
+          : `<span class="salt-noimg" aria-hidden="true">${ICONS.decks}</span>`;
+        const name = escapeHtml(r.name).replace(/"/g, '&quot;');
+        return `<button type="button" class="salt-tile" data-saltn="${name}" aria-label="${name}, rank ${r.rank}, salt ${r.salt != null ? r.salt.toFixed(2) : 'unavailable'}">
+          <span class="salt-art">${img}</span>
+          <span class="salt-meta"><span class="salt-name">${escapeHtml(r.name)}</span>
+            <span class="salt-stats"><span class="salt-rank">#${r.rank}</span><span class="salt-score">Salt ${r.salt != null ? r.salt.toFixed(2) : '—'}</span></span>
+          </span>
+        </button>`;
       })
       .join('')}
   </div>`;
-  main.querySelectorAll('[data-saltn]').forEach((b) =>
-    b.addEventListener('click', async () => {
-      const name = b.dataset.saltn;
-      const entry = ix && ix.byName ? ix.byName.get(String(name).toLowerCase()) : null;
-      if (entry) {
-        openCardInfo(bulkToCardish(entry));
-        return;
+  main.scrollTop = 0;
+  main.querySelectorAll('[data-saltn]').forEach((tile) => {
+    let opening = false;
+    tile.addEventListener('click', async () => {
+      if (opening) return;
+      opening = true;
+      const card = await lookup(tile.dataset.saltn, false);
+      if (card && current()) openCardInfo(card);
+      else if (current()) toast('Couldn’t load this card. Please try again later.');
+      opening = false;
+    });
+  });
+  // Fill missing art only near the viewport, through the shared paced queue.
+  // Closing the page stops any image work that has not started.
+  let imageQueue = Promise.resolve();
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const tile = entry.target;
+        observer.unobserve(tile);
+        imageQueue = imageQueue
+          .then(async () => {
+            if (!current() || sfCooldownUntil() > Date.now()) return;
+            const card = await lookup(tile.dataset.saltn, true);
+            const hold = tile.querySelector('.salt-noimg');
+            if (!card || !hold || !current()) return;
+            const src = cardImage(card);
+            if (!src) return;
+            const image = document.createElement('img');
+            image.src = src;
+            image.alt = '';
+            image.loading = 'lazy';
+            hold.replaceWith(image);
+          })
+          .catch(() => {});
       }
-      if (fetched[name]) {
-        openCardInfo(fetched[name]);
-        return;
-      }
-      try {
-        const r = await sfFetch(SF_BASE + '/cards/named?exact=' + encodeURIComponent(name));
-        if (r.ok) openCardInfo(await r.json());
-      } catch (e) {}
-    }),
-  );
-  // The story starts at the salt mine's floor -- and stays there while the
-  // images arrive, until the reader scrolls.
-  let touched = false;
-  main.addEventListener(
-    'touchstart',
-    () => {
-      touched = true;
     },
-    { passive: true, once: true },
+    { root: main, rootMargin: '200px' },
   );
-  main.addEventListener(
-    'wheel',
-    () => {
-      touched = true;
-    },
-    { passive: true, once: true },
-  );
-  const toFoot = () => {
-    if (!touched && main.isConnected) main.scrollTop = main.scrollHeight;
-  };
-  toFoot();
-  requestAnimationFrame(toFoot);
-  main.querySelectorAll('img').forEach((im) => im.addEventListener('load', toFoot, { once: true }));
-  // Cards the phone's card file does not know (banned or very old ones):
-  // one lookup each on the quiet lane, and their picture drops in.
-  for (const r of ordered) {
-    const hold = main.querySelector(`[data-saltn="${CSS.escape(r.name)}"] .salt-noimg`);
-    if (!hold) continue;
-    try {
-      const res = await sfFetch(
-        SF_BASE + '/cards/named?exact=' + encodeURIComponent(r.name),
-        0,
-        true,
-      );
-      if (!res.ok) continue;
-      const card = await res.json();
-      fetched[r.name] = card;
-      const src = cardImage(card);
-      if (src && hold.isConnected) {
-        const im = document.createElement('img');
-        im.src = src;
-        im.alt = r.name;
-        im.loading = 'lazy';
-        im.addEventListener('load', toFoot, { once: true });
-        hold.replaceWith(im);
-      }
-    } catch (e) {}
-    if (!document.getElementById('saltOverlay')) break;
-  }
+  el._saltObserver = observer;
+  main.querySelectorAll('.salt-tile:has(.salt-noimg)').forEach((tile) => observer.observe(tile));
 }
 
 async function edhrecSaltFor(card) {

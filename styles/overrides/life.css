@@ -488,21 +488,59 @@ html #setLifePopup #setLifeInput {
   }
 }
 
-/* Monarch and Initiative remain distinct when one player holds both roles. */
-.life-roles {
+/* Player roles stay beside the name in the normal and counter views. */
+.life-player-name {
   position: absolute;
   left: 50%;
-  bottom: 100%;
+  bottom: 8px;
   transform: translateX(-50%);
+  z-index: 3;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 6px;
+  width: max-content;
+  max-width: calc(100% - 20px);
+  color: rgb(255 255 255 / 0.85);
+  font:
+    400 clamp(14px, 7cqmin, 19px)/1.4 'Inter',
+    system-ui,
+    sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  pointer-events: none;
+}
+.life-player-name .pname-input {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  font-size: inherit;
+  pointer-events: auto;
+}
+.life-focus-name {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.life-name-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.life-roles {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
   pointer-events: none;
 }
 .life-roles .life-role-icon {
   position: static;
   transform: none;
-  width: clamp(26px, 14cqmin, 48px);
+  width: clamp(16px, 8cqmin, 24px);
   color: var(--gold);
   filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.55));
   line-height: 0;
@@ -519,12 +557,4 @@ html #setLifePopup #setLifeInput {
     system-ui,
     sans-serif;
   text-align: center;
-}
-@container (min-width:300px) {
-  .lf-extras [data-linitiative] {
-    position: absolute;
-    left: 50%;
-    bottom: 52px;
-    transform: translateX(-50%);
-  }
 }

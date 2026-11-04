@@ -5,14 +5,15 @@ Pauper, Modern, Legacy, and Vintage. Unsupported saved formats fall back to
 Commander while keeping their cards, commanders, and folders.
 
 The Node.js server handles sync, AI requests, news, and Scryfall through `/api/`.
-Sync data and AI caches stay in SQLite; AI provider keys are optional.
+Sync data and local AI caches stay in SQLite.
 
-Ask AI Judge uses **Groq only**. Create a key from a [Groq Free account](https://console.groq.com/keys),
-put it in your server's `.env` as `GROQ_API_KEY=...`, and restart the server.
-Keep the account on the Free plan; billing tier is controlled by Groq.
-The default model is `openai/gpt-oss-120b`. Rate limits pause AI requests;
-cached answers and the app's relevant rules remain available. See
-[Groq setup](docs/DEVELOPMENT.md#ask-ai-judge-with-groq-free) for details.
+Ask AI Judge and deck advice use a **local Ollama model only**: `qwen3:4b-instruct-2507-q4_K_M` (about 2.5 GB).
+Docker Compose includes a private Ollama service with cloud features disabled. No AI API keys are used.
+See [local AI setup](docs/DEVELOPMENT.md#local-ai-judge-and-deck-advice) and [GPU setup](docs/SERVER.md#local-ai-and-gpu-acceleration).
+
+The **experimental card scanner** is under **Collection → + → Scan cards** and in the main menu.
+It detects up to eight separated cards per photo or camera capture using self-hosted OpenCV.js and Tesseract.js.
+Photos and OCR stay in your browser. Review names before adding; exact printing, language and foil are not identified.
 
 In **Settings → Sync**, create a sync code on your first device and enter it on
 your other devices using the same Deckhand server. Decks, collection (including
@@ -50,11 +51,15 @@ fixed title and toolbars. Decks and Collection have full-width search bars
 that scroll with their pages.
 Main pages, full-screen tools, and filters share one themed title-bar style.
 Their add buttons share the same size and fixed bottom-right position.
-Open decks have a card-count and value overview, pinned search, card display controls,
-and a grouped Deck actions menu. Filters and bulk editing open full screen.
+Open decks keep commander cards on the left of their format, bracket estimate,
+issue review, and description. Card count and value sit in the Cards toolbar,
+alongside a Tiles/Stacks/List dropdown and sorting. Search stays pinned, with the
+same themed field and background fade used across the app. Filters and bulk
+editing open full screen; Deck actions groups the other tools.
+Stats charts open the deck list with editable mana-value or color filters applied.
 Backup reminders appear in Menu and add an exclamation badge to the menu logo.
-Collection has a Trade icon in its title bar, a filtered value beside its search field,
-and the same full-screen sliding filters as Search.
+Collection has a Trade icon in its title bar and the same full-screen sliding
+filters as Search. Its search bar contains no collection-value total.
 Collection's Add card opens Search. Each card's Add menu lists collection after the deck choices.
 Trade has two card lists with Add card actions and no separate page search.
 Each traded card has a Cardmarket link for its printing, with name search as a fallback for older entries.
@@ -72,12 +77,17 @@ for the folder map, page entry points, CSS order, and debugging instructions.
 
 Pages now open at the top. Search, sorting, and filter controls sit below the
 title bar; dropdowns read from the top. Scryfall requests use the local
-`/api/scryfall/...` adapter, which shares a paced queue and short-lived query
-cache across browser tabs. Optional data files are requested only when present.
+`/api/scryfall/...` adapter, with a shared paced queue, SQLite response cache,
+hourly/daily request budgets and persistent cooldowns after blocks or rate limits.
+Cardmarket pages open only on request; repeated link opens are spaced apart.
+See [request safeguards](docs/DEVELOPMENT.md#scrolling-and-scryfall-traffic).
+Optional data files are requested only when present.
 
-Device sync and AI caches use SQLite. AI features need optional provider keys
-in `.env`. The old feedback form, bundled Android APK, and web push service
+Device sync and AI caches use SQLite. AI features run through local Ollama. The old feedback form, bundled Android APK, and web push service
 have been removed. Install the web app through your browser.
 
 See [the development guide](docs/DEVELOPMENT.md) for LAN testing, Docker,
 backups, and deployment to your own machine. Run `npm test` for backend tests.
+
+The Ubuntu home server setup, deployment command, and backup procedures are in
+[the server guide](docs/SERVER.md).

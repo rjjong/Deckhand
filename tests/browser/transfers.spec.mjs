@@ -38,10 +38,18 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-async function openDeckTransfer(page) {
+async function openDeckTransfer(page, mode) {
   await page.locator('#menuBtn').click();
-  await page.locator('#mImpExp').click();
-  await expect(page.getByRole('dialog', { name: 'Import / export', exact: true })).toBeVisible();
+  const menu = page.getByRole('dialog', { name: 'Deck actions', exact: true });
+  await expect(menu.locator('#mImport')).toBeVisible();
+  await expect(menu.locator('#mExport')).toBeVisible();
+  await menu.locator(mode === 'import' ? '#mImport' : '#mExport').click();
+  await expect(
+    page.getByRole('dialog', {
+      name: mode === 'import' ? 'Import deck' : 'Export deck',
+      exact: true,
+    }),
+  ).toBeVisible();
 }
 
 async function expectFits(page, dialog) {
@@ -76,14 +84,10 @@ test('deck transfers use themed cards and retain formats, downloads, file loadin
 }, info) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await openDeckTransfer(page);
+  await openDeckTransfer(page, 'export');
   let dialog = page.locator('#dlPanelBox .transfer-dialog');
-  await expect(dialog.locator('.hub-card')).toHaveCount(2);
-  await expect(dialog.locator('.hub-card .hub-icon svg')).toHaveCount(2);
   await expectFits(page, dialog);
   await mkdir('var/previews', { recursive: true });
-  await page.screenshot({ path: `var/previews/transfers-choice-${info.project.name}.png` });
-  await page.locator('#ieChooseExport').click();
   await expect(dialog).toHaveAttribute('aria-label', 'Export deck');
   await expect(page.locator('#exportText')).toHaveValue('1 Sol Ring\n1 Arcane Signet');
   for (const format of ['moxfield', 'cockatrice', 'plain']) {
@@ -106,8 +110,7 @@ test('deck transfers use themed cards and retain formats, downloads, file loadin
   await page.screenshot({ path: `var/previews/transfers-export-small-${info.project.name}.png` });
   await dialog.getByRole('button', { name: 'Close import/export' }).click();
   await expect(page.locator('#dlPanelBox .transfer-dialog')).toHaveCount(0);
-  await openDeckTransfer(page);
-  await page.locator('#ieChooseImport').click();
+  await openDeckTransfer(page, 'import');
   dialog = page.locator('#dlPanelBox .transfer-dialog');
   await page
     .locator('#importFile')
@@ -188,7 +191,7 @@ test('transfer dialogs remain readable in every guild and light or dark mode', a
         },
         { guild, theme },
       );
-      for (const mode of ['impexp', 'import', 'export']) {
+      for (const mode of ['import', 'export']) {
         await page.evaluate((mode) => {
           state.dlPanel = null;
           toggleDlPanel(getDeck(state.activeDeckId), mode);

@@ -296,15 +296,7 @@ function collectionPageHtml() {
         aria-haspopup="dialog"
         aria-expanded="${state.colAdvOpen}"
       >
-        ${ICONS.filter}</button
-      ><button
-        type="button"
-        class="collection-value cap-tap"
-        id="capNoteBtn"
-        aria-label="Collection value"
-        title="${trS('Price history')}"
-      >
-        €${totalEur.toFixed(2)}
+        ${ICONS.filter}
       </button>
     </div>
     ${(!colFilterActive() && notePrice(collectionValueKey(), totalEur), '')}
@@ -430,6 +422,11 @@ function wireCollectionPage() {
           'fabAddCard',
           `<span class="ib">${ICONS.search}</span>${trS('Add card')}`,
           openCollectionCardSearch,
+        ],
+        [
+          'fabScanCards',
+          `<span class="ib">${SCANNER_ICON}</span>Scan cards · Experimental`,
+          openCardScanner,
         ],
         [
           'fabAddBinder',

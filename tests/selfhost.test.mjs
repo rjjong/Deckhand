@@ -132,10 +132,21 @@ test('HTTP serves the frontend, protects source/secrets, and supports local API 
   const badge = await fetch(base + '/assets/images/deckhand-badge.webp');
   assert.equal(badge.status, 200);
   assert.equal(badge.headers.get('content-type'), 'image/webp');
+  const manifest = await (await fetch(base + '/manifest.json')).json();
+  const installAssets = [
+    ...manifest.icons,
+    ...(manifest.screenshots || []),
+    ...manifest.shortcuts.flatMap(shortcut => shortcut.icons || [])
+  ];
+  for (const src of new Set(installAssets.map(asset => asset.src))) {
+    const asset = await fetch(new URL(src, base + '/'), { method: 'HEAD' });
+    assert.equal(asset.status, 200, 'Missing installation asset: ' + src);
+    assert.match(asset.headers.get('content-type'), /^image\//);
+  }
   const head = await fetch(base, { method: 'HEAD' });
   assert.equal(head.status, 200);
   assert.equal(await head.text(), '');
-  for (const path of ['/.env', '/.git/config', '/server/storage.mjs', '/src/core/state.js', '/assets/private.js', '/package.json', '/var/app.sqlite', '/Deckhand.apk', '/api/constructor']) {
+  for (const path of ['/.env', '/.git/config', '/server/storage.mjs', '/src/core/state.js', '/assets/private.js', '/package.json', '/var/app.sqlite', '/Deckhand.apk', '/api/constructor', '/screenshot-decklist.png', '/screenshot-inspiration.png', '/screenshot-life.png']) {
     assert.equal((await fetch(base + path)).status, 404, path);
   }
   const runtime = await (await fetch(base + '/runtime-config.js')).text();
@@ -155,7 +166,7 @@ test('HTTP serves the frontend, protects source/secrets, and supports local API 
   assert.deepEqual((await response.json()).changes['deck:http'], { t: 1, v: deck });
   response = await post('/api/judge', { q: 'Can this card attack?' });
   assert.equal(response.status, 503);
-  assert.equal((await response.json()).error, 'nokey');
+  assert.equal((await response.json()).error, 'notconfigured');
   assert.equal((await post('/api/push-subscribe', {})).status, 404);
   response = await fetch(base + '/oracle-slim.jsonl.gz');
   assert.equal(response.headers.get('content-type'), 'application/gzip');

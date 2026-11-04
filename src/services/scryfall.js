@@ -13,14 +13,20 @@ function hasLocalDataFile(name) {
 
 function sfRequestUrl(url) {
   const u = new URL(url, location.href);
-  return window.DECKHAND_CONFIG?.scryfallBase && u.hostname === 'api.scryfall.com'
-    ? SF_BASE + u.pathname + u.search
-    : u.href;
+  const base = new URL(SF_BASE);
+  if (u.username || u.password) throw new Error('Unsupported card API URL');
+  if (u.origin === 'https://api.scryfall.com') return SF_BASE + u.pathname + u.search;
+  if (
+    window.DECKHAND_CONFIG?.scryfallBase &&
+    u.origin === base.origin &&
+    u.pathname.startsWith(base.pathname.replace(/\/$/, '') + '/')
+  )
+    return u.href;
+  throw new Error('Unsupported card API URL');
 }
 
-/* Every Scryfall request goes through here: spaced out and auto-retried with
-   exponential backoff on 429/5xx, so bulk operations (which fire many
-   requests) don't get rate-limited and misreported as "not found". */
+/* GET and POST requests share one queue. Refusals pause the whole queue;
+   ordinary transient network failures have at most one bounded retry. */
 let _nextSfSlot = 0;
 
 /* ---------- The Scryfall scheduler ----------
@@ -29,7 +35,7 @@ let _nextSfSlot = 0;
    1. A search waits behind AT MOST one in-flight request, never a queue of
       price lookups (priority is re-decided before every single request).
    2. No request can hang forever: mobile networks sometimes black-hole a
-      fetch (no reply, no error) — a 12s abort converts that into a normal
+      fetch (no reply, no error) — a bounded timeout converts that into a normal
       retry instead of an infinite spinner that wedges the whole session.
    3. Retries rejoin the FRONT of their own lane after backoff. */
 const _sfQ = { hi: [], lo: [] };
@@ -38,18 +44,84 @@ let _sfWorking = false,
   _sfGen = 0,
   _sfBeat = 0;
 
-/* Requests start at least 250ms apart, with a shared backend queue as well.
-   which is inside that, but a burst of deck pricing still managed to trip their
-   limiter -- and a refused request comes back as a fast network error, not a
-   429, because the refusal carries no CORS headers. So the queue watches for
-   the signature (several sub-100ms failures in a row, or a real 429) and eases
-   off for a minute before returning to full speed. Still one request at a time:
-   only the spacing changes. */
-const SF_GAP = 250,
+/* Requests start at least 500ms apart, with a shared backend queue as well.
+   An explicit refusal pauses requests across reloads and browser tabs. Fast
+   network failures without readable status headers also slow the queue. */
+const SF_GAP = 500,
   SF_GAP_EASY = 1000,
   SF_COOL_MS = 60000;
 
 let _sfRetryAt = 0;
+const SF_COOLDOWN_KEY = 'deckhand:scryfall-cooldown';
+
+function sfCooldownUntil() {
+  try {
+    const saved = Number(localStorage.getItem(SF_COOLDOWN_KEY)) || 0;
+    if (saved > _sfRetryAt) _sfRetryAt = saved;
+  } catch (e) {}
+  return _sfRetryAt;
+}
+
+function sfCoolingResponse() {
+  return new Response(
+    JSON.stringify({
+      object: 'error',
+      code: 'rate_limited',
+      details: 'External card requests are paused. Your cached cards and prices remain available.',
+    }),
+    {
+      status: 429,
+      headers: {
+        'content-type': 'application/json',
+        'retry-after': String(Math.max(1, Math.ceil((sfCooldownUntil() - Date.now()) / 1000))),
+      },
+    },
+  );
+}
+
+function sfPauseRequests(response) {
+  const retry = response.headers?.get('retry-after');
+  const duration =
+    retry && /^\d+(\.\d+)?$/.test(retry)
+      ? Number(retry) * 1000
+      : Date.parse(retry || '') - Date.now();
+  _sfRetryAt = Math.max(
+    sfCooldownUntil(),
+    Date.now() + Math.max(60000, Number.isFinite(duration) ? duration : 15 * 60000),
+  );
+  try {
+    localStorage.setItem(SF_COOLDOWN_KEY, String(_sfRetryAt));
+  } catch (e) {}
+  state._priceHoldUntil = Math.max(state._priceHoldUntil || 0, _sfRetryAt);
+  for (const lane of [_sfQ.hi, _sfQ.lo]) {
+    while (lane.length) lane.shift().resolve(sfCoolingResponse());
+  }
+}
+
+function sfShouldPause(response) {
+  return (
+    response &&
+    (response.status === 429 ||
+      response.status === 403 ||
+      response.headers?.get('cf-mitigated') === 'challenge' ||
+      /text\/html/i.test(response.headers?.get('content-type') || '') ||
+      (response.status >= 500 && response.headers?.has('retry-after')))
+  );
+}
+
+function invalidScryfallUrl() {
+  return new Response(
+    JSON.stringify({
+      object: 'error',
+      code: 'invalid_scryfall_url',
+      details: 'Card lookups may only use the configured Scryfall API.',
+    }),
+    {
+      status: 400,
+      headers: { 'content-type': 'application/json' },
+    },
+  );
+}
 
 let _sfCoolUntil = 0,
   _sfFastFails = 0;
@@ -185,6 +257,7 @@ function _netNoteFail(url) {
 /* Never take the app offline on inference alone — go and check. */
 async function _netConfirmDown() {
   if (_netConfirming || _netDown) return;
+  if (sfCooldownUntil() > Date.now()) return;
   _netConfirming = true;
   try {
     if (navigator.onLine === false) {
@@ -203,6 +276,7 @@ async function _netConfirmDown() {
         signal: ctl.signal,
       });
       clearTimeout(t);
+      if (sfShouldPause(r)) sfPauseRequests(r);
       if (r) {
         _netNote(true);
         return;
@@ -256,6 +330,7 @@ function _netSetDown(down) {
     } catch (e) {}
   if (down && !_netProbeT) {
     _netProbeT = setInterval(async () => {
+      if (!window.DECKHAND_CONFIG?.selfHosted && sfCooldownUntil() > Date.now()) return;
       try {
         const pc = new AbortController();
         const pt = setTimeout(() => {
@@ -270,6 +345,7 @@ function _netSetDown(down) {
           { cache: 'no-store', signal: pc.signal },
         );
         clearTimeout(pt);
+        if (sfShouldPause(r)) sfPauseRequests(r);
         if (r?.ok) _netNote(true);
       } catch (e) {}
     }, 12000);
@@ -341,7 +417,11 @@ async function _bulkNamedServe(url) {
 }
 
 function sfFetch(url, attempt, bg, fresh, front) {
-  url = sfRequestUrl(url);
+  try {
+    url = sfRequestUrl(url);
+  } catch (e) {
+    return Promise.resolve(invalidScryfallUrl());
+  }
   // OFFLINE FAST PATH: while the banner is up, name lookups answer straight
   // from the local database -- no queueing behind a dead network.
   if (
@@ -366,6 +446,22 @@ function sfFetch(url, attempt, bg, fresh, front) {
   return _sfEnqueue(url, attempt, bg, fresh, front);
 }
 
+function sfPost(url, body, timeoutMs) {
+  try {
+    url = sfRequestUrl(url);
+    return _sfEnqueue(url, 0, false, false, false, {
+      fetch: {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      },
+      timeoutMs: timeoutMs || 10000,
+    });
+  } catch (e) {
+    return Promise.resolve(invalidScryfallUrl());
+  }
+}
+
 function localServerUnavailable() {
   return new Response(
     JSON.stringify({
@@ -377,22 +473,12 @@ function localServerUnavailable() {
   );
 }
 
-function _sfEnqueue(url, attempt, bg, fresh, front) {
+function _sfEnqueue(url, attempt, bg, fresh, front, requestOptions) {
   if (window.DECKHAND_CONFIG?.selfHosted && _netDown)
     return Promise.resolve(localServerUnavailable());
-  if (Date.now() < _sfRetryAt)
-    return Promise.resolve(
-      new Response(
-        JSON.stringify({
-          object: 'error',
-          code: 'rate_limited',
-          details: 'Scryfall is cooling down.',
-        }),
-        { status: 429, headers: { 'content-type': 'application/json' } },
-      ),
-    );
+  if (Date.now() < sfCooldownUntil()) return Promise.resolve(sfCoolingResponse());
   // `front` puts the job at the head of its lane: still strictly one request
-  // at a time at the same 80ms cadence — only the ORDER changes. Used for
+  // at a time at the same paced cadence — only the ORDER changes. Used for
   // what the person is looking at right now (the open card sheet's rulings
   // and price), which must not wait behind a deck page's background queue.
   return new Promise((resolve, reject) => {
@@ -407,6 +493,8 @@ function _sfEnqueue(url, attempt, bg, fresh, front) {
       fresh: !!fresh,
       born: Date.now(),
       screen: _screen,
+      options: requestOptions?.fetch,
+      timeoutMs: requestOptions?.timeoutMs || 20000,
       resolve,
       reject,
     };
@@ -474,10 +562,8 @@ async function _sfPump() {
         job.resolve(cached || localServerUnavailable());
         continue;
       }
-      if (Date.now() < _sfRetryAt) {
-        job.resolve(
-          new Response(JSON.stringify({ object: 'error', code: 'rate_limited' }), { status: 429 }),
-        );
+      if (Date.now() < sfCooldownUntil()) {
+        job.resolve(sfCoolingResponse());
         continue;
       }
       if (Date.now() - job.born > 90000) {
@@ -496,14 +582,20 @@ async function _sfPump() {
         try {
           ctl.abort();
         } catch (e) {}
-      }, 20000);
+      }, job.timeoutMs);
       let hardT = null;
       try {
         // Hard race: even a fetch that ignores its abort signal frees the lane.
         res = await Promise.race([
-          fetch(job.url, { signal: ctl.signal, cache: job.fresh ? 'no-store' : 'default' }),
+          fetch(job.url, {
+            ...job.options,
+            headers: { Accept: 'application/json', ...job.options?.headers },
+            redirect: 'error',
+            signal: ctl.signal,
+            cache: job.fresh ? 'no-store' : 'default',
+          }),
           new Promise((_, rej) => {
-            hardT = setTimeout(() => rej(new Error('hard timeout')), 24000);
+            hardT = setTimeout(() => rej(new Error('hard timeout')), job.timeoutMs + 4000);
           }),
         ]);
       } catch (e) {
@@ -534,18 +626,10 @@ async function _sfPump() {
       }
       // A refusal is fast; a genuinely slow line is not. Only the fast kind,
       // and a real 429, mean "you are asking too often".
-      if (res && res.status === 429) {
-        _sfNoteRefusal(null, 429);
-        _sfRetryAt =
-          Date.now() + Math.max(60000, (Number(res.headers?.get('retry-after')) || 0) * 1000);
-        for (const lane of [_sfQ.hi, _sfQ.lo]) {
-          while (lane.length)
-            lane.shift().resolve(
-              new Response(JSON.stringify({ object: 'error', code: 'rate_limited' }), {
-                status: 429,
-              }),
-            );
-        }
+      if (sfShouldPause(res)) {
+        _sfNoteRefusal(null, res.status);
+        sfPauseRequests(res);
+        res = sfCoolingResponse();
       } else if (_verdict === 'dead') _sfNoteRefusal(Date.now() - t0, null);
       else if (res && res.ok) _sfNoteOk();
       const retryable = err || (res && res.status >= 500);
@@ -594,14 +678,14 @@ async function _sfPump() {
   }
 }
 
-/* Watchdog: if the pump has queued work but hasn't heartbeat in 20s, its
-   awaited fetch has wedged in a way even the 12s abort didn't catch. Retire
+/* Watchdog: if the pump has queued work but hasn't heartbeat in 30s, its
+   awaited fetch has wedged in a way even the bounded timeout didn't catch. Retire
    that loop (generation bump) and start a fresh one — the whole app's data
    access rides on this one lane, so it must never stall permanently. */
 setInterval(() => {
   if (_sfWorking && (_sfQ.hi.length || _sfQ.lo.length) && Date.now() - _sfBeat > 30000) {
     console.warn(
-      'Scryfall queue watchdog: pump wedged for 20s — restarting it. Queue:',
+      'Scryfall queue watchdog: pump wedged for 30s — restarting it. Queue:',
       _sfQ.hi.length,
       'hi /',
       _sfQ.lo.length,

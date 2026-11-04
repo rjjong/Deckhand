@@ -785,7 +785,7 @@ async function fetchPricesForBatch(names, bg) {
       // the per-card fallback was written for.
       const refused =
         !(e && /status (4[0-9]{2})/.test(String(e.message))) ||
-        /status 429/.test(String(e && e.message));
+        /status (403|429)/.test(String(e && e.message));
       console.error('batch price query failed', e);
       return refused ? REFUSED : null;
     }
@@ -850,9 +850,6 @@ async function priceDeck(d, onProgress, bg) {
     if (onProgress) onProgress(doneNames, unique.length);
     // A few batches in parallel; sfFetch's queue still paces the actual requests
     let _refused = false;
-    // How many times this deck has already been picked back up. Three is
-    // plenty: beyond that something is wrong that waiting will not fix.
-    state._priceResume = state._priceResume || {};
     await runLimited(
       batches,
       async (names) => {
@@ -863,11 +860,13 @@ async function priceDeck(d, onProgress, bg) {
           // and six retries each; stop this run and let the queue's cool-off do
           // its work. What we did get is kept.
           _refused = true;
-          state._priceHoldUntil = Date.now() + 45000;
+          state._priceHoldUntil = Math.max(
+            state._priceHoldUntil || 0,
+            sfCooldownUntil(),
+            Date.now() + 15 * 60000,
+          );
           try {
-            sfJournal(
-              'prices: Scryfall refused the batch \u2014 pausing, will finish this by itself',
-            );
+            sfJournal('prices: Scryfall refused the batch \u2014 stopped; keeping cached prices');
           } catch (e) {}
           return;
         }
@@ -889,32 +888,6 @@ async function priceDeck(d, onProgress, bg) {
       2,
     );
     savePriceCache();
-    if (_refused) {
-      // Come back to it on our own, once the hold and the queue's cool-off have
-      // passed. The person should not have to keep reopening the deck -- that
-      // habit is what kept Scryfall's limiter awake in the first place.
-      const tries = (state._priceResume[d.id] || 0) + 1;
-      state._priceResume[d.id] = tries;
-      if (tries <= 3) {
-        setTimeout(
-          () => {
-            if (state._pricingDeck) return; // something else is busy
-            state._priceHoldUntil = 0;
-            priceDeck(d, onProgress, true)
-              .then(() => {
-                // background lane: no rush
-                if (state.screen === 'decklist' && state.activeDeckId === d.id)
-                  refreshDecklistBox(d);
-                if (state.screen === 'decks') paintDeckPrice(d);
-              })
-              .catch(() => {});
-          },
-          50000 + tries * 15000,
-        );
-      }
-    } else {
-      state._priceResume[d.id] = 0;
-    }
   }
 
   let total = 0,
@@ -931,6 +904,7 @@ async function priceDeck(d, onProgress, bg) {
     refreshed = (async () => {
       for (const batch of chunkArr(staleNames, PRICE_BATCH)) {
         const found = await fetchPricesForBatch(batch, true); // background lane
+        if (found === REFUSED) break;
         if (found)
           batch.forEach((n) => {
             state.priceCache[n] = { v: found[n], t: Date.now() };

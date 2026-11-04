@@ -191,9 +191,13 @@ function closeDeckFilterPanel(d, keepFilter) {
     box.className = '';
     box.innerHTML = dlPanelHtml(d);
   }
+  syncDeckEditorModal();
   document.querySelectorAll('[data-panel]').forEach((x) => x.classList.remove('active'));
   const ch = document.getElementById('dockFilterChev');
-  if (ch) ch.setAttribute('aria-expanded', 'false');
+  if (ch) {
+    ch.setAttribute('aria-expanded', 'false');
+    ch.focus({ preventScroll: true });
+  }
   if (!keepFilter) {
     state.dlFilter = { ci: [] };
     state.dlFilterOn = false;
@@ -524,6 +528,7 @@ function renderInner() {
   root.innerHTML = /* HTML */ `<div class="app">${nav}${body}</div>`;
   const page = root.querySelector('.app > main');
   layoutPageViewport(page);
+  enhanceSearchFields(root);
   const viewport = root.querySelector('.tab-viewport');
   if (viewport) viewport.dataset.restoreScroll = String(tabScroll);
   headerObserver.disconnect();

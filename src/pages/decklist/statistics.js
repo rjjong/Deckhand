@@ -147,7 +147,6 @@ function castabilitySummaryHtml(d) {
 
 function statsTabHtml(d) {
   const curve = [0, 0, 0, 0, 0, 0, 0];
-  const curveCards = { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
   const typeCounts = {};
   const rarityCounts = {};
   let cmcSum = 0,
@@ -156,7 +155,6 @@ function statsTabHtml(d) {
     if (countsForCurve(c)) {
       const b = Math.min(Math.round(c.cmc || 0), 6);
       curve[b]++;
-      curveCards[b].push(c);
       cmcSum += c.cmc || 0;
       curveCount++;
     }
@@ -199,16 +197,15 @@ function statsTabHtml(d) {
         <span
           >Mana Curve
           <span style="text-transform:none;color:var(--sub-text);font-weight:400;"
-            >— tap a bar to see those cards</span
+            >— tap a bar to filter the deck list</span
           ></span
         ><span
           id="avgMvBadge"
           style="text-transform:none;color:var(--brass);font-weight:700;white-space:nowrap;"
         ></span>
       </div>
-      <div id="curveDetail" class="st-detail"></div>
       <div class="curve-panel">
-        ${curve.map((n, i) => `<div class="curve-col" data-cmc="${i}" style="cursor:${n ? 'pointer' : 'default'};"><div class="curve-bar" style="height:${n ? 14 + (n / maxB) * 54 : 2}px"></div><div class="curve-n">${n || ''}</div><div class="curve-lbl">${i === 6 ? '6+' : i}</div></div>`).join('')}
+        ${curve.map((n, i) => `<button type="button" class="curve-col" data-cmc="${i}" aria-label="Filter deck by mana value ${i === 6 ? '6 or more' : i}: ${n} card${n === 1 ? '' : 's'}" ${n ? '' : 'disabled'}><span class="curve-bar" style="height:${n ? 14 + (n / maxB) * 54 : 2}px"></span><span class="curve-n">${n || ''}</span><span class="curve-lbl">${i === 6 ? '6+' : i}</span></button>`).join('')}
       </div>
     </div>
     ${
@@ -273,13 +270,18 @@ function statsTabHtml(d) {
         const prodPct = Math.round((prod[pk] / prodTotal) * 100);
         const showBar = prodAny && k !== 'C';
         return /* HTML */ `<div class="ms-cell">
-          <div class="ms-big" data-msym="${k}" style="cursor:pointer;">
+          <button
+            type="button"
+            class="ms-big"
+            data-msym="${k}"
+            aria-label="Filter deck by ${CNAME[k].toLowerCase()} mana symbols"
+          >
             ${manaIconSvg(k, 92)}<span class="ms-pct"><i>${symPct}%</i></span>
-          </div>
+          </button>
           ${
             showBar
               ? `<div class="ms-prod-lbl">${CNAME[k]} production</div>
-          <div class="ms-prod" data-mprod="${k}" style="cursor:pointer;"><div class="ms-prod-fill" style="width:${(prod[pk] / prodTotal) * 100}%;background:${colorFill[pk] || '#8a8f98'}"></div><span class="ms-prod-n"><b>${prodPct}%</b></span></div>`
+          <button type="button" class="ms-prod" data-mprod="${k}" aria-label="Filter deck by ${CNAME[pk].toLowerCase()} mana production"><span class="ms-prod-fill" style="width:${(prod[pk] / prodTotal) * 100}%;background:${colorFill[pk] || '#8a8f98'}"></span><span class="ms-prod-n"><b>${prodPct}%</b></span></button>`
               : ''
           }
         </div>`;
@@ -288,25 +290,12 @@ function statsTabHtml(d) {
         <div class="panel-h">
           Color Distribution
           <span style="text-transform:none;color:var(--sub-text);font-weight:400;"
-            >— tap a symbol or bar to see those cards</span
+            >— tap a symbol or bar to filter the deck list</span
           >
         </div>
-        <div class="ms-grid">
-          ${order.map(cell).join('')}
-          <div id="msDetail" class="st-detail"></div>
-        </div>
+        <div class="ms-grid">${order.map(cell).join('')}</div>
       </div>`;
     })()}
-    <div class="panel-card" id="deckCombosPanel">
-      <div class="panel-h">${MANA_INF} Combos</div>
-      <div
-        id="deckCombosBody"
-        class="hint"
-        style="margin:0;min-height:40px;display:flex;flex-direction:column;justify-content:center;"
-      >
-        Scanning…
-      </div>
-    </div>
   `;
 }
 
@@ -402,6 +391,17 @@ async function loadDeckPrice(d) {
       if (badge) badge.textContent = 'Deck total: ' + fmtEur(t2);
       renderTopPriced(d);
     });
+}
+
+function applyDeckStatsFilter(d, filter) {
+  state.dlSearchQ = '';
+  state.dlSearchOpen = true;
+  state.dlFilter = { ci: [], ...filter };
+  state.dlFilterOn = true;
+  state._dlSel = null;
+  showDeckList(d);
+  updateDeckMeter(d);
+  document.querySelector('.deck-list-tools')?.scrollIntoView({ block: 'start' });
 }
 
 function wireStatsTab(d) {
@@ -504,7 +504,6 @@ function wireStatsTab(d) {
         }),
       );
   }
-  wireDeckCombosPanel(d);
   document.getElementById('budgetBtn')?.addEventListener('click', () => openBudgetOverlay(d));
   {
     const pool = deckLeaders(d)
@@ -522,178 +521,29 @@ function wireStatsTab(d) {
       renderBuilderBody(d); // refresh the stats view (and its history card)
     }),
   );
-  let selectedCmc = null;
-  // The back handler sweeps open drill-downs via this hook — the selection
-  // marker lives in this closure, so clearing innerHTML alone would leave
-  // the next tap on the same column thinking it was still open.
-  {
-    const cd = document.getElementById('curveDetail');
-    if (cd)
-      cd._clear = () => {
-        selectedCmc = null;
-        cd.innerHTML = '';
-      };
-  }
-  const curveCards = { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
-  // Shared membership rule with the rendered curve — see countsForCurve.
-  d.cards.forEach((c) => {
-    if (!countsForCurve(c)) return;
-    const b = Math.min(Math.round(c.cmc || 0), 6);
-    curveCards[b].push(c);
-  });
-  document.querySelectorAll('.curve-col[data-cmc]').forEach((col) => {
-    col.addEventListener('click', () => {
-      const cmc = col.dataset.cmc;
-      const box = document.getElementById('curveDetail');
-      if (selectedCmc === cmc) {
-        selectedCmc = null;
-        statKeepPlace(col, () => {
-          box.innerHTML = '';
-        });
-        return;
-      }
-      selectedCmc = cmc;
-      const cards = curveCards[cmc].slice().sort((a, b) => a.name.localeCompare(b.name));
-      if (!cards.length) {
-        statKeepPlace(col, () => {
-          box.innerHTML = '';
-        });
-        return;
-      }
-      statKeepPlace(col, () => {
-        box.innerHTML = /* HTML */ `<div class="chip-label">
-            Mana value ${cmc === '6' ? '6+' : cmc} (${cards.length})
-          </div>
-          <div class="visual-grid">
-            ${cards.map((c) => `<div class="vg-card" data-name="${encodeURIComponent(c.name)}"><img src="${cardImage(c)}" alt="${escapeHtml(c.name)}"></div>`).join('')}
-          </div>`;
-      });
-      box.querySelectorAll('.vg-card img').forEach((img) => {
-        img.addEventListener('click', () => {
-          const nm = decodeURIComponent(img.closest('[data-name]').dataset.name);
-          const card = d.cards.find((x) => x.name === nm);
-          if (card) {
-            showCardPreview(card, cardImageLarge(card));
-          }
-        });
+  document.querySelectorAll('.curve-col[data-cmc]').forEach((bar) => {
+    bar.addEventListener('click', () => {
+      const value = Number(bar.dataset.cmc);
+      applyDeckStatsFilter(d, {
+        mvOp: value === 6 ? '>=' : '=',
+        mvVal: String(value),
+        curveOnly: true,
       });
     });
   });
-  // Color Distribution taps — same pattern as the curve: tap a big symbol
-  // for the cards whose costs feed that percentage, tap a production bar
-  // for the cards that can make that color. Membership mirrors the exact
-  // counting rules (front face, lands out of symbols, pure-generic = GEN,
-  // hybrid halves count their colour, GEN bar fed by colourless producers).
-  (function () {
-    if (!document.querySelector('[data-msym]') || !document.getElementById('msDetail')) return;
-    const symCards = { W: [], U: [], B: [], R: [], G: [], C: [], GEN: [] };
-    d.cards.forEach((c) => {
-      const tl = (
-        c.type_line ||
-        (c.card_faces && c.card_faces[0] && c.card_faces[0].type_line) ||
-        ''
-      ).split('//')[0];
-      if (/\bLand\b/i.test(tl)) return;
-      const symbols = rawManaCost(c).match(/\{([^}]+)\}/g) || [];
-      if (!symbols.length) return;
-      const pureGeneric = symbols.every((sym) => /^\d+$|^X$/i.test(sym.slice(1, -1)));
-      if (pureGeneric) {
-        symCards.GEN.push(c);
-        return;
-      }
-      const mine = new Set();
-      symbols.forEach((sym) => {
-        sym
-          .slice(1, -1)
-          .split('/')
-          .forEach((part) => {
-            if (symCards[part] !== undefined && part !== 'GEN') mine.add(part);
-          });
-      });
-      mine.forEach((k) => symCards[k].push(c));
-    });
-    const prodCards = { W: [], U: [], B: [], R: [], G: [], C: [] };
-    deckLeaders(d)
-      .concat(d.cards)
-      .forEach((c) => {
-        const pm = producedManaOf(c);
-        new Set(pm).forEach((k) => {
-          if (prodCards[k]) prodCards[k].push(c);
-        });
-      });
-    let msSel = null;
-    {
-      const md = document.getElementById('msDetail');
-      if (md)
-        md._clear = () => {
-          msSel = null;
-          md.innerHTML = '';
-        };
-    }
-    const NAME = {
-      W: 'White',
-      U: 'Blue',
-      B: 'Black',
-      R: 'Red',
-      G: 'Green',
-      GEN: 'Generic',
-      C: 'Colorless',
-    };
-    const show = (key, cards, label, from) => {
-      const b = document.getElementById('msDetail');
-      if (!b) return;
-      const cellEl = from && from.closest('.ms-cell');
-      if (msSel === key) {
-        msSel = null;
-        statKeepPlace(cellEl, () => {
-          b.innerHTML = '';
-        });
-        return;
-      }
-      msSel = key;
-      const list = cards.slice().sort((a, x) => a.name.localeCompare(x.name));
-      if (!list.length) {
-        msSel = null;
-        statKeepPlace(cellEl, () => {
-          b.innerHTML = '';
-        });
-        return;
-      }
-      statKeepPlace(cellEl, () => {
-        // The list takes a full row of the grid right ABOVE the tapped
-        // symbol's row; label at its foot, cards growing upward.
-        const grid = b.parentNode,
-          cells = Array.from(grid.querySelectorAll(':scope > .ms-cell'));
-        const i = cellEl ? cells.indexOf(cellEl) : -1;
-        const rowStart = i >= 0 ? cells[i - (i % 2)] : null;
-        if (rowStart) grid.insertBefore(b, rowStart);
-        else grid.appendChild(b);
-        b.innerHTML = /* HTML */ `<div class="chip-label">${label} (${list.length})</div>
-          <div class="visual-grid">
-            ${list.map((c) => `<div class="vg-card" data-name="${encodeURIComponent(c.name)}"><img src="${cardImage(c)}" alt="${escapeHtml(c.name)}"></div>`).join('')}
-          </div>`;
-      });
-      b.querySelectorAll('.vg-card img').forEach((img) => {
-        img.addEventListener('click', () => {
-          const nm = decodeURIComponent(img.closest('[data-name]').dataset.name);
-          const card = list.find((x) => x.name === nm);
-          if (card) showCardPreview(card, cardImageLarge(card));
-        });
-      });
-    };
-    document.querySelectorAll('[data-msym]').forEach((elx) =>
-      elx.addEventListener('click', () => {
-        const k = elx.dataset.msym;
-        show('s' + k, symCards[k] || [], `${NAME[k] || k} symbols`, elx);
+  document.querySelectorAll('[data-msym]').forEach((symbol) => {
+    symbol.addEventListener('click', () =>
+      applyDeckStatsFilter(d, { colorMode: 'symbols', ci: [symbol.dataset.msym] }),
+    );
+  });
+  document.querySelectorAll('[data-mprod]').forEach((bar) => {
+    bar.addEventListener('click', () =>
+      applyDeckStatsFilter(d, {
+        colorMode: 'production',
+        ci: [bar.dataset.mprod === 'GEN' ? 'C' : bar.dataset.mprod],
       }),
     );
-    document.querySelectorAll('[data-mprod]').forEach((elx) =>
-      elx.addEventListener('click', () => {
-        const k = elx.dataset.mprod;
-        show('p' + k, prodCards[k === 'GEN' ? 'C' : k] || [], `${NAME[k] || k} production`, elx);
-      }),
-    );
-  })();
+  });
 }
 
 function logStatsFor(d) {
@@ -862,6 +712,7 @@ function primerTabHtml(d) {
 }
 
 function openLogGameOverlay(d) {
+  const trigger = document.activeElement;
   document.getElementById('logGameOverlay')?.remove();
   // Unique deck cards (leaders first), each carrying its thumbnail for the pickers.
   const seen = new Set();
@@ -913,15 +764,14 @@ function openLogGameOverlay(d) {
   el.id = 'logGameOverlay';
   document.body.appendChild(el);
   pushOverlay('gamelog', () => {
+    state._localCsClose = null;
     document.getElementById('logGameOverlay')?.remove();
+    if (trigger?.isConnected) trigger.focus({ preventScroll: true });
   });
-  // Bottom-up grid: Z→A in DOM puts A on the bottom row, nearest the eye.
-  const cardOptsUp = cardOpts.slice(1).reverse().concat([cardOpts[0]]);
   const csLocal = (id, options, value, ph, cls) => {
     const keep = state.openCSelect;
     state.openCSelect = local.open;
-    // Panels float over the rows beneath — exactly like every page-level
-    // dropdown (Inspiration) — instead of shoving the form down.
+    // Keep this form's dropdown state local to the dialog.
     const html = cselectHtml(id, options, value, ph, {
       cls: cls || '',
       search: options.length > 12,
@@ -930,13 +780,17 @@ function openLogGameOverlay(d) {
     return html;
   };
   const segHtml = (id, field, pairs) =>
-    `<div class="seg" data-lseg="${id}">${pairs.map(([v, l]) => `<button data-v="${v}" data-f="${field}" class="${local[field] === v ? 'active' : ''}" type="button">${l}</button>`).join('')}</div>`;
-  const renderSheet = () => {
-    el.innerHTML = /* HTML */ `<div class="glog-sheet">
-      <div class="appoint-head">
-        <span>⊕ Log a game</span><button class="icon-btn" id="lgClose" style="flex:none;">✕</button>
-      </div>
-      <div class="glog-form">
+    `<div class="seg" data-lseg="${id}">${pairs.map(([v, l]) => `<button data-v="${v}" data-f="${field}" class="${local[field] === v ? 'active' : ''}" type="button" aria-pressed="${local[field] === v}">${l}</button>`).join('')}</div>`;
+  const renderSheet = (focusSelector) => {
+    const scroll = el.querySelector('.glog-form')?.scrollTop || 0;
+    el.innerHTML = /* HTML */ `<section
+      class="glog-sheet transfer-dialog game-log-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Log a game"
+    >
+      ${transferHeaderHtml('Log a game', d.name || 'Record your result and what decided the game.', 'lgClose', '', 'Close game log')}
+      <div class="glog-form transfer-body">
         <div class="glog-frow">
           <span class="glog-lbl">Result</span>${segHtml('res', 'res', [
             ['W', 'Won'],
@@ -946,7 +800,7 @@ function openLogGameOverlay(d) {
         ${
           isC
             ? `<div class="opp-chips" id="lgOppChips">${oppChipsHtml(oppSuggestions(d, local.opp, 6))}</div>
-        <div class="glog-frow"><span class="glog-lbl">${trS('Opponent')}</span><input id="lgOpp" type="text" enterkeyhint="done" autocomplete="off" class="glog-num" maxlength="60" placeholder="${escapeHtml(trS('Their deck'))}" value="${escapeHtml(local.opp)}"></div>
+        <div class="glog-frow"><label class="glog-lbl" for="lgOpp">${trS('Opponent')}</label><input id="lgOpp" type="text" enterkeyhint="done" autocomplete="off" class="glog-num" maxlength="60" placeholder="${escapeHtml(trS('Their deck'))}" value="${escapeHtml(local.opp)}"></div>
         <div class="glog-frow"><span class="glog-lbl">${trS('Start')}</span>${segHtml(
           'play',
           'play',
@@ -961,7 +815,7 @@ function openLogGameOverlay(d) {
           <span class="glog-lbl">Ended by</span>
           <div class="glog-csbox">${csLocal('lgBy', byOpts, local.by, 'Ended by…')}</div>
         </div>
-        ${local.by === 'Other' ? `<div class="glog-frow"><span class="glog-lbl"></span><input id="lgByTxt" type="text" enterkeyhint="done" class="glog-num" maxlength="60" placeholder="${escapeHtml(trS('How did it end?'))}" value="${escapeHtml(local.byTxt)}"></div>` : ''}
+        ${local.by === 'Other' ? `<div class="glog-frow"><label class="glog-lbl" for="lgByTxt">Details</label><input id="lgByTxt" type="text" enterkeyhint="done" class="glog-num" maxlength="60" placeholder="${escapeHtml(trS('How did it end?'))}" value="${escapeHtml(local.byTxt)}"></div>` : ''}
         ${
           isC
             ? ''
@@ -977,7 +831,7 @@ function openLogGameOverlay(d) {
               )}</div>`
         }
         <div class="glog-frow">
-          <span class="glog-lbl">Turns</span
+          <label class="glog-lbl" for="lgTurns">Turns</label
           ><input
             id="lgTurns"
             type="number"
@@ -1004,7 +858,7 @@ function openLogGameOverlay(d) {
           ])}
         </div>
         <div class="glog-frow">
-          <span class="glog-lbl">Dead turns</span
+          <label class="glog-lbl" for="lgDead">Dead turns</label
           ><input
             id="lgDead"
             type="number"
@@ -1018,27 +872,27 @@ function openLogGameOverlay(d) {
         </div>
         <div class="glog-frow">
           <span class="glog-lbl">MVP card</span>
-          <div class="glog-csbox">
-            ${csLocal('lgMvp', cardOptsUp, local.mvp, '—', 'cs-cardgrid')}
-          </div>
+          <div class="glog-csbox">${csLocal('lgMvp', cardOpts, local.mvp, '—', 'cs-cardgrid')}</div>
         </div>
         <div class="glog-frow">
           <span class="glog-lbl">Weakest card</span>
           <div class="glog-csbox">
-            ${csLocal('lgWeak', cardOptsUp, local.weak, '—', 'cs-cardgrid')}
+            ${csLocal('lgWeak', cardOpts, local.weak, '—', 'cs-cardgrid')}
           </div>
         </div>
-        <textarea
-          id="lgNote"
-          class="bulk-textarea"
-          style="min-height:64px;"
-          placeholder="Notes — what decided this game?"
-        >
+        <label class="transfer-label" for="lgNote">Notes</label>
+        <textarea id="lgNote" class="bulk-textarea" placeholder="Notes — what decided this game?">
 ${escapeHtml(local.note)}</textarea>
-        <button class="primary-btn" id="lgSave">Save game</button>
       </div>
-    </div>`;
+      <footer class="game-log-actions">
+        <button type="button" class="primary-btn" id="lgSave">Save game</button>
+      </footer>
+    </section>`;
     wireSheet();
+    enhanceSearchFields(el);
+    el.querySelector('.glog-form').scrollTop = scroll;
+    if (focusSelector && !el.querySelector('.cselect-search input'))
+      el.querySelector(focusSelector)?.focus({ preventScroll: true });
     if (local.open) {
       el.querySelector('.cselect-panel')?.scrollIntoView({ block: 'nearest' });
     }
@@ -1051,8 +905,20 @@ ${escapeHtml(local.note)}</textarea>
     local.opp = el.querySelector('#lgOpp')?.value ?? local.opp;
   };
   const fieldOf = (id) => (id === 'lgBy' ? 'by' : id === 'lgMvp' ? 'mvp' : 'weak');
+  function closePicker() {
+    const id = local.open;
+    syncInputs();
+    local.open = null;
+    state._localCsClose = null;
+    renderSheet(`[data-cs="${id}"]`);
+  }
   function wireSheet() {
-    el.querySelector('#lgClose').addEventListener('click', () => history.back());
+    el.querySelector('#lgClose').addEventListener('click', closeTopOverlay);
+    wireAppDialogKeys(el.querySelector('[role="dialog"]'), () => {
+      if (local.open) {
+        closePicker();
+      } else closeTopOverlay();
+    });
     const oppIn = el.querySelector('#lgOpp');
     if (oppIn) {
       const paintOpp = () => {
@@ -1079,7 +945,7 @@ ${escapeHtml(local.note)}</textarea>
       b.addEventListener('click', () => {
         syncInputs();
         local[b.dataset.f] = b.dataset.v;
-        renderSheet();
+        renderSheet(`[data-f="${b.dataset.f}"][data-v="${b.dataset.v}"]`);
       }),
     );
     el.querySelectorAll('[data-cs]').forEach((b) =>
@@ -1089,14 +955,8 @@ ${escapeHtml(local.note)}</textarea>
         local.open = local.open === b.dataset.cs ? null : b.dataset.cs;
         // The gatekeeper's first rung: while this picker is open, a hardware
         // back press closes IT, not the whole sheet.
-        state._localCsClose = local.open
-          ? () => {
-              local.open = null;
-              state._localCsClose = null;
-              renderSheet();
-            }
-          : null;
-        renderSheet();
+        state._localCsClose = local.open ? closePicker : null;
+        renderSheet(`[data-cs="${b.dataset.cs}"]`);
       }),
     );
     el.querySelectorAll('[data-csopt]').forEach((opt) =>
@@ -1106,7 +966,7 @@ ${escapeHtml(local.note)}</textarea>
         local[fieldOf(opt.dataset.csopt)] = opt.dataset.val;
         local.open = null;
         state._localCsClose = null;
-        renderSheet();
+        renderSheet(`[data-cs="${opt.dataset.csopt}"]`);
       }),
     );
     const si = el.querySelector('.cselect-search input');
@@ -1151,29 +1011,25 @@ ${escapeHtml(local.note)}</textarea>
       if (!d.playLog) d.playLog = [];
       d.playLog.push(entry);
       scheduleSave(d);
-      history.back();
-      // The page behind must show the fresh winrate IMMEDIATELY — the
-      // bridge row on the list tab and the log itself on the primer tab.
-      setTimeout(() => {
-        const box = document.getElementById('builderBody');
-        if (!box) return;
-        if (state.builderTab === 'primer') {
-          box.innerHTML = primerTabHtml(d);
-          wireBuilderBody(d);
-        } else if (state.builderTab === 'list') renderBuilderBody(d);
-      }, 60);
+      local.open = null;
+      state._localCsClose = null;
+      closeOverlayThen(() => {
+        if (state.screen !== 'decklist' || state.activeDeckId !== d.id) return;
+        renderBuilderBody(d);
+        document.getElementById('logGameBtn')?.focus({ preventScroll: true });
+      });
       toast(entry.res === 'W' ? 'Victory logged. ⚔' : 'Logged — every loss is data.');
     });
   }
   renderSheet();
+  el.querySelector('#lgClose').focus({ preventScroll: true });
 }
 
-/* Import/Export (and its Import / Export halves) floats as a centered
-   POPUP; the other tool panels keep their cover over the bridge. */
+/* Import/export uses a centered popup; filters and bulk editing fill the screen. */
 function dlBoxClass() {
   const p = state.dlPanel;
   if (!p) return '';
-  return p === 'impexp' || p === 'import' || p === 'export' ? 'dl-popup' : 'dl-cover';
+  return p === 'import' || p === 'export' ? 'dl-popup' : 'dl-cover';
 }
 
 function toggleDlPanel(d, panelKey) {
@@ -1189,9 +1045,7 @@ function toggleDlPanel(d, panelKey) {
     } catch (err) {}
   }
   const wasOpen = state.dlPanel;
-  const ieFam = (p) => p === 'impexp' || p === 'import' || p === 'export';
-  const hit = panelKey === 'impexp' ? ieFam(state.dlPanel) : state.dlPanel === panelKey;
-  state.dlPanel = hit ? null : panelKey;
+  state.dlPanel = state.dlPanel === panelKey ? null : panelKey;
   // Give the open panel its own history entry so the hardware back button
   // closes the panel rather than leaving the deck page.
   if (state.dlPanel && !wasOpen) {
@@ -1200,9 +1054,7 @@ function toggleDlPanel(d, panelKey) {
     } catch (e) {}
   }
   const pBox = document.getElementById('dlPanelBox');
-  // The cover class is what floats the panel OVER the commander block and
-  // buttons — the initial page render sets it, and this click path must
-  // set it too, or the panel drops into the grid flow below the buttons.
+  // Opening a panel in place must apply the same modal layout as a full render.
   pBox.className = dlBoxClass();
   if (
     state.dlPanel !== 'dsearch' &&
@@ -1213,6 +1065,7 @@ function toggleDlPanel(d, panelKey) {
           state.dlFilter.text ||
           state.dlFilter.type ||
           state.dlFilter.tag ||
+          state.dlFilter.curveOnly ||
           state.dlFilter.mvVal)))
   ) {
     state.dlFilter = { ci: [] };
@@ -1223,31 +1076,15 @@ function toggleDlPanel(d, panelKey) {
   pBox.innerHTML = dlPanelHtml(d);
   document
     .querySelectorAll('[data-panel]')
-    .forEach((x) =>
-      x.classList.toggle(
-        'active',
-        x.dataset.panel === state.dlPanel || (x.dataset.panel === 'impexp' && ieFam(state.dlPanel)),
-      ),
-    );
+    .forEach((x) => x.classList.toggle('active', x.dataset.panel === state.dlPanel));
   wireDlPanel(d);
   // Full-screen tools and transfer dialogs own their scrolling content.
   pBox.querySelector('.deck-editor-body, .transfer-body')?.scrollTo(0, 0);
 }
 
 function wireBuilderBody(d) {
+  syncDeckEditorModal();
   if (state.builderTab === 'list') {
-    document
-      .getElementById('bridgeLogGame')
-      ?.addEventListener('click', () => openLogGameOverlay(d));
-    document.getElementById('dl60Mu')?.addEventListener('click', () => {
-      state.builderTab = 'primer';
-      render();
-      requestAnimationFrame(() => {
-        try {
-          document.getElementById('muPanel')?.scrollIntoView({ block: 'end' });
-        } catch (e) {}
-      });
-    });
     document.getElementById('descAddBtn')?.addEventListener('click', (e) => {
       e.stopPropagation();
       state.builderTab = 'primer';
@@ -1399,6 +1236,7 @@ function wireBuilderBody(d) {
 }
 
 function wireDlPanel(d) {
+  syncDeckEditorModal();
   const editor = document.querySelector('.deck-editor-screen');
   if (editor) {
     wireAppDialogKeys(editor, () => history.back());
@@ -1489,7 +1327,7 @@ function wireDlPanel(d) {
         const el2 = document.getElementById(id);
         if (el2) f[key] = el2.value;
       });
-      if (f.name || f.text || f.type || f.tag || f.mvVal || (f.ci && f.ci.length))
+      if (f.name || f.text || f.type || f.tag || f.mvVal || f.curveOnly || (f.ci && f.ci.length))
         state.dlFilterOn = true;
       try {
         document.activeElement && document.activeElement.blur && document.activeElement.blur();
@@ -1523,8 +1361,13 @@ function wireDlPanel(d) {
         else refreshDecklistBox(d);
       }),
     );
+    document.getElementById('dfCurveOnly')?.addEventListener('change', (event) => {
+      f.curveOnly = event.target.checked;
+      state.dlFilterOn = true;
+      refreshDecklistBox(d);
+    });
     // The deck page never calls wireCSelects, so the panel wires its own
-    // ≤/=/≥ dropdown — the _csw flag keeps a re-render from ever stacking a
+    // dropdowns — the _csw flag keeps a re-render from ever stacking a
     // second listener on the same element.
     document.querySelectorAll('#dlPanelBox [data-cs]').forEach((b) => {
       if (b._csw) return;
@@ -1551,19 +1394,12 @@ function wireDlPanel(d) {
       state.dlFilterOn = true;
       csRerender();
     }; // redraw only — filtering waits for Search
-    return;
-  }
-  if (state.dlPanel === 'impexp') {
-    const go = (which) => {
-      state.dlPanel = which;
-      const box = document.getElementById('dlPanelBox');
-      if (box) {
-        box.innerHTML = dlPanelHtml(d);
-        wireDlPanel(d);
-      }
+    _csHandlers['dfColorMode'] = (value) => {
+      f.colorMode = value;
+      if (value !== 'symbols') f.ci = (f.ci || []).filter((color) => color !== 'GEN');
+      state.dlFilterOn = true;
+      csRerender();
     };
-    document.getElementById('ieChooseImport')?.addEventListener('click', () => go('import'));
-    document.getElementById('ieChooseExport')?.addEventListener('click', () => go('export'));
     return;
   }
   if (state.dlPanel === 'bulk') {

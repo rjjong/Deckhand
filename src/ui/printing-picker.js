@@ -45,17 +45,26 @@ async function openPrintingGrid(card, onPick, gOpts) {
     el.className = 'overlay';
     el.id = 'printOverlay';
   }
+  el.classList.add('printing-page');
+  const session = {};
+  el._printingSession = session;
+  const trigger = document.activeElement;
   document.body.appendChild(el); // (re)append — a reused overlay must rise above ones opened after it
   pushOverlay('printing', () => {
     document.getElementById('printOverlay')?.remove();
+    if (trigger?.isConnected) trigger.focus({ preventScroll: true });
   });
-  el.innerHTML = /* HTML */ `<div class="overlay-inner">
-    ${overlayCapHtml(trS('Change printing'))}
-    <main>
-      ${gOpts && gOpts.noCustom ? '' : `<button class="ghost-btn" id="ppCustom" style="width:100%;margin:2px 0 4px;">${inlIco('camera')}${trS('Use your own image…')}</button>`}
-      ${gOpts && gOpts.noCustom ? '' : `<p class="hint" style="margin:0 0 12px;text-align:center;">${infoBtnHtml(trS("Camera or any image file — it becomes this card's picture here. Picking a real printing below puts things back."))}</p>`}
-      <input type="file" id="ppCustomFile" accept="image/*" style="display:none;" />
-      <div id="ppList" class="status">
+  el.innerHTML = /* HTML */ `<div
+    class="overlay-inner"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Change printing"
+  >
+    ${overlayCapHtml(trS('Change printing'), `<button type="button" class="header-filter" id="ppClose" aria-label="Close printing picker">${ICONS.back}</button>`, card.name)}
+    <main class="printing-content">
+      ${gOpts && gOpts.noCustom ? '' : `<button type="button" class="printing-action" id="ppCustom" aria-label="Use your own image">${inlIco('camera')}${trS('Use your own image…')}</button>`}
+      <input type="file" id="ppCustomFile" accept="image/*" hidden />
+      <div id="ppList" class="status" role="status">
         <div class="spinner"></div>
         Loading printings…
       </div>
@@ -63,6 +72,7 @@ async function openPrintingGrid(card, onPick, gOpts) {
     ${overlayNavHtml()}
   </div>`;
   wireOverlayNav(el);
+  el.querySelector('#ppClose').addEventListener('click', closeTopOverlay);
   document.getElementById('ppCustom')?.addEventListener('click', () => {
     const inp = document.getElementById('ppCustomFile');
     if (inp) inp.click(); // Android's own sheet offers camera, gallery, and files
@@ -134,9 +144,12 @@ async function openPrintingGrid(card, onPick, gOpts) {
     if (front && front !== card.name) candidates.push(nameQ(front));
   }
   const attempt = async () => {
-    let box = document.getElementById('ppList');
+    const current = () => el.isConnected && el._printingSession === session;
+    if (!current()) return;
+    let box = el.querySelector('#ppList');
     if (box) {
       box.className = 'status';
+      box.setAttribute('role', 'status');
       box.innerHTML = '<div class="spinner"></div>Loading printings…';
     }
     let prints = [];
@@ -144,6 +157,7 @@ async function openPrintingGrid(card, onPick, gOpts) {
     for (const uri of candidates) {
       try {
         const res = await sfFetch(uri, 0, false, false, true);
+        if (!current()) return;
         const data = await res.json();
         prints = (data.data || []).filter(
           (p) => p.image_uris || (p.card_faces && p.card_faces[0] && p.card_faces[0].image_uris),
@@ -154,24 +168,24 @@ async function openPrintingGrid(card, onPick, gOpts) {
         hardFail = true;
       }
     }
-    box = document.getElementById('ppList');
+    if (!current()) return;
+    box = el.querySelector('#ppList');
     if (!box) return;
+    box.removeAttribute('role');
     if (!prints.length) {
       box.className = '';
-      box.innerHTML = /* HTML */ `<div class="empty-note" style="margin-top:14px;">
+      box.innerHTML = /* HTML */ `<div class="printing-empty">
+        <p role="status">
           ${hardFail ? "Couldn't load printings." : 'No printings with art found.'}
-        </div>
-        <button class="ghost-btn" id="ppRetry" style="width:100%;margin-top:10px;">
-          ↻ Try again
-        </button>`;
+        </p>
+        <button type="button" class="printing-action" id="ppRetry">↻ Try again</button>
+      </div>`;
       document.getElementById('ppRetry')?.addEventListener('click', attempt);
       return;
     }
     box.className = '';
-    // The tile grid is wrap-REVERSE: array start renders at the page FOOT.
-    // So: owned printings first (they land at the very bottom), then the
-    // rest ascending by date — oldest just above the shelf, newest on top.
-    prints.sort((a, b) => String(a.released_at || '').localeCompare(String(b.released_at || '')));
+    // Owned printings come first; each section reads newest to oldest.
+    prints.sort((a, b) => String(b.released_at || '').localeCompare(String(a.released_at || '')));
     // gOpts.noOwned (trade's ME side): the incoming cards belong to the other
     // trader, so every trace of MY ownership — shelf, \u2713, \u00d7counts — stays out.
     const ownQty = {};
@@ -187,7 +201,6 @@ async function openPrintingGrid(card, onPick, gOpts) {
     if (owned.length && owned.length < prints.length) {
       prints = owned.concat(prints.filter((p) => !owned.includes(p)));
     }
-    const shelfAt = owned.length && owned.length < prints.length ? owned.length : -1;
     // Foil handling: a printing that exists in foil offers it as its own
     // pick with Cardmarket's FOIL trend price; a foil-ONLY printing simply
     // IS the foil. Choosing foil overrides the card's price fields so every
@@ -206,19 +219,13 @@ async function openPrintingGrid(card, onPick, gOpts) {
     // a button nested in a button — browsers hoist nested buttons out, which
     // is exactly how the first attempt's foil control escaped its tile and
     // hijacked a whole grid cell. The tile itself stays untouched.
-    box.innerHTML = /* HTML */ `<div class="sr-grid">
+    box.innerHTML = /* HTML */ `<div class="pp-grid">
       ${prints
         .map((p, i) => {
-          // Array start renders at the FOOT. Two shelves split the grid rows:
-          // 'In your collection' at the very bottom captioning the owned block
-          // above it, then 'All printings' captioning everything else — each
-          // label with its stripe below the word, decklist style.
-          const lblCss = 'width:100%;flex:1 1 100%;border-bottom:2px solid var(--line);';
           let shelf = '';
-          if (owned.length && i === 0)
-            shelf = `<div class="section-label" style="${lblCss}">${'In your collection'}</div>`;
+          if (owned.length && i === 0) shelf = '<h2 class="pp-section">In your collection</h2>';
           else if (owned.length && i === owned.length)
-            shelf = `<div class="section-label" style="${lblCss}">${'All printings'}</div>`;
+            shelf = '<h2 class="pp-section">All printings</h2>';
           const ownMark =
             owned.length && i < owned.length
               ? '<span class="pp-own" title="In your collection">✓</span>'
@@ -231,7 +238,7 @@ async function openPrintingGrid(card, onPick, gOpts) {
               const foilEur = p.prices && parseFloat(p.prices.eur_foil);
               const eur = foilOnly ? foilEur || printEur(p) : printEur(p);
               return `<div class="pp-wrap">
-        <button class="sr-tile ta-tile" data-i="${i}" data-foilonly="${foilOnly ? 1 : ''}">
+        <button type="button" class="sr-tile ta-tile" data-i="${i}" data-foilonly="${foilOnly ? 1 : ''}" aria-label="${escapeHtml('Choose ' + (foilOnly ? 'foil ' : '') + (p.set_name || p.set) + ' printing, number ' + p.collector_number).replace(/"/g, '&quot;')}">
           <span class="pp-imghold"><img class="${wbClass(p)}" src="${cardImageMedRaw(p)}" alt="${escapeHtml(p.name)}" loading="lazy">${ownMark}</span>
           <div class="st-body">
             <div class="tp-set">${setIcoHtml(p.set, p.rarity)} ${escapeHtml(p.set_name || p.set)}</div>
@@ -239,17 +246,17 @@ async function openPrintingGrid(card, onPick, gOpts) {
               const q = ownQty[p.name + '|' + (p.set || '') + '|' + (p.collector_number || '')];
               return q ? ` · ×${q}` : '';
             })()}</div>
-            <div class="st-price st-price-lg">${eur != null && !isNaN(eur) ? `€${eur.toFixed(2)}` : '<span class="nopr" role="button">€✕</span>'}</div>
+            <div class="st-price st-price-lg">${eur != null && !isNaN(eur) ? `€${eur.toFixed(2)}` : '<span class="nopr">No price</span>'}</div>
           </div>
         </button>
-        ${foilOnly ? `<span class="pp-foil" style="pointer-events:none;">✨${eur != null && !isNaN(eur) ? ` €${eur.toFixed(2)}` : ''}</span>` : fins.includes('foil') ? `<button class="pp-foil" data-fi="${i}" title="Choose the foil printing">✨${foilEur ? ` €${foilEur.toFixed(2)}` : ''}</button>` : ''}
+        ${foilOnly ? `<span class="pp-foil">Foil${eur != null && !isNaN(eur) ? ` · €${eur.toFixed(2)}` : ''}</span>` : fins.includes('foil') ? `<button type="button" class="pp-foil" data-fi="${i}" aria-label="${escapeHtml('Choose foil ' + (p.set_name || p.set) + ' printing, number ' + p.collector_number).replace(/"/g, '&quot;')}">Foil${foilEur ? ` · €${foilEur.toFixed(2)}` : ''}</button>` : ''}
       </div>`;
             })()
           );
         })
         .join('')}
     </div>`;
-    box.querySelectorAll('.pp-foil').forEach((fb) => {
+    box.querySelectorAll('button.pp-foil').forEach((fb) => {
       fb.addEventListener('click', (e) => {
         e.stopPropagation();
         const chosen = asFoil(prints[+fb.dataset.fi]);
@@ -260,7 +267,7 @@ async function openPrintingGrid(card, onPick, gOpts) {
     box.querySelectorAll('.ta-tile').forEach((btn) => {
       btn.addEventListener('click', () => {
         const p = prints[+btn.dataset.i];
-        const chosen = btn.dataset.foilonly ? asFoil(p) : p;
+        const chosen = btn.dataset.foilonly === '1' ? asFoil(p) : p;
         closeTopOverlay(); // pop the chooser only
         onPick(chosen);
       });
@@ -482,11 +489,12 @@ async function applyTextToDeck(d, raw, reportElId, isImport) {
     <div class="spinner"></div>
     Resolving ${allN} cards…
   </div>`;
-  // The report grows at the panel's foot — keep that foot in view (the
-  // cover scrolls only when taller than the free viewport).
+  // Keep progress and results visible in the tool's own scrolling body.
   const _pinFoot = () => {
     try {
-      const b = document.getElementById('dlPanelBox');
+      const b =
+        document.getElementById(reportElId)?.closest('.deck-editor-body, .transfer-body') ||
+        document.getElementById('dlPanelBox');
       if (b) b.scrollTop = b.scrollHeight;
     } catch (e) {}
   };
