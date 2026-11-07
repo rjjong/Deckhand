@@ -1,5 +1,8 @@
 // app / start
 
+// Warm recognition after the first page loads; camera permission stays user-triggered.
+scheduleScannerWarmup();
+
 setTimeout(() => {
   try {
     preloadCotd();

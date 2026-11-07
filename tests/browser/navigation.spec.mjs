@@ -522,13 +522,26 @@ test('Settings owns working preferences, sync and backup controls', async ({page
   page.on('pageerror',error=>errors.push(error.message));
   await page.getByRole('button',{name:'Open menu',exact:true}).click();
   await page.locator('#menuSettings').click();
-  await expect(page.locator('.settings-page .hub-card')).toHaveCount(5);
-  for(const [row,body] of [['startupRow','startupBody'],['dataSourcesRow','dataSourcesBody'],['guildRow','guildBody'],['backupRow','backupBody']]){
+  await expect(page.locator('.settings-page .hub-card')).toHaveCount(7);
+  await expect(page.locator('.settings-page .hub-card').last()).toHaveAttribute('id','settingsChangelogRow');
+  for(const [row,body] of [['startupRow','startupBody'],['dataSourcesRow','dataSourcesBody'],['scannerSettingsRow','scannerSettingsBody'],['guildRow','guildBody'],['backupRow','backupBody'],['settingsChangelogRow','settingsChangelogBody']]){
     await page.locator(`#${row}`).click();
     await expect(page.locator(`#${body}`)).toBeVisible();
     await page.locator(`#${row}`).click();
     await expect(page.locator(`#${body}`)).toBeHidden();
   }
+  await expect(page.locator('#settingsChangelogRow .l2')).toContainText(await page.evaluate(()=>APP_VERSION));
+  await page.locator('#settingsChangelogRow').click();
+  const releases=page.locator('#settingsChangelogBody .cl-entry');
+  expect(await releases.count()).toBe(await page.evaluate(()=>changelogAll().length));
+  await expect(releases.first().locator('.cl-notes')).toBeVisible();
+  await expect(releases.first().locator('.cl-head')).toHaveAttribute('aria-expanded','true');
+  await releases.nth(1).locator('.cl-head').click();
+  await expect(releases.nth(1).locator('.cl-notes')).toBeVisible();
+  await releases.nth(1).locator('.cl-head').click();
+  await expect(releases.nth(1).locator('.cl-notes')).toBeHidden();
+  await page.goBack();
+  await expect(page.locator('#settingsChangelogBody')).toBeHidden();
   await expect(page.locator('#langRow, #languageBody, [data-lang-choice]')).toHaveCount(0);
   expect(await page.evaluate(()=>appLang())).toBe('en');
   await page.locator('#dataSourcesRow').click();

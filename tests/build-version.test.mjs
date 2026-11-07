@@ -31,6 +31,7 @@ test('CLI builds, Docker builds and deployment packaging assign one consistent v
     'scripts/scanner-assets.mjs',
     'scripts/build-docker.mjs',
     'scripts/server/deploy.py',
+    'scripts/prepare-scanner-assets.mjs',
     'Dockerfile',
   ])
     await copy(file);

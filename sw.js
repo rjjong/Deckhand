@@ -14,11 +14,13 @@ const VERSION = 'deckhand-shell-' + BUILD;
 // Card images and fonts survive app updates: this cache is deliberately
 // NOT version-named, so activating a new version never wipes it.
 const ASSETS = 'admiral-assets-v1';
+// Runtime files are immutable within the pinned scanner bundle and survive app updates.
+const SCANNER_ASSETS = 'deckhand-scanner-__DECKHAND_SCANNER_BUNDLE__';
 // How long the page may wait for a fresh copy before the cached one wins.
 // Long enough that a quick connection still serves the newest deploy at once,
 // short enough that a slow one never holds the launcher's icon hostage.
 const SHELL_WAIT = 1200;
-const SHELL = ['./', './index.html', './assets/app.js?v=' + BUILD, './assets/app.css?v=' + BUILD, './assets/images/deckhand-badge.webp', './runtime-config.js', './manifest.json', './icon-192.png', './icon-512.png', './icon-512-maskable.png'];
+const SHELL = ['./', './index.html', './assets/app.js?v=' + BUILD, './assets/app.css?v=' + BUILD, './assets/images/deckhand-badge.webp', './runtime-config.js', './manifest.json', './icon-192.png', './icon-512.png', './icon-512-maskable.png', './assets/scanner/collectorvision/scanner.worker.mjs?v=' + BUILD];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL.map(url => new Request(url, { cache: 'reload' })))).then(() => self.skipWaiting()));
@@ -32,7 +34,7 @@ self.addEventListener('message', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k.startsWith('deckhand-') && k !== VERSION && k !== ASSETS).map(k => caches.delete(k))))
+      .then(keys => Promise.all(keys.filter(k => k.startsWith('deckhand-') && k !== VERSION && k !== ASSETS && k !== SCANNER_ASSETS).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -50,6 +52,28 @@ self.addEventListener('fetch', (e) => {
   // where the app reads it when offline. Caching it here only kept a second
   // copy of roughly 11 MB that nothing ever read back.
   if (/\.(jsonl|tsv)\.gz$/.test(url.pathname)) return;
+
+  // Models/catalogs already live in IndexedDB. Cache their manifest and the
+  // ONNX runtime here so restarting the app does not download WASM again.
+  const scannerBase = '/assets/scanner/collectorvision/';
+  if (url.origin === location.origin &&
+      (url.pathname === scannerBase + 'assets/manifest.json' ||
+       url.pathname.startsWith(scannerBase + 'vendor/'))) {
+    e.respondWith((async () => {
+      const cache = await caches.open(SCANNER_ASSETS);
+      const cached = await cache.match(e.request);
+      if (cached) return cached;
+      const response = await fetch(e.request, { redirect: 'manual' });
+      const type = response.headers.get('content-type') || '';
+      const expected = url.pathname.endsWith('.wasm') ? /application\/wasm/
+        : url.pathname.endsWith('.mjs') ? /javascript/ : /json/;
+      if (response.ok && !response.redirected && expected.test(type)) {
+        await cache.put(e.request, response.clone());
+      }
+      return response;
+    })());
+    return;
+  }
 
   // Static, immutable assets: cache-first
   const isFont = url.hostname.includes('fonts.googleapis.com') || url.hostname.includes('fonts.gstatic.com');

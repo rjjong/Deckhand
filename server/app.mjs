@@ -26,9 +26,9 @@ const STATIC = new Map([
   ...['icon-192.png', 'icon-512.png', 'icon-512-maskable.png', 'apple-touch-icon.png',
     'og-image.png', 'badge-d.png'].map(name => ['/' + name, name])
 ]);
-const MIME = { html: 'text/html; charset=utf-8', css: 'text/css; charset=utf-8', js: 'text/javascript; charset=utf-8',
+const MIME = { html: 'text/html; charset=utf-8', css: 'text/css; charset=utf-8', js: 'text/javascript; charset=utf-8', mjs: 'text/javascript; charset=utf-8',
   json: 'application/json; charset=utf-8', txt: 'text/plain; charset=utf-8',
-  png: 'image/png', webp: 'image/webp', map: 'application/json; charset=utf-8', gz: 'application/gzip', wasm: 'application/wasm' };
+  png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp', map: 'application/json; charset=utf-8', gz: 'application/gzip', wasm: 'application/wasm' };
 
 function json(res, status, body, headers = {}) {
   res.writeHead(status, { 'content-type': MIME.json, 'cache-control': 'no-store',

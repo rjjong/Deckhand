@@ -1,9 +1,25 @@
 // core / preferences
 
+function normalizeScannerSettings(value = {}) {
+  const number = (key, fallback, min, max) =>
+    typeof value?.[key] === 'number' && Number.isFinite(value[key])
+      ? Math.max(min, Math.min(max, value[key]))
+      : fallback;
+  return {
+    scannerDebounceMs: Math.round(number('scannerDebounceMs', 0, 0, 60000)),
+    scannerIgnoreSession: value?.scannerIgnoreSession === true,
+    scannerIdThreshold: number('scannerIdThreshold', 0.6, 0, 1),
+    scannerCornerThreshold: number('scannerCornerThreshold', 0.02, 0, 1),
+    scannerIntervalMs: Math.round(number('scannerIntervalMs', 650, 100, 10000)),
+    scannerShowFramerate: value?.scannerShowFramerate === true,
+  };
+}
+
 async function loadSettings() {
   state.priceCache = loadPriceCache();
   state.collection = loadCollection();
   state.startupPage = 'home';
+  Object.assign(state, normalizeScannerSettings());
   try {
     const raw = localStorage.getItem(LS_PREFIX + 'settings:app');
     if (raw) {
@@ -11,6 +27,7 @@ async function loadSettings() {
       if (s.theme) state.theme = s.theme;
       if (s.guild && GUILDS.some((g) => g.k === s.guild)) state.guild = s.guild;
       if (STARTUP_PAGES.includes(s.startupPage)) state.startupPage = s.startupPage;
+      Object.assign(state, normalizeScannerSettings(s));
     }
   } catch (e) {
     /* no settings saved yet */
@@ -22,7 +39,12 @@ async function persistSettings() {
   try {
     localStorage.setItem(
       LS_PREFIX + 'settings:app',
-      JSON.stringify({ theme: state.theme, guild: state.guild, startupPage: state.startupPage }),
+      JSON.stringify({
+        theme: state.theme,
+        guild: state.guild,
+        startupPage: state.startupPage,
+        ...normalizeScannerSettings(state),
+      }),
     );
   } catch (e) {
     console.error(e);

@@ -7,6 +7,12 @@ const STARTUP_PAGES = ['home', 'decks', 'collection', 'search', 'browse', 'life'
 let state = {
   screen: 'home', // home | decks | decklist | search | inspiration | settings
   startupPage: 'home',
+  scannerDebounceMs: 0,
+  scannerIgnoreSession: false,
+  scannerIdThreshold: 0.6,
+  scannerCornerThreshold: 0.02,
+  scannerIntervalMs: 650,
+  scannerShowFramerate: false,
   decksIndex: [],
   homeLoaded: false,
 

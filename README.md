@@ -12,8 +12,28 @@ Docker Compose includes a private Ollama service with cloud features disabled. N
 See [local AI setup](docs/DEVELOPMENT.md#local-ai-judge-and-deck-advice) and [GPU setup](docs/SERVER.md#local-ai-and-gpu-acceleration).
 
 The **experimental card scanner** is under **Collection → + → Scan cards** and in the main menu.
-It detects up to eight separated cards per photo or camera capture using self-hosted OpenCV.js and Tesseract.js.
-Photos and OCR stay in your browser. Review names before adding; exact printing, language and foil are not identified.
+It scans one card at a time with [CollectorVision](https://github.com/HanClinto/CollectorVision)
+and its [Fastweb-Single 1.39 detector](https://huggingface.co/HanClinto/ccgdetector-fastweb-single).
+Scan cards opens the full-screen camera directly and recognizes cards continuously.
+The camera fills its preview with an aspect-preserving crop. Detected corners draw
+a live outline and drive perspective correction; there is no fixed alignment frame.
+Capture prefers native 1080p in the phone's orientation at up to 30 FPS,
+with continuous autofocus and tap-to-focus where supported.
+Recognition stays within a 720p-sized processing budget and reuses its capture buffer.
+Slower recognition never reduces the preview resolution. The optional framerate
+display includes the actual camera dimensions supplied by the browser.
+Detected cards appear below the preview with the newest at the top. Tap a logged card to review/add it.
+The review page includes printing, condition, foil, amount and binder options.
+Add directly from review, or use its top-right X to return to live scanning.
+In **Settings → Card scanner**, adjust the ID match threshold, corner threshold,
+scan interval and optional framerate display. Set a repeat-card debounce time or
+ignore card names already scanned during the current camera session, including
+different printings. Settings apply when the camera opens and sync with your account.
+Brief messages explain when the repeat delay or session setting ignores a card.
+Blank Card predictions from a covered camera are ignored silently.
+Photos stay in your browser. Models and reference data are served by Deckhand, with no OCR or external recognition service.
+Recognition initializes in the background after startup and stays ready while the app is open.
+Its roughly 70 MB of data is cached across launches. Recognition is experimental; confirm printing, foil and condition yourself.
 
 In **Settings → Account & sync**, create an optional email/password account,
 verify your email, and sign in on each device. Decks, collections, settings and
@@ -47,7 +67,9 @@ The mobile shell has five labeled bottom tabs: Decks, Collection, Search,
 Inspiration, and Life. The logo opens Menu, with cards for tools and Settings.
 Format Rules and Ban Lists open dedicated pages from Menu.
 Settings is the last menu card; the life counter is available from Life.
-Settings contains Startup page, Data sources, Color scheme, Sync, and Backup.
+Settings contains Startup page, Data sources, Card scanner, Color scheme, Sync, and Backup.
+The bottom **Version & changelog** card shows the installed version, release date
+and full release history, newest first.
 The interface is English-only and opens without a first-start introduction.
 The title returns home. Content scrolls above the bottom tabs and below its
 fixed title and toolbars. Decks and Collection have full-width search bars

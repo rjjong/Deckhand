@@ -422,21 +422,168 @@ SQLite caches incorporate the selected local model, current card text, rules and
 
 See [Ollama structured outputs](https://docs.ollama.com/capabilities/structured-outputs), [hardware support](https://docs.ollama.com/gpu), and [server GPU setup](SERVER.md#local-ai-and-gpu-acceleration).
 
-## Experimental multi-card scanner
+## Experimental single-card scanner
 
-Open **Collection → + → Scan cards** or **Menu → Scan cards**. Use a live camera capture or choose up to six photos.
-Each frame can contain up to eight separated cards, with all corners visible on a contrasting background. Browser camera permission requires HTTPS or localhost.
+Open **Collection → + → Scan cards** or **Menu → Scan cards** to enter the camera
+directly. The camera slides in from the right as a separate full-screen
+view, covering the underlying page and navigation. Recognition runs continuously
+while this view is visible, with a newest-first detection log below the preview.
+There is no shutter button. Hold one card steady with all corners visible.
 
-OpenCV.js detects quadrilateral card outlines and corrects perspective. Tesseract.js reads the English name at the top, including a second orientation attempt when needed.
-Names are matched against the downloaded local library. Users can correct OCR, choose from candidate matches, skip cards, and review the selection before the normal collection-add confirmation.
-This identifies names, not exact printings, sets, languages, foil status or condition. Sleeves, glare, unusual frames, tiny cards and overlapping cards reduce accuracy.
-The UI visibly labels the feature **Experimental**.
+Two matching frames confirm an identity. The same held card is logged once;
+moving it out of view for about 1.2 seconds allows another copy to be scanned.
+Changing to a different card can be confirmed immediately without a blank frame.
+Printings sharing an Oracle identity are treated as one held card to avoid
+duplicate entries from prediction jitter. Only confirming frames request image
+thumbnails, reducing bitmap transfers and memory pressure on mobile browsers.
 
-All libraries, OCR workers, WebAssembly and English training data are served by Deckhand and loaded only when scanning starts.
-Images are processed on the device and are not uploaded. Camera tracks stop on close, navigation, backgrounding or a late permission response after closing.
-Third-party license notices are included in `/assets/scanner/`. See [OpenCV.js](https://github.com/TechStark/opencv-js) and [Tesseract.js](https://github.com/naptha/tesseract.js).
+**Settings → Card scanner** adds an optional debounce time (0–60 seconds) and
+**Ignore previously scanned cards**. Debounce compares normalized card names,
+including different printings, against the last accepted scan of that name.
+Ignored detections do not extend the cooldown. The session option logs each name
+once until the camera closes; reviewing/adding a card keeps the session intact.
+Both default to off, preserving the held-card suppression described above.
+Settings are saved in `settings:app`, included in backups and account sync, and
+read when opening the camera. Older preferences use these defaults. Name checks
+run after resolving card details, in detection order even if lookups finish out
+of order; known identities are filtered before another row or lookup is created.
 
-`tests/browser/scanner.spec.mjs` exercises actual multi-card contour detection and OCR, review, collection insertion and camera cleanup, without external services.
+Recognition settings in the same section include **ID threshold** (0–1, default
+0.60), **Corner threshold** (0–1, default 0.02) and **Scan interval** (100–10,000 ms,
+default 650 ms). Higher thresholds require stronger identity/detector confidence;
+valid card geometry is always required. Both thresholds are applied before stable
+confirmation and retained for card-detail lookups, including ID thresholds below
+the old fixed 0.60 cutoff. Each queued worker request uses CollectorVision's
+existing config message to set its corner threshold. This preserves the warmed
+models and avoids leaking a previous session's threshold into later requests.
+The interval is the minimum start-to-start time; inference remains serialized
+and slower devices can take longer. **Show scan framerate** is off by default.
+It overlays completed scans per second, averaged over the last six completions,
+including interval/inference time. It resets on pause, review and reopening.
+All scanner preferences are normalized, backed up and account-synced.
+
+Each entry is inserted when detected, so slow card details never reorder the
+log. Detail lookups are shared by printing within this scanning session. Failed
+details show a tap-to-retry entry rather than retrying on every camera frame.
+The log is local to this open scanning session. Logging does not add collection
+items. Tap an entry to review it, adjust printing, condition, foil, amount and
+binder directly, then use the pinned **Add to collection** button. Review shares
+the collection add form and save/merge logic with the regular collection sheet.
+Alternate printings load in the background while the detected printing remains
+usable. Automatic binder choices and new-binder prompts open above review.
+Adding or closing with the top-right X returns to the retained live log; no
+second collection-add sheet is opened. The Experimental badge sits beside
+the review credits. Inference pauses while review covers the camera and resumes
+when returning to the live view.
+
+[CollectorVision](https://github.com/HanClinto/CollectorVision) replaces contour
+detection and OCR. Its Fastweb-Single 1.39 detector finds the corners, its worker dewarps
+the image, and its Milo embedder searches a packed reference catalog, checking
+both orientations. Inference uses ONNX Runtime Web in a worker with WASM and
+one thread when cross-origin isolation is unavailable. It does not use the
+server's GPU or compete with the AI judge. The preview uses `object-fit: cover`
+to fill the available space without stretching. Frames are cropped to the same
+visible region before recognition. Capture metadata retains the source dimensions
+and crop offsets, mapping detected corners back through the current preview crop.
+The outline stays aligned when the camera view resizes and
+clears on missing/invalid corners, pause and close. Cards can be smaller, off-center
+or tilted: the existing homography and bilinear sampling straighten the detected
+four corners before embedding, without requiring a fixed alignment rectangle.
+
+Repeat settings report `session` or `debounce` when a name is ignored, including
+different printings resolved asynchronously. A small camera notice identifies
+the name and reason for 2.5 seconds. Held repeats notify once per presentation,
+then rearm when a card is removed or another card is presented. Default held-card
+suppression alone does not claim that a user setting ignored the card.
+
+Blank Card is excluded by its known printing IDs, shared Oracle ID
+`d3e7bc24-c2b0-4be3-b9d9-8a8d23b93bc7`, or resolved name. Known predictions never
+produce a log row, lookup, outline or repeat-setting notice. A name fallback silently removes
+an unexpected future printing if its metadata resolves to Blank Card. The
+camera's alignment hint is removed; ordinary repeat notices remain available.
+
+Capture prefers 1920×1080 (1080×1920 on portrait screens) at up to 30 video FPS,
+with `resizeMode: { ideal: 'none' }` to prefer native camera frames. Unsupported
+constraints use the browser's best available stream. If both negotiated dimensions
+are smaller than the 1080p target, one optional adjustment requests that target in
+the orientation actually supplied by the track, within its exposed capabilities.
+A working stream is never deliberately reduced because recognition is slow.
+Continuous autofocus is requested when exposed, falling back to single-shot focus
+on cameras that support only that mode. Tapping the preview reapplies focus with a
+point of interest when the browser supports it, mapping the visible cover crop
+back to source coordinates; keyboard activation uses the center. Camera changes
+are serialized, preserve unrelated constraints and never block recognition. Closing
+or pausing prevents queued changes. Unsupported adjustments leave scanning available.
+The optional FPS overlay includes actual `videoWidth` and `videoHeight`, updated
+on video resize rather than presenting the requested resolution as achieved.
+
+Live analysis normalizes the source to a 1280-long-edge,
+720-short-edge budget before applying the visible crop. A 1080p preview therefore
+does not increase analysis dimensions, while the detector's 384×384 and embedder's
+448×448 input sizes stay fixed. One capture canvas is reused between frames.
+The scan loop never queues overlapping inference. There is no resolution downgrade
+based on inference time: exceeding the selected interval does not establish that
+camera capture caused the delay. Browser tests use emulated camera tracks and cannot
+verify a physical phone's optical focus, lens selection or preview detail.
+
+The pinned worker, license and local changes are under
+`assets/scanner/collectorvision/`. `scripts/prepare-scanner-assets.mjs` downloads
+the upstream prepared bundle once, verifies its SHA-256, extracts only known
+files, and caches them under ignored `assets/scanner/generated/`. Frontend and
+Docker builds prepare these assets automatically. Deployments include the
+public model/catalog assets so the server can build without downloading them
+again. Large generated files are not committed to Git. To update the snapshot,
+update the bundle pin in `scripts/scanner-assets.mjs`, the vendor source and
+provenance together, then rerun the real recognition tests.
+
+Fastweb-Single 1.39 is downloaded separately from pinned Hugging Face revision
+`2ef37ff78ee80ad4c3558e4a15341e447ff8a1be`, verified as 3,185,226 bytes with SHA-256
+`05d2b90b928a5a3bf0f49aa90aa86211b2103d9c347c238fd18b4f544b3cb8ca`.
+Its 384×384 ImageNet RGB input and named `corners`, `presence`, `sharpness` outputs
+use the existing worker contract; sharpness remains the confidence gate because
+this model's compatibility presence output is constant. The committed manifest
+selects its versioned model URL. A detector-specific manifest query bypasses old
+Cornelius manifests while preserving the unchanged Milo model, catalog and runtime
+caches. New builds select Fastweb-Single instead of Cornelius. The build hash
+includes detector metadata and the shipped manifest.
+
+After the first page loads, `src/features/scanner/session.js` warms one shared
+worker in idle time. It loads the models/catalog and runs both inference graphs
+with empty tensors before reporting readiness. This never opens the camera or
+requests permission. Opening/closing the scanner reuses that worker for the app
+session. Closing a view cancels its wait/scan, leaving initialization and other
+views intact; inference requests are serialized and canceled results discarded.
+Failures stay quiet during startup and can be retried when opening the camera
+or reconnecting. A full page exit releases the worker; backgrounding stops the
+camera while keeping recognition ready.
+
+Models, WASM and reference data are served by Deckhand (about 70 MB on first
+initialization). Model/catalog buffers are cached in IndexedDB. The service
+worker caches the manifest and ONNX runtime under a scanner-bundle-specific
+cache name. App updates retain this cache; a changed scanner bundle replaces
+it. The small scanner worker source is also part of the offline app shell.
+Photos stay on-device. A successful match can request its Scryfall card details
+through the existing paced proxy; no photo is uploaded and scanning does not
+require the separate local Oracle library. Camera tracks stop on back, close,
+navigation, backgrounding and late permission replies. Camera permission is
+requested only when the user enters scanning. There is no photo picker.
+
+The catalog is the prepared `milo1-scryfall-mtg-2026-07-09` snapshot with 109,711
+reference entries. Newer cards may be absent. Recognition remains visibly
+**Experimental**: confirm the card and printing, and choose foil/condition when
+adding. Sleeves, glare, unusual frames and partly hidden cards can reduce accuracy.
+License, source provenance and notices are linked from the scanner.
+
+`tests/browser/scanner.spec.mjs` exercises real model inference on a photographed
+Scrying Glass, upside-down recognition, blank rejection, full-screen camera
+live detection/log order, duplicate suppression and re-arming, delayed/failed
+card details, session name filtering across printings, review/collection insertion, background warm-up without camera
+permission, shared-engine reuse, offline cache reuse, camera denial and cleanup. Tests
+use the bundled upstream sample and stub only card details/camera hardware;
+they do not call external recognition services.
+`tests/browser/scanner-settings.spec.mjs` checks preference controls, mobile fit,
+reload persistence and defaults for older saved settings. Node tests cover
+cooldown boundaries, name normalization and typed setting sync/restore.
 
 ## Accounts and device sync
 

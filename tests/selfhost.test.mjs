@@ -144,6 +144,15 @@ test('HTTP serves the frontend, protects source/secrets, and supports local API 
   const badge = await fetch(base + '/assets/images/deckhand-badge.webp');
   assert.equal(badge.status, 200);
   assert.equal(badge.headers.get('content-type'), 'image/webp');
+  const scannerWorker = await fetch(base + '/assets/scanner/collectorvision/scanner.worker.mjs');
+  assert.equal(scannerWorker.status, 200);
+  assert.match(scannerWorker.headers.get('content-type'), /javascript/);
+  assert.match(await scannerWorker.text(), /WorkerRuntime/);
+  const scannerWasm = await fetch(base + '/assets/scanner/collectorvision/vendor/onnxruntime-web/ort-wasm-simd-threaded.asyncify.wasm', { method: 'HEAD' });
+  assert.equal(scannerWasm.status, 200);
+  assert.equal(scannerWasm.headers.get('content-type'), 'application/wasm');
+  assert.equal((await fetch(base + '/assets/scanner/opencv.js')).status, 404);
+  assert.equal((await fetch(base + '/assets/scanner/tesseract.min.js')).status, 404);
   const manifest = await (await fetch(base + '/manifest.json')).json();
   const installAssets = [
     ...manifest.icons,

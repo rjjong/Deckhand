@@ -5,20 +5,114 @@ const APP_VERSION = DECKHAND_VERSION;
 
 const CHANGELOG_NOTES = {
   en: [
-    'Optional accounts with server sync and email recovery',
-    'Local AI judge with streaming answers',
-    'Automatic build numbers within each major and minor release',
+    'Scanner camera no longer lowers its resolution when recognition takes longer',
+    'Camera requests follow phone orientation; tap the preview to refocus where supported',
+    'The optional scan framerate display also shows the actual camera resolution',
   ],
 };
 
 /* The history. When publishing release notes, move the previous CHANGELOG_NOTES
    to the top of CHANGELOG_HISTORY (with its date), then write the new notes
    above. Version and date come from the build. The start-up note shows every release since the
-   player's last visit; Extras -> What's new shows the past month (the
-   button appears once there is a history: 1.0 is the starting point). */
+   player's last visit; Settings -> Version & changelog shows the full history. */
 const APP_DATE = DECKHAND_RELEASE_DATE;
 
 const CHANGELOG_HISTORY = [
+  {
+    v: '2.0.11',
+    d: '2026-11-07',
+    en: [
+      'Sharper camera preview with continuous autofocus where supported',
+      'Recognition keeps a small processing budget and reduces capture resolution if scans fall behind',
+    ],
+  },
+  {
+    v: '2.0.10',
+    d: '2026-11-07',
+    en: [
+      'Blank Card matches are ignored silently without lookups or notifications',
+      'Camera fills the preview without stretching; the alignment hint was removed',
+    ],
+  },
+  {
+    v: '2.0.9',
+    d: '2026-11-07',
+    en: [
+      'Card scanning uses the smaller Fastweb-Single 1.39 detector',
+      'Detected borders follow cards anywhere in the full camera image, with perspective correction',
+      'Brief messages explain when repeat-scan settings ignore a card',
+    ],
+  },
+  {
+    v: '2.0.8',
+    d: '2026-11-07',
+    en: [
+      'Scanner settings add ID and corner thresholds and a configurable scan interval',
+      'Optionally show the processed scan framerate over the camera preview',
+    ],
+  },
+  {
+    v: '2.0.7',
+    d: '2026-11-07',
+    en: [
+      'Scanned card reviews include printing, condition, foil, amount and binder options',
+      'Add directly from review; the Experimental notice is beside the scanner credits',
+    ],
+  },
+  {
+    v: '2.0.6',
+    d: '2026-11-07',
+    en: ['Settings now includes the installed version and full changelog'],
+  },
+  {
+    v: '2.0.5',
+    d: '2026-11-07',
+    en: [
+      'Card scanner settings control the repeat-card delay',
+      'Optionally ignore card names already scanned in the current camera session',
+    ],
+  },
+  {
+    v: '2.0.4',
+    d: '2026-11-07',
+    en: ['Leaving the scanner slides the screen back to the right'],
+  },
+  {
+    v: '2.0.3',
+    d: '2026-11-07',
+    en: [
+      'Camera scans continuously without a shutter button',
+      'Detected cards are logged below the camera, newest first',
+      'Tap a logged card to review it or add it to your collection',
+    ],
+  },
+  {
+    v: '2.0.2',
+    d: '2026-11-07',
+    en: [
+      'Scan cards opens the camera directly',
+      'Recognition warms in the background and stays ready between scans',
+      'Recognition data and runtime remain cached across app launches',
+    ],
+  },
+  {
+    v: '2.0.1',
+    d: '2026-11-07',
+    en: [
+      'Full-screen camera slides in from the right',
+      'CollectorVision identifies one card at a time',
+      'Review each experimental scan before adding it to your collection',
+    ],
+  },
+  {
+    v: '2.0.0',
+    d: '2026-11-07',
+    en: [
+      'Optional accounts with server sync and email recovery',
+      'Local AI judge with streaming answers',
+      'Automatic build numbers within each major and minor release',
+    ],
+  },
   {
     v: '1.50',
     d: '2026-11-01',
@@ -439,14 +533,14 @@ function changelogDate(d) {
   }
 }
 
-// The releases as a list: open (start-up note) or each folded (Extras).
+// The releases as a list: open (start-up note) or each folded (Settings).
 function changelogListHtml(entries, folded) {
   return entries
     .map((e) => {
       const notes = (e.en || []).map((n) => `<li>${escapeHtml(n)}</li>`).join('');
       const head = `<b>v${escapeHtml(e.v)}</b><span class="cl-date">${escapeHtml(changelogDate(e.d))}</span>`;
       return folded
-        ? `<div class="cl-entry"><button type="button" class="cl-head" data-clv="${escapeHtml(e.v)}">${head}<span class="fold-ico">\u25BE</span></button><ul class="cl-notes" hidden>${notes}</ul></div>`
+        ? `<div class="cl-entry"><button type="button" class="cl-head" data-clv="${escapeHtml(e.v)}" aria-expanded="false" aria-controls="cl-notes-${escapeHtml(e.v)}">${head}<span class="fold-ico" aria-hidden="true">\u25BE</span></button><ul id="cl-notes-${escapeHtml(e.v)}" class="cl-notes" hidden>${notes}</ul></div>`
         : `<div class="cl-entry"><div class="cl-head">${head}</div><ul class="cl-notes">${notes}</ul></div>`;
     })
     .join('');

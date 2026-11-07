@@ -655,6 +655,20 @@ button.cl-head {
   display: none;
 }
 
+.settings-changelog .cl-head {
+  align-items: center;
+  min-height: 44px;
+  color: var(--main-text);
+}
+
+.settings-changelog .cl-entry + .cl-entry {
+  border-top-width: 1px;
+}
+
+.settings-changelog .cl-head[aria-expanded='true'] .fold-ico {
+  transform: rotate(180deg);
+}
+
 .cl-apk .cl-head {
   gap: 6px;
 }

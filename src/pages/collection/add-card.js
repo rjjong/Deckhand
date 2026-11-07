@@ -426,7 +426,7 @@ async function openAddToCollection(card) {
     el.className = 'overlay';
     el.id = 'addCollOverlay';
   }
-  document.body.appendChild(el); // (re)append — a reused overlay must rise above ones opened after it
+  document.body.appendChild(el);
   el.innerHTML = /* HTML */ `<div class="overlay-inner" style="max-width:380px;">
     <main style="padding:14px;">
       <div class="panel-card">
@@ -440,142 +440,21 @@ async function openAddToCollection(card) {
           />
         </div>
         <p class="hint" style="margin-bottom:8px;text-align:center;">${escapeHtml(card.name)}</p>
-        <div class="adv-row">
-          <label>Printing</label>
-          <div id="acPdBox">${printsDropdownHtml('acPd', [card], 0, true)}</div>
-        </div>
-        <div class="adv-row" style="margin-top:10px;">
-          <label>Condition</label>
-          <select id="acCond" class="col-select">
-            ${COL_CONDS.map(([k, l]) => `<option value="${k}" ${k === 'NM' ? 'selected' : ''}>${l}</option>`).join('')}
-          </select>
-        </div>
-        <div class="adv-row">
-          <label>Foil</label
-          ><label class="ac-foil"><input type="checkbox" id="acFoil" /> ✨ Foil</label>
-        </div>
-        <div class="adv-row">
-          <label>Amount</label>
-          <div class="action-row" style="margin:0;">
-            <button class="ghost-btn" id="acQminus" style="flex:none;width:44px;">−</button>
-            <input
-              id="acQty"
-              type="number"
-              min="1"
-              value="1"
-              class="col-filter-input"
-              style="max-width:70px;text-align:center;"
-            />
-            <button class="ghost-btn" id="acQplus" style="flex:none;width:44px;">＋</button>
-          </div>
-        </div>
-        <div class="adv-row">
-          <label>Binder</label>
-          <select id="acBinder" class="col-select">
-            ${ruledBinders().length ? `<option value="__auto__"${state.colFilter && state.collection.binders.some((b) => b.id === state.colFilter.binder) ? '' : ' selected'}>✦ ${'Automatic (binder rules)'}</option>` : ''}
-            <option value="">— No binder —</option>
-            ${state.collection.binders.map((b) => `<option value="${b.id}" ${state.colFilter && state.colFilter.binder === b.id ? 'selected' : ''}>${escapeHtml(b.name)}</option>`).join('')}
-            <option value="__wants__">🔖 Wants list</option>
-            <option value="__new__">＋ New binder…</option>
-          </select>
-        </div>
-        <button class="primary-btn" id="acAdd" style="margin-top:12px;">Add to collection</button>
-        <button class="ghost-btn" id="acCancel" style="width:100%;margin-top:8px;">Cancel</button>
+        ${collectionAddFieldsHtml(card)}
+        <button type="button" class="primary-btn" id="acAdd" style="margin-top:12px;">
+          Add to collection
+        </button>
+        <button type="button" class="ghost-btn" id="acCancel" style="width:100%;margin-top:8px;">
+          Cancel
+        </button>
       </div>
     </main>
   </div>`;
-  let prints = [card],
-    sel = 0,
-    loadingPrints = true;
-  const paintPd = () => {
-    const box = document.getElementById('acPdBox');
-    if (!box) return;
-    box.innerHTML = printsDropdownHtml('acPd', prints, sel, loadingPrints);
-    wirePrintsDropdown(box, 'acPd', (i) => {
-      sel = i;
-      paintPd();
-    });
-  };
-  paintPd();
-  if (card.prints_search_uri) {
-    try {
-      const r = await sfFetch(card.prints_search_uri);
-      if (r.ok) {
-        const d = await r.json();
-        if ((d.data || []).length) {
-          prints = d.data.slice(0, 30);
-          sel = Math.max(
-            0,
-            prints.findIndex(
-              (p) => p.set === card.set && p.collector_number === card.collector_number,
-            ),
-          );
-        }
-      }
-    } catch (e) {}
-  }
-  loadingPrints = false;
-  paintPd();
-  document.getElementById('acQplus')?.addEventListener('click', () => {
-    const q = document.getElementById('acQty');
-    q.value = (+q.value || 1) + 1;
-  });
-  document.getElementById('acQminus')?.addEventListener('click', () => {
-    const q = document.getElementById('acQty');
-    q.value = Math.max(1, (+q.value || 1) - 1);
-  });
-  document.getElementById('acCancel')?.addEventListener('click', closeTopOverlay);
-  document.getElementById('acAdd')?.addEventListener('click', () => {
-    const p = prints[sel] || card;
-    const chosen = document.getElementById('acBinder').value || null;
-    // The __new__ choice needs a name first — the rest of the add runs as a
-    // second phase once the house-style prompt resolves.
-    if (chosen === '__new__') {
-      openInAppPrompt('New binder name', 'Binder name', '', (name) => {
-        if (!name || !name.trim()) return;
-        const b = { id: 'bnd_' + Date.now().toString(36), name: name.trim() };
-        state.collection.binders.push(b);
-        finishAdd(p, b.id);
-      });
-      return;
-    }
-    finishAdd(p, chosen);
-  });
-  async function finishAdd(p, binder) {
-    const cond = document.getElementById('acCond').value;
-    const qty = Math.max(1, +document.getElementById('acQty').value || 1);
-    const slim = colFoilSlim(slimForCollection(p), p, !!document.getElementById('acFoil')?.checked);
-    if (binder === '__auto__') binder = await routeBinder({ ...slim, cond, qty }, {});
-    if (binder === '__wants__') {
-      state.collection.wantsExclude = state.collection.wantsExclude.filter((n) => n !== slim.name);
-      if (!state.collection.wantsManual.some((w) => w.name === slim.name))
-        state.collection.wantsManual.push(slim);
-      saveCollection();
-      toast(slim.name + ' added to your Wants list.');
+  el.querySelector('#acCancel').addEventListener('click', closeTopOverlay);
+  await wireCollectionAddForm(el, card, {
+    onAdded() {
       closeTopOverlay();
       if (state.screen === 'collection') render();
-      return;
-    }
-    const same = state.collection.items.find(
-      (x) =>
-        x.name === slim.name &&
-        x.set === slim.set &&
-        x.cn === slim.cn &&
-        x.cond === cond &&
-        !!x.foil === !!slim.foil &&
-        (x.binder || null) === (binder || null),
-    );
-    if (same) {
-      same.qty += qty;
-    } else state.collection.items.unshift({ ...slim, cond, qty, binder, addedAt: Date.now() });
-    state.collection.wantsManual = state.collection.wantsManual.filter((w) => w.name !== slim.name);
-    saveCollection();
-    toast(
-      binder
-        ? `${slim.name} ×${qty} → ${brBinderName(binder)}`
-        : `${slim.name} ×${qty} added to your collection.`,
-    );
-    closeTopOverlay();
-    if (state.screen === 'collection') render();
-  }
+    },
+  });
 }

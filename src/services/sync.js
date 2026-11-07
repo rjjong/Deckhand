@@ -172,6 +172,7 @@ function syncSnapshot() {
         theme: state.theme,
         guild: state.guild,
         startupPage: state.startupPage,
+        ...normalizeScannerSettings(state),
       });
     Object.assign(out, syncProjectStorage(source, raw));
   }

@@ -1,0 +1,19 @@
+Deckhand experimental single-card scanner
+
+CollectorVision by HanClinto and contributors
+https://github.com/HanClinto/CollectorVision
+Pinned source and local modifications: UPSTREAM.json
+License: GNU Affero General Public License 3.0 or later (LICENSE).
+The vendored worker and Deckhand's scanner integration are available as source
+in the served worker and the application's JavaScript source map.
+
+Inference uses CollectorVision's Fastweb-Single 1.39 and Milo 1.0.0 models and its
+prepared MTG reference catalog dated 2026-07-09. Recognition is experimental;
+newer cards may be absent, and printing, foil and condition need confirmation.
+
+ONNX Runtime Web 1.24.3 by Microsoft and contributors
+https://github.com/microsoft/onnxruntime
+MIT License: ONNXRUNTIME-LICENSE.txt
+
+Reference card images and names belong to their respective rights holders.
+All models and reference assets are served by Deckhand. Photos stay on-device.

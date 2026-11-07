@@ -1,0 +1,18 @@
+{
+  "repository": "https://github.com/HanClinto/CollectorVision",
+  "commit": "8b295ab80a997766afc00c640a616c1f2716df21",
+  "source": "examples/web_scanner/scanner.worker.mjs",
+  "license": "AGPL-3.0-or-later",
+  "changes": [
+    "Stamp worker import build placeholder with upstream commit.",
+    "Use one WASM thread when cross-origin isolation is unavailable.",
+    "Warm detector and embedder with empty tensors before reporting readiness; no camera frame is used."
+  ],
+  "catalog": "milo1-scryfall-mtg-2026-07-09",
+  "detector": "fastweb-single-1.39",
+  "detector_repository": "https://huggingface.co/HanClinto/ccgdetector-fastweb-single",
+  "detector_revision": "2ef37ff78ee80ad4c3558e4a15341e447ff8a1be",
+  "detector_sha256": "05d2b90b928a5a3bf0f49aa90aa86211b2103d9c347c238fd18b4f544b3cb8ca",
+  "embedder": "milo-1.0.0",
+  "onnxruntime_web": "1.24.3"
+}

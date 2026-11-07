@@ -1,0 +1,28 @@
+{
+  "version": "milo1-scryfall-mtg-2026-07-09",
+  "models": { "detector": "models/fastweb-single-1.39.onnx", "milo": "models/milo.onnx" },
+  "model_sizes": { "detector": 3185226, "milo": 5191100 },
+  "model_hashes": {
+    "detector": "sha256:05d2b90b928a5a3bf0f49aa90aa86211b2103d9c347c238fd18b4f544b3cb8ca",
+    "milo": "sha256:bd13d8d60383c69da04dce261f32e93fdaeaa8fd618fbc991e7385f71b3d45df"
+  },
+  "model_ids": { "detector": "fastweb-single-1.39", "milo": "milo-1.0.0" },
+  "model_versions": { "detector": "1.39", "milo": "1.0.0" },
+  "detector": {
+    "family": "fastweb-single",
+    "architecture": "efficientvit-b0-global-token-simcc",
+    "input_size": 384,
+    "preprocess": "imagenet-rgb",
+    "outputs": { "corners": "corners", "presence": "presence", "sharpness": "sharpness" }
+  },
+  "catalog": {
+    "embeddings": "catalog/scryfall-mtg-embeddings.f16.bin",
+    "card_ids": "catalog/scryfall-mtg-card-ids.json",
+    "asset_sizes": { "embeddings": 28086016, "card_ids": 4408130, "oracle_ids": 4388440 },
+    "oracle_ids": "catalog/scryfall-mtg-oracle-ids.json",
+    "rows": 109711,
+    "dims": 128,
+    "dtype": "float16"
+  },
+  "sample_frame": "samples/mtg-sample.jpg"
+}

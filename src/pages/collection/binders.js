@@ -480,7 +480,7 @@ function openBinderConflict(it, cands, o) {
     const el = document.createElement('div');
     el.className = 'deckpick-scrim';
     el.id = 'binderConflict';
-    el.style.zIndex = 210;
+    el.style.zIndex = Math.max(210, o.zIndex || 0);
     el.style.alignItems = 'flex-end';
     // column-reverse sheet: the first binder sits at the foot, by the thumb.
     el.innerHTML = /* HTML */ `<div class="deckpick bc-sheet">
@@ -517,7 +517,7 @@ function openBinderConflict(it, cands, o) {
   });
 }
 
-async function routeBinder(it, memo) {
+async function routeBinder(it, memo, options) {
   const c = binderCandidates(it);
   if (!c.length) return null;
   if (c.length === 1) return c[0].id;
@@ -526,7 +526,7 @@ async function routeBinder(it, memo) {
     .sort()
     .join('|');
   if (memo && Object.prototype.hasOwnProperty.call(memo, key)) return memo[key];
-  const r = await openBinderConflict(it, c);
+  const r = await openBinderConflict(it, c, options);
   if (memo && r.remember) memo[key] = r.id;
   return r.id;
 }

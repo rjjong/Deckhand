@@ -14,6 +14,7 @@ function settingsPageHtml() {
 function wireSettingsPage() {
   wirePreferenceCards();
   wirePreferences();
+  wireSettingsChangelog();
 }
 
 /* ---------------- SETTINGS PAGE ---------------- */
@@ -384,6 +385,7 @@ function menuToolsHtml(preferences = false) {
         ${tile('dataSourcesRow', ICONS.library, 'Data sources')}
         <div id="dataSourcesBody" class="menu-tool-body" hidden>${dataSourcesHtml()}</div>
       </div>
+      ${scannerSettingsHtml()}
       <div class="settings-section">
         <div id="guildBody" class="guild-list xt-body" hidden>
           ${GUILDS.map((x) => `<button type="button" class="guild-opt ${x.k === state.guild ? 'sel' : ''}" data-guild="${x.k}"><span class="guild-swatch" style="--gm:${GUILD_SWATCH[x.main][0]};--gs:${GUILD_SWATCH[x.side][1]};"></span>${manaIconSvg(x.main, 16)}${manaIconSvg(x.side, 16)}<span>${x.n}</span></button>`).join('')}
@@ -432,6 +434,7 @@ function menuToolsHtml(preferences = false) {
         </div>
         ${tile('backupRow', ICONS.shield, 'Backup')}
       </div>
+      ${settingsChangelogHtml()}
     </section>`;
   return /* HTML */ ` <section class="menu-tools hub-actions" aria-label="Tools">
     <div class="settings-section">${tile('lifeRow', ICONS.heart, 'Life tracker')}</div>

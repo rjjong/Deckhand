@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test';
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { scannerBundleHash } from '../../scripts/scanner-assets.mjs';
 
 test.use({ serviceWorkers: 'allow' });
 
@@ -48,6 +49,8 @@ async function releases() {
       const mime = {
         html: 'text/html',
         js: 'text/javascript',
+        mjs: 'text/javascript',
+        wasm: 'application/wasm',
         css: 'text/css',
         json: 'application/json',
         png: 'image/png',
@@ -130,7 +133,8 @@ test('a deployment preserves editing and saved data, then refreshes on return', 
   const app = await releases();
   try {
     await open(page, app);
-    await page.evaluate(async () => {
+    const scannerCache = 'deckhand-scanner-' + scannerBundleHash.slice(0, 12);
+    await page.evaluate(async (scannerCache) => {
       const deck = { id: 'update-test', name: 'Keep my deck', format: 'commander', cards: [] };
       state.decksIndex.push(deck);
       await persistDeck(deck);
@@ -138,12 +142,12 @@ test('a deployment preserves editing and saved data, then refreshes on return', 
       saveCollection();
       state.guild = 'dimir';
       await persistSettings();
-      for (const name of ['admiral-assets-v1', 'unrelated-cache']) {
+      for (const name of ['admiral-assets-v1', 'unrelated-cache', scannerCache]) {
         const cache = await caches.open(name);
         await cache.put('/sentinel', new Response('keep'));
       }
       openInAppPrompt('Rename deck', 'Deck name', 'Unsaved text', () => {});
-    });
+    }, scannerCache);
     await page.locator('#iapInput').fill('Still typing');
     app.state.version = '222222222222';
     await page.evaluate(async () => updateServiceWorker(await navigator.serviceWorker.ready));
@@ -152,8 +156,21 @@ test('a deployment preserves editing and saved data, then refreshes on return', 
     await expect(page.locator('#iapInput')).toHaveValue('Still typing');
     expect(await page.evaluate(() => Number(sessionStorage.getItem('testPageLoads')))).toBe(1);
     await expect
-      .poll(() => page.evaluate(() => caches.keys()))
-      .toEqual(['admiral-assets-v1', 'unrelated-cache', 'deckhand-shell-222222222222']);
+      .poll(() => page.evaluate(async () => (await caches.keys()).sort()))
+      .toEqual(
+        [
+          'admiral-assets-v1',
+          'unrelated-cache',
+          'deckhand-shell-222222222222',
+          scannerCache,
+        ].sort(),
+      );
+    expect(
+      await page.evaluate(
+        async (name) => (await (await caches.open(name)).match('/sentinel')).text(),
+        scannerCache,
+      ),
+    ).toBe('keep');
     await page.locator('#iapCancel').click();
     await page.evaluate(() => window.dispatchEvent(new Event('focus')));
     await expect

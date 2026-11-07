@@ -64,6 +64,8 @@ def main():
     host = sys.argv[1] if len(sys.argv) > 1 else 'ubuntu-server'
     if len(sys.argv) > 2 or not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.@:-]*', host):
         raise SystemExit('Usage: python3 scripts/server/deploy.py [ssh-host]')
+    # Public scanner models/catalog are packaged with assets, never private data.
+    subprocess.run(['node', str(SOURCE / 'scripts/prepare-scanner-assets.mjs')], check=True)
     # Assign once in the checkout before packaging; Docker and startup reuse it.
     version = json.loads(subprocess.check_output(
         ['node', str(SOURCE / 'scripts/app-version.mjs'), '--next'], text=True))

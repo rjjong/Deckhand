@@ -10,7 +10,7 @@ function menuPageHtml() {
     <div class="account-warning-slot">${accountWarningHtml()}</div>
     ${menuNoticeHtml()} ${menuToolsHtml()}
     <section class="hub-actions" aria-label="Card scanner">
-      ${menuCardHtml('menuScanCards', SCANNER_ICON, 'Scan cards', 'Experimental · Scan several cards from a photo or camera')}
+      ${menuCardHtml('menuScanCards', SCANNER_ICON, 'Scan cards', 'Experimental · Live card scanning')}
     </section>
     <section class="hub-actions menu-settings" aria-label="Settings">
       ${menuCardHtml('menuAccount', SYNC_ICON, 'Account & sync', escapeHtml(accountStatusLabel()))}

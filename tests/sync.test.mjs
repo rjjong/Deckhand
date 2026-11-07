@@ -8,6 +8,60 @@ import { openStorage } from '../server/storage.mjs';
 import { handle, idOf } from '../server/services/sync.mjs';
 import records from '../shared/sync-records.cjs';
 
+test('scanner preferences project, validate and persist as independent numeric/boolean settings', async (t) => {
+  const storage = openStorage(':memory:');
+  t.after(() => storage.close());
+  const ctx = { sync: storage.sync };
+  const code = (await handle({ op: 'create' }, ctx)).json.code;
+  const raw = {
+    theme: 'dark',
+    scannerDebounceMs: 2500,
+    scannerIgnoreSession: true,
+    scannerIdThreshold: 0.72,
+    scannerCornerThreshold: 0.08,
+    scannerIntervalMs: 950,
+    scannerShowFramerate: true,
+  };
+  const projected = records.syncProjectStorage('settings:app', JSON.stringify(raw));
+  assert.equal(projected['setting:scannerDebounceMs'], '2500');
+  assert.equal(projected['setting:scannerIgnoreSession'], 'true');
+  const changes = Object.fromEntries(
+    Object.entries(projected).map(([key, v]) => [key, { t: 1, v }]),
+  );
+  assert.equal((await handle({ op: 'sync', code, changes }, ctx)).status, 200);
+  const saved = (await handle({ op: 'sync', code, since: 0 }, ctx)).json.changes;
+  const values = Object.fromEntries(Object.entries(saved).map(([key, value]) => [key, value.v]));
+  assert.deepEqual(JSON.parse(records.syncRestoreStorage('settings:app', values)), raw);
+  for (const value of ['2500', -1, 60001, 2.5, null])
+    assert.equal(
+      records.syncRecordValid('setting:scannerDebounceMs', JSON.stringify(value)),
+      false,
+    );
+  for (const value of ['true', 1, {}, null])
+    assert.equal(
+      records.syncRecordValid('setting:scannerIgnoreSession', JSON.stringify(value)),
+      false,
+    );
+  assert.equal(records.syncRecordValid('setting:scannerIgnoreSession', 'false'), true);
+  assert.equal(records.syncRecordValid('setting:scannerDebounceMs', '0'), true);
+  for (const key of ['scannerIdThreshold', 'scannerCornerThreshold']) {
+    for (const value of ['0.5', -0.1, 1.01, null, true])
+      assert.equal(records.syncRecordValid('setting:' + key, JSON.stringify(value)), false);
+    for (const value of [0, 0.6, 1])
+      assert.equal(records.syncRecordValid('setting:' + key, JSON.stringify(value)), true);
+  }
+  for (const value of ['650', 99, 10001, 650.1, null])
+    assert.equal(
+      records.syncRecordValid('setting:scannerIntervalMs', JSON.stringify(value)),
+      false,
+    );
+  assert.equal(records.syncRecordValid('setting:scannerIntervalMs', '100'), true);
+  assert.equal(records.syncRecordValid('setting:scannerIntervalMs', '10000'), true);
+  assert.equal(records.syncRecordValid('setting:scannerShowFramerate', 'true'), true);
+  assert.equal(records.syncRecordValid('setting:scannerShowFramerate', 'false'), true);
+  assert.equal(records.syncRecordValid('setting:scannerShowFramerate', '1'), false);
+});
+
 test('sync codes isolate SQLite data across restarts without storing credentials or the code', async (t) => {
   const directory = await mkdtemp(join(tmpdir(), 'deckhand-sync-'));
   t.after(() => rm(directory, { recursive: true, force: true }));

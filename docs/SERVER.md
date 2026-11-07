@@ -202,7 +202,9 @@ python3 scripts/server/deploy.py
 ```
 
 The deploy command packages the current working files, including uncommitted
-customizations, without `.env`, databases, generated files or dependencies.
+customizations, without `.env`, databases, generated frontend bundles or dependencies.
+The public CollectorVision models/catalog are prepared locally and included
+under `assets/scanner/generated/`; these contain no user photos or private data.
 It reserves the next **Major.Minor.Build** number in the development checkout's
 `version.json` before packaging. The image build and server startup reuse that
 number, so a deployment increments only once. A new major/minor starts at build

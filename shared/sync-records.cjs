@@ -14,7 +14,17 @@ const SYNC_SCALARS = [
   'ptSmart',
 ];
 const SYNC_SOURCES = ['collection', 'folders', 'settings:app', 'lifeSaves', ...SYNC_SCALARS];
-const SYNC_SETTING_FIELDS = ['theme', 'guild', 'startupPage'];
+const SYNC_SETTING_FIELDS = [
+  'theme',
+  'guild',
+  'startupPage',
+  'scannerDebounceMs',
+  'scannerIgnoreSession',
+  'scannerIdThreshold',
+  'scannerCornerThreshold',
+  'scannerIntervalMs',
+  'scannerShowFramerate',
+];
 
 function syncItemKey(item) {
   return (
@@ -139,6 +149,14 @@ function syncRecordValid(key, raw) {
   if (SYNC_SCALARS.includes(key)) return true;
   try {
     const value = JSON.parse(raw);
+    if (key === 'setting:scannerDebounceMs')
+      return Number.isInteger(value) && value >= 0 && value <= 60000;
+    if (key === 'setting:scannerIdThreshold' || key === 'setting:scannerCornerThreshold')
+      return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1;
+    if (key === 'setting:scannerIntervalMs')
+      return Number.isInteger(value) && value >= 100 && value <= 10000;
+    if (key === 'setting:scannerIgnoreSession' || key === 'setting:scannerShowFramerate')
+      return typeof value === 'boolean';
     if (key.startsWith('setting:')) return typeof value === 'string' && value.length <= 80;
     if (key.startsWith('want-exclude:')) return value === 1;
     if (!value || typeof value !== 'object' || Array.isArray(value)) return false;

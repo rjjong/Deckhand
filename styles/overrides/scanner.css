@@ -1,6 +1,88 @@
-/* The experimental scanner uses the app's title bar and menu surfaces. */
+/* Live camera, newest-first detection log, and optional card review. */
+.scanner-setting-field,
+.scanner-setting-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  min-height: 48px;
+  cursor: pointer;
+  border-bottom: 1px solid color-mix(in srgb, var(--main-text) 20%, transparent);
+}
+.scanner-setting-field > span:first-child,
+.scanner-setting-toggle > span {
+  flex: 1;
+  min-width: 0;
+}
+.scanner-settings strong {
+  display: block;
+  font:
+    600 14px/1.5 'Inter',
+    sans-serif;
+  color: var(--main-text);
+}
+.scanner-settings small {
+  display: block;
+  margin-top: 5px;
+  font:
+    400 12px/1.6 'Inter',
+    sans-serif;
+  color: var(--main-sub);
+}
+.scanner-setting-number {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+}
+.scanner-setting-number input {
+  box-sizing: border-box;
+  width: 100px;
+  max-width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--main-text) 28%, transparent);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--main-text) 4%, var(--ink));
+  color: var(--main-text);
+  font:
+    400 16px/1.4 'Inter',
+    sans-serif;
+}
+.scanner-setting-number > span {
+  color: var(--main-sub);
+  font:
+    400 11px/1.4 'Inter',
+    sans-serif;
+}
+.scanner-setting-toggle input {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  accent-color: var(--gold);
+}
+.scanner-settings-note {
+  margin: 14px 0 0;
+  color: var(--main-sub);
+  font:
+    400 11px/1.7 'Inter',
+    sans-serif;
+}
+@media (max-width: 359px) {
+  .scanner-setting-field {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .scanner-setting-number {
+    flex-direction: row;
+    align-items: center;
+  }
+}
 html #cardScannerOverlay {
-  z-index: 210;
+  z-index: 230;
 }
 html #cardScannerOverlay > .scanner-screen {
   display: flex;
@@ -18,6 +100,7 @@ html #cardScannerOverlay > .scanner-screen {
 }
 .scanner-screen > .app-titlebar {
   position: relative !important;
+  flex: none;
 }
 html #cardScannerOverlay .scanner-body {
   display: block;
@@ -25,20 +108,16 @@ html #cardScannerOverlay .scanner-body {
   min-height: 0;
   overflow: auto;
   width: 100%;
-  max-width: 900px;
+  max-width: 760px;
   margin: auto;
   padding: 20px 16px 28px !important;
   box-sizing: border-box;
   overscroll-behavior: contain;
 }
-.scanner-intro h1 {
-  font:
-    600 24px/1.4 'Cinzel',
-    serif;
-  margin: 14px 0;
+.scanner-intro p {
+  margin: 0 0 16px;
 }
 .scanner-intro p,
-#scannerStatus,
 .scanner-credits {
   font:
     400 13px/1.7 'Inter',
@@ -52,89 +131,51 @@ html #cardScannerOverlay .scanner-body {
   padding: 4px 10px;
   color: var(--accent-ink);
   font:
-    600 12px/1.5 'Inter',
+    600 11px/1.5 'Inter',
     sans-serif;
 }
-.scanner-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin: 18px 0;
-}
-.scanner-actions .hub-card {
-  min-width: 0;
-  justify-content: center;
-  padding: 14px 8px;
-  color: var(--main-text);
-}
-.scanner-actions svg {
-  flex: none;
-  width: 24px;
-  height: 24px;
-}
-.scanner-preview {
-  overflow: hidden;
-  border-radius: 16px;
-  background: var(--ink);
-  border: 1px solid var(--scanner-line);
-}
-.scanner-preview :is(video, canvas) {
-  display: block;
-  width: 100%;
-  max-height: 50dvh;
-  object-fit: contain;
-}
-html #cardScannerOverlay [hidden] {
+html :is(#cardScannerOverlay, #cardScannerCamera) [hidden] {
   display: none !important;
-}
-.scanner-results {
-  display: grid;
-  gap: 12px;
 }
 .scanner-result {
   display: grid;
-  grid-template-columns: 80px minmax(0, 1fr);
-  gap: 12px;
-  padding: 14px;
+  grid-template-columns: 90px minmax(0, 1fr);
+  gap: 16px;
+  padding: 16px;
   border: 1px solid var(--scanner-line);
   border-radius: 16px;
   background: color-mix(in srgb, var(--main-text) 4%, var(--ink));
 }
 .scanner-result > img {
-  width: 80px;
-  border-radius: 8px;
+  width: 90px;
+  aspect-ratio: 5 / 7;
+  border-radius: 7px;
 }
-.scanner-result label {
-  display: block;
-  margin-bottom: 6px;
+.scanner-result:not(:has(> img)) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.scanner-result h2 {
+  margin: 6px 0;
   font:
-    600 12px/1.5 'Inter',
-    sans-serif;
+    600 17px/1.4 'Cinzel',
+    serif;
+  overflow-wrap: anywhere;
 }
-.scanner-match-label {
-  margin-top: 10px;
-}
-html #cardScannerOverlay .scanner-result :is(input, select, .nsel-btn) {
-  width: 100%;
-  min-width: 0;
-  min-height: 42px;
-  padding: 8px;
-  box-sizing: border-box;
-  border: 1px solid var(--scanner-line);
-  border-radius: 9px;
-  background: color-mix(in srgb, var(--main-text) 4%, var(--ink));
-  color: var(--main-text);
-  font:
-    400 14px/1.5 'Inter',
-    sans-serif;
-}
+.scanner-result p,
 .scanner-result small {
   display: block;
-  margin-top: 8px;
   color: var(--main-sub);
   font:
-    400 12px/1.5 'Inter',
+    400 12px/1.6 'Inter',
     sans-serif;
+}
+.scanner-eyebrow {
+  color: var(--accent-ink);
+  font:
+    600 10px/1.4 'Inter',
+    sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 .scanner-footer {
   flex: none;
@@ -144,11 +185,11 @@ html #cardScannerOverlay .scanner-result :is(input, select, .nsel-btn) {
 }
 html .scanner-screen .primary-btn {
   width: 100%;
-  max-width: 868px;
+  max-width: 728px;
   display: block;
   min-height: 46px;
   padding: 12px 16px;
-  margin: 12px auto 0;
+  margin: 0 auto;
   border: 0;
   border-radius: 12px;
   background: var(--gold);
@@ -157,29 +198,423 @@ html .scanner-screen .primary-btn {
     600 14px/1.5 'Inter',
     sans-serif;
 }
-html .scanner-screen .scanner-footer .primary-btn {
-  margin-top: 0;
+.scanner-secondary {
+  min-height: 44px;
+  padding: 8px 12px;
+  margin-top: 10px;
+  border: 1px solid color-mix(in srgb, var(--main-text) 24%, transparent);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--main-text);
+  font:
+    500 12px/1.4 'Inter',
+    sans-serif;
 }
-.scanner-screen button:disabled {
-  opacity: 0.55;
+.scanner-collection {
+  margin-top: 16px;
+  padding: 6px 16px;
+  border: 1px solid var(--scanner-line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--main-text) 4%, var(--ink));
+}
+.scanner-collection .adv-row {
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 12px;
+  margin: 0;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--scanner-line);
+}
+.scanner-collection .adv-row:last-child {
+  border-bottom: 0;
+}
+.scanner-collection :is(.adv-row > label, .collection-field-label) {
+  color: var(--main-text);
+  font:
+    500 12px/1.5 'Inter',
+    sans-serif;
+}
+html
+  #cardScannerOverlay
+  .scanner-collection
+  :is(.col-select, .cselect-btn, .pd-btn, #acQty, .ghost-btn) {
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid var(--scanner-line);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--main-text) 4%, var(--ink));
+  color: var(--main-text);
+  font:
+    400 16px/1.4 'Inter',
+    sans-serif;
+}
+.scanner-collection .collection-add-quantity {
+  display: flex;
+  gap: 6px;
+}
+.scanner-collection .ac-foil {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+}
+.scanner-collection #acFoil {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--gold);
+}
+.scanner-collection .pd-panel {
+  top: calc(100% + 4px);
+  bottom: auto;
+  max-height: min(230px, 40dvh);
+  border: 1px solid var(--scanner-line);
+  background: var(--ink);
+  color: var(--main-text);
+}
+.scanner-collection .pd-opt {
+  min-height: 44px;
+}
+html:has(#cardScannerOverlay) #nselPop {
+  --ink-text: var(--main-text);
+  --sub-text: var(--main-sub);
+  --line: color-mix(in srgb, var(--main-text) 24%, transparent);
+  --brass: var(--accent-ink);
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--ink);
+  color: var(--main-text);
+}
+html:has(#cardScannerOverlay) #nselPop .cselect-opt {
+  min-height: 44px;
+  border-bottom: 1px solid var(--line);
+  color: var(--main-text);
+  font:
+    400 14px/1.5 'Inter',
+    sans-serif;
+}
+html:has(#cardScannerOverlay) #nselPop .cselect-opt.on {
+  background: color-mix(in srgb, var(--main-text) 8%, var(--ink));
+  color: var(--accent-ink);
+}
+.scanner-credits {
+  margin-top: 20px;
+}
+.scanner-credits p {
+  margin: 10px 0 0;
+}
+@media (max-width: 359px) {
+  .scanner-collection .adv-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+}
+:is(.scanner-screen, .scanner-camera-screen) button:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
 }
 .scanner-credits a {
   color: var(--accent-ink);
 }
-
-html #nselPop.scanner-options {
+html #cardScannerCamera {
+  position: fixed;
+  inset: 0;
+  z-index: 220;
+  width: 100%;
+  height: 100dvh;
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #080b0d;
+  animation: scanner-camera-enter 0.24s ease-out;
+}
+@keyframes scanner-camera-enter {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+html #cardScannerCamera.leaving {
+  animation: scanner-camera-exit 0.24s ease-in forwards;
+  pointer-events: none;
+}
+@keyframes scanner-camera-exit {
+  from {
+    transform: var(--scanner-exit-start, translateX(0));
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+html #cardScannerCamera .scanner-camera-header {
+  position: relative !important;
+  flex: none;
+  width: 100%;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr) 88px;
+  align-items: center;
+  padding-inline: 12px;
+  background: var(--ink);
+  color: var(--head-ink);
+}
+.scanner-camera-header .brand-txt {
+  text-align: center;
+  justify-self: center;
+}
+.scanner-camera-header > button {
+  justify-self: start;
+}
+.scanner-camera-header .scanner-badge {
+  justify-self: end;
+  padding: 3px 7px;
+  font-size: 9px;
+}
+html #cardScannerCamera .scanner-camera-stage {
+  position: relative;
+  flex: 0 1 clamp(120px, 44dvh, 480px);
+  min-height: 100px;
+  padding: 0 !important;
+  margin: 0;
+  overflow: hidden;
+  isolation: isolate;
+}
+#scannerVideo,
+.scanner-camera-frozen {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.scanner-camera-focus {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  cursor: crosshair;
+  -webkit-tap-highlight-color: transparent;
+}
+.scanner-camera-focus:focus-visible {
+  outline: 2px solid #f1ce62;
+  outline-offset: -4px;
+}
+.scanner-camera-border {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.scanner-camera-border polygon {
+  fill: rgb(241 206 98 / 0.04);
+  stroke: #f1ce62;
+  stroke-width: 3px;
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 1px 2px #000);
+}
+.scanner-ignored {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  width: fit-content;
+  max-width: calc(100% - 24px);
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgb(0 0 0 / 0.8);
+  color: #f1ce62;
+  text-align: center;
+  font:
+    500 11px/1.5 'Inter',
+    sans-serif;
+  pointer-events: none;
+}
+.scanner-framerate {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: rgb(0 0 0 / 0.7);
+  color: #fff;
+  font:
+    500 12px/1.5 'Inter',
+    sans-serif;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.scanner-framerate small {
+  display: block;
+  font-size: 10px;
+  text-align: right;
+}
+.scanner-camera-statusbar {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--ink);
+  border-top: 1px solid color-mix(in srgb, var(--main-text) 24%, transparent);
+  color: var(--main-text);
+}
+#scannerCameraStatus {
+  flex: 1;
+  min-width: 0;
+  min-height: 18px;
+  margin: 0;
+  text-align: left;
+  font:
+    400 12px/1.5 'Inter',
+    sans-serif;
+  color: var(--main-sub);
+}
+.scanner-camera-statusbar .scanner-secondary {
+  flex: none;
+  margin-top: 0;
+}
+.scanner-log-section {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 72px;
+  background: var(--page-backdrop);
+  color: var(--main-text);
+  border-top: 1px solid color-mix(in srgb, var(--main-text) 24%, transparent);
+}
+.scanner-log-header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+}
+.scanner-log-header h2 {
+  margin: 0;
+  font:
+    600 14px/1.4 'Inter',
+    sans-serif;
+}
+#scannerLogCount {
+  color: var(--main-sub);
+  font:
+    400 12px/1.4 'Inter',
+    sans-serif;
+}
+.scanner-log-scroll {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: 900px;
+  align-self: center;
+  box-sizing: border-box;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 0 12px calc(12px + env(safe-area-inset-bottom));
+}
+#scannerLogEmpty {
+  margin: 8px 4px;
+  color: var(--main-sub);
+  font:
+    400 13px/1.6 'Inter',
+    sans-serif;
+}
+#scannerDetections {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.scanner-detection-button {
+  display: grid;
+  grid-template-columns: 43px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 80px;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  text-align: left;
   border: 1px solid color-mix(in srgb, var(--main-text) 24%, transparent);
   border-radius: 12px;
-  background: color-mix(in srgb, var(--main-text) 5%, var(--ink));
+  background: color-mix(in srgb, var(--main-text) 4%, var(--ink));
   color: var(--main-text);
+  font-family: 'Inter', sans-serif;
 }
-html #nselPop.scanner-options .cselect-opt {
-  min-height: 44px;
-  border-color: color-mix(in srgb, var(--main-text) 18%, transparent);
-  border-bottom-width: 1px;
-  color: var(--main-text);
+.scanner-detection-button:disabled {
+  opacity: 0.8;
 }
-html #nselPop.scanner-options .cselect-opt.on {
+.scanner-detection-button img,
+.scanner-detection-art {
+  width: 43px;
+  height: 60px;
+  border-radius: 4px;
+}
+.scanner-detection-art {
+  display: grid;
+  place-items: center;
   color: var(--accent-ink);
+}
+.scanner-detection-details {
+  min-width: 0;
+}
+.scanner-detection-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 600;
+}
+.scanner-detection-set {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 4px;
+  color: var(--main-sub);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.scanner-detection-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+.scanner-detection-meta time {
+  font-size: 10px;
+  color: var(--main-sub);
+}
+.scanner-detection-meta > span {
+  color: var(--accent-ink);
+  font-size: 20px;
+  line-height: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  html #cardScannerCamera,
+  html #cardScannerCamera.leaving {
+    animation: none;
+  }
+}
+@media (max-height: 500px) {
+  html #cardScannerCamera .scanner-camera-stage {
+    flex-basis: 36dvh;
+  }
 }

@@ -363,6 +363,7 @@ async function restoreFromFile(file) {
 function wirePreferences() {
   wireBackupAndSync();
   wireDataSources();
+  wireScannerSettings();
   document.querySelectorAll('input[name="startupPage"]').forEach((input) =>
     input.addEventListener('change', () => {
       if (!input.checked || !STARTUP_PAGES.includes(input.value)) return;

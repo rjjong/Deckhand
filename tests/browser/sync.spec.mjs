@@ -15,6 +15,12 @@ test('offline changes remain pending and are sent to SQLite when the device reco
     state.collection.items[0].qty = 9;
     saveCollection();
     state.guild = 'boros';
+    state.scannerDebounceMs = 2500;
+    state.scannerIgnoreSession = true;
+    state.scannerIdThreshold = 0.72;
+    state.scannerCornerThreshold = 0.08;
+    state.scannerIntervalMs = 950;
+    state.scannerShowFramerate = true;
     await persistSettings();
     const games = lifeSavesAll();
     games[0].d.players[0].life = 11;
@@ -30,6 +36,12 @@ test('offline changes remain pending and are sent to SQLite when the device reco
   expect(JSON.parse(stored['deck:sync-Offline'].v).name).toBe('Edited offline');
   expect(JSON.parse(stored['saved-game:game-Offline'].v).d.players[0].life).toBe(11);
   expect(stored['setting:guild'].v).toBe('"boros"');
+  expect(stored['setting:scannerDebounceMs'].v).toBe('2500');
+  expect(stored['setting:scannerIgnoreSession'].v).toBe('true');
+  expect(stored['setting:scannerIdThreshold'].v).toBe('0.72');
+  expect(stored['setting:scannerCornerThreshold'].v).toBe('0.08');
+  expect(stored['setting:scannerIntervalMs'].v).toBe('950');
+  expect(stored['setting:scannerShowFramerate'].v).toBe('true');
   expect(Object.values(stored).some((record) => record.v?.includes('"qty":9'))).toBe(true);
 });
 

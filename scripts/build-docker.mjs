@@ -1,8 +1,10 @@
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { reserveAppVersion } from './app-version.mjs';
+import { prepareScannerAssets } from './prepare-scanner-assets.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
+await prepareScannerAssets();
 const version = await reserveAppVersion();
 console.log(`Building Deckhand ${version.version}.`);
 // Reserve in the checkout so container rebuilds share the persistent counter.

@@ -374,7 +374,7 @@ html.desk .app > main:has(> #spAdvBox) {
 html.desk .browse-selects .cselect-panel,
 html.desk #recoOverlay .cselect-panel,
 html.desk .overlay .reco-themes .cselect-panel,
-html.desk .cselect-panel {
+html.desk .cselect-panel:not(#nselPop) {
   top: calc(100% + 4px) !important;
   bottom: auto !important;
 }

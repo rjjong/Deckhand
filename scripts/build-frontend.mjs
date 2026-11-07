@@ -5,8 +5,9 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Script } from 'node:vm';
 import { scripts, styles, media, staticFiles } from './frontend-sources.mjs';
-import { scannerAssets } from './scanner-assets.mjs';
+import { scannerAssets, scannerBundleHash, scannerDetector } from './scanner-assets.mjs';
 import { readAppVersion, reserveAppVersion } from './app-version.mjs';
+import { prepareScannerAssets } from './prepare-scanner-assets.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const outputDirectory = resolve(root, 'public/assets');
@@ -63,6 +64,7 @@ async function writeChanged(file, content) {
 }
 
 export async function buildFrontend({ advanceVersion = false } = {}) {
+  await prepareScannerAssets();
   const version = await (advanceVersion ? reserveAppVersion() : readAppVersion());
   const [javascript, css, shellFiles] = await Promise.all([
     combine(scripts, 'app.js'),
@@ -78,7 +80,13 @@ export async function buildFrontend({ advanceVersion = false } = {}) {
   ]);
   // The worker changes whenever the app shell changes; deployments no longer
   // depend on remembering to increment a handwritten service-worker version.
-  const digest = createHash('sha256').update(javascript.code).update(css.code);
+  const digest = createHash('sha256')
+    .update(javascript.code)
+    .update(css.code)
+    .update(scannerBundleHash)
+    .update(JSON.stringify(scannerDetector));
+  digest.update(await readFile(resolve(root, 'assets/scanner/collectorvision/manifest.json')));
+  digest.update(await readFile(resolve(root, 'assets/scanner/collectorvision/scanner.worker.mjs')));
   for (const [file, content] of shellFiles) digest.update(file).update(content);
   const hash = digest.digest('hex').slice(0, 12);
   javascript.code =
@@ -98,7 +106,11 @@ export async function buildFrontend({ advanceVersion = false } = {}) {
       `name="deckhand-build" content="${hash}"`,
     )
     .replaceAll(/assets\/app\.(js|css)"/g, `assets/app.$1?v=${hash}"`);
-  const worker = shell.get('sw.js').toString().replace('__DECKHAND_BUILD__', hash);
+  const worker = shell
+    .get('sw.js')
+    .toString()
+    .replace('__DECKHAND_BUILD__', hash)
+    .replace('__DECKHAND_SCANNER_BUNDLE__', scannerBundleHash.slice(0, 12));
   // This app deliberately keeps one classic script: existing inline handlers
   // and shared state retain their scope and function hoisting across files.
   new Script(javascript.code, { filename: 'app.js' });

@@ -561,7 +561,8 @@
   display: block;
 }
 
-.adv-row > label {
+.adv-row > label,
+.adv-row > .collection-field-label {
   font-size: 12.5px;
   color: var(--ink-text);
   font-weight: 500;
