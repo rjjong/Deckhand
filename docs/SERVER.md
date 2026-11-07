@@ -203,6 +203,13 @@ python3 scripts/server/deploy.py
 
 The deploy command packages the current working files, including uncommitted
 customizations, without `.env`, databases, generated files or dependencies.
+It reserves the next **Major.Minor.Build** number in the development checkout's
+`version.json` before packaging. The image build and server startup reuse that
+number, so a deployment increments only once. A new major/minor starts at build
+zero; choose it with `npm run version:set -- 2.1` (or `3.0`) before deploying.
+Failed attempts can consume a number. Commit the updated version file with the
+source to preserve the counter in other checkouts. See
+[app versions](DEVELOPMENT.md#app-versions) for local and Docker builds.
 It uploads a new release, builds a tagged image on the server, makes a consistent
 backup and waits for the container health check. The `current` link changes
 only after success. A failed health check restores the previous image when

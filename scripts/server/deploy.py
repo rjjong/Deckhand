@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Deploy this working tree over SSH, including uncommitted customizations."""
 import datetime
+import io
+import json
 from pathlib import Path
 import re
 import subprocess
@@ -62,6 +64,10 @@ def main():
     host = sys.argv[1] if len(sys.argv) > 1 else 'ubuntu-server'
     if len(sys.argv) > 2 or not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.@:-]*', host):
         raise SystemExit('Usage: python3 scripts/server/deploy.py [ssh-host]')
+    # Assign once in the checkout before packaging; Docker and startup reuse it.
+    version = json.loads(subprocess.check_output(
+        ['node', str(SOURCE / 'scripts/app-version.mjs'), '--next'], text=True))
+    print(f"Deploying Deckhand {version['version']}", flush=True)
     release = datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ')
     release += '-' + uuid.uuid4().hex[:8]
     names = [
@@ -82,6 +88,16 @@ def main():
             return info
         with tarfile.open(archive, 'w:gz') as tar:
             for name in names:
+                if name == 'version.json':
+                    # Snapshot the number this deployment reserved, even if a
+                    # different local build advances the counter while packing.
+                    metadata = {**version, 'lastBuiltVersion': version['version']}
+                    content = (json.dumps(metadata, indent=2) + '\n').encode()
+                    info = tarfile.TarInfo(name)
+                    info.size = len(content)
+                    info.mode = 0o644
+                    tar.addfile(info, io.BytesIO(content))
+                    continue
                 file = SOURCE / name
                 if file.exists():
                     tar.add(file, arcname=name, filter=include)

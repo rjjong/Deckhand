@@ -1,10 +1,9 @@
+import { markCurrentReleaseSeen } from './helpers/version.mjs';
 import { test, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem('admiral_app:seenVersion', '1.50');
-  });
+  await markCurrentReleaseSeen(page);
   // Exercise local UI without making background requests to external APIs.
   await page.route('**/*', route => {
     const url = new URL(route.request().url());

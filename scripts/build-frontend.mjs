@@ -6,6 +6,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Script } from 'node:vm';
 import { scripts, styles, media, staticFiles } from './frontend-sources.mjs';
 import { scannerAssets } from './scanner-assets.mjs';
+import { readAppVersion, reserveAppVersion } from './app-version.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const outputDirectory = resolve(root, 'public/assets');
@@ -61,12 +62,18 @@ async function writeChanged(file, content) {
   await rename(temporary, file);
 }
 
-export async function buildFrontend() {
+export async function buildFrontend({ advanceVersion = false } = {}) {
+  const version = await (advanceVersion ? reserveAppVersion() : readAppVersion());
   const [javascript, css, shellFiles] = await Promise.all([
     combine(scripts, 'app.js'),
     combine(styles, 'app.css'),
     Promise.all(
-      [...staticFiles, ...media].map(async (file) => [file, await readFile(resolve(root, file))]),
+      [...staticFiles, ...media].map(async (file) => [
+        file,
+        file === 'version.json'
+          ? Buffer.from(JSON.stringify(version, null, 2) + '\n')
+          : await readFile(resolve(root, file)),
+      ]),
     ),
   ]);
   // The worker changes whenever the app shell changes; deployments no longer
@@ -74,9 +81,13 @@ export async function buildFrontend() {
   const digest = createHash('sha256').update(javascript.code).update(css.code);
   for (const [file, content] of shellFiles) digest.update(file).update(content);
   const hash = digest.digest('hex').slice(0, 12);
-  javascript.code = `const DECKHAND_BUILD = '${hash}';\n` + javascript.code;
+  javascript.code =
+    `const DECKHAND_BUILD = '${hash}';\n` +
+    `const DECKHAND_VERSION = '${version.version}';\n` +
+    `const DECKHAND_RELEASE_DATE = '${version.date}';\n` +
+    javascript.code;
   const map = JSON.parse(javascript.map);
-  for (const section of map.sections) section.offset.line++;
+  for (const section of map.sections) section.offset.line += 3;
   javascript.map = JSON.stringify(map);
   const shell = new Map(shellFiles);
   const html = shell
@@ -113,6 +124,7 @@ export async function buildFrontend() {
     scripts: scripts.length,
     styles: styles.length,
     hash,
+    version: version.version,
   };
 }
 
@@ -160,8 +172,12 @@ export function watchFrontend() {
 }
 
 if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
-  const result = await buildFrontend();
+  const args = process.argv.slice(2);
+  if (args.some((arg) => arg !== '--reuse-version') || args.length > 1) {
+    throw new Error('Usage: node scripts/build-frontend.mjs [--reuse-version]');
+  }
+  const result = await buildFrontend({ advanceVersion: !args.includes('--reuse-version') });
   console.log(
-    `Built ${result.scripts} JavaScript files and ${result.styles} stylesheets (${result.hash}).`,
+    `Built Deckhand ${result.version}: ${result.scripts} JavaScript files and ${result.styles} stylesheets (${result.hash}).`,
   );
 }

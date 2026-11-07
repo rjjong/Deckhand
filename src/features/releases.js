@@ -1,25 +1,34 @@
 // features / releases
 
 // Release metadata and update notices.
-const APP_VERSION = '1.50';
+const APP_VERSION = DECKHAND_VERSION;
 
 const CHANGELOG_NOTES = {
   en: [
-    'English-only interface',
-    'First-start tour removed',
-    'Card scanner removed',
-    'Search filter: sort rows removed',
+    'Optional accounts with server sync and email recovery',
+    'Local AI judge with streaming answers',
+    'Automatic build numbers within each major and minor release',
   ],
 };
 
-/* The history. PUBLISHER, every release: move the previous CHANGELOG_NOTES
+/* The history. When publishing release notes, move the previous CHANGELOG_NOTES
    to the top of CHANGELOG_HISTORY (with its date), then write the new notes
-   above and set APP_DATE. The start-up note shows every release since the
+   above. Version and date come from the build. The start-up note shows every release since the
    player's last visit; Extras -> What's new shows the past month (the
    button appears once there is a history: 1.0 is the starting point). */
-const APP_DATE = '2026-11-01';
+const APP_DATE = DECKHAND_RELEASE_DATE;
 
 const CHANGELOG_HISTORY = [
+  {
+    v: '1.50',
+    d: '2026-11-01',
+    en: [
+      'English-only interface',
+      'First-start tour removed',
+      'Card scanner removed',
+      'Search filter: sort rows removed',
+    ],
+  },
   {
     v: '1.49',
     d: '2026-11-01',

@@ -129,6 +129,11 @@ test('HTTP serves the frontend, protects source/secrets, and supports local API 
   const bundle = await javascript.text();
   assert.match(bundle, /function searchPageHtml/);
   assert.ok(bundle.startsWith("const DECKHAND_BUILD = '" + build + "';"));
+  const version = await (await fetch(base + '/version.json')).json();
+  assert.match(version.version, /^\d+\.\d+\.\d+$/);
+  assert.deepEqual(Object.keys(version).sort(), ['date', 'version']);
+  assert.ok(bundle.includes("const DECKHAND_VERSION = '" + version.version + "';"));
+  assert.ok(bundle.includes("const DECKHAND_RELEASE_DATE = '" + version.date + "';"));
   const stylesheet = await fetch(base + '/assets/app.css');
   assert.equal(stylesheet.status, 200);
   assert.match(stylesheet.headers.get('content-type'), /text\/css/);

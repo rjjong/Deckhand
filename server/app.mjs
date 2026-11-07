@@ -21,7 +21,7 @@ const STATIC = new Map([
   ['/', 'public/index.html'], ['/index.html', 'public/index.html'], ['/sw.js', 'public/sw.js'],
   ...['app.js', 'app.css', 'app.js.map', 'app.css.map', 'images/deckhand-badge.webp']
     .map(name => ['/assets/' + name, 'public/assets/' + name]),
-  ['/manifest.json', 'manifest.json'], ['/version.json', 'version.json'],
+  ['/manifest.json', 'manifest.json'], ['/version.json', 'public/version.json'],
   ['/favicon.ico', 'icon-192.png'],
   ...['icon-192.png', 'icon-512.png', 'icon-512-maskable.png', 'apple-touch-icon.png',
     'og-image.png', 'badge-d.png'].map(name => ['/' + name, name])

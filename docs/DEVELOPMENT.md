@@ -108,6 +108,39 @@ npm test             # Build and run backend/data checks
 npm run test:mobile  # Build and run mobile + desktop browser checks
 ```
 
+### App versions
+
+Versions use **Major.Minor.Build**, starting at **2.0.0**. `version.json` is the
+single source for the displayed version, backup metadata and `/version.json`.
+Each `npm run build`, `npm run build:docker` or server deployment reserves one
+new build number, even when the source is unchanged: `2.0.0`, `2.0.1`, `2.0.2`.
+The first build after choosing a different major or minor starts at zero.
+
+Choose major/minor explicitly:
+
+```sh
+npm run version:set -- 2.1   # Next build/deployment is 2.1.0
+npm run version:set -- 3.0   # Next build/deployment is 3.0.0
+```
+
+Alternatively, edit the first two components of `version.json`'s `version`.
+Keep `lastBuiltVersion`: it remembers the last assigned number, detects a change
+of series and survives restarts/checkouts when committed with the source.
+The build date is assigned automatically in UTC. Concurrent reservations are
+serialized; failed build/deployment attempts can leave gaps, but numbers are
+never reused within the current series.
+
+`npm start`, `npm run dev`, automatic frontend watching and tests reuse the
+assigned version. `npm run build -- --reuse-version` regenerates artifacts
+without advancing it. Docker's internal build uses this option too: reserve the
+version in the checkout with `npm run build:docker` instead of invoking
+`docker compose build` or `docker compose up --build` directly. A deployment
+reserves once before packaging, and its image build/startup reuse that version.
+If Docker needs sudo, use `npm run build:docker -- --sudo`; only Docker runs as
+root, so the version file remains owned by your development user.
+Keep the updated `version.json` in your commits so another checkout continues
+the counter. The content hash still controls service-worker cache updates.
+
 The dev server rebuilds `src/`, `styles/`, and source image changes without
 restarting SQLite. Refresh the page to see edits. Adding a file to the source
 list restarts the backend through Node's watcher. JavaScript and CSS source maps
@@ -367,7 +400,8 @@ The smaller model has less reasoning capacity than large hosted models. Judge an
 For Docker:
 
 ```sh
-docker compose up -d --build
+npm run build:docker
+docker compose up -d --no-build
 docker compose exec ollama ollama pull qwen3:4b-instruct-2507-q4_K_M
 ```
 
@@ -588,15 +622,16 @@ After Docker is installed:
 
 ```sh
 cd /home/remodj/Projects/Deckhand
-sudo docker compose build
+npm run build:docker -- --sudo
 sudo docker compose run --rm deckhand npm run data:sample
-sudo docker compose up -d
+sudo docker compose up -d --no-build
 sudo docker compose logs -f deckhand
 ```
 
 Open http://localhost:3000. Ctrl+C exits log viewing without stopping the app.
 Use `sudo docker compose down` to stop it. Rebuild with
-`sudo docker compose up -d --build` after changing code. Stop the native Node
+`npm run build:docker -- --sudo` followed by
+`sudo docker compose up -d --no-build` after changing code. Stop the native Node
 server first if it is already using port 3000.
 
 The app runs as the unprivileged `node` user. The `deckhand-data` named volume

@@ -75,6 +75,11 @@ HTML shell; page markup and handlers are grouped by tab in `src/pages/`.
 `npm run dev` builds the frontend and watches those folders automatically.
 Refresh the browser after editing. `npm run build` produces the deployable
 `public/` directory, and `npm run format` keeps the source consistently formatted.
+
+App versions use **Major.Minor.Build**. Builds and deployments automatically
+advance the build number; choose major/minor with `npm run version:set -- 2.1`.
+Use `npm run build:docker` for Docker builds. See
+[versioning instructions](docs/DEVELOPMENT.md#app-versions).
 See [the source guide](docs/DEVELOPMENT.md#frontend-source-organization)
 for the folder map, page entry points, CSS order, and debugging instructions.
 

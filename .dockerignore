@@ -10,5 +10,7 @@ data
 Deckhand.apk
 deckhand-android.zip
 public
+.version.lock
+.version-*.tmp
 test-results
 playwright-report

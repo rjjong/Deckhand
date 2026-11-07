@@ -18,7 +18,7 @@ async function expectDirectStartup(page, title) {
   await expect(page.locator('#brandTitle')).toHaveText(title);
   await expect
     .poll(() => page.evaluate(() => localStorage.getItem('admiral_app:seenVersion')))
-    .toBe('1.50');
+    .toBe(await page.evaluate(() => APP_VERSION));
   await expect(
     page.locator('#tourScrim, #welcomeScrim, #welcomeNote, #changelogScrim'),
   ).toHaveCount(0);
@@ -34,6 +34,8 @@ test('a fresh installation opens directly and has no language or introduction co
   page.on('pageerror', (error) => errors.push(error.message));
   await expectDirectStartup(page, 'DECKHAND');
   await page.getByRole('button', { name: 'Open menu', exact: true }).click();
+  const metadata = await (await page.request.get('/version.json')).json();
+  await expect(page.locator('#appFootNote')).toContainText(`Deckhand v${metadata.version}`);
   await expect(page.locator('#welcomeNote, #tourRow')).toHaveCount(0);
   await page.locator('#menuSettings').click();
   await expect(page.locator('#langRow, #languageBody, [data-lang-choice], #tourRow')).toHaveCount(

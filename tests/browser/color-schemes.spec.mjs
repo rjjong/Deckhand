@@ -1,3 +1,4 @@
+import { markCurrentReleaseSeen } from './helpers/version.mjs';
 import { test, expect } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { auditContrast } from './helpers/contrast.mjs';
@@ -19,9 +20,7 @@ for (const theme of ['dark', 'light'])
   for (const guild of guilds) {
     test(`color scheme ${guild} in ${theme} mode stays readable`, async ({ page }, info) => {
       test.setTimeout(90000);
-      await page.addInitScript(() => {
-        localStorage.setItem('admiral_app:seenVersion', '1.50');
-      });
+      await markCurrentReleaseSeen(page);
       await page.route('**/*', (route) => {
         const url = new URL(route.request().url());
         if (url.pathname === '/api/news')

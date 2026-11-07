@@ -1,9 +1,10 @@
+import { markCurrentReleaseSeen } from './helpers/version.mjs';
 import { test, expect } from '@playwright/test';
 import { mkdir, readFile } from 'node:fs/promises';
 import { auditContrast } from './helpers/contrast.mjs';
 
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('admiral_app:seenVersion', '1.50'));
+  await markCurrentReleaseSeen(page);
   await page.route('**/*', (route) => {
     const url = new URL(route.request().url());
     if (url.pathname === '/api/news') return route.fulfill({ json: { items: [] } });

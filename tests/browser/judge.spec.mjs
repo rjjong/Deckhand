@@ -1,3 +1,4 @@
+import { markCurrentReleaseSeen } from './helpers/version.mjs';
 import { test, expect } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 
@@ -57,7 +58,7 @@ test('Local model setup and capacity failures show relevant rules without asking
   page,
 }) => {
   let result;
-  await page.addInitScript(() => localStorage.setItem('admiral_app:seenVersion', '1.50'));
+  await markCurrentReleaseSeen(page);
   await page.route('**/*', (route) => {
     const url = new URL(route.request().url());
     if (url.pathname === '/api/judge')

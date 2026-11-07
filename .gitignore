@@ -1,5 +1,7 @@
 node_modules/
 public/
+.version.lock/
+.version-*.tmp
 .env
 .env.*
 !.env.example

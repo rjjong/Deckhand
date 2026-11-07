@@ -1,3 +1,4 @@
+import { markCurrentReleaseSeen } from './helpers/version.mjs';
 import { test, expect } from '@playwright/test';
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -75,8 +76,8 @@ async function releases() {
 }
 
 test.beforeEach(async ({ context }) => {
+  await markCurrentReleaseSeen(context);
   await context.addInitScript(() => {
-    localStorage.setItem('admiral_app:seenVersion', '1.50');
     sessionStorage.setItem(
       'testPageLoads',
       String(Number(sessionStorage.getItem('testPageLoads') || 0) + 1),
