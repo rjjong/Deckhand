@@ -6,7 +6,8 @@
   "changes": [
     "Stamp worker import build placeholder with upstream commit.",
     "Use one WASM thread when cross-origin isolation is unavailable.",
-    "Warm detector and embedder with empty tensors before reporting readiness; no camera frame is used."
+    "Warm detector and embedder with empty tensors before reporting readiness; no camera frame is used.",
+    "Clear camera pixel buffers on request while retaining loaded models and reference data."
   ],
   "catalog": "milo1-scryfall-mtg-2026-07-09",
   "detector": "fastweb-single-1.39",

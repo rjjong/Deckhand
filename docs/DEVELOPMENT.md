@@ -526,6 +526,56 @@ based on inference time: exceeding the selected interval does not establish that
 camera capture caused the delay. Browser tests use emulated camera tracks and cannot
 verify a physical phone's optical focus, lens selection or preview detail.
 
+`viewport.js` gives the camera and log one scroll area below the title bar. The
+actions remain sticky. Once the preview is covered, the camera tracks stop and
+in-flight results are ignored; scrolling back automatically opens a fresh stream
+using the same loaded engine. A background/page-hide pause still requires Resume.
+
+`selection.js` implements a 480 ms hold, with cancellation on pointer movement,
+cancel or leave. Space selects with a keyboard; taps toggle while selection is
+active. `log.js` owns selected rows, asynchronous metadata and session-only photos.
+The + action adds only selected ready rows through
+`collection.js`: one NM/nonfoil copy per detection, no binder, merging matching
+collection stacks and saving once. Individual review retains its richer controls.
+Select all snapshots visible rows without automatically selecting later detections.
+The + action is gray and disabled when no eligible rows are selected, and the log
+also enforces selection so bypassing the disabled control cannot add everything.
+Both collection add paths remove the saved rows and their photo sources from the
+log. Removed rows retain only their metadata for repeat history. Delete removes log entries,
+including their photos, and never changes collection data. Deleted accepted scans
+still participate in session repeat history so suppressed duplicates do not reappear.
+Ownership quantities sum card names across printings, finishes and binders; wants
+are excluded. Counts refresh after metadata, review, add and delete operations.
+
+The Decks FAB opens `openCardScanner({ mode: 'deck' })`. In this mode the camera,
+selection and photo lifecycle are shared, but repeat delay/session suppression are
+disabled in the session snapshot so a physical deck can contain repeated names.
+Saved preferences are not modified and held-card suppression still applies.
+`log.prepareAdd()` captures a batch with a validity check and a one-use commit;
+cancelling a destination or new-deck dialog leaves every scan pending. Committing
+marks only the transferred rows, preventing another bulk add from duplicating them.
+Collection commits remove those rows; deck commits keep their destination labels.
+
+`decks.js` provides a themed, keyboard-accessible destination picker above the
+camera/review. New decks reuse `openModal('newdeck')` through an `onCreate` callback;
+the normal New Deck flow still opens its editor. Scanner-created decks use the
+factory's `open: false, persist: false` options and save once after receiving cards.
+Each scan is copied with `pin: true` to retain its printing. A matching commander
+or partner occupies its existing command slot once per destination/session; further
+physical copies remain in the main deck. The importer preserves all other copies,
+including those the deck editor may flag as illegal, rather than silently dropping
+parts of the physical deck. No collection writes or remote requests are needed.
+Single-card review uses the same deck destination in deck mode. Cancelling/back
+restores the parent dialog and focus; closing the scanner also closes its picker
+and any owned new-deck dialog.
+
+Closing aborts the log, clears image sources and entries, zeros the capture canvas,
+and queues `clearFrames` behind any in-flight inference and ahead of future frames.
+Aborted results skip thumbnail creation. The worker zeros retained frame, dewarp,
+detector and embedder image buffers while retaining model sessions and the catalog.
+Camera photos are never written to browser storage, uploaded, or added to collection
+records. Cached reference card images and model assets are separate from camera photos.
+
 The pinned worker, license and local changes are under
 `assets/scanner/collectorvision/`. `scripts/prepare-scanner-assets.mjs` downloads
 the upstream prepared bundle once, verifies its SHA-256, extracts only known

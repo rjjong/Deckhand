@@ -376,12 +376,19 @@ html #cardScannerCamera .scanner-camera-header {
 }
 html #cardScannerCamera .scanner-camera-stage {
   position: relative;
-  flex: 0 1 clamp(120px, 44dvh, 480px);
+  height: clamp(120px, 44dvh, 480px);
   min-height: 100px;
   padding: 0 !important;
   margin: 0;
   overflow: hidden;
   isolation: isolate;
+}
+.scanner-camera-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: var(--page-backdrop);
 }
 #scannerVideo,
 .scanner-camera-frozen {
@@ -460,15 +467,69 @@ html #cardScannerCamera .scanner-camera-stage {
   text-align: right;
 }
 .scanner-camera-statusbar {
-  position: relative;
+  position: sticky;
+  top: 0;
+  z-index: 2;
   flex: none;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 16px;
+  padding: 8px 16px;
+  min-height: 61px;
+  box-sizing: border-box;
   background: var(--ink);
   border-top: 1px solid color-mix(in srgb, var(--main-text) 24%, transparent);
   color: var(--main-text);
+}
+.scanner-log-actions {
+  display: flex;
+  flex: none;
+  gap: 10px;
+  margin-left: auto;
+}
+.scanner-log-actions button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--main-text) 24%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--main-text) 4%, var(--ink));
+  color: var(--main-text);
+}
+.scanner-log-actions button.scanner-log-add {
+  border: 0;
+  background: var(--gold);
+  color: #241a04;
+}
+.scanner-log-actions button.scanner-log-add:disabled {
+  border: 1px solid color-mix(in srgb, var(--main-text) 24%, transparent);
+  background: color-mix(in srgb, var(--main-text) 8%, var(--ink));
+  color: var(--main-sub);
+  opacity: 1;
+  cursor: not-allowed;
+}
+.scanner-log-actions svg {
+  width: 24px;
+  height: 24px;
+}
+.scanner-selection-count {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  color: var(--main-text);
+  font:
+    500 12px/1.5 'Inter',
+    sans-serif;
+}
+.scanner-selection-count svg {
+  width: 16px;
+  height: 16px;
 }
 #scannerCameraStatus {
   flex: 1;
@@ -489,7 +550,8 @@ html #cardScannerCamera .scanner-camera-stage {
   display: flex;
   flex: 1;
   flex-direction: column;
-  min-height: 72px;
+  min-height: var(--scanner-log-min, 72px);
+  box-sizing: border-box;
   background: var(--page-backdrop);
   color: var(--main-text);
   border-top: 1px solid color-mix(in srgb, var(--main-text) 24%, transparent);
@@ -515,14 +577,13 @@ html #cardScannerCamera .scanner-camera-stage {
     sans-serif;
 }
 .scanner-log-scroll {
-  flex: 1;
+  flex: none;
   min-height: 0;
   width: 100%;
   max-width: 900px;
   align-self: center;
   box-sizing: border-box;
-  overflow: auto;
-  overscroll-behavior: contain;
+  overflow: visible;
   padding: 0 12px calc(12px + env(safe-area-inset-bottom));
 }
 #scannerLogEmpty {
@@ -555,6 +616,63 @@ html #cardScannerCamera .scanner-camera-stage {
   background: color-mix(in srgb, var(--main-text) 4%, var(--ink));
   color: var(--main-text);
   font-family: 'Inter', sans-serif;
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: pan-y;
+}
+.scanner-detection.selected .scanner-detection-button {
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 10%, var(--ink));
+  box-shadow: inset 0 0 0 1px var(--gold);
+}
+.scanner-detection-owned {
+  display: block;
+  margin-top: 5px;
+  color: var(--main-sub);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.scanner-detection-owned.owned {
+  color: var(--main-text);
+}
+html .scanner-deck-picker {
+  z-index: 250;
+  align-items: center;
+}
+html .scanner-deck-picker > .scanner-deck-sheet {
+  display: flex;
+  flex-direction: column;
+  max-width: 440px;
+  gap: 16px;
+}
+.scanner-deck-sheet .nd-heading p {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--main-sub);
+}
+.scanner-deck-sheet .hub-card {
+  padding: 14px 12px;
+  gap: 12px;
+  border-radius: 14px;
+}
+.scanner-deck-copy {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.scanner-deck-list {
+  display: grid;
+  flex: 0 1 auto;
+  min-height: 0;
+  gap: 8px;
+  max-height: min(44dvh, 400px);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.scanner-deck-empty {
+  margin: 0;
+  color: var(--main-sub);
+  font-size: 12px;
 }
 .scanner-detection-button:disabled {
   opacity: 0.8;
@@ -615,6 +733,6 @@ html #cardScannerCamera .scanner-camera-stage {
 }
 @media (max-height: 500px) {
   html #cardScannerCamera .scanner-camera-stage {
-    flex-basis: 36dvh;
+    height: 36dvh;
   }
 }

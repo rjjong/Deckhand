@@ -108,9 +108,11 @@ function openModal(type, extra) {
 }
 
 function closeModal() {
-  const trigger = state.modal?.returnFocus;
+  const modal = state.modal;
+  const trigger = modal?.returnFocus;
   state.modal = null;
   renderModal();
+  modal?.onClose?.();
   if (trigger?.isConnected) trigger.focus({ preventScroll: true });
 }
 
@@ -180,20 +182,30 @@ function renderModal() {
         aria-modal="true"
         aria-labelledby="newDeckTitle"
       >
-        <h3 id="newDeckTitle">New Deck</h3>
+        <header class="nd-heading">
+          <span class="hub-icon" aria-hidden="true">${ICONS.decks}</span>
+          <div>
+            <h3 id="newDeckTitle">New Deck</h3>
+            ${m.description ? `<p>${escapeHtml(m.description)}</p>` : ''}
+          </div>
+        </header>
         <div class="nd-fields">
-          <input
-            id="newDeckName"
-            placeholder="Deck name"
-            maxlength="${MAX_DECK_NAME_LENGTH}"
-            autofocus
-          />
-          <div class="otag-wrap" style="margin-bottom:10px;">
+          <div class="nd-field">
+            <label for="newDeckName">Deck name</label>
+            <input
+              id="newDeckName"
+              placeholder="Name your deck"
+              maxlength="${MAX_DECK_NAME_LENGTH}"
+              autofocus
+            />
+          </div>
+          <div class="otag-wrap nd-field">
+            <label id="ndFormatLabel">Format</label>
             <button
               type="button"
               id="newDeckFmtBtn"
               class="col-filter-input"
-              style="width:100%;text-align:left;"
+              aria-labelledby="ndFormatLabel newDeckFmtBtn"
             >
               ${ndFmtBtnHtml('commander')}
             </button>
@@ -201,28 +213,28 @@ function renderModal() {
               ${FMT_ORDER.map((f) => `<button type="button" data-ndfmt="${f}">${FMT_LABELS[f]}</button>`).join('')}
             </div>
           </div>
-          <div class="otag-wrap" id="ndCmdWrap" style="margin-bottom:10px;">
+          <div class="otag-wrap nd-field" id="ndCmdWrap">
+            <label for="ndCmd" id="ndCmdLabel">Commander <span>Optional</span></label>
             <input
               id="ndCmd"
               class="col-filter-input"
-              placeholder="Who is your commander? (optional)"
+              placeholder="Search commanders…"
               autocomplete="off"
-              style="width:100%;"
             />
             <div id="ndCmdPop" class="otag-pop" hidden></div>
           </div>
-          <div class="otag-wrap" id="ndP2Wrap" hidden style="margin-bottom:10px;">
+          <div class="otag-wrap nd-field" id="ndP2Wrap" hidden>
+            <label for="ndCmd2">Partner <span>Optional</span></label>
             <input
               id="ndCmd2"
               class="col-filter-input"
-              placeholder="Partner…"
+              placeholder="Search partners…"
               autocomplete="off"
-              style="width:100%;"
             />
             <div id="ndCmd2Pop" class="otag-pop" hidden></div>
           </div>
         </div>
-        <div class="modal-actions">
+        <div class="modal-actions nd-actions">
           <button class="cancel" id="cancelBtn">Cancel</button
           ><button class="confirm" id="createBtn">Create</button>
         </div>
@@ -238,8 +250,11 @@ function renderModal() {
       const wrap = document.getElementById('ndCmdWrap');
       const inp = document.getElementById('ndCmd');
       if (wrap) wrap.hidden = !woord;
+      const label = document.getElementById('ndCmdLabel');
+      if (label && woord)
+        label.innerHTML = `${escapeHtml(woord[0].toUpperCase() + woord.slice(1))} <span>Optional</span>`;
       if (inp) {
-        inp.placeholder = woord ? `Who is your ${woord}? (optional)` : '';
+        inp.placeholder = woord ? `Search ${woord}s…` : '';
         if (!woord) inp.value = '';
       }
       if (!woord) {
@@ -280,7 +295,7 @@ function renderModal() {
             ndSyncLeader();
           }),
         );
-        document.addEventListener(
+        el.querySelector('.new-deck-backdrop').addEventListener(
           'pointerdown',
           (ev) => {
             if (
@@ -306,6 +321,7 @@ function renderModal() {
       if (!inp || !pop) return;
       let t = null;
       const fill = async () => {
+        if (!inp.isConnected || state.modal !== m) return;
         const q = inp.value.trim();
         if (q.length < 2) {
           pop.hidden = true;
@@ -382,7 +398,8 @@ function renderModal() {
       const cmd = window._ndPick,
         p2 = window._ndPick2;
       closeModal();
-      createNewDeck(name, fmt, cmd, p2);
+      if (m.onCreate) m.onCreate({ name, format: fmt, commander: cmd, partner: p2 });
+      else createNewDeck(name, fmt, cmd, p2);
     });
   } else if (m.type === 'delete') {
     const d = getDeck(state.activeDeckId);

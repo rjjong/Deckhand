@@ -624,6 +624,11 @@ function wireHome() {
       openFabMenu([
         ['fabNewDeck', '⚔ New deck', () => openModal('newdeck')],
         [
+          'fabScanDeck',
+          `<span class="ib">${SCANNER_ICON}</span>Scan deck`,
+          () => openCardScanner({ mode: 'deck' }),
+        ],
+        [
           'fabNewFolder',
           `<span class="ib">${ICONS.decks}</span>New folder`,
           () => openNewFolderPrompt(state.folderNav || null),
@@ -1276,7 +1281,7 @@ function openPasteListSheet(opts) {
   }, 60);
 }
 
-function createNewDeck(name, fmt, cmd, partner) {
+function createNewDeck(name, fmt, cmd, partner, { open = true, persist = true } = {}) {
   // Born where you stand: creating a deck while inside a folder files it there.
   const homeFolder =
     state.screen === 'decks' && !isFmtFolder(state.folderNav) ? state.folderNav || null : null;
@@ -1302,6 +1307,7 @@ function createNewDeck(name, fmt, cmd, partner) {
     logDeckChange(d, { type: 'add', name: partner.name, card: partner });
   }
   state.decksIndex.unshift(d);
-  persistDeck(d);
-  openDeck(d.id);
+  if (persist) persistDeck(d);
+  if (open) openDeck(d.id);
+  return d;
 }

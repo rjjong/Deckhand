@@ -148,7 +148,7 @@ async function wireCollectionAddForm(root, card, { onAdded, onPrintingChange } =
             ? `${slim.name} ×${qty} → ${brBinderName(binder)}`
             : `${slim.name} ×${qty} added to your collection.`,
       );
-      onAdded?.();
+      onAdded?.({ printing, cond, qty, binder });
     } finally {
       busy = false;
       if (root.isConnected) submit.disabled = false;

@@ -424,11 +424,7 @@ function wireCollectionPage() {
           `<span class="ib">${ICONS.search}</span>${trS('Add card')}`,
           openCollectionCardSearch,
         ],
-        [
-          'fabScanCards',
-          `<span class="ib">${SCANNER_ICON}</span>Scan cards · Experimental`,
-          openCardScanner,
-        ],
+        ['fabScanCards', `<span class="ib">${SCANNER_ICON}</span>Scan cards`, openCardScanner],
         [
           'fabAddBinder',
           `<span class="ib">${ICONS.collection}</span>${trS('New binder')}`,

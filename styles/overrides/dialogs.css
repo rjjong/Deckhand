@@ -35,6 +35,7 @@ html .new-deck-backdrop {
   align-items: center;
   padding: 16px;
   box-sizing: border-box;
+  z-index: 270;
 }
 
 html .new-deck-backdrop .nd-sheet {
@@ -47,11 +48,89 @@ html .new-deck-backdrop .nd-sheet {
   border-radius: 22px;
   overflow: visible !important;
   box-sizing: border-box;
+  gap: 20px;
+  background: var(--page-backdrop);
 }
 
-html .nd-sheet > h3,
+html .nd-sheet > .nd-heading,
 html .nd-sheet > .modal-actions {
   flex: none;
+}
+.nd-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+html .nd-sheet .nd-heading h3 {
+  margin: 0;
+  color: var(--main-text);
+  font:
+    600 22px/1.35 'Cinzel',
+    serif;
+}
+.nd-heading p {
+  margin: 5px 0 0;
+  color: var(--main-sub);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.nd-heading .hub-icon {
+  border: 1px solid color-mix(in srgb, var(--main-text) 18%, transparent);
+  background: color-mix(in srgb, var(--main-text) 5%, var(--ink));
+}
+.nd-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+.nd-field + .nd-field {
+  margin-top: 16px;
+}
+.nd-field > label {
+  color: var(--main-text);
+  font:
+    500 12px/1.4 'Inter',
+    sans-serif;
+}
+.nd-field > label span {
+  margin-left: 6px;
+  color: var(--main-sub);
+  font-weight: 400;
+}
+html .nd-sheet .nd-field :is(input, #newDeckFmtBtn) {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 11px 12px;
+  border: 1px solid color-mix(in srgb, var(--main-text) 26%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--main-text) 4%, var(--ink));
+  color: var(--main-text);
+  text-align: left;
+  font:
+    400 16px/1.4 'Inter',
+    sans-serif;
+}
+html .nd-sheet .nd-field input::placeholder {
+  color: var(--main-sub);
+  opacity: 1;
+}
+html .nd-sheet .nd-field :is(input, #newDeckFmtBtn):focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: -2px;
+}
+html .nd-sheet .nd-actions {
+  margin: 0;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid color-mix(in srgb, var(--main-text) 18%, transparent);
+}
+.nd-sheet [hidden] {
+  display: none !important;
 }
 
 .nd-fields {

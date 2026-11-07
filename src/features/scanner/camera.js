@@ -1,20 +1,29 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // One inference at a time; the preview stays live while detections fill the log.
-function openScannerCamera({ onReview, onClose }) {
+function openScannerCamera({ mode = 'collection', onReview, onClose, onAdd }) {
   if (document.getElementById('cardScannerCamera')) return;
   const settings = normalizeScannerSettings(state);
+  const deckMode = mode === 'deck';
+  // A deck can contain several physical copies, even when collection scanning
+  // is configured to ignore names seen earlier in the session.
+  if (deckMode) {
+    settings.scannerIgnoreSession = false;
+    settings.scannerDebounceMs = 0;
+  }
   const el = document.createElement('div');
   el.id = 'cardScannerCamera';
   el.className = 'overlay scanner-camera-screen';
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-modal', 'true');
-  el.setAttribute('aria-label', 'Scan card camera');
+  el.setAttribute('aria-label', deckMode ? 'Scan deck camera' : 'Scan card camera');
+  el.dataset.mode = mode;
   el.innerHTML = `${appTitlebarHtml(
     'scanner-camera-header',
     `
     <button type="button" class="header-filter" id="scannerCameraBack" aria-label="Close scanner">${ICONS.back}</button>
-    <span class="brand-txt">Scan cards</span><span class="scanner-badge">Experimental</span>`,
+    <span class="brand-txt">${deckMode ? 'Scan deck' : 'Scan cards'}</span><span class="scanner-badge">Experimental</span>`,
   )}
+    <div class="scanner-camera-scroll">
     <main class="scanner-camera-stage"><video id="scannerVideo" muted playsinline autoplay></video>
       <button type="button" id="scannerFocus" class="scanner-camera-focus" aria-label="Refocus camera" hidden></button>
       <svg id="scannerDetectedBorder" class="scanner-camera-border" preserveAspectRatio="none" aria-hidden="true" hidden><polygon /></svg>
@@ -24,13 +33,19 @@ function openScannerCamera({ onReview, onClose }) {
     <div class="scanner-camera-statusbar">
       <p id="scannerCameraStatus" role="status">Opening camera…</p>
       <button type="button" id="scannerCameraRetry" class="scanner-secondary" hidden>Retry camera</button>
+      <button type="button" id="scannerClearSelection" class="scanner-selection-count" aria-label="Clear selection" hidden><span></span>${ICONS.close}</button>
+      <div class="scanner-log-actions">
+        <button type="button" id="scannerSelectAll" aria-label="Select all scans" title="Select all scans" disabled>${ICONS.selectAll}</button>
+        <button type="button" id="scannerDeleteSelected" class="scanner-log-delete" aria-label="Delete selected scans" title="Delete selected scans from the log" disabled>${ICONS.trash}</button>
+        <button type="button" id="scannerAddAll" class="scanner-log-add" aria-label="Add selected cards to collection" title="Add selected scans: one Near Mint, nonfoil copy each" disabled>${ICONS.plus}</button>
+      </div>
     </div>
     <section class="scanner-log-section" aria-labelledby="scannerLogTitle">
       <header class="scanner-log-header"><h2 id="scannerLogTitle">Detected cards</h2><span id="scannerLogCount">0 cards</span></header>
       <div class="scanner-log-scroll"><p id="scannerLogEmpty">Detected cards appear here, newest first.</p>
         <ol id="scannerDetections" role="log" aria-label="Detected cards, newest first" aria-live="polite" aria-relevant="additions text"></ol>
       </div>
-    </section>`;
+    </section></div>`;
   document.body.appendChild(el);
   const controller = new AbortController();
   const video = el.querySelector('#scannerVideo');
@@ -45,6 +60,11 @@ function openScannerCamera({ onReview, onClose }) {
   );
   const notice = el.querySelector('#scannerIgnored');
   const retry = el.querySelector('#scannerCameraRetry');
+  const addAll = el.querySelector('#scannerAddAll');
+  const selectAll = el.querySelector('#scannerSelectAll');
+  if (deckMode) addAll.title = 'Add selected scans to an existing or new deck';
+  const deleteSelected = el.querySelector('#scannerDeleteSelected');
+  const clearSelection = el.querySelector('#scannerClearSelection');
   const tracker = scannerCreateTracker({
     idThreshold: settings.scannerIdThreshold,
     cornerThreshold: settings.scannerCornerThreshold,
@@ -53,15 +73,25 @@ function openScannerCamera({ onReview, onClose }) {
   const fps = el.querySelector('#scannerFramerate');
   const log = scannerCreateLog(el, {
     signal: controller.signal,
-    onReview: (...args) => {
+    onReview: (result, card, trigger, options) => {
       tracker.pause();
       framerate.reset();
       fps.textContent = '— FPS';
       border.clear();
       clearIgnored();
-      onReview(...args);
+      onReview(result, card, trigger, {
+        ...options,
+        mode,
+        onAdd: (batch, more) => onAdd?.(batch, { ...more, signal: controller.signal }),
+        onClose() {
+          options.onClose();
+          if (cameraVisible && !paused && !cameraError) startCamera();
+          schedule(0);
+        },
+      });
     },
     onIgnored: notifyIgnored,
+    onChange: updateActions,
     settings,
   });
   let active = true,
@@ -72,6 +102,7 @@ function openScannerCamera({ onReview, onClose }) {
     timer,
     frameController,
     cameraPending = false,
+    cameraVisible = true,
     enginePending = false,
     cameraReady = false,
     busy = false,
@@ -86,6 +117,7 @@ function openScannerCamera({ onReview, onClose }) {
   const isTop = () => state.overlayStack[state.overlayStack.length - 1]?.id === 'scanner';
   const canScan = () =>
     active &&
+    cameraVisible &&
     cameraReady &&
     engine &&
     !engine.disposed &&
@@ -94,6 +126,17 @@ function openScannerCamera({ onReview, onClose }) {
     !engineError &&
     !document.hidden &&
     isTop();
+  function updateActions({ total, selected, addable }) {
+    selectAll.disabled = total === 0 || selected === total;
+    deleteSelected.disabled = selected === 0;
+    addAll.disabled = selected === 0 || addable === 0;
+    addAll.setAttribute(
+      'aria-label',
+      `Add ${addable} selected ${addable === 1 ? 'card' : 'cards'} to ${deckMode ? 'a deck' : 'collection'}`,
+    );
+    clearSelection.hidden = selected === 0;
+    clearSelection.querySelector('span').textContent = `${selected} selected`;
+  }
   function clearIgnored() {
     clearTimeout(noticeTimer);
     notice.hidden = true;
@@ -129,14 +172,17 @@ function openScannerCamera({ onReview, onClose }) {
     const message =
       cameraError ||
       engineError ||
-      (paused
-        ? 'Camera paused.'
-        : !cameraReady
-          ? 'Opening camera…'
-          : !engine
-            ? progress || 'Preparing recognition…'
-            : 'Scanning live · Move a detected card away before scanning another copy.');
+      (!cameraVisible
+        ? ''
+        : paused
+          ? 'Camera paused.'
+          : !cameraReady
+            ? 'Opening camera…'
+            : !engine
+              ? progress || 'Preparing recognition…'
+              : '');
     const status = el.querySelector('#scannerCameraStatus');
+    status.hidden = !message;
     if (status.textContent !== message) status.textContent = message;
   };
   function schedule(delay = 300) {
@@ -216,24 +262,18 @@ function openScannerCamera({ onReview, onClose }) {
     stream = null;
     cameraReady = false;
     video.srcObject = null;
+    video.load();
+    if (captureCanvas) captureCanvas.width = captureCanvas.height = 0;
+    captureCanvas = null;
   };
   const cleanup = () => {
     if (!active) return;
     active = false;
     border.dispose();
     const animate = el.isConnected && !matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (animate && video.videoWidth && video.videoHeight) {
-      // Keep the last preview visible while releasing camera access immediately.
-      try {
-        const frozen = scannerImageCanvas(video, stage);
-        frozen.className = 'scanner-camera-frozen';
-        video.replaceWith(frozen);
-      } catch (error) {
-        /* The screen can still slide out without a preview. */
-      }
-    }
     stopCamera();
     controller.abort();
+    Promise.resolve(engine?.clearFrames?.()).catch(() => {});
     engine = null; // The shared recognition worker remains warm.
     el.dataset.scanning = 'false';
     el.inert = true;
@@ -263,6 +303,36 @@ function openScannerCamera({ onReview, onClose }) {
   pushOverlay('scanner', cleanup);
   wireAppDialogKeys(el, closeTopOverlay);
   el.querySelector('#scannerCameraBack').onclick = closeTopOverlay;
+  addAll.onclick = () => {
+    if (deckMode) {
+      onAdd?.(log.prepareAdd(), { signal: controller.signal, returnFocus: addAll });
+      return;
+    }
+    const added = log.addToCollection();
+    if (added) toast(`${added} ${added === 1 ? 'card' : 'cards'} added to your collection.`);
+  };
+  deleteSelected.onclick = () => {
+    const removed = log.deleteSelected();
+    if (removed) toast(`${removed} ${removed === 1 ? 'card' : 'cards'} removed from the scan log.`);
+  };
+  clearSelection.onclick = () => log.clearSelection();
+  selectAll.onclick = () => log.selectAll();
+  log.refresh();
+  scannerCreateViewport(
+    el.querySelector('.scanner-camera-scroll'),
+    stage,
+    el.querySelector('.scanner-camera-statusbar'),
+    {
+      signal: controller.signal,
+      onVisible(visible) {
+        cameraVisible = visible;
+        el.dataset.cameraVisible = String(visible);
+        if (!visible) stopCamera();
+        else if (active && !paused && !document.hidden && !cameraError) startCamera();
+        update();
+      },
+    },
+  );
   const updateResolution = () => {
     if (active && cameraReady && settings.scannerShowFramerate)
       resolution.textContent =
@@ -274,7 +344,7 @@ function openScannerCamera({ onReview, onClose }) {
     cameraControls?.focus(scannerFocusPoint(video, stage, event));
   };
   async function startCamera() {
-    if (cameraPending || cameraReady || !active) return;
+    if (cameraPending || cameraReady || !active || !cameraVisible || !isTop()) return;
     if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
       cameraError = 'Open Deckhand over HTTPS to use the camera.';
       update();
@@ -289,7 +359,7 @@ function openScannerCamera({ onReview, onClose }) {
       const next = await navigator.mediaDevices.getUserMedia(
         scannerCameraConstraints({ portrait: window.innerHeight > window.innerWidth }),
       );
-      if (!active || request !== cameraRequest || document.hidden) {
+      if (!active || request !== cameraRequest || document.hidden || !cameraVisible) {
         next.getTracks().forEach((track) => track.stop());
         return;
       }
@@ -319,6 +389,15 @@ function openScannerCamera({ onReview, onClose }) {
     } finally {
       cameraPending = false;
       update();
+      if (
+        active &&
+        request !== cameraRequest &&
+        cameraVisible &&
+        !paused &&
+        !document.hidden &&
+        !cameraError
+      )
+        startCamera();
     }
   }
   async function startEngine() {

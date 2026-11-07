@@ -23,8 +23,26 @@ Recognition stays within a 720p-sized processing budget and reuses its capture b
 Slower recognition never reduces the preview resolution. The optional framerate
 display includes the actual camera dimensions supplied by the browser.
 Detected cards appear below the preview with the newest at the top. Tap a logged card to review/add it.
+Scroll the log over the preview to release the camera; returning to the top opens it again.
+Hold a logged card to select it, then tap more cards to select several. The pinned
+Select all selects the current log; later scans remain unselected. The yellow +
+is gray and disabled without a selection. It adds selected scans as one Near Mint,
+nonfoil copy per scan without a binder, removing those scans and their photos from
+the log. Adding through individual review also removes that scan. Delete removes
+selected log entries only. Each scan shows the quantity already in your collection
+across all printings.
 The review page includes printing, condition, foil, amount and binder options.
 Add directly from review, or use its top-right X to return to live scanning.
+
+**Decks → + → Scan deck** uses the same camera for a physical deck. Its yellow +
+offers existing decks or a themed new-deck dialog with format and optional commander.
+It adds selected scans (use Select all for the whole log), keeping every repeated copy and the
+detected printing. Deck scanning allows repeated names regardless of collection
+scanner preferences; a held card still needs to leave view before another copy
+can be detected. A matching commander or partner is accounted for once in its
+existing command slot. Other scans append to the main deck, with the deck editor
+available for legality review. Collection contents are unchanged in this mode.
+
 In **Settings → Card scanner**, adjust the ID match threshold, corner threshold,
 scan interval and optional framerate display. Set a repeat-card debounce time or
 ignore card names already scanned during the current camera session, including
@@ -32,6 +50,8 @@ different printings. Settings apply when the camera opens and sync with your acc
 Brief messages explain when the repeat delay or session setting ignores a card.
 Blank Card predictions from a covered camera are ignored silently.
 Photos stay in your browser. Models and reference data are served by Deckhand, with no OCR or external recognition service.
+Closing the scanner clears logged photos, capture canvases and worker image buffers;
+the recognition models and reference catalog stay cached.
 Recognition initializes in the background after startup and stays ready while the app is open.
 Its roughly 70 MB of data is cached across launches. Recognition is experimental; confirm printing, foil and condition yourself.
 

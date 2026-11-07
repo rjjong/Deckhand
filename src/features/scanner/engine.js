@@ -176,7 +176,7 @@ async function scannerCreateEngine({ signal, onProgress = () => {} } = {}) {
         sourceFrame: pending.sourceFrame,
         thumb: null,
       };
-      if (data.cropBitmap) {
+      if (data.cropBitmap && !pending.signal?.aborted) {
         const thumb = document.createElement('canvas');
         thumb.width = 200;
         thumb.height = 280;
@@ -214,6 +214,14 @@ async function scannerCreateEngine({ signal, onProgress = () => {} } = {}) {
     get disposed() {
       return disposed;
     },
+    clearFrames() {
+      // Queue behind in-flight inference, ahead of any later camera session.
+      const operation = frameQueue.then(() => {
+        if (!disposed) worker.postMessage({ type: 'clearFrames' });
+      });
+      frameQueue = operation.catch(() => {});
+      return operation;
+    },
     recognize(canvas, { signal, thumbnail = true, cornerThreshold = 0.02 } = {}) {
       const operation = frameQueue.then(() =>
         scanFrame(canvas, signal, thumbnail, cornerThreshold),
@@ -237,6 +245,7 @@ async function scannerCreateEngine({ signal, onProgress = () => {} } = {}) {
       pending = {
         resolve,
         reject,
+        signal,
         frameWidth: canvas.width,
         frameHeight: canvas.height,
         sourceFrame: canvas.scannerSource,

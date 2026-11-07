@@ -1124,6 +1124,28 @@ function roundTiming(timing) {
 // Message handler
 // ---------------------------------------------------------------------------
 
+function clearFrameData() {
+  if (frameCanvas) {
+    frameCanvas.width = frameCanvas.height = 0;
+    frameCanvas = null;
+    frameCtx = null;
+  }
+  if (!runtime) return;
+  for (const canvas of [runtime.dewarpCanvas, runtime.detectorScratchCanvas, runtime.embedderScratchCanvas]) {
+    const context = canvas.getContext("2d");
+    context.save();
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.restore();
+  }
+  runtime.dewarpImageData.data.fill(0);
+  runtime.detectorInputTensor.fill(0);
+  runtime.embedderInputTensor.fill(0);
+  runtime._lastRawCorners = null;
+  runtime._lastDetectorInput = null;
+  runtime._lastDewarpTiming = null;
+}
+
 self.onmessage = async ({ data }) => {
   try {
     if (data.type === "init") {
@@ -1183,6 +1205,9 @@ self.onmessage = async ({ data }) => {
         data.captureRequested ?? false,
         data.includeDebugBitmaps ?? false,
       );
+    } else if (data.type === "clearFrames") {
+      clearFrameData();
+      self.postMessage({ type: "framesCleared" });
     } else if (data.type === "config") {
       runtime?.updateConfig({
         minCornerConfidence: data.minCornerConfidence,

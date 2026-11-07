@@ -24,12 +24,18 @@ test.beforeEach(async ({ page }) => {
     window.scannerWorkerStops = 0;
     window.scannerCameraRequests = 0;
     window.scannerFramesSent = 0;
+    window.scannerFramesCleared = 0;
     const OriginalWorker = window.Worker;
     window.Worker = class extends OriginalWorker {
       constructor(url, options) {
         super(url, options);
         this.isScanner = String(url).includes('/collectorvision/scanner.worker.mjs');
-        if (this.isScanner) scannerWorkerCreates++;
+        if (this.isScanner) {
+          scannerWorkerCreates++;
+          this.addEventListener('message', ({ data }) => {
+            if (data.type === 'framesCleared') scannerFramesCleared++;
+          });
+        }
       }
       postMessage(message, ...args) {
         if (this.isScanner && message.type === 'frame') scannerFramesSent++;
@@ -96,6 +102,7 @@ async function mockCamera(page, { width, height, source } = {}) {
         };
         draw();
         window.scannerTestStream = canvas.captureStream(4);
+        clearInterval(window.scannerTestTimer);
         window.scannerTestTimer = setInterval(draw, 200);
         return scannerTestStream;
       };
@@ -121,6 +128,7 @@ test('startup warms recognition without opening the camera; menu and collection 
     if (entry === 'collection') {
       await page.evaluate(() => switchPage('collection'));
       await page.locator('#colFab').click();
+      await expect(page.locator('#fabScanCards')).toHaveText('Scan cards');
       await page.locator('#fabScanCards').click();
     } else await page.locator('#menuScanCards').click();
     await expect(page.getByRole('dialog', { name: 'Scan card camera', exact: true })).toBeVisible();
@@ -236,7 +244,8 @@ test('live camera logs stable cards once, rearms after removal and keeps the log
     foil: true,
   });
   await expect(camera).toHaveAttribute('data-scanning', 'true');
-  await expect(names).toHaveCount(2);
+  await expect(names).toHaveCount(1);
+  await expect(page.locator('.scanner-detection-owned')).toHaveText('✓ In collection: 2');
   await camera.locator('#scannerCameraBack').click();
   await expect(camera).toHaveCount(0);
   const closed = await page.evaluate(() => scannerFramesSent);
@@ -626,6 +635,395 @@ test('live scanning applies thresholds, interval and optional framerate using th
   await page.locator('#scannerCameraBack').click();
   await expect(page.locator('#cardScannerCamera')).toHaveCount(0);
   await page.evaluate(() => clearInterval(scannerTestTimer));
+});
+
+test('scan log scroll releases and reopens the camera; multiple scans can be selected, added and deleted', async ({
+  page,
+}, info) => {
+  test.setTimeout(90000);
+  const other = {
+    ...card,
+    id: '11111111-1111-4111-8111-111111111111',
+    oracle_id: '22222222-2222-4222-8222-222222222222',
+    name: 'Sol Ring',
+  };
+  await page.route('**/api/scryfall/cards/' + other.id, (route) => route.fulfill({ json: other }));
+  await mockCamera(page);
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.evaluate(
+    async ({ card, other }) => {
+      state.scannerIntervalMs = 100;
+      state.collection.items = [
+        {
+          name: card.name,
+          set: card.set,
+          cn: card.collector_number,
+          cond: 'NM',
+          qty: 2,
+          binder: null,
+        },
+        {
+          name: card.name,
+          set: 'other',
+          cn: '1',
+          cond: 'EX',
+          qty: 1,
+          foil: true,
+          binder: 'binder-a',
+        },
+      ];
+      window.scanLogStep = 0;
+      const engine = await scannerGetEngine();
+      engine.recognize = async (canvas) => {
+        const step = scanLogStep++;
+        const found =
+          step < 16 ? (Math.floor(step / 2) % 2 ? other : card) : window.scanLogExtra?.shift();
+        if (!found) return { cardPresent: false };
+        return {
+          cardPresent: true,
+          cornersValid: true,
+          confidence: 1,
+          score: 0.99,
+          cardId: found.id,
+          secondaryId: found.oracle_id,
+          thumb: canvas.toDataURL('image/jpeg'),
+          sourceFrame: canvas.scannerSource,
+        };
+      };
+      const originalCanvas = scannerImageCanvas;
+      scannerImageCanvas = (...args) => (window.scanLogBuffer = originalCanvas(...args));
+    },
+    { card, other },
+  );
+  await page.locator('#menuScanCards').click();
+  await expect(page.locator('.scanner-detection')).toHaveCount(8, { timeout: 15000 });
+  await expect(page.locator('.scanner-detection[data-state="ready"]')).toHaveCount(8);
+  await expect(page.locator('#scannerCameraStatus')).toBeHidden();
+  await expect(page.locator('#cardScannerCamera')).not.toContainText('Move a detected card away');
+  await expect(page.locator('.scanner-detection-owned').first()).toHaveText('In collection: 0');
+  await expect(page.locator('.scanner-detection-owned').nth(1)).toHaveText('✓ In collection: 3');
+  const add = page.locator('#scannerAddAll');
+  const selectAll = page.locator('#scannerSelectAll');
+  await expect(add).toBeDisabled();
+  await expect(selectAll).toBeEnabled();
+  // The action itself is safe even if a caller bypasses the disabled button.
+  await add.dispatchEvent('click');
+  expect(
+    await page.evaluate(() => state.collection.items.reduce((n, item) => n + item.qty, 0)),
+  ).toBe(3);
+  const disabledBackground = await add.evaluate((el) => getComputedStyle(el).backgroundColor);
+  const first = page.locator('.scanner-detection-button').first();
+  // Moving a finger during a hold cancels selection so a scroll is safe.
+  await first.dispatchEvent('pointerdown', {
+    button: 0,
+    isPrimary: true,
+    clientX: 30,
+    clientY: 30,
+  });
+  await first.dispatchEvent('pointermove', { clientX: 30, clientY: 60 });
+  await page.waitForTimeout(520);
+  await first.dispatchEvent('pointercancel');
+  await expect(page.locator('.scanner-detection.selected')).toHaveCount(0);
+  await first.dispatchEvent('pointerdown', {
+    button: 0,
+    isPrimary: true,
+    clientX: 30,
+    clientY: 30,
+  });
+  await page.waitForTimeout(520);
+  await first.dispatchEvent('pointerup');
+  await first.dispatchEvent('click', { detail: 1 });
+  await expect(page.locator('.scanner-detection.selected')).toHaveCount(1);
+  await expect(add).toBeEnabled();
+  expect(await add.evaluate((el) => getComputedStyle(el).backgroundColor)).not.toBe(
+    disabledBackground,
+  );
+  await expect(page.locator('#cardScannerOverlay')).toHaveCount(0);
+  await page.locator('.scanner-detection-button').nth(1).click();
+  await expect(page.locator('#scannerClearSelection')).toHaveText('2 selected');
+  await page.screenshot({ path: `var/previews/scanner-log-selection-${info.project.name}.png` });
+  await page.evaluate(() => {
+    window.addedScanPhotos = [...document.querySelectorAll('.scanner-detection.selected img')];
+  });
+  await add.click();
+  await expect(page.locator('.scanner-detection')).toHaveCount(6);
+  await expect(page.locator('.scanner-detection.selected')).toHaveCount(0);
+  await expect(add).toBeDisabled();
+  expect(
+    await page.evaluate(() => addedScanPhotos.every((image) => !image.hasAttribute('src'))),
+  ).toBe(true);
+  await expect(page.locator('.scanner-detection-owned').first()).toHaveText('✓ In collection: 1');
+  await expect(page.locator('.scanner-detection-owned').nth(1)).toHaveText('✓ In collection: 4');
+  expect(await page.evaluate(() => JSON.stringify(state.collection).includes('data:image'))).toBe(
+    false,
+  );
+  // A keyboard can also select a scan without opening review.
+  await first.focus();
+  await first.press('Space');
+  await page.locator('.scanner-detection-button').nth(1).click();
+  await page.locator('#scannerDeleteSelected').click();
+  await expect(page.locator('.scanner-detection')).toHaveCount(4);
+  expect(
+    await page.evaluate(() => state.collection.items.reduce((n, item) => n + item.qty, 0)),
+  ).toBe(5);
+  const stream = await page.evaluate(() => {
+    window.scanLogFirstStream = scannerTestStream;
+    window.scanLogFirstBuffer = scanLogBuffer;
+    const root = document.querySelector('.scanner-camera-scroll');
+    root.scrollTop = root.scrollHeight;
+    return scannerCameraRequests;
+  });
+  await expect(page.locator('#cardScannerCamera')).toHaveAttribute('data-camera-visible', 'false');
+  await expect(page.locator('#cardScannerCamera')).toHaveAttribute('data-scanning', 'false');
+  expect(
+    await page.evaluate(() =>
+      scanLogFirstStream.getTracks().every((track) => track.readyState === 'ended'),
+    ),
+  ).toBe(true);
+  expect(await page.evaluate(() => scanLogFirstBuffer.width * scanLogFirstBuffer.height)).toBe(0);
+  const pinned = await page.evaluate(() => {
+    const root = document.querySelector('.scanner-camera-scroll').getBoundingClientRect();
+    const toolbar = document.querySelector('.scanner-camera-statusbar').getBoundingClientRect();
+    const title = document.querySelector('.scanner-camera-header').getBoundingClientRect();
+    return { root: root.top, toolbar: toolbar.top, title: title.bottom };
+  });
+  expect(pinned.toolbar).toBeCloseTo(pinned.title, 0);
+  await page.screenshot({ path: `var/previews/scanner-log-expanded-${info.project.name}.png` });
+  await page.evaluate(() => {
+    document.querySelector('.scanner-camera-scroll').scrollTop = 0;
+  });
+  await expect(page.locator('#cardScannerCamera')).toHaveAttribute('data-camera-visible', 'true');
+  await expect(page.locator('#cardScannerCamera')).toHaveAttribute('data-scanning', 'true');
+  expect(await page.evaluate(() => scannerCameraRequests)).toBe(stream + 1);
+  expect(await page.evaluate(() => scannerWorkerCreates)).toBe(1);
+  await selectAll.click();
+  await expect(page.locator('.scanner-detection.selected')).toHaveCount(4);
+  await expect(selectAll).toBeDisabled();
+  // New scans require a new selection; Select all is a snapshot of the log.
+  await page.evaluate((card) => {
+    scanLogExtra = [card, card];
+  }, card);
+  await expect(page.locator('.scanner-detection')).toHaveCount(5);
+  await expect(page.locator('.scanner-detection.selected')).toHaveCount(4);
+  await expect(selectAll).toBeEnabled();
+  await selectAll.click();
+  await expect(page.locator('#scannerClearSelection')).toHaveText('5 selected');
+  await page.evaluate(() => {
+    window.retainedAddedPhotos = [...document.querySelectorAll('.scanner-detection img')];
+  });
+  await add.click();
+  await expect(page.locator('.scanner-detection')).toHaveCount(0);
+  await expect(page.locator('#scannerLogEmpty')).toBeVisible();
+  await expect(selectAll).toBeDisabled();
+  await expect(add).toBeDisabled();
+  expect(
+    await page.evaluate(() => retainedAddedPhotos.every((image) => !image.hasAttribute('src'))),
+  ).toBe(true);
+  expect(
+    await page.evaluate(() => state.collection.items.reduce((n, item) => n + item.qty, 0)),
+  ).toBe(10);
+  await page.evaluate(() => {
+    window.retainedScanRoot = document.querySelector('#cardScannerCamera');
+    window.retainedScanImages = Array.from(retainedScanRoot.querySelectorAll('img'));
+    window.retainedScanBuffer = scanLogBuffer;
+  });
+  await page.locator('#scannerCameraBack').click();
+  await expect(page.locator('#cardScannerCamera')).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => scannerFramesCleared)).toBeGreaterThan(0);
+  expect(
+    await page.evaluate(() => retainedScanRoot.querySelectorAll('.scanner-detection').length),
+  ).toBe(0);
+  expect(
+    await page.evaluate(() => retainedScanImages.every((image) => !image.hasAttribute('src'))),
+  ).toBe(true);
+  expect(await page.evaluate(() => retainedScanBuffer.width * retainedScanBuffer.height)).toBe(0);
+  expect(
+    await page.evaluate(() =>
+      scannerTestStream.getTracks().every((track) => track.readyState === 'ended'),
+    ),
+  ).toBe(true);
+  expect(await page.evaluate(() => scannerIsReady())).toBe(true);
+  expect(errors).toEqual([]);
+  await page.evaluate(() => clearInterval(scannerTestTimer));
+});
+
+test('Scan deck adds every physical copy to an existing or new deck and keeps collection scanning separate', async ({
+  page,
+}, info) => {
+  test.setTimeout(90000);
+  const other = {
+    ...card,
+    id: '11111111-1111-4111-8111-111111111111',
+    oracle_id: '22222222-2222-4222-8222-222222222222',
+    name: 'Sol Ring',
+  };
+  await page.route('**/api/scryfall/cards/' + other.id, (route) => route.fulfill({ json: other }));
+  await mockCamera(page);
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.evaluate(
+    async ({ card, other }) => {
+      state.guild = 'dimir';
+      applyTheme();
+      state.scannerIgnoreSession = true;
+      state.scannerDebounceMs = 60000;
+      state.scannerIntervalMs = 100;
+      window.deckScanQueue = [card, card, other, other, card, card];
+      (await scannerGetEngine()).recognize = async (canvas) => {
+        const found = deckScanQueue.shift();
+        return found
+          ? {
+              cardPresent: true,
+              cornersValid: true,
+              confidence: 1,
+              score: 0.99,
+              cardId: found.id,
+              secondaryId: found.oracle_id,
+              sourceFrame: canvas.scannerSource,
+            }
+          : { cardPresent: false };
+      };
+      window.deckScanOriginal = createNewDeck('Existing deck', 'modern', null, null, {
+        open: false,
+      });
+      deckScanOriginal.cards.push({ ...other, id: 'already-in-deck' });
+      await persistDeck(deckScanOriginal);
+      switchPage('decks');
+    },
+    { card, other },
+  );
+  await page.locator('#deckFab').click();
+  await page.locator('#fabScanDeck').click();
+  await expect(page.locator('#cardScannerCamera')).toHaveAttribute('data-mode', 'deck');
+  await expect(page.locator('.scanner-camera-header .brand-txt')).toHaveText('Scan deck');
+  await expect(page.locator('.scanner-detection[data-state="ready"]')).toHaveCount(3);
+  expect(
+    await page.evaluate(() => state.scannerIgnoreSession && state.scannerDebounceMs === 60000),
+  ).toBe(true);
+  await expect(page.locator('#scannerAddAll')).toBeDisabled();
+  await page.locator('#scannerAddAll').dispatchEvent('click');
+  await expect(page.locator('#scannerDeckPicker')).toHaveCount(0);
+  await page.locator('#scannerSelectAll').click();
+  await page.locator('#scannerAddAll').click();
+  const picker = page.locator('#scannerDeckPicker');
+  await expect(picker.getByRole('dialog', { name: 'Add to deck', exact: true })).toBeVisible();
+  await picker.locator('#scannerDeckCancel').click();
+  await expect(picker).toHaveCount(0);
+  expect(await page.evaluate(() => deckScanOriginal.cards.length)).toBe(1);
+  await page.locator('#scannerAddAll').click();
+  await picker.locator('#scannerCreateDeck').click();
+  await expect(page.getByRole('dialog', { name: 'New Deck', exact: true })).toBeVisible();
+  await page.goBack();
+  await expect(page.locator('.nd-sheet')).toHaveCount(0);
+  await expect(picker).toBeVisible();
+  expect(await picker.evaluate((el) => el.inert)).toBe(false);
+  await picker.getByRole('button', { name: 'Add to Existing deck', exact: true }).click();
+  await expect(picker).toHaveCount(0);
+  await expect(page.locator('#scannerAddAll')).toBeDisabled();
+  expect(await page.evaluate(() => deckScanOriginal.cards.map((card) => card.id))).toEqual([
+    'already-in-deck',
+    card.id,
+    other.id,
+    card.id,
+  ]);
+  expect(await page.evaluate(() => state.collection.items)).toEqual([]);
+  await expect(page.locator('.scanner-detection-owned').first()).toContainText(
+    'Added to Existing deck',
+  );
+  await page.evaluate(
+    ({ card, other }) => {
+      deckScanQueue = [other, other, card, card];
+    },
+    { card, other },
+  );
+  await expect(page.locator('.scanner-detection[data-state="ready"]')).toHaveCount(5);
+  await expect(page.locator('#scannerAddAll')).toBeDisabled();
+  await page.locator('#scannerSelectAll').click();
+  await page.locator('#scannerAddAll').click();
+  await picker.locator('#scannerCreateDeck').click();
+  await page.locator('#newDeckName').fill('Scanned deck');
+  await mkdir('var/previews', { recursive: true });
+  await page.screenshot({ path: `var/previews/new-deck-themed-${info.project.name}.png` });
+  await page.locator('#newDeckFmtBtn').click();
+  await page.locator('[data-ndfmt="modern"]').click();
+  await page.locator('#createBtn').click();
+  await expect(page.locator('.nd-sheet')).toHaveCount(0);
+  await expect(picker).toHaveCount(0);
+  await expect(page.locator('#cardScannerCamera')).toBeVisible();
+  await expect(page.locator('#scannerAddAll')).toBeDisabled();
+  const created = await page.evaluate(() => {
+    const deck = state.decksIndex.find((deck) => deck.name === 'Scanned deck');
+    return {
+      id: deck.id,
+      format: deck.format,
+      cards: deck.cards.map((card) => ({ id: card.id, pin: card.pin })),
+    };
+  });
+  expect(created.format).toBe('modern');
+  expect(created.cards).toEqual([
+    { id: other.id, pin: true },
+    { id: card.id, pin: true },
+  ]);
+  expect(await page.evaluate(() => state.collection.items)).toEqual([]);
+  // Single-card review in deck mode also offers a deck destination.
+  await page.evaluate((other) => {
+    deckScanQueue = [other, other];
+  }, other);
+  await expect(page.locator('.scanner-detection[data-state="ready"]')).toHaveCount(6);
+  await page.locator('.scanner-detection-button').first().click();
+  const review = page.locator('#cardScannerOverlay');
+  await expect(review.locator('#acAdd, .scanner-collection')).toHaveCount(0);
+  await review.locator('#scannerReviewDeckAdd').click();
+  await picker.getByRole('button', { name: 'Add to Existing deck', exact: true }).click();
+  await expect(picker).toHaveCount(0);
+  await expect(review).toHaveCount(0);
+  expect(await page.evaluate(() => deckScanOriginal.cards.length)).toBe(5);
+  await expect(page.locator('#scannerAddAll')).toBeDisabled();
+  // Navigating away while the nested creation dialog is open cancels it too.
+  await page.evaluate((card) => {
+    deckScanQueue = [card, card];
+  }, card);
+  await expect(page.locator('.scanner-detection[data-state="ready"]')).toHaveCount(7);
+  await expect(page.locator('#scannerAddAll')).toBeDisabled();
+  await page.locator('#scannerSelectAll').click();
+  await page.locator('#scannerAddAll').click();
+  await picker.locator('#scannerCreateDeck').click();
+  await page.locator('#newDeckName').fill('Cancelled scan deck');
+  await page.evaluate(() => dismissAllOverlays());
+  await expect(page.locator('#cardScannerCamera, #scannerDeckPicker, .nd-sheet')).toHaveCount(0);
+  expect(await page.evaluate(() => state.overlayStack.length)).toBe(0);
+  expect(
+    await page.evaluate(() => state.decksIndex.some((deck) => deck.name === 'Cancelled scan deck')),
+  ).toBe(false);
+  await expect
+    .poll(() =>
+      page.evaluate(async () => {
+        const all = await deckDbAll();
+        return Object.values(all)
+          .map((raw) => JSON.parse(raw))
+          .filter((deck) => deck.name === 'Scanned deck' || deck.name === 'Existing deck')
+          .map((deck) => ({ name: deck.name, cards: deck.cards.length }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+      }),
+    )
+    .toEqual([
+      { name: 'Existing deck', cards: 5 },
+      { name: 'Scanned deck', cards: 2 },
+    ]);
+  await page.evaluate(() => clearInterval(scannerTestTimer));
+  await page.reload();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          state.decksIndex.filter(
+            (deck) => deck.name === 'Scanned deck' || deck.name === 'Existing deck',
+          ).length,
+      ),
+    )
+    .toBe(2);
+  expect(errors).toEqual([]);
 });
 
 test('slow inference preserves preview quality; refocus and resolution reporting use the live camera', async ({

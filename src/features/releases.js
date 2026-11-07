@@ -5,9 +5,9 @@ const APP_VERSION = DECKHAND_VERSION;
 
 const CHANGELOG_NOTES = {
   en: [
-    'Scanner camera no longer lowers its resolution when recognition takes longer',
-    'Camera requests follow phone orientation; tap the preview to refocus where supported',
-    'The optional scan framerate display also shows the actual camera resolution',
+    'Scanner actions require a selection, with a new Select all button and a gray disabled plus',
+    'Cards added to the collection are removed from the scan log with their captured photos',
+    'The collection + menu shows a shorter Scan cards label',
   ],
 };
 
@@ -18,6 +18,33 @@ const CHANGELOG_NOTES = {
 const APP_DATE = DECKHAND_RELEASE_DATE;
 
 const CHANGELOG_HISTORY = [
+  {
+    v: '2.0.14',
+    d: '2026-11-07',
+    en: [
+      'New deck dialogs use themed fields, labeled controls and clearer actions',
+      'Decks → + → Scan deck captures a physical deck and adds scans to an existing or new deck',
+      'Deck scanning preserves repeated copies and detected printings without changing your collection',
+    ],
+  },
+  {
+    v: '2.0.13',
+    d: '2026-11-07',
+    en: [
+      'The scan log scrolls over the camera, releasing it until you return to the top',
+      'Hold a scan to select several; add selected or all new scans with the yellow plus, or delete selected log entries',
+      'Scans show collection quantities, and captured photos are cleared when the scanner closes',
+    ],
+  },
+  {
+    v: '2.0.12',
+    d: '2026-11-07',
+    en: [
+      'Scanner camera no longer lowers its resolution when recognition takes longer',
+      'Camera requests follow phone orientation; tap the preview to refocus where supported',
+      'The optional scan framerate display also shows the actual camera resolution',
+    ],
+  },
   {
     v: '2.0.11',
     d: '2026-11-07',
