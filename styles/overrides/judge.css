@@ -120,6 +120,23 @@ html #crOverlay .cja-a {
   line-height: 1.75;
 }
 
+html #crOverlay .cja-stream-status {
+  margin-bottom: 12px;
+  color: var(--sub-text);
+  font-size: 12px;
+}
+
+html #crOverlay .cja-stream-answer,
+html #crOverlay .cja-stream-reasoning {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+html #crOverlay .cja-stream-reasoning {
+  margin: 12px 0 0;
+  line-height: 1.8;
+}
+
 html #crOverlay .cja-h {
   margin: 24px 0 0;
 }

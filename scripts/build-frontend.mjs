@@ -62,10 +62,32 @@ async function writeChanged(file, content) {
 }
 
 export async function buildFrontend() {
-  const [javascript, css] = await Promise.all([
+  const [javascript, css, shellFiles] = await Promise.all([
     combine(scripts, 'app.js'),
     combine(styles, 'app.css'),
+    Promise.all(
+      [...staticFiles, ...media].map(async (file) => [file, await readFile(resolve(root, file))]),
+    ),
   ]);
+  // The worker changes whenever the app shell changes; deployments no longer
+  // depend on remembering to increment a handwritten service-worker version.
+  const digest = createHash('sha256').update(javascript.code).update(css.code);
+  for (const [file, content] of shellFiles) digest.update(file).update(content);
+  const hash = digest.digest('hex').slice(0, 12);
+  javascript.code = `const DECKHAND_BUILD = '${hash}';\n` + javascript.code;
+  const map = JSON.parse(javascript.map);
+  for (const section of map.sections) section.offset.line++;
+  javascript.map = JSON.stringify(map);
+  const shell = new Map(shellFiles);
+  const html = shell
+    .get('index.html')
+    .toString()
+    .replace(
+      'name="deckhand-build" content="development"',
+      `name="deckhand-build" content="${hash}"`,
+    )
+    .replaceAll(/assets\/app\.(js|css)"/g, `assets/app.$1?v=${hash}"`);
+  const worker = shell.get('sw.js').toString().replace('__DECKHAND_BUILD__', hash);
   // This app deliberately keeps one classic script: existing inline handlers
   // and shared state retain their scope and function hoisting across files.
   new Script(javascript.code, { filename: 'app.js' });
@@ -78,7 +100,10 @@ export async function buildFrontend() {
       writeChanged(resolve(root, 'public', file), await readFile(resolve(root, file))),
     ),
     ...staticFiles.map(async (file) =>
-      writeChanged(resolve(root, 'public', file), await readFile(resolve(root, file))),
+      writeChanged(
+        resolve(root, 'public', file),
+        file === 'index.html' ? html : file === 'sw.js' ? worker : shell.get(file),
+      ),
     ),
     ...scannerAssets.map(async ({ source, target }) =>
       writeChanged(resolve(root, 'public', target), await readFile(resolve(root, source))),
@@ -87,7 +112,7 @@ export async function buildFrontend() {
   return {
     scripts: scripts.length,
     styles: styles.length,
-    hash: createHash('sha256').update(javascript.code).update(css.code).digest('hex').slice(0, 12),
+    hash,
   };
 }
 
@@ -120,6 +145,11 @@ export function watchFrontend() {
   };
   const watchers = ['src', 'styles', 'assets', 'shared'].map((directory) =>
     watch(resolve(root, directory), { recursive: true }, schedule),
+  );
+  watchers.push(
+    watch(root, (_event, filename) => {
+      if (staticFiles.includes(String(filename))) schedule();
+    }),
   );
   return {
     close() {

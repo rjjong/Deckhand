@@ -11,6 +11,10 @@ services:
       PORT: 3000
       DATABASE_PATH: /app/var/deckhand.sqlite
       DATA_DIR: ${CONTAINER_DATA_DIR:-/app/var/data-sample}
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:3000}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      TRUST_CLOUDFLARE_PROXY: ${TRUST_CLOUDFLARE_PROXY:-0}
       OLLAMA_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:4b-instruct-2507-q4_K_M}
       OLLAMA_TIMEOUT_MS: ${OLLAMA_TIMEOUT_MS:-75000}

@@ -3,6 +3,7 @@ import { dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
 import { createSyncStorage } from './sync-storage.mjs';
+import { createAccountsStorage } from './accounts-storage.mjs';
 
 // AI caches and legacy documents use the small key/value store. Device sync
 // uses dedicated tables and transactions through createSyncStorage().
@@ -55,5 +56,6 @@ export function openStorage(path) {
       async list() { return { blobs: list.all(name).map(row => ({ key: row.key })) }; }
     };
   }
-  return { store, sync: createSyncStorage(db), close: () => db.close(), healthy: () => db.prepare('SELECT 1').get() };
+  const sync = createSyncStorage(db);
+  return { store, sync, accounts: createAccountsStorage(db), close: () => db.close(), healthy: () => db.prepare('SELECT 1').get() };
 }

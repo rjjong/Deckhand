@@ -1,5 +1,5 @@
-/* Code-only synchronization on this server. Codes are bearer secrets; only
-   their SHA-256 hashes are stored. There are no accounts or credentials. */
+/* Record exchange on this server. The HTTP route always supplies an
+   authenticated accountScope. Legacy code helpers remain for migration. */
 import crypto from 'node:crypto';
 import records from '../../shared/sync-records.cjs';
 
@@ -19,7 +19,7 @@ export async function handle(body, ctx) {
   if (!ctx?.sync) return { status: 503, json: { ok: false, error: 'store' } };
   if (!body || typeof body !== 'object' || Array.isArray(body))
     return { status: 400, json: { ok: false, error: 'request' } };
-  if (body.op === 'create') {
+  if (!ctx.accountScope && body.op === 'create') {
     for (let attempt = 0; attempt < 5; attempt++) {
       const code = [...crypto.randomBytes(24)]
         .map((byte) => ALPHABET[byte % ALPHABET.length])
@@ -32,7 +32,7 @@ export async function handle(body, ctx) {
     }
     return { status: 503, json: { ok: false, error: 'busy' } };
   }
-  const id = idOf(body.code);
+  const id = ctx.accountScope || idOf(body.code);
   if (!id) return { status: 400, json: { ok: false, error: 'code' } };
   if (body.op !== 'probe' && body.op !== 'sync')
     return { status: 400, json: { ok: false, error: 'op' } };

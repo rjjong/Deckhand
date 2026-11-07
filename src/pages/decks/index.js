@@ -481,6 +481,7 @@ function homeHtml() {
   const hasAny = state.decksIndex.length || (state.folders || []).length;
   const _html = `
   <main class="decks-page">
+    <div class="account-warning-slot">${accountWarningHtml()}</div>
     <div class="searchbar page-searchbar decks-searchbar">
       <input id="deckFilter" placeholder="Search decks..." value="${escapeHtml(state.deckFilter || '')}">
       ${folderViewToggleHtml('decks')}

@@ -1,4 +1,4 @@
-// Code-only sync with this app's server. SQLite is the shared source; the
+// Account-bound sync with this app's server. SQLite is the shared source; the
 // browser remains usable offline. Each deck, collection row, preference,
 // folder and saved game is a separate last-change-wins record.
 const SYNC_KEYS = new Set(SYNC_SOURCES);
@@ -8,10 +8,10 @@ const _lsDelRaw = Storage.prototype.removeItem;
 let _syncQuiet = 0,
   _syncTimer = null,
   _syncBusy = false,
-  _syncLinking = false,
   _syncGeneration = 0;
 let _syncController = null,
-  _syncClock = 0;
+  _syncClock = 0,
+  _syncSessionRefreshAt = 0;
 
 function syncState() {
   if (state._syncSt === undefined) {
@@ -31,8 +31,8 @@ function syncSaveState() {
 
 function syncPaintStatus() {
   const label = document.querySelector('#syncRow .hub-copy > div.l2');
-  if (label)
-    label.textContent = syncState() ? 'Linked to this server' : 'Link your devices with a code';
+  if (label) label.textContent = accountStatusLabel();
+  paintAccountWarnings();
 }
 
 function syncMeta() {
@@ -134,68 +134,7 @@ function syncSoon(ms = 1500) {
   _syncTimer = setTimeout(() => syncRun('change'), ms);
 }
 
-function syncCleanCode(code) {
-  return String(code || '')
-    .trim()
-    .toUpperCase()
-    .replace(/[\s-]/g, '');
-}
-function syncNiceCode(code) {
-  return (syncCleanCode(code).match(/.{1,4}/g) || []).join('-');
-}
-
-function openSyncCodePrompt(onOk) {
-  openInAppPrompt('Sync code', '', '', onOk, { maxLength: 49 });
-  const input = document.getElementById('iapInput');
-  input.autocapitalize = 'characters';
-  input.spellcheck = false;
-  input.setAttribute('aria-describedby', 'syncCodeHint');
-  const entry = document.createElement('div');
-  entry.className = 'sync-code-entry';
-  input.before(entry);
-  entry.appendChild(input);
-  const mask = document.createElement('span');
-  mask.className = 'sync-code-mask';
-  mask.setAttribute('aria-hidden', 'true');
-  entry.appendChild(mask);
-  const hint = document.createElement('p');
-  hint.id = 'syncCodeHint';
-  hint.className = 'iac-msg';
-  hint.textContent = 'Paste your full code, or type it. Dashes are added automatically.';
-  entry.after(hint);
-  const clean = (value) => value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-  const format = () => {
-    const start = clean(input.value.slice(0, input.selectionStart)).length;
-    const end = clean(input.value.slice(0, input.selectionEnd)).length;
-    // New codes have 24 characters. Keep accepting older 16–40 character codes.
-    input.value = syncNiceCode(clean(input.value).slice(0, 40));
-    const caret = (length) =>
-      Math.min(input.value.length, length + Math.floor(Math.max(0, length - 1) / 4));
-    input.setSelectionRange(caret(start), caret(end));
-    const template = '____-____-____-____-____-____';
-    mask.textContent = ' '.repeat(input.value.length) + template.slice(input.value.length);
-  };
-  input.addEventListener('input', format);
-  input.addEventListener('paste', (event) => {
-    const text = event.clipboardData?.getData('text/plain');
-    if (text == null) return;
-    event.preventDefault();
-    input.setRangeText(clean(text), input.selectionStart, input.selectionEnd, 'end');
-    format();
-  });
-  input.addEventListener('keydown', (event) => {
-    if (input.selectionStart !== input.selectionEnd) return;
-    const caret = input.selectionStart;
-    // Deleting beside a separator removes a code character on the first press.
-    if (event.key === 'Backspace' && input.value[caret - 1] === '-')
-      input.setSelectionRange(caret - 1, caret - 1);
-    if (event.key === 'Delete' && input.value[caret] === '-')
-      input.setSelectionRange(caret + 1, caret + 1);
-  });
-  format();
-}
-
-async function syncCall(body, code = syncState()?.code, signal) {
+async function syncCall(body, _unused, signal) {
   const controller = new AbortController();
   const abort = () => controller.abort();
   signal?.addEventListener('abort', abort, { once: true });
@@ -204,8 +143,9 @@ async function syncCall(body, code = syncState()?.code, signal) {
   try {
     const response = await fetch(SYNC_URL, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ ...body, ...(code ? { code } : {}) }),
+      headers: { 'content-type': 'application/json', 'x-csrf-token': accountSession?.csrf || '' },
+      credentials: 'same-origin',
+      body: JSON.stringify(body),
       signal: controller.signal,
       cache: 'no-store',
     });
@@ -429,7 +369,17 @@ async function syncFlushDecks() {
 async function syncRun(why = 'manual') {
   const linked = syncState(),
     generation = _syncGeneration;
-  if (!linked?.code || _syncBusy || !state.homeLoaded || navigator.onLine === false) return null;
+  if (
+    !linked?.accountId ||
+    linked.accountId !== ACCOUNT_OWNER ||
+    accountSession?.user?.id !== linked.accountId ||
+    !accountSession.csrf ||
+    !accountWorkspaceCurrent() ||
+    _syncBusy ||
+    !state.homeLoaded ||
+    navigator.onLine === false
+  )
+    return null;
   _syncBusy = true;
   _syncController = new AbortController();
   let applied = 0;
@@ -441,8 +391,7 @@ async function syncRun(why = 'manual') {
     if (linked.protocol !== 2) {
       const old = syncMeta();
       state._syncMeta = {};
-      // Old links keep their code and data, but restart the revision stream
-      // after converting monolithic collection/settings records.
+      // Restart the revision stream after upgrading older local record metadata.
       for (const key of Object.keys(snapshot))
         state._syncMeta[key] = { t: old[key]?.t || old[syncRecordSource(key)]?.t || 1 };
       for (const [key, entry] of Object.entries(old))
@@ -455,7 +404,7 @@ async function syncRun(why = 'manual') {
     }
     const pending = syncPending(snapshot, captured.meta);
     if (!Object.keys(pending).length) {
-      const probe = await syncCall({ op: 'probe' }, linked.code, _syncController.signal);
+      const probe = await syncCall({ op: 'probe' }, null, _syncController.signal);
       syncSessionValid(linked, generation);
       if (probe.rev === linked.rev) {
         linked.last = Date.now();
@@ -482,11 +431,7 @@ async function syncRun(why = 'manual') {
     const since = linked.rev || 0;
     let response;
     for (const changes of parcels) {
-      response = await syncCall(
-        { op: 'sync', since, changes },
-        linked.code,
-        _syncController.signal,
-      );
+      response = await syncCall({ op: 'sync', since, changes }, null, _syncController.signal);
       syncSessionValid(linked, generation);
       applied += await syncApply({ ...response.changes, ...response.current }, linked, generation);
       for (const [key, value] of Object.entries(changes))
@@ -498,7 +443,7 @@ async function syncRun(why = 'manual') {
       if (++pages > 100) throw new Error('pagination');
       response = await syncCall(
         { op: 'sync', since, after: response.more },
-        linked.code,
+        null,
         _syncController.signal,
       );
       syncSessionValid(linked, generation);
@@ -521,6 +466,19 @@ async function syncRun(why = 'manual') {
     if (generation === _syncGeneration && syncState() === linked) {
       linked.err = error.name === 'AbortError' ? 'connection' : error.message;
       syncSaveState();
+      if (
+        ['signin_required', 'csrf'].includes(error.message) &&
+        Date.now() - _syncSessionRefreshAt > 60000
+      ) {
+        _syncSessionRefreshAt = Date.now();
+        setTimeout(
+          () =>
+            accountRefresh().then(() => {
+              if (accountSession?.user?.id === linked.accountId) syncSoon(500);
+            }),
+          0,
+        );
+      }
     }
     return null;
   } finally {
@@ -533,43 +491,12 @@ async function syncRun(why = 'manual') {
 
 function syncLastLabel() {
   const linked = syncState();
-  if (!linked) return 'Not linked';
-  if (linked.err === 'code_not_found') return 'This code was not found on this server.';
+  if (!linked?.accountId) return 'Not signed in';
+  if (linked.err === 'signin_required' || linked.err === 'csrf')
+    return 'Sign in again to resume cloud saving. Local changes are kept.';
   if (linked.err) return 'Sync could not connect. Your local changes are kept for retry.';
   if (!linked.last) return 'Not synced yet';
   return 'Last synced: ' + new Date(linked.last).toLocaleString('en-GB');
-}
-
-async function syncLink(code, creator = false) {
-  if (_syncBusy || _syncLinking) throw new Error('Sync is already running.');
-  if (!creator && !/^[A-Z0-9]{16,40}$/.test(syncCleanCode(code))) throw new Error('code');
-  _syncLinking = true;
-  const generation = _syncGeneration;
-  try {
-    if (!state.homeLoaded) await loadDecksIndex();
-    await syncFlushDecks();
-    const response = await syncCall(
-      { op: creator ? 'create' : 'probe' },
-      creator ? null : syncCleanCode(code),
-    );
-    const { values: snapshot } = await syncReadSnapshot();
-    if (_syncGeneration !== generation) throw new Error('cancelled');
-    _syncGeneration++;
-    state._syncSt = {
-      protocol: 2,
-      code: syncCleanCode(creator ? response.code : code),
-      rev: 0,
-      sent: {},
-      last: 0,
-    };
-    state._syncMeta = {};
-    _lsSetRaw.call(localStorage, LS_PREFIX + 'syncMeta', '{}');
-    syncSeed(creator ? 1 : 0.5, { ...snapshot, ...syncSnapshot() });
-    syncSaveState();
-    return await syncRun('link');
-  } finally {
-    _syncLinking = false;
-  }
 }
 
 function syncUnlink() {
@@ -582,7 +509,11 @@ function syncUnlink() {
 }
 
 async function syncStart() {
-  if (syncState()) return syncRun('start');
+  await accountRefresh();
+  if (accountSession?.user?.id === ACCOUNT_OWNER) {
+    await accountBindSync();
+    return syncRun('start');
+  }
 }
 setInterval(() => {
   if (document.visibilityState === 'visible' && syncState()) syncRun('tick');
@@ -609,7 +540,7 @@ window.addEventListener('storage', (event) => {
     try {
       linked = JSON.parse(event.newValue || 'null');
     } catch {}
-    if ((linked?.code || null) !== (syncState()?.code || null)) {
+    if ((linked?.accountId || null) !== (syncState()?.accountId || null)) {
       _syncGeneration++;
       _syncController?.abort();
       state._syncSt = linked;
@@ -621,149 +552,5 @@ window.addEventListener('storage', (event) => {
 });
 
 function openSyncSheet() {
-  const linked = syncState();
-  document.getElementById('syncSheet')?.remove();
-  const root = document.createElement('div');
-  root.id = 'syncSheet';
-  root.className = 'deckpick-scrim';
-  root.innerHTML = /* HTML */ `<section
-    class="deckpick transfer-dialog sync-dialog"
-    role="dialog"
-    aria-modal="true"
-    aria-label="Sync devices"
-  >
-    ${transferHeaderHtml('Sync devices', 'Decks, collection, settings, and saved games.', 'syncClose')}
-    <div class="transfer-body">
-      <p>Your devices sync through this Deckhand server. No account or password is needed.</p>
-      ${
-        linked
-          ? `<p id="syncLastLine" role="status">${escapeHtml(syncLastLabel())}</p>
-        <input class="sync-code" id="syncCodeTxt" aria-label="Sync code" value="${escapeHtml(syncNiceCode(linked.code))}" readonly spellcheck="false" autocomplete="off" />
-        <p class="hint">Enter this code on another device running this server. Anyone with the code can access the synced data.</p>
-        <div class="sync-actions"><button type="button" class="primary-btn" id="syncNow">Sync now</button>
-        <button type="button" class="ghost-btn" id="syncShare">Copy sync code</button>
-        <button type="button" class="ghost-btn" id="syncOff">Unlink this device</button></div>`
-          : `<p>Create a code on your first device. On your other devices, join with that same code. Matching records from the server take precedence when joining; local-only cards, decks, and games are added.</p>
-        <div class="sync-actions"><button type="button" class="primary-btn" id="syncNew">Create sync code</button>
-        <button type="button" class="ghost-btn" id="syncJoin">I already have a code</button></div>`
-      }
-      <p class="hint sync-status" id="syncActionStatus" role="status"></p>
-    </div>
-  </section>`;
-  brSheetOpen(root, 'syncSheet', () => {
-    if (state.screen === 'settings') render();
-  });
-  const close = () => brSheetClose('syncSheet');
-  root.querySelector('#syncClose').addEventListener('click', close);
-  root.addEventListener('click', (event) => {
-    if (event.target === root) close();
-  });
-  wireAppDialogKeys(root, close);
-  root.querySelector('#syncClose').focus({ preventScroll: true });
-  const run = async (button, task, reopen = false) => {
-    if (!button) return;
-    const activeSheet = document.getElementById('syncSheet');
-    const buttons = activeSheet.querySelectorAll('.sync-actions button:not(#syncOff)');
-    buttons.forEach((item) => {
-      item.disabled = true;
-    });
-    const status = document.getElementById('syncActionStatus');
-    status.textContent = 'Syncing…';
-    try {
-      const result = await task();
-      if (result === null) throw new Error(syncState()?.err || 'connection');
-      status.textContent = 'Synced with this server.';
-      if (
-        reopen &&
-        activeSheet.isConnected &&
-        document.getElementById('syncSheet') === activeSheet
-      ) {
-        close();
-        await brAfterPop();
-        openSyncSheet();
-      }
-    } catch (error) {
-      status.textContent =
-        error.message === 'code_not_found'
-          ? 'Code not found. Check the code and that both devices use the same server.'
-          : error.message === 'code'
-            ? 'Enter the sync code shown on your other device.'
-            : 'Sync failed. Local changes are kept for retry when this server is available.';
-      if (
-        reopen &&
-        syncState() &&
-        activeSheet.isConnected &&
-        document.getElementById('syncSheet') === activeSheet
-      ) {
-        close();
-        await brAfterPop();
-        openSyncSheet();
-      }
-    } finally {
-      buttons.forEach((item) => {
-        item.disabled = false;
-      });
-    }
-  };
-  root
-    .querySelector('#syncNew')
-    ?.addEventListener('click', (event) =>
-      run(event.currentTarget, () => syncLink(null, true), true),
-    );
-  root
-    .querySelector('#syncNow')
-    ?.addEventListener('click', (event) => run(event.currentTarget, () => syncRun('manual')));
-  root.querySelector('#syncJoin')?.addEventListener('click', async () => {
-    close();
-    await brAfterPop();
-    openSyncCodePrompt(async (value) => {
-      if (value == null) return;
-      openSyncSheet();
-      const button = document.getElementById('syncJoin');
-      await run(button, () => syncLink(value, false), true);
-    });
-  });
-  const codeField = root.querySelector('#syncCodeTxt');
-  codeField?.addEventListener('click', () => codeField.select());
-  root.querySelector('#syncShare')?.addEventListener('click', () => {
-    const copied = () => {
-      root.querySelector('#syncActionStatus').textContent = 'Sync code copied.';
-      toast('Sync code copied.');
-    };
-    const fallback = () => {
-      codeField.focus({ preventScroll: true });
-      codeField.select();
-      codeField.setSelectionRange(0, codeField.value.length);
-      try {
-        if (document.execCommand('copy')) {
-          copied();
-          return;
-        }
-      } catch {}
-      root.querySelector('#syncActionStatus').textContent =
-        'Code selected. Use Copy from your device’s text selection menu.';
-      toast('Code selected. Choose Copy from the selection menu.');
-    };
-    // HTTP LAN origins have no Clipboard API. Keep this fallback in the
-    // click handler so browsers can recognize the user's copy gesture.
-    try {
-      if (window.isSecureContext && navigator.clipboard?.writeText)
-        navigator.clipboard.writeText(codeField.value).then(copied, fallback);
-      else fallback();
-    } catch {
-      fallback();
-    }
-  });
-  root.querySelector('#syncOff')?.addEventListener('click', () =>
-    openInAppConfirm(
-      'This device will stop syncing. Data already saved here stays on this device.',
-      (confirmed) => {
-        if (confirmed) {
-          syncUnlink();
-          close();
-        }
-      },
-      { title: 'Unlink device', ok: 'Unlink' },
-    ),
-  );
+  openAccountSheet();
 }

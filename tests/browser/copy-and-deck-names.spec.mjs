@@ -1,7 +1,5 @@
 import { test, expect } from '@playwright/test';
 
-const code = 'ABCD-EFGH-JKLM-NPQR-STUV-WXYZ';
-
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('admiral_app:seenVersion', '1.50'));
   await page.route('**/*', (route) => {
@@ -15,72 +13,14 @@ test.beforeEach(async ({ page }) => {
   await expect.poll(() => page.evaluate(() => state.homeLoaded)).toBe(true);
 });
 
-async function openLinkedSync(page) {
-  await page.evaluate((code) => {
-    state._syncSt = { code, sent: {} };
-  }, code);
+test('sync opens optional account controls without creating bearer codes', async ({ page }) => {
   await page.locator('#homeBtn').click();
   await page.locator('#menuSettings').click();
   await page.locator('#syncRow').click();
-  await expect(page.getByRole('textbox', { name: 'Sync code', exact: true })).toHaveValue(code);
-}
-
-test('copy sync code uses the modern clipboard when available', async ({ page }) => {
-  await openLinkedSync(page);
-  await page.evaluate(() =>
-    Object.defineProperty(navigator, 'clipboard', {
-      configurable: true,
-      value: {
-        writeText: async (value) => {
-          window.copiedSyncCode = value;
-        },
-      },
-    }),
-  );
-  await page.locator('#syncShare').click();
-  expect(await page.evaluate(() => window.copiedSyncCode)).toBe(code);
-  await expect(page.locator('#syncActionStatus')).toHaveText('Sync code copied.');
-});
-
-test('copy sync code writes the real clipboard through the HTTP fallback', async ({
-  page,
-  context,
-}) => {
-  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-  await openLinkedSync(page);
-  await page.evaluate(() => {
-    window.testClipboard = navigator.clipboard;
-    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
-    Object.defineProperty(window, 'isSecureContext', { configurable: true, value: false });
-  });
-  await page.locator('#syncShare').click();
-  await expect(page.locator('#syncActionStatus')).toHaveText('Sync code copied.');
-  expect(await page.evaluate(() => window.testClipboard.readText())).toBe(code);
-});
-
-test('copy sync code handles denied permissions and offers manual selection on failure', async ({
-  page,
-}) => {
-  const errors = [];
-  page.on('pageerror', (error) => errors.push(error.message));
-  await openLinkedSync(page);
-  await page.evaluate(() => {
-    Object.defineProperty(navigator, 'clipboard', {
-      configurable: true,
-      value: { writeText: () => Promise.reject(new DOMException('Denied', 'NotAllowedError')) },
-    });
-    document.execCommand = () => false;
-  });
-  await page.locator('#syncShare').click();
-  await expect(page.locator('#syncActionStatus')).toContainText('Code selected.');
-  await expect(page.locator('#syncActionStatus')).not.toContainText('copied');
-  const field = page.getByRole('textbox', { name: 'Sync code', exact: true });
-  await expect(field).toHaveAttribute('readonly', '');
-  await expect(field).toBeFocused();
-  expect(
-    await field.evaluate((input) => input.value.slice(input.selectionStart, input.selectionEnd)),
-  ).toBe(code);
-  expect(errors).toEqual([]);
+  await expect(page.locator('#accountSheet')).toBeVisible();
+  await expect(page.locator('#accountEmail')).toHaveAttribute('type', 'email');
+  await expect(page.locator('#accountPassword')).toHaveAttribute('type', 'password');
+  await expect(page.locator('#syncNew, #syncShare, #syncCodeTxt')).toHaveCount(0);
 });
 
 test('deck creation and renaming limit names to 99 characters and save them durably', async ({

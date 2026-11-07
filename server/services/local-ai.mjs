@@ -1,5 +1,6 @@
 /* Local inference shared by the rules judge and deck advisor. */
 import { isIP } from 'node:net';
+import { readOllamaStream } from './ollama-stream.mjs';
 export const DEFAULT_LOCAL_MODEL = 'qwen3:4b-instruct-2507-q4_K_M';
 export const MAX_LOCAL_PROMPT_CHARS = 9000;
 const lanes = new WeakMap();
@@ -34,7 +35,8 @@ export function localConfig(env = {}) {
   };
 }
 
-function reserve(fetchImpl, url) {
+function reserve(fetchImpl, url, signal) {
+  signal?.throwIfAborted();
   let endpoints = lanes.get(fetchImpl);
   if (!endpoints) lanes.set(fetchImpl, (endpoints = new Map()));
   let lane = endpoints.get(url);
@@ -53,13 +55,26 @@ function reserve(fetchImpl, url) {
   if (lane.waiting.length >= 3) return Promise.reject(new Error('busy'));
   return new Promise((resolve, reject) => {
     const entry = {
-      resolve,
+      resolve: (release) => {
+        signal?.removeEventListener('abort', aborted);
+        resolve(release);
+      },
       timer: setTimeout(() => {
         lane.waiting.splice(lane.waiting.indexOf(entry), 1);
+        signal?.removeEventListener('abort', aborted);
         reject(new Error('busy'));
       }, 10000),
     };
+    const aborted = () => {
+      const index = lane.waiting.indexOf(entry);
+      if (index < 0) return;
+      lane.waiting.splice(index, 1);
+      clearTimeout(entry.timer);
+      signal.removeEventListener('abort', aborted);
+      reject(signal.reason);
+    };
     lane.waiting.push(entry);
+    signal?.addEventListener('abort', aborted, { once: true });
   });
 }
 
@@ -68,7 +83,7 @@ export async function askLocal(
   fetchImpl,
   sys,
   user,
-  { schema = 'json', maxTokens = 640 } = {},
+  { schema = 'json', maxTokens = 640, onToken, signal } = {},
 ) {
   const config = localConfig(env);
   if (!config) return { error: 'notconfigured' };
@@ -76,16 +91,17 @@ export async function askLocal(
     return { error: 'context' };
   let release, timer;
   try {
-    release = await reserve(fetchImpl, config.url);
+    release = await reserve(fetchImpl, config.url, signal);
+    signal?.throwIfAborted();
     const controller = new AbortController();
     timer = setTimeout(() => controller.abort(), config.timeout);
     const response = await fetchImpl(config.url + '/api/chat', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      signal: controller.signal,
+      signal: signal ? AbortSignal.any([controller.signal, signal]) : controller.signal,
       body: JSON.stringify({
         model: config.model,
-        stream: false,
+        stream: !!onToken,
         think: false,
         keep_alive: '30m',
         format: schema,
@@ -112,13 +128,23 @@ export async function askLocal(
               : 'down',
         retryAfter: 10,
       };
+    if (onToken) {
+      const text = await readOllamaStream(response, onToken);
+      return { text, provider: 'ollama', model: config.model };
+    }
     const result = await response.json();
     if (result.done !== true || result.done_reason === 'length' || !result.message?.content)
       return { error: 'shape' };
     return { text: result.message.content, provider: 'ollama', model: config.model };
   } catch (error) {
     return {
-      error: error.message === 'busy' ? 'busy' : error.name === 'AbortError' ? 'timeout' : 'down',
+      error: signal?.aborted
+        ? 'cancelled'
+        : ['busy', 'shape'].includes(error.message)
+          ? error.message
+          : error.name === 'AbortError'
+            ? 'timeout'
+            : 'down',
       retryAfter: 10,
     };
   } finally {

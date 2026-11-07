@@ -1,266 +1,4 @@
-import { test, expect } from '@playwright/test';
-import { mkdir } from 'node:fs/promises';
-
-async function prepare(page) {
-  await page.addInitScript(() => localStorage.setItem('admiral_app:seenVersion', '1.50'));
-  await page.route('**/*', (route) => {
-    const url = new URL(route.request().url());
-    if (url.pathname === '/api/news') return route.fulfill({ json: { items: [] } });
-    if (url.pathname.startsWith('/api/scryfall/'))
-      return route.fulfill({ json: { object: 'list', data: [], has_more: false } });
-    return url.origin === 'http://127.0.0.1:3100' ? route.continue() : route.abort();
-  });
-  await page.goto('http://127.0.0.1:3100');
-  await expect.poll(() => page.evaluate(() => state.homeLoaded)).toBe(true);
-  await page
-    .locator('.app > .app-navigation')
-    .getByRole('button', { name: 'Decks', exact: true })
-    .click();
-}
-
-async function seed(page, name) {
-  await page.evaluate(async (name) => {
-    const deck = {
-      id: 'sync-' + name,
-      name: name + ' deck',
-      format: 'modern',
-      cards: [],
-      maybeboard: [],
-    };
-    state.decksIndex = [deck];
-    await persistDeck(deck);
-    state.collection = {
-      items: [{ name: name + ' card', set: 'tst', cn: '1', qty: 2, cond: 'NM' }],
-      binders: [],
-      wantsManual: [],
-      wantsExclude: [],
-    };
-    saveCollection();
-    localStorage.setItem(
-      LS_PREFIX + 'lifeSaves',
-      JSON.stringify([
-        {
-          id: 'game-' + name,
-          t: name === 'First' ? 1000 : 2000,
-          d: { players: [{ name, life: 20 }], count: 1, history: [], settings: {} },
-        },
-      ]),
-    );
-  }, name);
-}
-
-async function syncNow(page) {
-  const result = await page.evaluate(async () => {
-    clearTimeout(_syncTimer);
-    for (let i = 0; _syncBusy && i < 200; i++)
-      await new Promise((resolve) => setTimeout(resolve, 10));
-    return syncRun('manual');
-  });
-  expect(result, await page.evaluate(() => syncState()?.err)).not.toBeNull();
-  return result;
-}
-
-async function openSync(page) {
-  await page.locator('#homeBtn').click();
-  await page.locator('#menuSettings').click();
-  await page.locator('#syncRow').click();
-  await expect(page.getByRole('dialog', { name: 'Sync devices', exact: true })).toBeVisible();
-}
-
-test('sync code entry keeps separators visible and formats typing and deletion', async ({
-  page,
-}, info) => {
-  await prepare(page);
-  await openSync(page);
-  await page.locator('#syncJoin').click();
-  const input = page.locator('#iapInput');
-  await expect(input).toBeFocused();
-  await expect(page.locator('.sync-code-mask')).toHaveText('____-____-____-____-____-____');
-  await input.pressSequentially('abcdefghi');
-  await expect(input).toHaveValue('ABCD-EFGH-I');
-  await input.evaluate((field) => field.setSelectionRange(5, 5));
-  await input.press('Backspace');
-  await expect(input).toHaveValue('ABCE-FGHI');
-  await input.evaluate((field) => field.setSelectionRange(4, 4));
-  await input.press('Delete');
-  await expect(input).toHaveValue('ABCE-GHI');
-  await input.press('ControlOrMeta+A');
-  await input.press('Backspace');
-  await expect(input).toHaveValue('');
-  await expect(page.locator('.sync-code-mask')).toHaveText('____-____-____-____-____-____');
-  await input.pressSequentially('abcd-efgh-jklm-npqr-stuv-wxyz');
-  await expect(input).toHaveValue('ABCD-EFGH-JKLM-NPQR-STUV-WXYZ');
-  await mkdir('var/previews', { recursive: true });
-  await page.screenshot({ path: `var/previews/sync-code-entry-${info.project.name}.png` });
-});
-
-test('sync code entry accepts whole pasted codes and sends only code characters', async ({
-  page,
-}) => {
-  await prepare(page);
-  await openSync(page);
-  await page.locator('#syncJoin').click();
-  const input = page.locator('#iapInput');
-  await expect(input).toBeFocused();
-  const code = 'ABCD-EFGH-JKLM-NPQR-STUV-WXYZ';
-  for (const text of [
-    code,
-    code.toLowerCase().replaceAll('-', ''),
-    '  ' + code.replaceAll('-', ' — ') + '\n',
-  ]) {
-    await input.evaluate((field, text) => {
-      field.select();
-      const data = new DataTransfer();
-      data.setData('text/plain', text);
-      field.dispatchEvent(
-        new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: data }),
-      );
-    }, text);
-    await expect(input).toHaveValue(code);
-  }
-  const requests = [];
-  await page.route('**/api/sync', (route) => {
-    requests.push(route.request().postDataJSON());
-    return route.fulfill({ status: 404, json: { ok: false, error: 'code_not_found' } });
-  });
-  await page.locator('#iapOk').click();
-  await expect(page.locator('#syncActionStatus')).toContainText('Code not found.');
-  expect(requests).toEqual([{ op: 'probe', code: code.replaceAll('-', '') }]);
-});
-
-test('code-only sync merges two devices and propagates decks, collection, settings and saved games', async ({
-  page,
-  browser,
-}, info) => {
-  test.setTimeout(60000);
-  await prepare(page);
-  await seed(page, 'First');
-  await page.evaluate(async () => {
-    state.guild = 'dimir';
-    state.theme = 'light';
-    state.startupPage = 'life';
-    await persistSettings();
-  });
-  await openSync(page);
-  await page.locator('#syncNew').click();
-  await expect(page.locator('#syncCodeTxt')).toBeVisible();
-  const code = await page.locator('#syncCodeTxt').inputValue();
-  expect(code).toMatch(/^(?:[A-Z2-9]{4}-){5}[A-Z2-9]{4}$/);
-  await expect(page.locator('#syncLastLine')).toContainText('Last synced:');
-  const second = await browser.newContext({
-    viewport: page.viewportSize(),
-    serviceWorkers: 'block',
-  });
-  try {
-    const other = await second.newPage();
-    await prepare(other);
-    await seed(other, 'Second');
-    await openSync(other);
-    await other.locator('#syncJoin').click();
-    await other.locator('#iapInput').fill(code.toLowerCase());
-    await other.locator('#iapOk').click();
-    await expect(other.locator('#syncCodeTxt')).toHaveValue(code);
-    await expect
-      .poll(() => other.evaluate(() => state.decksIndex.map((d) => d.id).sort()))
-      .toEqual(['sync-First', 'sync-Second']);
-    expect(await other.evaluate(() => state.collection.items.map((i) => i.name).sort())).toEqual([
-      'First card',
-      'Second card',
-    ]);
-    expect(await other.evaluate(() => [state.theme, state.guild, state.startupPage])).toEqual([
-      'light',
-      'dimir',
-      'life',
-    ]);
-    expect(
-      await other.evaluate(() =>
-        lifeSavesAll()
-          .map((g) => g.id)
-          .sort(),
-      ),
-    ).toEqual(['game-First', 'game-Second']);
-    await syncNow(page);
-    expect(await page.evaluate(() => state.decksIndex.length)).toBe(2);
-    // Concurrent edits affect separate records, including independent preferences.
-    await page.evaluate(async () => {
-      state.guild = 'simic';
-      await persistSettings();
-    });
-    await other.evaluate(async () => {
-      state.startupPage = 'collection';
-      await persistSettings();
-      state.collection.items.find((i) => i.name === 'First card').qty = 5;
-      state.collection.items.push({ name: 'New printing', qty: 1, cond: 'EX', foil: true });
-      saveCollection();
-      const games = lifeSavesAll();
-      games.find((g) => g.id === 'game-First').d.players[0].life = 17;
-      localStorage.setItem(LS_PREFIX + 'lifeSaves', JSON.stringify(games));
-    });
-    await syncNow(other);
-    await syncNow(page);
-    await syncNow(other);
-    expect(await page.evaluate(() => [state.guild, state.startupPage])).toEqual([
-      'simic',
-      'collection',
-    ]);
-    expect(await other.evaluate(() => [state.guild, state.startupPage])).toEqual([
-      'simic',
-      'collection',
-    ]);
-    expect(
-      await page.evaluate(() => state.collection.items.find((i) => i.name === 'First card').qty),
-    ).toBe(5);
-    expect(
-      await page.evaluate(
-        () => lifeSavesAll().find((g) => g.id === 'game-First').d.players[0].life,
-      ),
-    ).toBe(17);
-    await other.evaluate(async () => {
-      state.decksIndex = state.decksIndex.filter((d) => d.id !== 'sync-Second');
-      await deleteDeckStorage('sync-Second');
-      state.collection.items = state.collection.items.filter((i) => i.name !== 'Second card');
-      saveCollection();
-      localStorage.setItem(
-        LS_PREFIX + 'lifeSaves',
-        JSON.stringify(lifeSavesAll().filter((g) => g.id !== 'game-Second')),
-      );
-    });
-    await syncNow(other);
-    await syncNow(page);
-    expect(await page.evaluate(() => state.decksIndex.map((d) => d.id))).toEqual(['sync-First']);
-    expect(await page.evaluate(() => state.collection.items.map((i) => i.name).sort())).toEqual([
-      'First card',
-      'New printing',
-    ]);
-    expect(await page.evaluate(() => lifeSavesAll().map((g) => g.id))).toEqual(['game-First']);
-    await other.evaluate(async () => {
-      state.decksIndex[0].name = 'Updated before startup';
-      await persistDeck(state.decksIndex[0]);
-    });
-    await syncNow(other);
-    await page.setViewportSize({ width: 320, height: 480 });
-    expect(
-      await page
-        .locator('#syncSheet .transfer-body')
-        .evaluate((el) => el.scrollWidth <= el.clientWidth),
-    ).toBe(true);
-    await mkdir('var/previews', { recursive: true });
-    await page.screenshot({ path: `var/previews/sync-linked-${info.project.name}.png` });
-    await page.reload();
-    await expect
-      .poll(() => page.evaluate(() => state.decksIndex.find((d) => d.id === 'sync-First')?.name))
-      .toBe('Updated before startup');
-    await expect
-      .poll(() => page.evaluate(() => state.homeLoaded && syncState()?.last > 0))
-      .toBe(true);
-    expect(
-      await page.evaluate(() => state.collection.items.find((i) => i.name === 'First card').qty),
-    ).toBe(5);
-    expect(await page.evaluate(() => lifeSavesAll()[0].d.players[0].life)).toBe(17);
-  } finally {
-    await second.close();
-  }
-});
+import { test, expect, prepare, seed, syncNow, link } from './helpers/accounts.mjs';
 
 test('offline changes remain pending and are sent to SQLite when the device reconnects', async ({
   page,
@@ -268,7 +6,7 @@ test('offline changes remain pending and are sent to SQLite when the device reco
 }) => {
   await prepare(page);
   await seed(page, 'Offline');
-  await page.evaluate(() => syncLink(null, true));
+  await link(page);
   await context.setOffline(true);
   await page.evaluate(async () => {
     const deck = state.decksIndex[0];
@@ -295,50 +33,12 @@ test('offline changes remain pending and are sent to SQLite when the device reco
   expect(Object.values(stored).some((record) => record.v?.includes('"qty":9'))).toBe(true);
 });
 
-test('an unknown sync code does not link or change local data', async ({ page }) => {
-  await prepare(page);
-  await seed(page, 'Unlinked');
-  await openSync(page);
-  await page.locator('#syncJoin').click();
-  await page.locator('#iapInput').fill('ZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZ-ZZZZ');
-  await page.locator('#iapOk').click();
-  await expect(page.locator('#syncActionStatus')).toContainText('Code not found.');
-  expect(await page.evaluate(() => syncState())).toBeNull();
-  expect(await page.evaluate(() => state.decksIndex[0].name)).toBe('Unlinked deck');
-  expect(await page.evaluate(() => state.collection.items[0].qty)).toBe(2);
-  expect(await page.locator('#syncSheet input[type="password"]')).toHaveCount(0);
-});
-
-test('a code stays available when its first upload fails and Sync now retries it', async ({
-  page,
-}) => {
-  await prepare(page);
-  await seed(page, 'Retry');
-  let fail = true;
-  await page.route('**/api/sync', (route) => {
-    if (route.request().postDataJSON().op === 'sync' && fail)
-      return route.fulfill({ status: 503, json: { ok: false, error: 'store' } });
-    return route.continue();
-  });
-  await openSync(page);
-  await page.locator('#syncNew').click();
-  await expect(page.locator('#syncCodeTxt')).toBeVisible();
-  const code = await page.locator('#syncCodeTxt').inputValue();
-  await expect(page.locator('#syncLastLine')).toContainText('could not connect');
-  expect(await page.evaluate(() => Object.keys(syncPending()).length)).toBeGreaterThan(0);
-  fail = false;
-  await page.locator('#syncNow').click();
-  await expect(page.locator('#syncActionStatus')).toContainText('Synced with this server.');
-  await expect(page.locator('#syncCodeTxt')).toHaveValue(code);
-  expect(await page.evaluate(() => syncState().err)).toBeNull();
-});
-
 test('collection edits made while saved decks are being read retain their new values', async ({
   page,
 }) => {
   await prepare(page);
   await seed(page, 'Snapshot');
-  await page.evaluate(() => syncLink(null, true));
+  await link(page);
   await page.evaluate(() => {
     const original = deckDbAll;
     window.snapshotReading = false;
@@ -374,7 +74,7 @@ test('collection edits made while saved decks are being read retain their new va
 test('a local edit made during a request stays pending until it is uploaded', async ({ page }) => {
   await prepare(page);
   await seed(page, 'Concurrent');
-  await page.evaluate(() => syncLink(null, true));
+  await link(page);
   await page.evaluate(async () => {
     const remote = { ...state.decksIndex[0], name: 'Other device edit' };
     await syncCall({
@@ -432,7 +132,7 @@ test('aging a game out of the local ten-game list does not delete its server rec
       ),
     );
   });
-  await page.evaluate(() => syncLink(null, true));
+  await link(page);
   const evicted = await page.evaluate(() => {
     const games = lifeSavesAll();
     const evicted = games.at(-1).id;
@@ -454,7 +154,7 @@ test('an edit waiting for the deck autosave timer is preserved when a remote dec
 }) => {
   await prepare(page);
   await seed(page, 'Autosave');
-  await page.evaluate(() => syncLink(null, true));
+  await link(page);
   const result = await page.evaluate(async () => {
     const deck = state.decksIndex[0];
     const old = { ...deck, name: 'Older remote copy' };
@@ -480,7 +180,7 @@ test('unlinking during an in-flight response prevents remote data from being app
 }) => {
   await prepare(page);
   await seed(page, 'Cancel');
-  await page.evaluate(() => syncLink(null, true));
+  await link(page);
   const remote = await page.evaluate(async () =>
     syncCall({ op: 'sync', changes: { 'setting:guild': { t: Date.now() + 50, v: '"simic"' } } }),
   );
@@ -562,7 +262,7 @@ test('a deck edit made during a remote database write remains local and pending'
 }) => {
   await prepare(page);
   await seed(page, 'Writing');
-  await page.evaluate(() => syncLink(null, true));
+  await link(page);
   const result = await page.evaluate(async () => {
     const write = deckDbPutMany;
     let release,
@@ -615,7 +315,7 @@ test('a deck edit made during a remote database write remains local and pending'
 test('upgrading an existing link preserves an offline deck deletion', async ({ page }) => {
   await prepare(page);
   await seed(page, 'Legacy');
-  await page.evaluate(() => syncLink(null, true));
+  await link(page);
   await page.evaluate(async () => {
     state.decksIndex = [];
     await deleteDeckStorage('sync-Legacy');

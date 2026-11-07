@@ -544,7 +544,7 @@ test('Settings owns working preferences, sync and backup controls', async ({page
   expect(await page.evaluate(()=>state.guild)).toBe(selected);
   await expect(page.locator('#guildBody')).toBeHidden();
   await page.locator('#syncRow').click();
-  await expect(page.locator('#syncSheet')).toBeVisible();
+  await expect(page.locator('#accountSheet')).toBeVisible();
   await page.evaluate(()=>dismissAllOverlays());
   await expect(page.locator('#brandTitle')).toHaveText('SETTINGS');
   await page.locator('#backupRow').click();
@@ -2565,9 +2565,9 @@ test('a stopped local server pauses API calls and recovers through the health en
   page.on('pageerror', error=>errors.push(error.message));
   await page.evaluate(()=>resolveLegalSets());
   await page.clock.install();
-  let requests=0,probes=0;
+  let requests=0,probes=0,serverStopped=true;
   await page.route('**/api/scryfall/cards/autocomplete*',route=>{requests++;return route.abort('connectionrefused');});
-  await page.route('**/api/health',route=>{probes++;return route.fulfill({json:{ok:true,storage:'sqlite'}});});
+  await page.route('**/api/health',route=>{probes++;return serverStopped?route.abort('connectionrefused'):route.fulfill({json:{ok:true,storage:'sqlite'}});});
   const statuses=await page.evaluate(async()=>{
     const responses=await Promise.all([
       sfFetch(SF_BASE+'/cards/autocomplete?q=offline-first'),
@@ -2586,6 +2586,7 @@ test('a stopped local server pauses API calls and recovers through the health en
   });
   expect(await page.evaluate(()=>state.allSetsRaw)).toEqual([{code:'keep',name:'Saved set'}]);
   expect(await page.evaluate(()=>state.setsResolved)).toBe(false);
+  serverStopped=false;
   await page.clock.fastForward(12001);
   await expect.poll(()=>probes).toBeGreaterThan(0);
   await expect(page.locator('#netChip')).toHaveCount(0);

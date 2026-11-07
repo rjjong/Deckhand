@@ -221,6 +221,8 @@ window.addEventListener('unhandledrejection', (e) => {
 let _netFailN = 0,
   _netRunN = 0,
   _netDown = false,
+  _netAuthRequired = false,
+  _netServerCheck = null,
   _netProbeT = null;
 
 let _netFailKeys = new Set(),
@@ -254,6 +256,42 @@ function _netNoteFail(url) {
   if ((_netFailN >= 3 || _netRunN >= 5) && !_netDown && !_netConfirming) _netConfirmDown();
 }
 
+/* An expired reverse-proxy login is different from a stopped server. Check
+   our own health endpoint without following a login redirect or accepting
+   a login page as a successful health response. Share concurrent probes. */
+function _netCheckServer() {
+  if (_netServerCheck) return _netServerCheck;
+  _netServerCheck = (async () => {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 6000);
+    try {
+      const response = await fetch('/api/health', {
+        cache: 'no-store',
+        redirect: 'manual',
+        headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        signal: ctl.signal,
+      });
+      if (response.status === 401 || response.type === 'opaqueredirect') {
+        _netSetDown(true, true);
+        return false;
+      }
+      const health = response.ok ? await response.json() : null;
+      if (health?.ok !== true || health.storage !== 'sqlite')
+        throw new Error('Invalid health response');
+      _netNote(true);
+      return true;
+    } catch (e) {
+      _netSetDown(true);
+      return false;
+    } finally {
+      clearTimeout(timer);
+    }
+  })().finally(() => {
+    _netServerCheck = null;
+  });
+  return _netServerCheck;
+}
+
 /* Never take the app offline on inference alone — go and check. */
 async function _netConfirmDown() {
   if (_netConfirming || _netDown) return;
@@ -262,6 +300,10 @@ async function _netConfirmDown() {
   try {
     if (navigator.onLine === false) {
       _netSetDown(true);
+      return;
+    }
+    if (window.DECKHAND_CONFIG?.selfHosted) {
+      await _netCheckServer();
       return;
     }
     const ctl = new AbortController();
@@ -293,6 +335,8 @@ async function _netConfirmDown() {
 /* The offline notice lives in the page-name bar: one short chip on the left,
    rebuilt by every render and kept in sync the moment the network flips. */
 function netChipHtml() {
+  if (_netAuthRequired)
+    return '<a class="net-chip" id="netChip" href="/api/login" title="Your sign-in has expired. Sign in again to reconnect.">Sign in again</a>';
   const local = window.DECKHAND_CONFIG?.selfHosted && navigator.onLine !== false;
   const title = local
     ? 'The local Deckhand server is unavailable. Start the server again.'
@@ -307,7 +351,8 @@ function _netChipSync() {
     const cap = document.querySelector('.page-cap');
     const chip = document.getElementById('netChip');
     if (_netDown) {
-      if (!chip && cap)
+      if (chip) chip.outerHTML = netChipHtml();
+      else if (cap)
         (cap.querySelector('.cap-tools') || cap).insertAdjacentHTML('afterbegin', netChipHtml());
     } else if (chip) {
       chip.remove();
@@ -315,9 +360,11 @@ function _netChipSync() {
   } catch (e) {}
 }
 
-function _netSetDown(down) {
-  if (_netDown === down) return;
+function _netSetDown(down, authRequired = false) {
+  authRequired = down && authRequired;
+  if (_netDown === down && _netAuthRequired === authRequired) return;
   _netDown = down;
+  _netAuthRequired = authRequired;
   try {
     _netChipSync();
   } catch (e) {}
@@ -330,6 +377,10 @@ function _netSetDown(down) {
     } catch (e) {}
   if (down && !_netProbeT) {
     _netProbeT = setInterval(async () => {
+      if (window.DECKHAND_CONFIG?.selfHosted) {
+        await _netCheckServer();
+        return;
+      }
       if (!window.DECKHAND_CONFIG?.selfHosted && sfCooldownUntil() > Date.now()) return;
       try {
         const pc = new AbortController();
@@ -338,12 +389,10 @@ function _netSetDown(down) {
             pc.abort();
           } catch (e) {}
         }, 6000);
-        const r = await fetch(
-          window.DECKHAND_CONFIG?.selfHosted
-            ? '/api/health'
-            : SF_BASE + '/catalog/keyword-abilities',
-          { cache: 'no-store', signal: pc.signal },
-        );
+        const r = await fetch(SF_BASE + '/catalog/keyword-abilities', {
+          cache: 'no-store',
+          signal: pc.signal,
+        });
         clearTimeout(pt);
         if (sfShouldPause(r)) sfPauseRequests(r);
         if (r?.ok) _netNote(true);
@@ -589,7 +638,13 @@ async function _sfPump() {
         res = await Promise.race([
           fetch(job.url, {
             ...job.options,
-            headers: { Accept: 'application/json', ...job.options?.headers },
+            headers: {
+              Accept: 'application/json',
+              ...(window.DECKHAND_CONFIG?.selfHosted
+                ? { 'X-Requested-With': 'XMLHttpRequest' }
+                : {}),
+              ...job.options?.headers,
+            },
             redirect: 'error',
             signal: ctl.signal,
             cache: job.fresh ? 'no-store' : 'default',
@@ -619,9 +674,10 @@ async function _sfPump() {
       // Any RESPONSE (even a 404) proves the line is up. A timeout proves
       // nothing either way, so it is deliberately not counted.
       const _verdict = res ? 'ok' : _netClassify(err);
-      if (_verdict === 'ok') _netNote(true);
+      if (window.DECKHAND_CONFIG?.selfHosted && res?.status === 401) _netSetDown(true, true);
+      else if (_verdict === 'ok') _netNote(true);
       else if (_verdict === 'dead') {
-        if (window.DECKHAND_CONFIG?.selfHosted) _netSetDown(true);
+        if (window.DECKHAND_CONFIG?.selfHosted) await _netCheckServer();
         else _netNoteFail(job.url);
       }
       // A refusal is fast; a genuinely slow line is not. Only the fast kind,

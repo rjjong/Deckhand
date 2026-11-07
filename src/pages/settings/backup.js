@@ -13,9 +13,11 @@ function backupPayload() {
         k &&
         k.indexOf(LS_PREFIX) === 0 &&
         k !== LS_PREFIX + 'syncState' &&
-        k !== LS_PREFIX + 'syncMeta'
+        k !== LS_PREFIX + 'syncMeta' &&
+        k !== LS_PREFIX + 'workspaceReady' &&
+        k !== LS_PREFIX + 'migrationNotice'
       )
-        ls[k] = localStorage.getItem(k); // 1.26: a backup never carries the sync link
+        ls['admiral_app:' + k.slice(LS_PREFIX.length)] = localStorage.getItem(k);
     }
   } catch (e) {}
   // Decks live in IndexedDB: written into the same key layout, so the file
@@ -26,10 +28,10 @@ function backupPayload() {
       Object.keys(d).forEach((k) => {
         if (k !== '_saveStatus') c[k] = d[k];
       });
-      ls[LS_PREFIX + 'deck:' + d.id] = JSON.stringify(slimDeckForSave(c));
+      ls['admiral_app:deck:' + d.id] = JSON.stringify(slimDeckForSave(c));
     } catch (e) {}
   });
-  ls[LS_PREFIX + 'lastBackup'] = String(Date.now());
+  ls['admiral_app:lastBackup'] = String(Date.now());
   return {
     app: 'deckhand',
     v: 2,
@@ -204,6 +206,16 @@ async function restoreFromFile(file) {
     return;
   }
   if (payload && payload.ls && typeof payload.ls === 'object' && !Array.isArray(payload.ls)) {
+    // Backup files use the original portable key layout, never an account's
+    // local namespace or session credentials. Restore into the current space.
+    const portable = {};
+    for (const [key, value] of Object.entries(payload.ls)) {
+      if (!key.startsWith('admiral_app:')) continue;
+      const name = key.slice('admiral_app:'.length);
+      if (['syncState', 'syncMeta', 'workspaceReady', 'migrationNotice'].includes(name)) continue;
+      portable[LS_PREFIX + name] = value;
+    }
+    payload.ls = portable;
     // Full backup: replace this device's app data wholesale, then reboot the
     // app so every screen rebuilds from the restored storage.
     const keys = Object.keys(payload.ls).filter((k) => k.indexOf(LS_PREFIX) === 0);
@@ -223,12 +235,14 @@ async function restoreFromFile(file) {
     } catch (e) {}
     const okFull = await new Promise((res) =>
       openInAppConfirm(
-        `Full backup from ${when} — ${bkN(nDecks, 'deck', 'decks')} and ${bkN(nCards, 'card', 'cards')}, plus binders and settings.\n\nRestoring REPLACES everything currently in this app on this device.`,
+        `Full backup from ${when} — ${bkN(nDecks, 'deck', 'decks')} and ${bkN(nCards, 'card', 'cards')}, plus binders and settings.\n\nRestoring REPLACES everything currently in this app on this device.${ACCOUNT_OWNER ? ' Restored records will sync to your account; cloud-only records are retained.' : ''}`,
         res,
         { danger: true, ok: trS('Restore'), must: true },
       ),
     );
     if (!okFull) return;
+    syncUnlink();
+    _syncQuiet++;
     try {
       const drop = [];
       for (let i = 0; i < localStorage.length; i++) {
@@ -243,9 +257,38 @@ async function restoreFromFile(file) {
       const inDb =
         (await deckDbClear()) && (await deckDbPutMany(deckKeys.map((k) => [k, payload.ls[k]])));
       (inDb ? otherKeys : keys).forEach((k) => localStorage.setItem(k, payload.ls[k]));
+      if (ACCOUNT_OWNER) {
+        const values = {};
+        for (const key of deckKeys) values[key.slice(LS_PREFIX.length)] = payload.ls[key];
+        for (const source of SYNC_SOURCES)
+          Object.assign(
+            values,
+            syncProjectStorage(source, localStorage.getItem(LS_PREFIX + source)),
+          );
+        const restoredAt = Object.values(syncMeta()).reduce(
+          (latest, entry) => Math.max(latest, (entry.t || 0) + 1),
+          Math.max(Date.now(), _syncClock + 1),
+        );
+        const meta = Object.fromEntries(Object.keys(values).map((key) => [key, { t: restoredAt }]));
+        _lsSetRaw.call(localStorage, LS_PREFIX + 'syncMeta', JSON.stringify(meta));
+        _lsSetRaw.call(
+          localStorage,
+          LS_PREFIX + 'syncState',
+          JSON.stringify({
+            protocol: 2,
+            accountId: ACCOUNT_OWNER,
+            email: accountSession?.user?.email || '',
+            rev: 0,
+            sent: {},
+            last: 0,
+          }),
+        );
+      }
     } catch (e) {
       toast('Restore hit a storage error — free some space and try again.');
       return;
+    } finally {
+      _syncQuiet--;
     }
     toast('Everything restored — reloading…');
     setTimeout(() => {

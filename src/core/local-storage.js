@@ -28,4 +28,19 @@ function isDesk() {
   } catch (e) {}
 })();
 
-const LS_PREFIX = 'admiral_app:';
+// Each account has a separate local workspace, including when offline. Signing
+// out returns to the guest workspace without erasing either person's data.
+const ACCOUNT_OWNER_KEY = 'deckhand:activeAccount';
+const ACCOUNT_OWNER = (() => {
+  try {
+    const value = localStorage.getItem(ACCOUNT_OWNER_KEY);
+    return /^[a-f0-9-]{36}$/.test(value || '') ? value : null;
+  } catch {
+    return null;
+  }
+})();
+const LS_PREFIX = ACCOUNT_OWNER ? 'deckhand_user:' + ACCOUNT_OWNER + ':' : 'admiral_app:';
+
+function accountWorkspaceCurrent() {
+  return (localStorage.getItem(ACCOUNT_OWNER_KEY) || null) === ACCOUNT_OWNER;
+}

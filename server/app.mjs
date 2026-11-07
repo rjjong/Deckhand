@@ -12,11 +12,13 @@ import { handle as judge } from './services/judge.mjs';
 import { handle as deckai, DECKAI_V } from './services/deckai.mjs';
 import { handle as news } from './services/news.mjs';
 import { scannerAssets } from '../scripts/scanner-assets.mjs';
+import { createAccountService } from './services/accounts.mjs';
+import { createMailer } from './mail.mjs';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const STATIC = new Map([
   ...scannerAssets.map(({ target }) => ['/' + target, 'public/' + target]),
-  ['/', 'index.html'], ['/index.html', 'index.html'], ['/sw.js', 'sw.js'],
+  ['/', 'public/index.html'], ['/index.html', 'public/index.html'], ['/sw.js', 'public/sw.js'],
   ...['app.js', 'app.css', 'app.js.map', 'app.css.map', 'images/deckhand-badge.webp']
     .map(name => ['/assets/' + name, 'public/assets/' + name]),
   ['/manifest.json', 'manifest.json'], ['/version.json', 'version.json'],
@@ -54,9 +56,55 @@ async function readBody(req, limit) {
   return body;
 }
 
+/* Cached replies and early errors retain ordinary JSON status codes. Model
+   output uses SSE; heartbeats also keep cold loads alive through the tunnel. */
+async function streamResult(res, run) {
+  if (res.destroyed) return;
+  const controller = new AbortController();
+  let started = false;
+  const start = () => {
+    if (started) return;
+    res.writeHead(200, { 'content-type': 'text/event-stream; charset=utf-8',
+      'cache-control': 'no-store, no-transform', 'x-accel-buffering': 'no',
+      'x-content-type-options': 'nosniff' });
+    res.flushHeaders();
+    started = true;
+  };
+  const send = (event, value) => {
+    if (res.destroyed || res.writableEnded) return;
+    start();
+    res.write('event: ' + event + '\ndata: ' + JSON.stringify(value) + '\n\n');
+  };
+  const closed = () => { if (!res.writableEnded) controller.abort(); };
+  res.once('close', closed);
+  const heartbeat = setInterval(() => {
+    if (res.destroyed || res.writableEnded) return;
+    start();
+    res.write(': keep-alive\n\n');
+  }, 10000);
+  heartbeat.unref();
+  try {
+    const result = await run({ signal: controller.signal,
+      onProgress: fields => send('progress', fields) });
+    if (res.destroyed) return;
+    if (!started) return json(res, result.status, result.json);
+    send('result', result.json);
+    res.end();
+  } catch (error) {
+    if (res.destroyed) return;
+    if (!started) throw error;
+    send('result', { ok: false, error: 'server' });
+    res.end();
+  } finally {
+    clearInterval(heartbeat);
+    res.off('close', closed);
+  }
+}
+
 export function createApp({ databasePath = resolve('./var/deckhand.dev.sqlite'),
-  dataDirectory = resolve('./var/data-sample'), env = process.env, fetchImpl = fetch } = {}) {
+  dataDirectory = resolve('./var/data-sample'), env = process.env, fetchImpl = fetch, mailer } = {}) {
   const storage = openStorage(databasePath);
+  const accounts = createAccountService({ storage, env, mailer: mailer || createMailer(env, fetchImpl) });
   const cache = createDataCache({ directory: dataDirectory });
   const scryfall = createScryfallClient({ fetchImpl, store: storage.store('scryfall-http') });
   let newsCache, newsPending;
@@ -70,6 +118,12 @@ export function createApp({ databasePath = resolve('./var/deckhand.dev.sqlite'),
         if (!sameOrigin) return json(res, 403, { ok: false, error: 'origin' });
       }
       if (api !== null) {
+        // A full navigation bypasses the cached PWA shell, allowing an Access
+        // proxy to renew its login before returning to the application.
+        if (api === 'login' && req.method === 'GET') {
+          res.writeHead(302, { location: '/', 'cache-control': 'no-store' });
+          return res.end();
+        }
         if (api.startsWith('scryfall/')) {
           if (req.method !== 'GET' && req.method !== 'POST') return json(res, 405, { ok: false, error: 'method' });
           const body = req.method === 'POST' ? await readBody(req, 128 * 1024) : undefined;
@@ -81,6 +135,12 @@ export function createApp({ databasePath = resolve('./var/deckhand.dev.sqlite'),
         if (api === 'health' && req.method === 'GET') {
           storage.healthy();
           return json(res, 200, { ok: true, storage: 'sqlite' });
+        }
+        if (api === 'account') {
+          if (!['GET', 'POST'].includes(req.method)) return json(res, 405, { ok: false, error: 'method' });
+          const body = req.method === 'POST' ? await readBody(req, 4096) : null;
+          const result = await accounts.handle(req, body);
+          return json(res, result.status, result.json, result.headers);
         }
         if (api === 'news' && req.method === 'GET') {
           if (!newsCache || newsCache.expires < Date.now()) {
@@ -94,9 +154,13 @@ export function createApp({ databasePath = resolve('./var/deckhand.dev.sqlite'),
         const handler = { sync, judge, deckai }[api];
         if (!Object.hasOwn({ sync, judge, deckai }, api)) return json(res, 404, { ok: false, error: 'not_found' });
         if (req.method !== 'POST') return json(res, 405, { ok: false, error: 'method' }, { allow: 'POST' });
+        const auth = api === 'sync' ? accounts.authorize(req) : null;
+        if (auth?.failure) return json(res, auth.failure.status, auth.failure.json);
         const body = await readBody(req, api === 'sync' ? 64 * 1024 * 1024 : 1024 * 1024);
-        const deps = api === 'sync' ? { sync: storage.sync, legacy: storage.store('deckhand-sync') }
+        const deps = api === 'sync' ? { sync: storage.sync, accountScope: auth.user.sync_space }
           : { store: storage.store, env, fetch: fetchImpl, ip: req.socket.remoteAddress || '' };
+        if (api === 'judge' && String(req.headers.accept || '').includes('text/event-stream'))
+          return await streamResult(res, hooks => judge(body, { ...deps, ...hooks }));
         const result = await handler(body, deps);
         if (api === 'deckai') result.json.v = DECKAI_V;
         return json(res, result.status, result.json);
@@ -139,6 +203,7 @@ export function createApp({ databasePath = resolve('./var/deckhand.dev.sqlite'),
     if (server.listening) {
       await new Promise((done, reject) => server.close(error => error ? reject(error) : done()));
     }
+    await accounts.flush();
     storage.close();
   } };
 }

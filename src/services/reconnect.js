@@ -23,6 +23,10 @@ function netBackRefresh() {
     try {
       retryMissingArt();
     } catch (e) {}
+    const news = document.querySelector('#homeNews[data-nw-retry]');
+    if (news) loadMtgNews(news);
+    const logo = document.getElementById('homeModeLogo');
+    if (logo?.complete && !logo.naturalWidth) logo.src = logo.src;
     try {
       const R = state.reco;
       if (R && (R.error || R.localSourced || R.loading)) {

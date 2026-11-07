@@ -223,7 +223,10 @@ function deckDbOpen() {
   if (_deckDbP) return _deckDbP;
   _deckDbP = new Promise((res) => {
     try {
-      const req = indexedDB.open('admiral-decks', 1);
+      const req = indexedDB.open(
+        ACCOUNT_OWNER ? 'deckhand-decks-' + ACCOUNT_OWNER : 'admiral-decks',
+        1,
+      );
       req.onupgradeneeded = () => {
         try {
           req.result.createObjectStore('decks');

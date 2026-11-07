@@ -7,11 +7,13 @@ function menuPageHtml() {
       <h1>Make it yours.</h1>
       <p>A place for your preferences, tools, and everything behind the cards.</p>
     </section>
+    <div class="account-warning-slot">${accountWarningHtml()}</div>
     ${menuNoticeHtml()} ${menuToolsHtml()}
     <section class="hub-actions" aria-label="Card scanner">
       ${menuCardHtml('menuScanCards', SCANNER_ICON, 'Scan cards', 'Experimental · Scan several cards from a photo or camera')}
     </section>
     <section class="hub-actions menu-settings" aria-label="Settings">
+      ${menuCardHtml('menuAccount', SYNC_ICON, 'Account & sync', escapeHtml(accountStatusLabel()))}
       ${pwaInstallCardHtml()}
       <button type="button" class="hub-card" id="menuSettings">
         <span class="hub-icon">${ICONS.settings}</span

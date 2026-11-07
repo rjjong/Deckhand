@@ -1,6 +1,7 @@
 /* Rules questions use the server's local model with supplied Oracle text and rule excerpts. */
 import crypto from 'node:crypto';
 import { askLocal, localConfig, DEFAULT_LOCAL_MODEL, MAX_LOCAL_PROMPT_CHARS } from './local-ai.mjs';
+import { judgeProgress } from './judge-progress.mjs';
 
 const MAX_Q = 500,
   MAX_CARDS = 5,
@@ -128,8 +129,19 @@ export function parseReply(text) {
   };
 }
 
-export async function askJudge(env, fetchImpl, sys, user) {
-  const result = await askLocal(env, fetchImpl, sys, user, { schema: 'json' });
+export async function askJudge(env, fetchImpl, sys, user, { onProgress, signal } = {}) {
+  let previous = '';
+  const onToken = onProgress
+    ? (_token, text) => {
+        const fields = judgeProgress(text);
+        const current = JSON.stringify(fields);
+        if (current !== previous && (fields.reasoning || fields.answer)) {
+          previous = current;
+          onProgress(fields);
+        }
+      }
+    : undefined;
+  const result = await askLocal(env, fetchImpl, sys, user, { schema: 'json', onToken, signal });
   if (result.error) return result;
   const out = parseReply(result.text);
   return out ? { ...out, provider: result.provider, model: result.model } : { error: 'shape' };
@@ -180,7 +192,7 @@ export async function handle(body, deps) {
     }
   } catch (e) {}
   // 3. ask
-  const out = await askJudge(env, deps.fetch, sys, user);
+  const out = await askJudge(env, deps.fetch, sys, user, deps);
   if (out.error) {
     return {
       status:

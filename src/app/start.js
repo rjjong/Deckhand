@@ -6,21 +6,6 @@ setTimeout(() => {
   } catch (e) {}
 }, 4000);
 
-/* The page may have been served from the cache to keep the launch quick, so
-   the newest deploy can be one start behind. Only noted in the journal --
-   no toast: the next start picks the new version up by itself. */
-setTimeout(async () => {
-  try {
-    if (!/^https:/.test(location.protocol)) return;
-    const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
-    if (!r || !r.ok) return;
-    const v = await r.json();
-    if (v && v.version && v.version !== APP_VERSION) {
-      sfJournal('update: v' + v.version + ' is available (this session runs v' + APP_VERSION + ')');
-    }
-  } catch (e) {}
-}, 6000);
-
 // Safety: the shell may never be left holding an icon over a working app.
 // Later than it was -- the point is to lose to the real signal, not beat it.
 setTimeout(appReady, pendingShareToken() ? 6000 : 5000);

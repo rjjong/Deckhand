@@ -849,6 +849,7 @@ function openNewsPreview(a) {
 }
 
 async function loadMtgNews(box) {
+  delete box.dataset.nwRetry;
   if (!box.dataset.nwWired) {
     box.dataset.nwWired = '1';
     box.addEventListener('click', (e) => {
@@ -876,8 +877,16 @@ async function loadMtgNews(box) {
     if (!data) {
       const ctl = new AbortController();
       const tm = setTimeout(() => ctl.abort(), 9000);
-      const r = await fetch('/api/news', { signal: ctl.signal });
-      clearTimeout(tm);
+      let r;
+      try {
+        r = await fetch('/api/news', {
+          signal: ctl.signal,
+          redirect: 'manual',
+          headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        });
+      } finally {
+        clearTimeout(tm);
+      }
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const j = await r.json();
       data = Array.isArray(j.items) ? j.items : [];
@@ -924,8 +933,11 @@ async function loadMtgNews(box) {
       }
     } catch (e) {}
   } catch (e) {
-    box.innerHTML =
-      '<span class="l2">Couldn’t load articles right now — check your connection, or the news function isn’t deployed yet.</span>';
+    if (window.DECKHAND_CONFIG?.selfHosted) await _netCheckServer();
+    box.dataset.nwRetry = '1';
+    box.innerHTML = _netAuthRequired
+      ? '<span class="l2">Sign in again to load the news.</span><a class="ghost-btn" href="/api/login">Sign in again</a>'
+      : '<span class="l2">Couldn’t load articles right now. Please try again later.</span>';
   }
 }
 

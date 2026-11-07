@@ -280,6 +280,7 @@ function collectionPageHtml() {
   const valueItems = !f.binder && !colFilterActive() ? state.collection.items : items;
   const totalEur = collectionTotalValue(valueItems);
   return /* HTML */ `<main class="collection-page">
+    <div class="account-warning-slot">${accountWarningHtml()}</div>
     <div class="searchbar page-searchbar collection-searchbar">
       <input
         id="colSearchQ"

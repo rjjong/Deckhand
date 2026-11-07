@@ -15,11 +15,14 @@ The **experimental card scanner** is under **Collection → + → Scan cards** a
 It detects up to eight separated cards per photo or camera capture using self-hosted OpenCV.js and Tesseract.js.
 Photos and OCR stay in your browser. Review names before adding; exact printing, language and foil are not identified.
 
-In **Settings → Sync**, create a sync code on your first device and enter it on
-your other devices using the same Deckhand server. Decks, collection (including
-binders), settings, and saved games sync automatically. There are no accounts or
-passwords; the server stores only a hash of the sync code. Offline edits stay
-local until the connection returns. Unlinking keeps the device's local data.
+In **Settings → Account & sync**, create an optional email/password account,
+verify your email, and sign in on each device. Decks, collections, settings and
+saved games sync to this server's SQLite database. Passwords use salted scrypt
+hashes; they are never stored in a recoverable form. Email recovery uses expiring,
+single-use links. Each account has its own local/offline workspace. Without an
+account, the app stays usable and warns that local decks and collections need backups.
+Existing sync codes can be imported once into an account. See
+[account email setup](docs/SERVER.md#accounts-and-recovery-email).
 
 Run the web app locally with Node.js 24 and SQLite:
 

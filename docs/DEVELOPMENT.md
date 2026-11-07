@@ -58,6 +58,20 @@ shared/sync-records.cjs      Sync schema shared by the browser bundle and server
 public/                     Generated website, bundles, and source maps
 ```
 
+The build generates `public/index.html` and `public/sw.js` alongside the bundles.
+Their content hash includes JS, CSS, the HTML/worker templates and shell assets;
+bundle URLs and the shell cache share this build ID. Edit the root templates,
+not their generated copies. No manual service-worker version bump is needed.
+
+`src/platform/updates.js` checks for updates at launch, on return to the app,
+on reconnect and every five minutes while visible. A different build refreshes
+automatically at launch/return unless the user has begun interacting, has an
+editor/dialog/game open, or a deck save is pending. An **Update ready — reload**
+button remains available; it waits for those activities to finish. Offline
+launches use the installed build. Updates delete old Deckhand shell caches,
+preserving card images, fonts, localStorage and IndexedDB. Real worker update,
+offline, edit-preservation and reload tests are in `tests/browser/pwa-updates.spec.mjs`.
+
 For page changes, start with `src/pages/<page>/index.js`. Inspiration is split
 into `browse.js`, `deck.js`, `themes.js`, `metagame.js`, and recommendation files.
 Life has a landing page in `index.js`, its full-screen setup in `setup.js`, menus
@@ -325,7 +339,7 @@ PORT=3000
 
 Use `http://YOUR-COMPUTER-LAN-IP:3000` on your phone. Allow TCP port 3000 on
 your local firewall if required. The computer must remain awake while testing.
-Do not forward this test server's port on your router: it has no login system.
+Use the HTTPS deployment for public access; keep the development server on your LAN.
 For private access away from home, use Tailscale Serve or your own VPN.
 Phone camera scanning, service workers, and PWA installation need HTTPS;
 plain LAN HTTP is suitable only for testing ordinary app features. Localhost
@@ -333,7 +347,7 @@ is treated as a secure origin on this computer.
 
 Browser data is tied to the address: localhost, a LAN IP, and a future HTTPS
 domain are different origins. Use the app's backup/restore tools or link your
-test devices using its sync code. This server stores linked sync data in SQLite;
+test devices by signing into the same account. This server stores synced data in SQLite;
 browser-only decks are not automatically copied to the server until sync is on.
 
 ## Local AI Judge and deck advice
@@ -342,6 +356,11 @@ Both AI features use Ollama on your server. There are no remote AI providers, ke
 
 The pinned default is `qwen3:4b-instruct-2507-q4_K_M`, a 2.5 GB text model chosen to leave room on a 4 GB GPU.
 The runtime uses a 4096-token context, one inference at a time, a queue of at most three waiting requests and a ten-second queue wait limit.
+The Judge streams readable progress over SSE while Ollama emits NDJSON tokens.
+The browser keeps the explanation visible when the final ruling and validated
+rule citations arrive. JSON cache hits and early errors remain compatible.
+Leaving or clearing the Judge aborts the request and releases its model slot;
+partial or failed responses are never cached as completed answers.
 Inference has a 75-second deadline; a busy server returns a clear message rather than starting more concurrent models.
 The smaller model has less reasoning capacity than large hosted models. Judge answers remain grounded in tagged Oracle texts and selected rules; unsupported citations are removed and mark an answer uncertain.
 
@@ -385,44 +404,66 @@ Third-party license notices are included in `/assets/scanner/`. See [OpenCV.js](
 
 `tests/browser/scanner.spec.mjs` exercises actual multi-card contour detection and OCR, review, collection insertion and camera cleanup, without external services.
 
-## Device sync
+## Accounts and device sync
 
-Open **Settings → Sync → Create sync code** on the first device. On another
-device using this same server, choose **I already have a code** and enter it.
-The server generates a 24-character code; it stores a SHA-256 hash, never the
-code itself. There are no username/password fields, user accounts, or external
-sync services. Anyone with the code can access that sync space.
+Accounts are optional. **Settings → Account & sync** supports signup, email
+verification, login, logout, password recovery and one-time imports of old sync
+codes. Guests see a warning in Decks, Collection and Menu: data is stored only on
+this device and can be lost without backups. All other app features work locally.
 
-`DATABASE_PATH` contains `sync_links` (hashed codes and revisions) and
-`sync_records` (individual changes). They share the application's persistent
-SQLite database and existing Docker volume. A transaction commits every sync
-batch, with deletion tombstones and a stable revision cursor for paged reads.
-Existing sync documents in the old SQLite `blobs` table are migrated on access;
-their codes and original documents are preserved.
+`server/accounts-storage.mjs` creates account, session, action-token, rate-limit
+and legacy-claim tables beside the existing sync tables in SQLite. Emails are
+normalized to lowercase. Passwords use Node's scrypt (N=131072, r=8, p=1), random
+salts and constant-time comparison, with one active hash and a bounded queue.
+Only session/reset-token hashes are stored. Cookies are HttpOnly, SameSite=Lax,
+and Secure with a `__Host-` name when `PUBLIC_URL` is HTTPS. Credentials never
+enter localStorage, exports or frontend configuration. Login requires verified
+email. Password reset links expire after 30 minutes, verification after 24 hours;
+reset consumption revokes all sessions and outstanding links. Recovery returns
+the same response for existing and unknown addresses. Authentication and email
+requests have persistent rate limits, including a global email budget.
+
+The same-origin `/api/account` endpoint provides GET session/status and POST
+register/login/logout/forgot/resend/verify/reset/migrate operations. Mutating
+session operations require a CSRF token from the session response. Cross-origin
+requests are rejected, and non-JSON requests cannot submit credentials. Email
+links carry their tokens in fragments, which are removed immediately on entry;
+links also work when opening in an already running tab. Resend sends verification
+and reset emails; see `PUBLIC_URL`, `EMAIL_FROM` and `RESEND_API_KEY` in `.env.example`.
+Email must be configured before signup can create accounts. Email-service keys
+remain only in the ignored private environment file, never in SQLite or the
+browser bundle. Account screens are in `src/pages/settings/account.js`; identity
+and workspace logic is in `src/services/accounts.js`.
+
+The public `POST /api/sync` endpoint requires an authenticated, verified session
+and CSRF token. Only probe/sync operations are accepted. The server selects the
+account's sync space; submitted codes or account IDs cannot select another user.
+Old code-only requests return 401. Existing legacy data remains in SQLite and can
+be claimed once by a signed-in account presenting its previous code. Records are
+copied transactionally; the original data remains intact. The first sign-in can
+copy guest decks and collection into a private workspace. A previous guest link
+is migrated automatically when that option is selected, retaining pending edits
+and deletion markers. Another account cannot claim the same legacy space.
+
+Each signed-in user has a separate `deckhand_user:<id>:` localStorage namespace
+and `deckhand-decks-<id>` IndexedDB database. Guest storage keeps its original
+names. Signing out returns to that guest workspace; signing back in restores the
+account workspace. Other tabs reload when the active account changes, while
+in-flight requests are cancelled. Backups use the portable original key layout
+and exclude session/sync credentials. Card libraries and cached images are shared.
 
 Sync records cover each deck, collection printing/condition/binder entry, binder,
-folder, preference, and saved game. Independent records merge. When the same
-record changes on two devices, the newer change timestamp wins; a tied timestamp
-keeps the server's current value. Joining prefers server records with matching
-identities and uploads local-only records. Deck versions retain local decks
-before remote replacement or deletion.
+folder, preference and saved game. Independent records merge. For matching
+identities the newer change timestamp wins, with the server winning ties. On the
+first join, matching server records take precedence; local-only records are added.
+SQLite transactions retain deletion tombstones and stable paginated revision cursors.
+Sync runs after startup, edits, reconnect/foreground and a visible 30-second tick.
+Failed/offline uploads retain their markers. Receiving saved games does not change
+an active table; displaying only ten recent games does not delete older server saves.
 
-Sync runs after startup, shortly after edits, on reconnect/foreground, and via a
-small revision check every 30 seconds while visible. Offline or failed uploads
-retain their pending markers. Unlinking cancels in-flight work and leaves local
-data intact. Settings include color scheme, startup page, and view preferences.
-Saved games sync as snapshots; receiving one does not change an active table.
-The Life page still displays the latest ten saves, without deleting older server
-records merely because they age out of that local view. Card-library downloads,
-image/price caches, the link itself, and device brightness are excluded.
-
-The same-origin `POST /api/sync` endpoint accepts `create`, `probe`, and `sync`
-operations. An unknown code returns 404 rather than creating a space. The shared
-record schema is in `shared/sync-records.cjs`; SQL operations are in
-`server/sync-storage.mjs`, and the client is in `src/services/sync.js`.
-`tests/sync.test.mjs` and `tests/browser/sync.spec.mjs` cover SQLite restart,
-migration, code isolation, two-device merging, deletions, offline edits,
-pagination, startup, concurrent edits, and unlinking.
+`tests/accounts.test.mjs` checks password storage, recovery, CSRF, session revocation,
+SQLite persistence, account isolation and migration. Browser accounts/sync tests use
+real cookie sessions and an in-memory email sink, never actual outgoing emails.
 
 ## Node.js and npm
 
@@ -538,7 +579,7 @@ deletion tombstones, pagination, bounded sample downloads, and HTTP routes.
 
 ## Run the app in Docker, here or on the future machine
 
-For the configured Ubuntu server at `192.168.2.50`, use the
+For the configured Ubuntu server at `192.168.3.50`, use the
 [server guide](SERVER.md). It deploys the current working tree, preserves shared
 data and configuration, and configures daily backups. The commands below
 describe a separate local Docker instance with its own sample data.
@@ -569,7 +610,7 @@ Compose publishes only on localhost by default. Set `BIND_ADDRESS=0.0.0.0` in
 
 No Node or SQLite installation on the Docker host is necessary. Export any
 browser-only decks before moving to another address, then restore them there
-or connect both instances with the same sync code.
+or sign in to the same account on both addresses served by this server.
 
 For a consistent native SQLite backup while the server runs:
 

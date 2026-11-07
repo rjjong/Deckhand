@@ -667,6 +667,11 @@ main {
   -webkit-text-fill-color: var(--icon-pl, var(--main-lt));
 }
 
+.net-chip[href] {
+  min-height: 32px;
+  text-decoration: none;
+}
+
 /* Give the page name the room the chip takes, and step the deck counter aside. */
 
 .page-cap:has(.net-chip) .brand-txt {
@@ -1479,4 +1484,25 @@ main.card-detail > div:nth-child(2) {
   font-size: 14px;
 }
 
-/* ---------- home / decks grid ---------- */
+/* An app update stays available without interrupting an active screen. */
+.pwa-update {
+  position: fixed;
+  z-index: 180;
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 32px);
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--ink-2);
+  color: var(--ink-text, var(--parchment));
+  box-shadow: 0 3px 16px #0004;
+  font: 600 13px var(--font-body, sans-serif);
+  cursor: pointer;
+}
+.pwa-update:disabled {
+  opacity: 0.65;
+  cursor: default;
+}

@@ -24,6 +24,67 @@ html :is(.deckpick, .modal-sheet) {
   padding: 22px 20px calc(22px + env(safe-area-inset-bottom));
 }
 
+/* New decks float in the visible area, including above the phone keyboard. */
+html .new-deck-backdrop {
+  top: var(--nd-viewport-top, 0px);
+  left: var(--nd-viewport-left, 0px);
+  right: auto;
+  bottom: auto;
+  width: var(--nd-viewport-width, 100%);
+  height: var(--nd-viewport-height, 100dvh);
+  align-items: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+html .new-deck-backdrop .nd-sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  max-width: 420px;
+  max-height: 100%;
+  padding: 20px;
+  border-radius: 22px;
+  overflow: visible !important;
+  box-sizing: border-box;
+}
+
+html .nd-sheet > h3,
+html .nd-sheet > .modal-actions {
+  flex: none;
+}
+
+.nd-fields {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+html .nd-sheet > .nd-popover {
+  position: absolute !important;
+  top: var(--nd-pop-top, 0px) !important;
+  left: var(--nd-pop-left, 0px) !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: var(--nd-pop-width, 100%);
+  max-height: var(--nd-pop-height, 200px) !important;
+  margin: 0;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
+  background: color-mix(in srgb, var(--ink-text) 5%, var(--ink));
+  border: 1px solid color-mix(in srgb, var(--ink-text) 22%, transparent);
+  box-shadow: 0 10px 24px #0005;
+}
+
+html .nd-sheet .otag-pop button {
+  flex: none;
+  min-height: 44px;
+  padding: 10px 12px;
+}
+
 html :is(.deckpick h4, .modal-sheet h3) {
   background: none;
   color: var(--ink-text);

@@ -30,7 +30,7 @@ function transferHeaderHtml(
   return /* HTML */ `<header class="transfer-heading">
     <div>
       <h2>${escapeHtml(title)}</h2>
-      <p>${escapeHtml(detail)}</p>
+      ${detail ? `<p>${escapeHtml(detail)}</p>` : ''}
     </div>
     <button
       type="button"

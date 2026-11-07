@@ -508,32 +508,6 @@ function judgeLeftSet(n) {
   } catch (e) {}
 }
 
-async function judgeAsk(payload) {
-  const ctl = 'AbortController' in window ? new AbortController() : null;
-  const t = setTimeout(() => {
-    try {
-      ctl && ctl.abort();
-    } catch (e) {}
-  }, 100000);
-  try {
-    const res = await fetch('/api/judge', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(payload),
-      signal: ctl ? ctl.signal : undefined,
-    });
-    let j = null;
-    try {
-      j = await res.json();
-    } catch (e) {}
-    return j || { ok: false, error: 'down' };
-  } catch (e) {
-    return { ok: false, error: 'offline' };
-  } finally {
-    clearTimeout(t);
-  }
-}
-
 // The answer leads, followed by its cited rules in reading order.
 function judgeAnswerHtml(res, rules, q) {
   const cards = res._cards || [];
@@ -589,6 +563,7 @@ function judgeAnswerHtml(res, rules, q) {
 }
 
 function openCROverlay(startMode) {
+  document.getElementById('crOverlay')?._cancelJudge?.();
   document.getElementById('crOverlay')?.remove();
   const el = document.createElement('div');
   el.id = 'crOverlay';
@@ -608,6 +583,17 @@ function openCROverlay(startMode) {
   document.body.appendChild(el);
   wireOverlayNav(el);
   const body = el.querySelector('#crBody');
+  let judgeBusy = false,
+    judgeController = null,
+    judgeRequest = 0;
+  const cancelJudge = () => {
+    judgeRequest++;
+    judgeController?.abort();
+    judgeController = null;
+    judgeBusy = false;
+    el.querySelector('#crJudge').disabled = false;
+  };
+  el._cancelJudge = cancelJudge;
   const q = el.querySelector('#crQ');
   const count = el.querySelector('#crCount');
   const mirror = el.querySelector('#crQMirror');
@@ -633,6 +619,7 @@ function openCROverlay(startMode) {
   // pushes a clear-entry on top. Back pops one level at a time.
   state._crqArmed = false;
   function crClearStep() {
+    cancelJudge();
     state._crqArmed = false;
     if (!document.getElementById('crOverlay')) return;
     q.value = '';
@@ -651,6 +638,7 @@ function openCROverlay(startMode) {
   const keepY = pageScroller().scrollTop,
     keepScreen = state.screen;
   pushOverlay('cr', () => {
+    cancelJudge();
     state._crqArmed = false;
     document.getElementById('crOverlay')?.remove();
     if (state.screen === keepScreen) {
@@ -719,6 +707,7 @@ function openCROverlay(startMode) {
       </div>`;
   };
   const setMode = (m) => {
+    cancelJudge();
     mode = m;
     el.classList.toggle('cr-mode-rules', m === 'rules');
     title.textContent = m === 'rules' ? 'Comprehensive Rules' : 'Ask AI judge';
@@ -1018,7 +1007,6 @@ function openCROverlay(startMode) {
       if (e.target === n) shut();
     });
   };
-  let judgeBusy = false;
   const askJudge = async () => {
     const query = q.value.trim();
     tagPop.hidden = true;
@@ -1033,8 +1021,13 @@ function openCROverlay(startMode) {
       toast('The rules could not be loaded — check your connection.');
       return;
     }
+    if (judgeBusy || !el.isConnected || mode !== 'judge') return;
     arm();
     judgeBusy = true;
+    const request = ++judgeRequest;
+    const controller = new AbortController();
+    judgeController = controller;
+    el.querySelector('#crJudge').disabled = true;
     try {
       q.blur();
     } catch (e) {}
@@ -1045,16 +1038,44 @@ function openCROverlay(startMode) {
       ${'The judge is reading the rules…'}
     </div>`;
     body.scrollTop = 0;
-    const g = await judgeGather(query, tagged, rules);
-    const res = await judgeAsk({
-      q: query,
-      lang: 'en',
-      cards: g.cards,
-      rules: g.rules.map((r) => ({ n: r.n, t: r.t })),
-      device: judgeDevice(),
-    });
-    judgeBusy = false;
-    if (!document.getElementById('crOverlay') || mode !== 'judge') return;
+    let g = { cards: [], rules: crSearch(rules, query, 14) },
+      res,
+      streamed = false;
+    try {
+      g = await judgeGather(query, tagged, rules);
+      if (controller.signal.aborted) return;
+      res = await judgeAsk(
+        {
+          q: query,
+          lang: 'en',
+          cards: g.cards,
+          rules: g.rules.map((r) => ({ n: r.n, t: r.t })),
+          device: judgeDevice(),
+        },
+        {
+          signal: controller.signal,
+          onProgress: (fields) => {
+            if (request === judgeRequest && el.isConnected && mode === 'judge')
+              streamed = showJudgeProgress(body, fields) || streamed;
+          },
+        },
+      );
+    } catch (error) {
+      res = { ok: false, error: 'down' };
+    } finally {
+      if (request === judgeRequest) {
+        judgeBusy = false;
+        judgeController = null;
+        el.querySelector('#crJudge').disabled = false;
+      }
+    }
+    if (
+      request !== judgeRequest ||
+      !el.isConnected ||
+      mode !== 'judge' ||
+      res?.error === 'cancelled'
+    )
+      return;
     if (res && typeof res.left === 'number') {
       judgeLeftSet(res.left);
       if (res.left === 5) judgeNotice('5 questions left for today. Tomorrow you get 20 again.');
@@ -1066,8 +1087,10 @@ function openCROverlay(startMode) {
       res._read = res.readRules
         ? g.rules.filter((rule) => res.readRules.includes(rule.n))
         : g.rules;
+      const scroll = streamed ? body.scrollTop : 0;
       body.innerHTML = judgeAnswerHtml(res, rules, query);
-      body.scrollTop = 0;
+      if (streamed && res.reasoning) body.querySelector('[data-cjwhy]')?.click();
+      body.scrollTop = scroll;
       return;
     }
     // no judge: say why, and show what the app found itself

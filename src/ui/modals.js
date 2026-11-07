@@ -2,6 +2,106 @@
 
 /* ---------------- MODALS ---------------- */
 
+let newDeckViewportCleanup = null;
+
+function revealNewDeckField(input) {
+  const fields = input?.closest('.nd-fields');
+  if (!fields) return;
+  const bounds = fields.getBoundingClientRect();
+  const field = input.getBoundingClientRect();
+  if (field.bottom > bounds.bottom - 8) fields.scrollTop += field.bottom - bounds.bottom + 8;
+  const top = input.getBoundingClientRect().top;
+  if (top < bounds.top + 8) fields.scrollTop -= bounds.top + 8 - top;
+  placeNewDeckPopovers(fields.closest('.new-deck-backdrop'));
+}
+
+function placeNewDeckPopovers(backdrop) {
+  if (!backdrop?.isConnected) return;
+  const sheet = backdrop.querySelector('.nd-sheet');
+  const bounds = backdrop.getBoundingClientRect();
+  const sheetBounds = sheet.getBoundingClientRect();
+  const fields = sheet.querySelector('.nd-fields').getBoundingClientRect();
+  const actions = sheet.querySelector('.modal-actions').getBoundingClientRect();
+  for (const pop of sheet.querySelectorAll(':scope > .nd-popover:not([hidden])')) {
+    const anchor = pop._ndAnchor;
+    const field = anchor.getBoundingClientRect();
+    if (
+      !anchor.getClientRects().length ||
+      field.bottom <= fields.top ||
+      field.top >= fields.bottom
+    ) {
+      pop.hidden = true;
+      continue;
+    }
+    const above = Math.max(0, field.top - 4 - bounds.top - 8);
+    // A dropdown must finish before the fixed Cancel/Create row.
+    const below = Math.max(0, Math.min(actions.top - 8, bounds.bottom - 8) - field.bottom - 4);
+    const up = above > below;
+    const available = Math.min(200, up ? above : below);
+    if (available < 44) {
+      pop.hidden = true;
+      continue;
+    }
+    const width = Math.min(field.width, bounds.width - 16);
+    const left = Math.max(bounds.left + 8, Math.min(field.left, bounds.right - width - 8));
+    pop.style.setProperty('--nd-pop-height', available + 'px');
+    pop.style.setProperty('--nd-pop-width', width + 'px');
+    pop.style.setProperty('--nd-pop-left', left - sheetBounds.left - sheet.clientLeft + 'px');
+    const top = up
+      ? Math.max(bounds.top + 8, field.top - 4 - pop.getBoundingClientRect().height)
+      : field.bottom + 4;
+    pop.style.setProperty('--nd-pop-top', top - sheetBounds.top - sheet.clientTop + 'px');
+    pop.dataset.direction = up ? 'up' : 'down';
+  }
+}
+
+function wireNewDeckViewport(backdrop) {
+  const controller = new AbortController();
+  const viewport = window.visualViewport;
+  const sheet = backdrop.querySelector('.nd-sheet');
+  // Keep the popovers inside the accessible dialog, outside its scrolling form.
+  for (const pop of sheet.querySelectorAll('.otag-pop')) {
+    pop._ndAnchor = pop.parentElement.querySelector('input, button');
+    pop.classList.add('nd-popover');
+    sheet.appendChild(pop);
+  }
+  let frame = null;
+  const update = () => {
+    backdrop.style.setProperty('--nd-viewport-top', (viewport?.offsetTop || 0) + 'px');
+    backdrop.style.setProperty('--nd-viewport-height', (viewport?.height || innerHeight) + 'px');
+    backdrop.style.setProperty('--nd-viewport-left', (viewport?.offsetLeft || 0) + 'px');
+    backdrop.style.setProperty('--nd-viewport-width', (viewport?.width || innerWidth) + 'px');
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(() => {
+      revealNewDeckField(document.activeElement);
+      placeNewDeckPopovers(backdrop);
+    });
+  };
+  viewport?.addEventListener('resize', update, { signal: controller.signal });
+  viewport?.addEventListener('scroll', update, { signal: controller.signal });
+  window.addEventListener('resize', update, { signal: controller.signal });
+  backdrop.addEventListener(
+    'focusin',
+    (event) => {
+      for (const pop of sheet.querySelectorAll(':scope > .nd-popover'))
+        if (event.target !== pop._ndAnchor && !pop.contains(event.target)) pop.hidden = true;
+      update();
+    },
+    { signal: controller.signal },
+  );
+  sheet
+    .querySelector('.nd-fields')
+    .addEventListener('scroll', () => placeNewDeckPopovers(backdrop), {
+      passive: true,
+      signal: controller.signal,
+    });
+  update();
+  return () => {
+    controller.abort();
+    cancelAnimationFrame(frame);
+  };
+}
+
 function openModal(type, extra) {
   state.modal = Object.assign({ type }, extra || {});
   renderModal();
@@ -15,6 +115,8 @@ function closeModal() {
 }
 
 function renderModal() {
+  newDeckViewportCleanup?.();
+  newDeckViewportCleanup = null;
   let el = document.getElementById('modalRoot');
   if (!state.modal) {
     if (el) el.remove();
@@ -71,47 +173,54 @@ function renderModal() {
       });
     });
   } else if (m.type === 'newdeck') {
-    el.innerHTML = /* HTML */ `<div class="modal-backdrop" id="mbd">
-      <div class="modal-sheet nd-sheet">
-        <h3>New Deck</h3>
-        <input
-          id="newDeckName"
-          placeholder="Deck name"
-          maxlength="${MAX_DECK_NAME_LENGTH}"
-          autofocus
-        />
-        <div class="otag-wrap" style="margin-bottom:10px;">
-          <button
-            type="button"
-            id="newDeckFmtBtn"
-            class="col-filter-input"
-            style="width:100%;text-align:left;"
-          >
-            ${ndFmtBtnHtml('commander')}
-          </button>
-          <div id="newDeckFmtPop" class="otag-pop" hidden>
-            ${FMT_ORDER.map((f) => `<button type="button" data-ndfmt="${f}">${FMT_LABELS[f]}</button>`).join('')}
+    el.innerHTML = /* HTML */ `<div class="modal-backdrop new-deck-backdrop" id="mbd">
+      <div
+        class="modal-sheet nd-sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="newDeckTitle"
+      >
+        <h3 id="newDeckTitle">New Deck</h3>
+        <div class="nd-fields">
+          <input
+            id="newDeckName"
+            placeholder="Deck name"
+            maxlength="${MAX_DECK_NAME_LENGTH}"
+            autofocus
+          />
+          <div class="otag-wrap" style="margin-bottom:10px;">
+            <button
+              type="button"
+              id="newDeckFmtBtn"
+              class="col-filter-input"
+              style="width:100%;text-align:left;"
+            >
+              ${ndFmtBtnHtml('commander')}
+            </button>
+            <div id="newDeckFmtPop" class="otag-pop" hidden>
+              ${FMT_ORDER.map((f) => `<button type="button" data-ndfmt="${f}">${FMT_LABELS[f]}</button>`).join('')}
+            </div>
           </div>
-        </div>
-        <div class="otag-wrap" id="ndCmdWrap" style="margin-bottom:10px;">
-          <input
-            id="ndCmd"
-            class="col-filter-input"
-            placeholder="Who is your commander? (optional)"
-            autocomplete="off"
-            style="width:100%;"
-          />
-          <div id="ndCmdPop" class="otag-pop" hidden></div>
-        </div>
-        <div class="otag-wrap" id="ndP2Wrap" hidden style="margin-bottom:10px;">
-          <input
-            id="ndCmd2"
-            class="col-filter-input"
-            placeholder="Partner…"
-            autocomplete="off"
-            style="width:100%;"
-          />
-          <div id="ndCmd2Pop" class="otag-pop" hidden></div>
+          <div class="otag-wrap" id="ndCmdWrap" style="margin-bottom:10px;">
+            <input
+              id="ndCmd"
+              class="col-filter-input"
+              placeholder="Who is your commander? (optional)"
+              autocomplete="off"
+              style="width:100%;"
+            />
+            <div id="ndCmdPop" class="otag-pop" hidden></div>
+          </div>
+          <div class="otag-wrap" id="ndP2Wrap" hidden style="margin-bottom:10px;">
+            <input
+              id="ndCmd2"
+              class="col-filter-input"
+              placeholder="Partner…"
+              autocomplete="off"
+              style="width:100%;"
+            />
+            <div id="ndCmd2Pop" class="otag-pop" hidden></div>
+          </div>
         </div>
         <div class="modal-actions">
           <button class="cancel" id="cancelBtn">Cancel</button
@@ -119,6 +228,8 @@ function renderModal() {
         </div>
       </div>
     </div>`;
+    newDeckViewportCleanup = wireNewDeckViewport(el.querySelector('.new-deck-backdrop'));
+    wireAppDialogKeys(el.querySelector('.new-deck-backdrop'), closeModal);
     window._ndFmt = 'commander';
 
     // krijgt de balk niet te zien.
@@ -151,6 +262,7 @@ function renderModal() {
         fb.addEventListener('click', (ev) => {
           ev.stopPropagation();
           fp.hidden = !fp.hidden;
+          if (!fp.hidden) requestAnimationFrame(() => revealNewDeckField(fb));
         });
         fp.querySelectorAll('[data-ndfmt]').forEach((o) =>
           o.addEventListener('click', (ev) => {
@@ -206,11 +318,14 @@ function renderModal() {
           );
           if (!r.ok) throw 0;
           const j = await r.json();
+          if (!inp.isConnected || inp.value.trim() !== q || window._ndFmt !== fmt2) return;
           const hits = (j.data || []).slice(0, 24);
           pop.innerHTML = hits
             .map((c, i) => `<button type="button" data-ndp="${i}">${escapeHtml(c.name)}</button>`)
             .join('');
           pop.hidden = !hits.length;
+          pop.scrollTop = 0;
+          if (hits.length) requestAnimationFrame(() => revealNewDeckField(inp));
           pop.querySelectorAll('[data-ndp]').forEach((o) =>
             o.addEventListener('mousedown', (ev) => {
               ev.preventDefault();

@@ -20,13 +20,13 @@ html #dlPanelBox.dl-popup {
   box-shadow: 0 20px 64px rgb(0 0 0 / 0.35);
 }
 
-html :is(#colImportOverlay, #syncSheet, #appointOverlay.deck-import-overlay) {
+html :is(#colImportOverlay, #syncSheet, #accountSheet, #appointOverlay.deck-import-overlay) {
   align-items: center;
   padding: 20px 16px;
   backdrop-filter: blur(6px);
 }
 
-html #syncSheet {
+html :is(#syncSheet, #accountSheet) {
   z-index: 205;
 }
 
