@@ -27,14 +27,24 @@ function searchSortOptions() {
 }
 
 function openSearchSortMenu(anchor) {
+  openCardSortMenu(
+    anchor,
+    searchSortOptions(),
+    state.searchSort,
+    state.searchSortDir,
+    applySearchSort,
+  );
+}
+
+function openCardSortMenu(anchor, options, key, direction, onPick) {
   openTileMenu(
     anchor,
-    searchSortOptions().map(([k, dir, label]) => {
-      const on = state.searchSort === k && state.searchSortDir === dir;
+    options.map(([k, dir, label]) => {
+      const on = key === k && direction === dir;
       return {
         label:
           `<span style="display:inline-block;width:1.2em;">${on ? '\u2713' : ''}</span>` + label,
-        fn: () => applySearchSort(k, dir),
+        fn: () => onPick(k, dir),
       };
     }),
   );

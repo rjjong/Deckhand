@@ -106,6 +106,7 @@ function renderCardSheet(d, card, loc, idx) {
     el.id = 'cardSheetOverlay';
   }
   csPopApply(el); // 1.26: a right-click opens this sheet as a popup by the mouse
+  el._collectionItem = null;
   // (Re)append only when this sheet is new or already on top — a background
   // price/printing re-render must never climb above overlays opened later
   // (the Similar page vanished behind exactly that on its first open).
@@ -126,13 +127,10 @@ function renderCardSheet(d, card, loc, idx) {
   const _sim = `<button class="ghost-btn" id="csSimilar" style="width:100%;"><span class="ib">${ICONS.similar}</span>${trS('Similar cards')}</button>`;
   const _shr = `<button class="ghost-btn" id="csShare" style="width:100%;"><span class="ib">${ICONS.share}</span>${trS('Share')}</button>`;
   const _prt = `<button class="ghost-btn" id="csChangePrinting" style="width:100%;"><span class="ib">${ICONS.swap}</span>${trS('Change printing')}</button>`;
-  const _cmb = `<button type="button" class="ghost-btn" data-cmbbtn style="width:100%;">∞</button>`;
   const _tag = `<button class="ghost-btn" id="csTags" style="width:100%;"><span class="ib">${ICONS.tag}</span>${trS('Tags')}</button>`;
-  // 1.38: one layout on every sheet -- Recommendations top right, Similar
-  // under it, Change printing | Tags · ∞ at the foot. An odd count folds
-  // Share · Tags · ∞ into three icon buttons: never a row of one.
-  const _pairTC = `<div class="cs-pair">${_tag}${_cmb}</div>`;
-  const _trio = `<div class="cs-pair cs-trio"><button class="ghost-btn" id="csShare" title="${trS('Share')}" aria-label="${trS('Share')}"><span class="ib">${ICONS.share}</span></button><button class="ghost-btn" id="csTags" title="${trS('Tags')}" aria-label="${trS('Tags')}"><span class="ib">${ICONS.tag}</span></button>${_cmb}</div>`;
+  // Editing, sharing/tagging and discovery get their own rows below the quantity.
+  const _pairTC = _tag;
+  const _trio = `<div class="card-secondary-actions">${_shr}${_tag}</div>`;
   const _coll = `<button class="ghost-btn" id="csCollSheet" style="width:100%;"><span class="ib">${ICONS.collection}</span>${trS('Add to collection')}</button>`;
   if (loc === 'admiral') {
     actions.push(
@@ -159,15 +157,13 @@ function renderCardSheet(d, card, loc, idx) {
     );
     actions.push(_prt, _pairTC);
   } else {
-    // Add one | Recommendations · Remove one | Similar · To maybeboard |
-    // Share · Change printing | Tags · ∞. A card that can lead takes
-    // Share's place with Set as leader; Share joins the icon trio.
+    // Keep deck-copy actions and commander choices available in the editor.
     actions.push(
-      `<button class="ghost-btn" id="csAddOne" style="width:100%;"><span class="ib">${ICONS.addOne}</span>${trS('Add')}</button>`,
+      `<button class="ghost-btn" id="csAddOne" style="width:100%;"><span class="ib">${ICONS.addOne}</span>${trS('Add to deck')}</button>`,
       _reco,
     );
     actions.push(
-      `<button class="ghost-btn" id="csRemove" style="width:100%;color:var(--danger);border-color:var(--danger);"><span class="ib">${ICONS.removeOne}</span>${trS('Remove one')}</button>`,
+      `<button class="ghost-btn" id="csRemove" style="width:100%;color:var(--danger);border-color:var(--danger);"><span class="ib">${ICONS.removeOne}</span>${trS('Remove from deck')}</button>`,
       _sim,
     );
     const _move =
@@ -186,6 +182,9 @@ function renderCardSheet(d, card, loc, idx) {
     }
   }
 
+  const editingActions = actions.filter(
+    (action) => ![_reco, _sim, _shr, _tag, _trio].includes(action),
+  );
   el.innerHTML = /* HTML */ `<div class="overlay-inner">
     ${cardDetailsHeaderHtml(card)}
     <main class="card-detail">
@@ -200,7 +199,14 @@ function renderCardSheet(d, card, loc, idx) {
           />${dfcFlipHtml(card)}</span
         >
       </div>
-      <div class="cs-actions-grid">${actions.join('')}</div>
+      <div class="cs-actions-grid">
+        ${cardCollectionQuantityHtml(card)}
+        <div class="card-editing-actions">${editingActions.join('')}</div>
+        <div class="card-secondary-actions">${_shr}${_tag}</div>
+        <div class="card-discovery-actions" role="group" aria-label="Discover cards">
+          ${_reco}${_sim}
+        </div>
+      </div>
       <div id="csTagBox"></div>
       <div class="detail-sec sel-text">
         <div class="detail-h">Oracle Text</div>
@@ -231,7 +237,7 @@ function renderCardSheet(d, card, loc, idx) {
   document
     .getElementById('dcImg')
     ?.addEventListener('click', () => showCardPreview(card, cardImageLarge(card)));
-  wireCombosButton(el, card);
+  wireCardCollectionQuantity(el, card);
   try {
     paintPendingArt();
   } catch (e) {}
@@ -247,46 +253,9 @@ function renderCardSheet(d, card, loc, idx) {
       { label: trS('Share link'), fn: () => shareCardLink(card) },
     ]);
   });
-  document.getElementById('csTags')?.addEventListener('click', () => {
-    const box = document.getElementById('csTagBox');
-    if (!box) return;
-    if (box.dataset.open === '1') {
-      const top = state.overlayStack[state.overlayStack.length - 1];
-      if (top && top.id === 'tagBox') closeTopOverlay();
-      else {
-        box.dataset.open = '0';
-        box.innerHTML = '';
-      }
-      return;
-    }
-    box.dataset.open = '1';
-    pushOverlay('tagBox', () => {
-      const b = document.getElementById('csTagBox');
-      if (b) {
-        b.dataset.open = '0';
-        b.innerHTML = '';
-      }
-    });
-    if (!window._tagBoxOutside) {
-      window._tagBoxOutside = true;
-      document.addEventListener(
-        'pointerdown',
-        (ev) => {
-          const b = document.getElementById('csTagBox');
-          if (!b || b.dataset.open !== '1') return;
-          if (ev.target.closest && (ev.target.closest('#csTagBox') || ev.target.closest('#csTags')))
-            return;
-          const st = state.overlayStack;
-          if (st.length && st[st.length - 1].id === 'tagBox') st.pop(); // inert-history retire
-          b.dataset.open = '0';
-          b.innerHTML = '';
-        },
-        true,
-      );
-    }
-    renderTagEditor(d, card, box);
-    keepSheetFoot(box);
-  });
+  document
+    .getElementById('csTags')
+    ?.addEventListener('click', (event) => openCardTagPopup(d, card, event.currentTarget));
   document.getElementById('csToMaybe')?.addEventListener('click', () => {
     d.cards.splice(idx, 1);
     ensureMaybeboard(d).push(card);
@@ -819,6 +788,12 @@ function buildTagPickerSections(applied, autoTags, userTags, catalog) {
 }
 
 function renderTagEditor(d, card, box) {
+  box._tagAbort?.abort();
+  const events = new AbortController();
+  box._tagAbort = events;
+  const keepPosition = () => {
+    if (!box.closest('.card-tags-dialog')) keepSheetFoot(box);
+  };
   const tags = getCardTags(d, card.name);
   // This card's Scryfall tags: the persistent probe cache answers
   // instantly; otherwise the (now local-first) detector fills it and the
@@ -873,13 +848,7 @@ function renderTagEditor(d, card, box) {
       })()}
     </div>
     <div class="tag-add-row" style="position:relative;">
-      <input
-        id="tagInput"
-        type="text"
-        placeholder="Add or pick a tag…"
-        maxlength="24"
-        autocomplete="off"
-      />
+      <input id="tagInput" type="text" placeholder="Add tag…" maxlength="24" autocomplete="off" />
       <button
         class="ghost-btn"
         id="tagCatChev"
@@ -895,10 +864,10 @@ function renderTagEditor(d, card, box) {
     </div>
   </div>`;
   const refresh = () => {
-    scheduleSave(d);
+    if (d) scheduleSave(d);
     renderTagEditor(d, card, box);
-    refreshDecklistBox(d);
-    keepSheetFoot(box);
+    if (d) refreshDecklistBox(d);
+    keepPosition();
   };
   const input = box.querySelector('#tagInput');
   const commit = () => {
@@ -1067,7 +1036,7 @@ function renderTagEditor(d, card, box) {
       }
       hideDrop();
     },
-    true,
+    { capture: true, signal: events.signal },
   );
   // Reopen after a pick (the whole box was redrawn with the new chip).
   if (box._keepDrop != null) {

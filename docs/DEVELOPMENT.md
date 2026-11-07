@@ -108,6 +108,31 @@ npm test             # Build and run backend/data checks
 npm run test:mobile  # Build and run mobile + desktop browser checks
 ```
 
+### Collection sorting and card details
+
+Collection search reuses Search's `SORT_ICON` and `openCardSortMenu` presentation.
+`src/pages/collection/sort.js` offers name, mana value and price in both directions.
+Whole-collection and Wants sorting is session state; a real binder stores its choice
+in `view.sort`/`view.sortDir` with its existing group selection. Legacy binder views
+retain ascending name/mana and descending price defaults. Missing numeric data stays
+last in both directions, with name tie-breaking. Sorting uses owned data and local
+price/library caches without new upstream requests.
+
+`src/ui/card-collection.js` supplies the shared quantity control and refreshes all
+open counters whenever `saveCollection()` runs. Quantities include every printing
+of the card. Collection-origin actions prefer the opened stack, preserving its
+condition, foil and binder when re-adding at zero. Zero stacks leave the collection
+without closing Card Details; object references keep navigation and late printing
+responses tied to the correct item as array indices change.
+
+Recommendations and Similar cards share a discovery row. Card Details has no
+Combos action. `src/ui/card-tags.js` opens the existing tag editor in a themed modal,
+with visual-viewport sizing, scrolling, focus restoration and Back support. Global
+tags save independently; deck-specific tag changes still schedule a deck save.
+
+`attachSwipeNav` animates only the `main` viewport. Its outgoing clip excludes the
+header, subtitle and navigation, and the chevrons remain inside the hero bounds.
+
 ### App versions
 
 Versions use **Major.Minor.Build**, starting at **2.0.0**. `version.json` is the

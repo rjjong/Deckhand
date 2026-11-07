@@ -268,14 +268,10 @@ function collectionPageHtml() {
   const f = state.colFilter;
   const wantsMode = f.binder === '__wants__';
   const _colLegalCodes = new Set();
-  // The grid is bottom-up (wrap-reverse), but the items arrived in raw
-  // insertion order, so the visual direction depended on how cards happened
-  // to be added. A deterministic ascending name sort puts A at the FOOT
-  // where the page lands, with the alphabet climbing — bottom-up like the
-  // rest of the app.
-  const items = (
-    wantsMode ? computeWants().filter((it) => colMatch(it, _colLegalCodes)) : colFilteredItems()
-  ).sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+  const items = wantsMode
+    ? computeWants().filter((it) => colMatch(it, _colLegalCodes))
+    : colFilteredItems();
+  const sortChoice = collectionSortChoice();
   const _idxOf = new Map(state.collection.items.map((x, i) => [x, i]));
   const valueItems = !f.binder && !colFilterActive() ? state.collection.items : items;
   const totalEur = collectionTotalValue(valueItems);
@@ -298,6 +294,16 @@ function collectionPageHtml() {
         aria-expanded="${state.colAdvOpen}"
       >
         ${ICONS.filter}
+      </button>
+      <button
+        type="button"
+        id="colSortBtn"
+        class="ghost-btn search-tool${sortChoice.sort !== 'name' || sortChoice.sortDir !== 'asc' ? ' active' : ''}"
+        aria-label="Sort collection"
+        title="Sort"
+        style="padding:0 11px;flex:none;"
+      >
+        ${SORT_ICON}
       </button>
     </div>
     ${(!colFilterActive() && notePrice(collectionValueKey(), totalEur), '')}
@@ -341,6 +347,10 @@ function artCropFrom(img) {
 }
 
 function wireCollectionPage() {
+  document.getElementById('colSortBtn')?.addEventListener('click', (event) => {
+    event.stopPropagation();
+    openCollectionSortMenu(event.currentTarget);
+  });
   wireFolderViewToggle('col');
   requestAnimationFrame(() => requestAnimationFrame(fitColTileHeight));
   ensureBinderFaces();

@@ -141,6 +141,203 @@ html .card-details-page main.card-detail {
     sans-serif;
   white-space: normal;
 }
+.card-collection-quantity,
+.card-editing-actions,
+.card-action-wide,
+.card-discovery-actions,
+.card-secondary-actions {
+  grid-column: 1 / -1;
+}
+.card-discovery-actions,
+.card-editing-actions,
+.card-secondary-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+.card-editing-actions > .ghost-btn:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+html
+  .card-details-page
+  .cs-actions-grid
+  :is(.card-discovery-actions, .card-secondary-actions)
+  > .ghost-btn {
+  grid-column: auto;
+}
+.card-collection-quantity {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--main-text) 18%, transparent);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--main-text) 5%, var(--ink));
+  color: var(--main-text);
+  font:
+    500 12px/1.5 'Inter',
+    sans-serif;
+}
+.card-collection-quantity strong {
+  margin-left: 8px;
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.card-collection-quantity > div {
+  display: flex;
+  gap: 6px;
+}
+.card-collection-quantity button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--main-text) 24%, transparent);
+  border-radius: 9px;
+  background: var(--ink);
+  color: var(--accent-ink);
+  font-size: 22px;
+  line-height: 1;
+}
+.card-collection-quantity button svg {
+  width: 20px;
+  height: 20px;
+}
+.card-collection-quantity button:disabled {
+  color: var(--main-sub);
+  background: color-mix(in srgb, var(--main-text) 8%, var(--ink));
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+/* Keep both arrows inside the hero's bounds, including on narrow phones. */
+.card-details-page .ci-nav-arrow {
+  top: 50%;
+  height: 48px;
+  border: 1px solid rgb(255 255 255 / 0.25);
+  border-radius: 12px;
+  background: rgb(0 0 0 / 0.65);
+  color: #fff;
+  text-shadow: none;
+}
+.card-details-page .ci-nav-arrow.left {
+  left: 6px;
+}
+.card-details-page .ci-nav-arrow.right {
+  right: 6px;
+}
+
+html .card-tags-dialog {
+  position: fixed;
+  inset: auto;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+html .card-tags-dialog > .card-tags-sheet {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 440px;
+  max-height: 100%;
+  margin: 0;
+  padding: 22px;
+  gap: 18px;
+  overflow: hidden;
+}
+.card-tags-sheet > header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+}
+.card-tags-sheet header p {
+  margin: 6px 0 0;
+  color: var(--main-sub);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.card-tags-body {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.card-tags-dialog .tag-editor {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--main-text);
+}
+.card-tags-dialog .tag-editor .detail-h {
+  margin: 0 0 12px;
+  padding: 0;
+  border: 0;
+  color: var(--main-sub);
+  font:
+    600 10px/1.5 'Inter',
+    sans-serif;
+  letter-spacing: 0.1em;
+}
+.card-tags-dialog .tag-chip {
+  border-width: 1px;
+  border-color: color-mix(in srgb, var(--main-text) 24%, transparent);
+  color: var(--main-text);
+  background: color-mix(in srgb, var(--main-text) 5%, var(--ink));
+  box-shadow: none;
+}
+.card-tags-dialog .tag-chip.tag-scry {
+  border-color: var(--gold);
+}
+.card-tags-dialog .tag-add-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 6px;
+}
+html .card-tags-dialog .tag-add-row input {
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+  padding: 10px 11px;
+  border: 1px solid color-mix(in srgb, var(--main-text) 24%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--main-text) 4%, var(--ink));
+  color: var(--main-text);
+  font:
+    400 16px/1.4 'Inter',
+    sans-serif;
+}
+.card-tags-dialog .tag-chip button {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+}
+.card-tags-dialog .tag-add-row > button {
+  margin: 0;
+  border: 1px solid color-mix(in srgb, var(--main-text) 24%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--main-text) 4%, var(--ink));
+  color: var(--main-text);
+}
+.card-tags-dialog .tag-drop {
+  position: static;
+  grid-column: 1 / -1;
+  order: 1;
+  width: 100%;
+  max-height: 240px;
+  border: 1px solid color-mix(in srgb, var(--main-text) 24%, transparent);
+  background: var(--ink);
+  color: var(--main-text);
+}
+.card-tags-dialog > .card-tags-sheet > #cardTagsDone {
+  flex: none;
+}
 
 .card-details-page :is(#ciTagBox, #csTagBox):empty {
   display: none;

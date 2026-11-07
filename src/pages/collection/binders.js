@@ -244,7 +244,7 @@ const BR_GROUPS = ['none', 'color', 'rarity', 'finish', 'type'];
 
 const BR_SORTS = ['name', 'mv', 'price'];
 
-function brViewLabels() {
+function brViewLabels(view = {}) {
   return {
     group: {
       none: 'No groups',
@@ -254,9 +254,16 @@ function brViewLabels() {
       type: 'Card type',
     },
     sort: {
-      name: 'Alphabetical (A–Z)',
-      mv: 'Mana value (low–high)',
-      price: 'Price (high–low)',
+      name:
+        view.sort === 'name' && view.sortDir === 'desc'
+          ? 'Alphabetical (Z–A)'
+          : 'Alphabetical (A–Z)',
+      mv:
+        view.sort === 'mv' && view.sortDir === 'desc'
+          ? 'Mana value (high–low)'
+          : 'Mana value (low–high)',
+      price:
+        view.sort === 'price' && view.sortDir === 'asc' ? 'Price (low–high)' : 'Price (high–low)',
     },
   };
 }
@@ -266,6 +273,8 @@ function binderView(b) {
   return {
     group: BR_GROUPS.indexOf(v.group) >= 0 ? v.group : 'none',
     sort: BR_SORTS.indexOf(v.sort) >= 0 ? v.sort : 'name',
+    sortDir:
+      v.sortDir === 'asc' || v.sortDir === 'desc' ? v.sortDir : v.sort === 'price' ? 'desc' : 'asc',
   };
 }
 
@@ -283,21 +292,18 @@ function brItemMv(it) {
   return null;
 }
 
-function binderSortItems(items, sort) {
+function binderSortItems(items, sort, sortDir = sort === 'price' ? 'desc' : 'asc') {
   const nm = (a, b2) => String(a.name || '').localeCompare(String(b2.name || ''));
-  if (sort === 'mv')
+  const direction = sortDir === 'desc' ? -1 : 1;
+  if (sort === 'mv' || sort === 'price')
     return items.sort((a, b2) => {
-      const x = brItemMv(a),
-        y = brItemMv(b2);
-      return (x == null ? 99 : x) - (y == null ? 99 : y) || nm(a, b2);
+      const value = sort === 'mv' ? brItemMv : brItemEur;
+      const x = value(a),
+        y = value(b2);
+      if ((x == null) !== (y == null)) return x == null ? 1 : -1;
+      return (x == null ? 0 : (x - y) * direction) || nm(a, b2);
     });
-  if (sort === 'price')
-    return items.sort((a, b2) => {
-      const x = brItemEur(a),
-        y = brItemEur(b2);
-      return (y == null ? -1 : y) - (x == null ? -1 : x) || nm(a, b2);
-    });
-  return items.sort(nm);
+  return items.sort((a, b2) => nm(a, b2) * direction);
 }
 
 const BR_TYPE_ORDER = [
@@ -346,9 +352,10 @@ function colGridsHtml(items, tileFn) {
     f.binder && f.binder !== '__all__' && f.binder !== '__wants__'
       ? (state.collection.binders || []).find((x) => x.id === f.binder)
       : null;
+  const choice = collectionSortChoice();
+  binderSortItems(items, choice.sort, choice.sortDir);
   if (!b) return /* HTML */ `<div class="col-grid">${items.map(tileFn).join('')}</div>`;
   const v = binderView(b);
-  binderSortItems(items, v.sort);
   if (v.group === 'none')
     return /* HTML */ `<div class="col-grid">${items.map(tileFn).join('')}</div>`;
   const groups = new Map();
@@ -647,7 +654,7 @@ function openBinderRules(b, isNew) {
     `<button type="button" class="chip br-chip${r[kind].indexOf(v) >= 0 ? ' active' : ''}" data-brk="${kind}" data-brv="${v}">${label}</button>`;
   const pr = r.price || { min: 0, max: 5 };
   const view = binderView(b),
-    VL = brViewLabels();
+    VL = brViewLabels(view);
   // A small drop-up: the options open ABOVE the button, the first option nearest the thumb.
   const dd = (id, kind, vals) => `<div class="cselect br-dd" id="${id}">
       <div class="cselect-panel br-dd-panel" hidden>${vals.map((v) => `<button type="button" class="cselect-opt${view[kind] === v ? ' sel' : ''}" data-brdd="${kind}" data-v="${v}">${VL[kind][v]}</button>`).join('')}</div>
@@ -737,7 +744,7 @@ function openBinderRules(b, isNew) {
   );
   const keepGlyphs = () => {
     b.glyphs = BR_GLYPHS.filter((k) => glyphs.indexOf(k) >= 0);
-    b.view = { group: view.group, sort: view.sort };
+    b.view = { group: view.group, sort: view.sort, sortDir: view.sortDir };
   };
   el.querySelectorAll('.br-dd').forEach((box) => {
     const panel = box.querySelector('.br-dd-panel'),
@@ -754,9 +761,11 @@ function openBinderRules(b, isNew) {
       o.addEventListener('click', (e) => {
         e.stopPropagation();
         const kind = o.dataset.brdd;
+        if (kind === 'sort' && view.sort !== o.dataset.v)
+          view.sortDir = o.dataset.v === 'price' ? 'desc' : 'asc';
         view[kind] = o.dataset.v;
         panel.querySelectorAll('[data-brdd]').forEach((x) => x.classList.toggle('sel', x === o));
-        btn.querySelector('.cs-label').textContent = VL[kind][view[kind]];
+        btn.querySelector('.cs-label').textContent = brViewLabels(view)[kind][view[kind]];
         btn.querySelector('.cs-car').textContent = '▴';
         panel.hidden = true;
       }),
@@ -1624,6 +1633,10 @@ async function openCollectionCard(idx, pool) {
   if (!it) return;
   const colOpts = {
     colIdx: idx,
+    collectionItem: it,
+    colItems: Array.isArray(pool)
+      ? pool.map((index) => state.collection.items[index]).filter(Boolean)
+      : null,
     colPool: Array.isArray(pool) ? pool : null,
     colPoolIdx: Array.isArray(pool) ? pool.indexOf(idx) : -1,
   };
@@ -1646,7 +1659,7 @@ async function openCollectionCard(idx, pool) {
   } catch (e) {}
   if (card) {
     // Only upgrade if the sheet is still showing this copy.
-    if (!it.img || (document.getElementById('cardSheetOverlay') && state._colSheetIdx === idx))
+    if (!it.img || document.getElementById('cardSheetOverlay')?._collectionItem === it)
       openCardInfo(card, Object.assign({}, colOpts, it.img ? { _replace: true } : {}));
   } else if (!it.img) openColItemSheet(idx); // offline / not found — fall back to the manage sheet
 }

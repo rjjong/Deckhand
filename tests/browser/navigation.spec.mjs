@@ -1584,7 +1584,11 @@ test('search and sort controls open below the header and pages start at the top'
     const header = await page.locator('.app-header').boundingBox();
     const field = await page.locator(input).boundingBox();
     expect(field.y).toBeGreaterThanOrEqual(header.y + header.height);
-    expect(field.y).toBeLessThan(header.y + header.height + 50);
+    const noticeBottom = await page.locator(input).evaluate(el => {
+      const rect = el.closest('main')?.querySelector('.account-warning-slot')?.getBoundingClientRect();
+      return rect?.height ? rect.bottom : 0;
+    });
+    expect(field.y).toBeLessThan(Math.max(header.y + header.height, noticeBottom) + 50);
     if(name === 'Search'){
       const bar = await page.locator(input).evaluate(el=> (el.closest('.searchbar') || el.parentElement).getBoundingClientRect().top);
       expect(bar - header.y - header.height).toBeCloseTo(12,0);

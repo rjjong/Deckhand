@@ -4,6 +4,11 @@ Build decks for Commander, Pauper Commander, PreDH, Duel Commander, Standard,
 Pauper, Modern, Legacy, and Vintage. Unsupported saved formats fall back to
 Commander while keeping their cards, commanders, and folders.
 
+Collection search includes sorting by name, mana value and price in either direction;
+binder choices keep their grouping. Card Details shows the owned quantity with compact
++/− controls, grouped Recommendations/Similar cards actions, and a themed Tags popup.
+The title and navigation stay fixed while swiping between cards.
+
 The Node.js server handles sync, AI requests, news, and Scryfall through `/api/`.
 Sync data and local AI caches stay in SQLite.
 

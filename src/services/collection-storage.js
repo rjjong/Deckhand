@@ -83,6 +83,7 @@ async function repriceCollectionDaily() {
 
 function saveCollection() {
   state._ownedSet = null;
+  if (typeof refreshCardCollectionQuantities === 'function') refreshCardCollectionQuantities();
   try {
     localStorage.setItem(LS_PREFIX + 'collection', JSON.stringify(state.collection));
   } catch (e) {

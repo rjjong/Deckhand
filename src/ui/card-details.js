@@ -264,6 +264,8 @@ function attachSwipeNav(el, onNext, onPrev, meta) {
     wrap.appendChild(img);
     const mk = (which, glyph, side) => {
       const b = document.createElement('button');
+      b.type = 'button';
+      b.setAttribute('aria-label', which === 'next' ? 'Next card' : 'Previous card');
       b.className = 'ci-nav-arrow ' + side;
       b.innerHTML = glyph;
       b.addEventListener('click', (e) => {
@@ -336,14 +338,14 @@ function attachSwipeNav(el, onNext, onPrev, meta) {
     el._swipeG ||
     (el._swipeG = { armed: false, engaged: false, dx: 0, sx: 0, sy: 0, W: 1, prep: null });
   el._swipeLive = { can, onNext, onPrev };
-  const pageOf = () => el.querySelector(':scope > .overlay-inner');
+  const pageOf = paneEl;
   const prepLive = (dir) => {
     const L = el._swipeLive;
     const inner = pageOf();
     if (!inner) return null;
     const r = inner.getBoundingClientRect();
-    const om = inner.querySelector('main'),
-      st = om ? om.scrollTop : 0;
+    const om = inner,
+      st = om.scrollTop;
     try {
       (dir === 'next' ? L.onNext : L.onPrev)();
     } catch (err) {
@@ -363,7 +365,7 @@ function attachSwipeNav(el, onNext, onPrev, meta) {
     const z = (parseInt(getComputedStyle(el).zIndex, 10) || 100) + 1;
     // 1.25: the frozen page rides inside a clip the size of the sheet itself,
     // so on a wide screen it never slides across the side menu.
-    const er = el.getBoundingClientRect();
+    const er = r;
     const clip = document.createElement('div');
     clip.className = 'swipe-clip';
     clip.style.cssText = `position:fixed;left:${er.left}px;top:${er.top}px;width:${er.width}px;height:${er.height}px;overflow:hidden;pointer-events:none;z-index:${z};`;
@@ -447,7 +449,7 @@ function attachSwipeNav(el, onNext, onPrev, meta) {
           (P.dir === 'next' ? L.onPrev : L.onNext)();
         } catch (err) {}
         const back = pageOf();
-        const bm = back && back.querySelector('main');
+        const bm = back;
         if (bm) bm.scrollTop = P.st;
         // the frozen copy covers the rebuilt sheet until its pictures are painted
         requestAnimationFrame(() => requestAnimationFrame(() => (P.clip || P.wrap).remove()));
@@ -463,6 +465,7 @@ function attachSwipeNav(el, onNext, onPrev, meta) {
     }, dur + 30);
   };
   const ts = (e) => {
+    if (!paneEl()?.contains(e.target)) return;
     if (e.touches.length !== 1) {
       G.armed = false;
       return;
@@ -734,7 +737,12 @@ function openCardInfo(card, opts) {
     }
   }
   const colIdx = opts.colIdx != null ? opts.colIdx : null;
-  state._colSheetIdx = colIdx;
+  const collectionItem =
+    colIdx != null ? opts.collectionItem || state.collection.items[colIdx] : null;
+  if (collectionItem) opts.collectionItem = collectionItem;
+  if (!opts.colItems && Array.isArray(opts.colPool))
+    opts.colItems = opts.colPool.map((index) => state.collection.items[index]).filter(Boolean);
+  state._colSheetIdx = collectionItem ? state.collection.items.indexOf(collectionItem) : null;
   // A sheet already up AND on top is a double-fired tap or swipe replace:
   // reuse it in place. But a sheet buried under another overlay (a reco or
   // Similar-cards page opened FROM it) means this tap opens a genuinely NEW
@@ -779,6 +787,7 @@ function openCardInfo(card, opts) {
     el.id = 'cardSheetOverlay';
   }
   csPopApply(el); // 1.26: a right-click opens this sheet as a popup by the mouse
+  el._collectionItem = collectionItem;
   // (Re)append only when this sheet is new or already on top — a background
   // price/printing re-render must never climb above overlays opened later
   // (the Similar page vanished behind exactly that on its first open).
@@ -824,30 +833,19 @@ function openCardInfo(card, opts) {
       <div class="card-details-actions">
         <div class="cs-actions-grid" style="margin:0;">
           ${(() => {
-            // 1.38: the deck sheet's layout -- Recommendations top right,
-            // Similar under it, Change printing | Tags · ∞ at the foot; an
-            // odd count folds Share · Tags · ∞ into three icon buttons.
-            const _cmbI = `<button type="button" class="ghost-btn" data-cmbbtn style="width:100%;">∞</button>`;
-            const _recoI = `<button class="ghost-btn" id="ciReco" style="width:100%;"><span class="ib">${ICONS.reco}</span>${trS('Recommendations')}</button>`;
-            const _simI = `<button class="ghost-btn" id="ciSimilar" style="width:100%;"><span class="ib">${ICONS.similar}</span>${trS('Similar cards')}</button>`;
-            const _shareI = `<button class="ghost-btn" id="ciShare" style="width:100%;"><span class="ib">${ICONS.share}</span>${trS('Share')}</button>`;
-            const _pairI = `<div class="cs-pair"><button class="ghost-btn" id="ciTags" style="width:100%;"><span class="ib">${ICONS.tag}</span>${trS('Tags')}</button>${_cmbI}</div>`;
-            const _trioI = `<div class="cs-pair cs-trio"><button class="ghost-btn" id="ciShare" title="${trS('Share')}" aria-label="${trS('Share')}"><span class="ib">${ICONS.share}</span></button><button class="ghost-btn" id="ciTags" title="${trS('Tags')}" aria-label="${trS('Tags')}"><span class="ib">${ICONS.tag}</span></button>${_cmbI}</div>`;
-            if (colIdx != null)
-              return `
-          <button class="ghost-btn" id="ciAddOne" style="width:100%;color:var(--brass);border-color:var(--brass);">＋ ${trS('Add one')}</button>
-          ${_recoI}
-          <button class="ghost-btn" id="ciRemOne" style="width:100%;color:var(--danger);border-color:var(--danger);">− ${trS('Remove one')}</button>
-          ${_simI}
-          <button class="ghost-btn" id="ciPrint2" style="width:100%;"><span class="ib">${ICONS.swap}</span>${trS('Change printing')}</button>
-          ${_trioI}`;
-            const _addI = `<button class="ghost-btn" id="ciAdd" style="width:100%;color:var(--brass);border-color:var(--brass);" ${ciBlockWhy(card, pinned) ? 'disabled' : ''}>${ciBlockWhy(card, pinned) ? escapeHtml(trS(ciBlockWhy(card, pinned))) : pinned ? (pinnedHasCard() ? `− Remove from ${escapeHtml(pinned.name)}` : `+ Add to ${escapeHtml(pinned.name)}`) : `${modeGlyph()} ${trS('Add to…')}`}</button>`;
-            const _printI = `<button class="ghost-btn" id="ciPrint" style="width:100%;"><span class="ib">${ICONS.swap}</span>${trS('Change printing')}</button>`;
-            if (opts.wantName)
-              return `${_addI}${_recoI}
-          <button class="ghost-btn" id="ciWantRm" style="width:100%;color:var(--danger);border-color:var(--danger);">${trS('Remove from Wants')}</button>
-          ${_simI}${_printI}${_trioI}`;
-            return `${_addI}${_recoI}${_shareI}${_simI}${_printI}${_pairI}`;
+            const reco = `<button type="button" class="ghost-btn" id="ciReco"><span class="ib">${ICONS.reco}</span>Recommendations</button>`;
+            const similar = `<button type="button" class="ghost-btn" id="ciSimilar"><span class="ib">${ICONS.similar}</span>Similar cards</button>`;
+            const utilities = `<div class="card-secondary-actions"><button type="button" class="ghost-btn" id="ciShare"><span class="ib">${ICONS.share}</span>Share</button><button type="button" class="ghost-btn" id="ciTags"><span class="ib">${ICONS.tag}</span>Tags</button></div>`;
+            const discovery = `<div class="card-discovery-actions" role="group" aria-label="Discover cards">${reco}${similar}</div>`;
+            const printing = `<button type="button" class="ghost-btn${colIdx != null ? ' card-action-wide' : ''}" id="${colIdx != null ? 'ciPrint2' : 'ciPrint'}"><span class="ib">${ICONS.swap}</span>Change printing</button>`;
+            const add =
+              colIdx != null
+                ? ''
+                : `<button type="button" class="ghost-btn" id="ciAdd" ${ciBlockWhy(card, pinned) ? 'disabled' : ''}>${ciBlockWhy(card, pinned) ? escapeHtml(trS(ciBlockWhy(card, pinned))) : pinned ? (pinnedHasCard() ? `− Remove from ${escapeHtml(pinned.name)}` : `+ Add to ${escapeHtml(pinned.name)}`) : `${modeGlyph()} ${trS('Add to…')}`}</button>`;
+            const wants = opts.wantName
+              ? '<button type="button" class="ghost-btn card-action-wide" id="ciWantRm">Remove from Wants</button>'
+              : '';
+            return `${cardCollectionQuantityHtml(card)}${add}${printing}${wants}${utilities}${discovery}`;
           })()}
         </div>
       </div>
@@ -882,44 +880,25 @@ function openCardInfo(card, opts) {
     .addEventListener('click', () =>
       showCardPreview(card, colIdx != null ? cardImageLargeRaw(card) : cardImageLarge(card)),
     );
-  wireCombosButton(el, card);
+  wireCardCollectionQuantity(el, card, {
+    item: collectionItem,
+    onChange() {
+      if (collectionItem) state._colSheetIdx = state.collection.items.indexOf(collectionItem);
+    },
+  });
   try {
     paintPendingArt();
   } catch (e) {}
   // 1.9: outside a deck, recommendations are about the card itself -- no
   // "which deck?" question first
   document.getElementById('ciReco')?.addEventListener('click', () => openCardReco(card, null));
-  document.getElementById('ciAddOne')?.addEventListener('click', () => {
-    const it = state.collection.items[colIdx];
-    if (!it) return;
-    it.qty = (it.qty || 1) + 1;
-    saveCollection();
-    state._colDirty = true;
-    toast(`${it.name} — now ×${it.qty}`);
-  });
-  document.getElementById('ciRemOne')?.addEventListener('click', () => {
-    const it = state.collection.items[colIdx];
-    if (!it) return;
-    it.qty = (it.qty || 1) - 1;
-    if (it.qty <= 0) {
-      state.collection.items.splice(colIdx, 1);
-      saveCollection();
-      state._colDirty = true;
-      toast(`${it.name} removed from your collection.`);
-      closeTopOverlay();
-      return;
-    }
-    saveCollection();
-    state._colDirty = true;
-    toast(`${it.name} — now ×${it.qty}`);
-  });
   document.getElementById('ciPrint2')?.addEventListener('click', () => {
     setTimeout(
       () =>
         openPrintingGrid(
           card,
           (chosen) => {
-            const it = state.collection.items[colIdx];
+            const it = collectionItem;
             if (!it) return;
             const iu =
               chosen.image_uris ||
@@ -940,12 +919,18 @@ function openCardInfo(card, opts) {
             toast(
               `Now showing the ${chosen.set_name}${chosen._foilPick ? ' ✨ foil' : ''} printing.`,
             );
-            openCardInfo(chosen, { colIdx: colIdx, _replace: true, _ppApplied: true });
+            openCardInfo(chosen, {
+              ...opts,
+              colIdx,
+              collectionItem,
+              _replace: true,
+              _ppApplied: true,
+            });
           },
           {
             onCustom: (custom) => {
               // 1.18: your own image dresses THIS copy only
-              const it = state.collection.items[colIdx];
+              const it = collectionItem;
               if (!it) return;
               it.img = custom.image_uris.normal;
               saveCollection();
@@ -1010,29 +995,9 @@ function openCardInfo(card, opts) {
       }
     } else openDeckPickPopup(card, 'main', opts.refreshFn, null, true); // Add to…: Collection rides along
   });
-  document.getElementById('ciTags')?.addEventListener('click', () => {
-    const box = document.getElementById('ciTagBox');
-    if (!box) return;
-    if (box.dataset.open === '1') {
-      const top = state.overlayStack[state.overlayStack.length - 1];
-      if (top && top.id === 'tagBox') closeTopOverlay();
-      else {
-        box.dataset.open = '0';
-        box.innerHTML = '';
-      }
-      return;
-    }
-    box.dataset.open = '1';
-    pushOverlay('tagBox', () => {
-      const b = document.getElementById('ciTagBox');
-      if (b) {
-        b.dataset.open = '0';
-        b.innerHTML = '';
-      }
-    });
-    renderTagEditor(null, card, box); // deckless: the global registry directly
-    keepSheetFoot(box);
-  });
+  document
+    .getElementById('ciTags')
+    ?.addEventListener('click', (event) => openCardTagPopup(null, card, event.currentTarget));
   loadRulings(card);
   loadCardPrice(card);
   const pool = Array.isArray(opts.pool) ? opts.pool : null;
@@ -1094,35 +1059,32 @@ function openCardInfo(card, opts) {
   // chevrons and swipe, resolving each stack's exact printing as it comes
   // into view, with colIdx following so Manage copy acts on the shown copy.
   const cpool =
-    !pool && !Array.isArray(opts.wantPool) && Array.isArray(opts.colPool) ? opts.colPool : null;
-  if (cpool && cpool.length > 1 && colIdx != null) {
-    const ci0 =
-      opts.colPoolIdx != null && cpool[opts.colPoolIdx] === colIdx
-        ? opts.colPoolIdx
-        : cpool.indexOf(colIdx);
+    !pool && !Array.isArray(opts.wantPool) && Array.isArray(opts.colItems) ? opts.colItems : null;
+  if (cpool && cpool.length > 1 && collectionItem) {
+    const ci0 = cpool.indexOf(collectionItem);
+    const neighbor = (dir) => {
+      let next = ci0 + dir;
+      while (next >= 0 && next < cpool.length && !state.collection.items.includes(cpool[next]))
+        next += dir;
+      return next >= 0 && next < cpool.length ? cpool[next] : null;
+    };
     const go = (dir) => {
-      const n = ci0 + dir;
-      if (n < 0 || n >= cpool.length) return;
-      try {
-        navigator.vibrate && navigator.vibrate(6);
-      } catch (e) {}
-      openCollectionCard(cpool[n], cpool);
+      const next = neighbor(dir);
+      if (!next) return;
+      openCollectionCard(
+        state.collection.items.indexOf(next),
+        cpool.map((item) => state.collection.items.indexOf(item)).filter((index) => index >= 0),
+      );
     };
     attachSwipeNav(
       el,
       () => go(1),
       () => go(-1),
       {
-        canNext: () => ci0 + 1 < cpool.length,
-        canPrev: () => ci0 - 1 >= 0,
-        peekNext: () => {
-          const it = state.collection.items[cpool[ci0 + 1]];
-          return it ? it.img : null;
-        },
-        peekPrev: () => {
-          const it = state.collection.items[cpool[ci0 - 1]];
-          return it ? it.img : null;
-        },
+        canNext: () => !!neighbor(1),
+        canPrev: () => !!neighbor(-1),
+        peekNext: () => neighbor(1)?.img,
+        peekPrev: () => neighbor(-1)?.img,
       },
     );
   }

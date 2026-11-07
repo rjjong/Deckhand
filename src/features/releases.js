@@ -5,9 +5,10 @@ const APP_VERSION = DECKHAND_VERSION;
 
 const CHANGELOG_NOTES = {
   en: [
-    'Scanner actions require a selection, with a new Select all button and a gray disabled plus',
-    'Cards added to the collection are removed from the scan log with their captured photos',
-    'The collection + menu shows a shorter Scan cards label',
+    'Collection search has the same sort control as Search, with name, mana value and price orders',
+    'Card Details shows collection quantities with compact plus/minus controls and grouped discovery buttons',
+    'Tags open in a themed popup and the Combos button is removed from Card Details',
+    'Card swipes keep the header and navigation fixed, with both arrows inside the screen',
   ],
 };
 
@@ -18,6 +19,15 @@ const CHANGELOG_NOTES = {
 const APP_DATE = DECKHAND_RELEASE_DATE;
 
 const CHANGELOG_HISTORY = [
+  {
+    v: '2.0.15',
+    d: '2026-11-07',
+    en: [
+      'Scanner actions require a selection, with a new Select all button and a gray disabled plus',
+      'Cards added to the collection are removed from the scan log with their captured photos',
+      'The collection + menu shows a shorter Scan cards label',
+    ],
+  },
   {
     v: '2.0.14',
     d: '2026-11-07',
