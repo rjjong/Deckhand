@@ -118,6 +118,21 @@ retain ascending name/mana and descending price defaults. Missing numeric data s
 last in both directions, with name tie-breaking. Sorting uses owned data and local
 price/library caches without new upstream requests.
 
+The overview places Binders, Automatic folders and Unsorted headings before their
+contents. Its title-bar Trade action is also available in Menu; All cards replaces
+it with total collection value/history, and saved binders replace it with Edit.
+`src/pages/collection/binder-settings.js` owns the full-screen, right-sliding editor
+with a pinned header/footer and an independent scrolling body. Back cancels draft
+changes; Save retains layout, icons and automatic routing rules. Cover art is
+derived from the first filed card without a user-facing picker.
+
+Collection selection always displays its quantity, even for one card; while
+selected, the normal Add button is hidden. Entering any folder, returning to the
+overview, or switching tabs clears the selection. Total collection snapshots use
+`__col:all` regardless of filters, retaining earlier `__col:__all__` history points
+and allowing a zero total. The stats icon opens the existing price-history chart
+with the current total and owned copy count.
+
 `src/ui/card-collection.js` supplies the shared quantity control and refreshes all
 open counters whenever `saveCollection()` runs. Quantities include every printing
 of the card. Collection-origin actions prefer the opened stack, preserving its
@@ -307,8 +322,8 @@ closes; closing restores keyboard focus. These controls live in
 `src/pages/decklist/controls.js`; deck styling lives in `styles/overrides/decklist.css`.
 Collection filters use the shared full-screen panel that slides in from the
 right, with reset/back controls and a floating search button. Collection's
-Trade action is a title-bar icon. The collection total is omitted from the search
-bar; collection valuation and historical data remain available in the data model.
+Trade action is an overview-only title-bar icon, also available in Menu. The total
+is omitted from the search bar; All cards exposes value and history through Stats.
 `src/ui/search-fields.js` enhances page, popup, tag, combo, and dropdown search
 fields in place, retaining their input state and handlers. Their shared field
 styles are in `styles/overrides/search-fields.css`. Pinned search surfaces use

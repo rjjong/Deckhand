@@ -352,6 +352,7 @@ function startupPageOptions() {
 function menuToolsHtml(preferences = false) {
   const hints = {
     lifeRow: 'Start or resume a game',
+    tradeRow: 'Compare cards and confirm a trade',
     draftRow: 'Seats, timers, pairings and standings',
     crRow: 'Look up rules and ask a question',
     dataSourcesRow: 'Local library, catalogues and refresh controls',
@@ -438,6 +439,7 @@ function menuToolsHtml(preferences = false) {
     </section>`;
   return /* HTML */ ` <section class="menu-tools hub-actions" aria-label="Tools">
     <div class="settings-section">${tile('lifeRow', ICONS.heart, 'Life tracker')}</div>
+    <div class="settings-section">${tile('tradeRow', ICONS.trade, 'Trade')}</div>
     <div class="settings-section">${tile('draftRow', ICONS.draft, 'Draft tools')}</div>
     <div class="settings-section">${tile('crRow', ICONS.gavel, 'Ask AI judge')}</div>
     <div class="settings-section">${tile('fmtRulesRow', ICONS.library, 'Format rules')}</div>

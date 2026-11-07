@@ -624,234 +624,6 @@ function brMovedSheet(moved) {
   });
 }
 
-/* The rules sheet: set at creation, changed later via the binder's gold +. */
-function openBinderRules(b, isNew) {
-  const r = JSON.parse(JSON.stringify(b.rules || {}));
-  r.rarity = r.rarity || [];
-  r.color = r.color || [];
-  r.type = r.type || [];
-  r.finish = r.finish || [];
-  if (r.color.indexOf('multi') >= 0)
-    r.color = BR_COLORS.filter(
-      (c) => c !== 'multi' && (r.color.indexOf(c) >= 0 || /^[2-5]c$/.test(c)),
-    );
-  document.getElementById('binderRulesSheet')?.remove();
-  const glyphs = Array.isArray(b.glyphs) ? b.glyphs.slice() : [];
-  const el = document.createElement('div');
-  el.className = 'deckpick-scrim';
-  el.id = 'binderRulesSheet';
-  el.style.zIndex = 205;
-  el.style.alignItems = 'flex-end';
-  const CL = {
-    C: 'Colorless',
-    '2c': '2 colors',
-    '3c': '3 colors',
-    '4c': '4 colors',
-    '5c': '5 colors',
-    multi: 'Multicolor',
-  };
-  const chip = (kind, v, label) =>
-    `<button type="button" class="chip br-chip${r[kind].indexOf(v) >= 0 ? ' active' : ''}" data-brk="${kind}" data-brv="${v}">${label}</button>`;
-  const pr = r.price || { min: 0, max: 5 };
-  const view = binderView(b),
-    VL = brViewLabels(view);
-  // A small drop-up: the options open ABOVE the button, the first option nearest the thumb.
-  const dd = (id, kind, vals) => `<div class="cselect br-dd" id="${id}">
-      <div class="cselect-panel br-dd-panel" hidden>${vals.map((v) => `<button type="button" class="cselect-opt${view[kind] === v ? ' sel' : ''}" data-brdd="${kind}" data-v="${v}">${VL[kind][v]}</button>`).join('')}</div>
-      <button type="button" class="cselect-btn br-dd-btn"><span class="cs-label">${VL[kind][view[kind]]}</span><span class="cs-car">▴</span></button>
-    </div>`;
-  // column-reverse sheet: Save at the foot, the title at the top.
-  el.innerHTML = /* HTML */ `<div class="deckpick br-sheet">
-    <div class="br-actions">
-      <button type="button" class="primary-btn" id="brSave">${'Save'}</button>
-      <button type="button" class="ghost-btn" id="brNone">
-        ${isNew ? 'Skip — standard binder' : 'Clear rules'}
-      </button>
-    </div>
-    <div class="br-err" id="brErr" hidden></div>
-    <div class="br-sec">
-      <div class="br-h">${'Sort by'}</div>
-      ${dd('brSort', 'sort', BR_SORTS)}
-    </div>
-    <div class="br-sec">
-      <div class="br-h">${'Group by'}</div>
-      ${dd('brGroup', 'group', BR_GROUPS)}
-    </div>
-    <div class="br-h br-h2">${'Layout inside the binder'}</div>
-    <div class="br-sec">
-      <div class="br-h">
-        <label class="br-pt"
-          ><input type="checkbox" id="brPriceOn" ${r.price ? ' checked' : ''} />
-          ${'Price per card'}</label
-        ><span id="brPriceLab">${brPriceLabel(pr)}</span>
-      </div>
-      <div id="brPriceBox" ${r.price ? '' : ' hidden'}>
-        ${priceSliderHtml('brPr', pr.min || 0, pr.max)}
-      </div>
-    </div>
-    <div class="br-sec">
-      <div class="br-h">Foil</div>
-      <div class="br-chips">
-        ${chip('finish', 'foil', '✨ Foil')}${chip('finish', 'nonfoil', 'Non-foil')}
-      </div>
-    </div>
-    <div class="br-sec">
-      <div class="br-h">${'Card type'}</div>
-      <div class="br-chips">${BR_TYPES.map((t) => chip('type', t, t)).join('')}</div>
-    </div>
-    <div class="br-sec">
-      <div class="br-h">${'Color'}</div>
-      <div class="br-chips">
-        ${BR_COLORS.map((c) => chip('color', c, 'WUBRG'.indexOf(c) >= 0 ? manaIconSvg(c, 20) : c === 'C' ? manaIconSvg('C', 20) + ' ' + CL.C : CL[c])).join('')}
-      </div>
-    </div>
-    <div class="br-sec">
-      <div class="br-h">Rarity</div>
-      <div class="br-chips">
-        ${BR_RARITIES.map((v) => chip('rarity', v, v[0].toUpperCase() + v.slice(1))).join('')}
-      </div>
-    </div>
-    <div class="br-h br-h2">${'Auto-fill'}</div>
-    <div class="br-sec">
-      <div class="br-h">${'Icons on the tile'}</div>
-      <div class="br-chips">
-        ${BR_GLYPHS.map((k) => `<button type="button" class="chip br-chip br-gl${glyphs.indexOf(k) >= 0 ? ' active' : ''}" data-brg="${k}" aria-label="${k}">${brGlyphHtml(k, 20)}</button>`).join('')}
-      </div>
-    </div>
-    <div class="br-title">
-      <b>${escapeHtml(b.name)}</b
-      ><span
-        >${'Pick the icons for the tile, how the cards inside are grouped and sorted, and whether the binder fills itself. With auto-fill, new cards that fit go into this binder by themselves: within a row any choice counts; across rows all must match.'}</span
-      >
-    </div>
-  </div>`;
-  let afterClose = null;
-  brSheetOpen(el, 'binderRulesSheet', () => {
-    if (afterClose) {
-      const f = afterClose;
-      afterClose = null;
-      setTimeout(f, 0);
-    }
-  });
-  el.querySelectorAll('[data-brg]').forEach((c) =>
-    c.addEventListener('click', () => {
-      const k = c.dataset.brg,
-        i = glyphs.indexOf(k);
-      if (i >= 0) glyphs.splice(i, 1);
-      else glyphs.push(k);
-      c.classList.toggle('active', i < 0);
-    }),
-  );
-  const keepGlyphs = () => {
-    b.glyphs = BR_GLYPHS.filter((k) => glyphs.indexOf(k) >= 0);
-    b.view = { group: view.group, sort: view.sort, sortDir: view.sortDir };
-  };
-  el.querySelectorAll('.br-dd').forEach((box) => {
-    const panel = box.querySelector('.br-dd-panel'),
-      btn = box.querySelector('.br-dd-btn');
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      el.querySelectorAll('.br-dd-panel').forEach((pn) => {
-        if (pn !== panel) pn.hidden = true;
-      });
-      panel.hidden = !panel.hidden;
-      btn.querySelector('.cs-car').textContent = panel.hidden ? '▴' : '▾';
-    });
-    panel.querySelectorAll('[data-brdd]').forEach((o) =>
-      o.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const kind = o.dataset.brdd;
-        if (kind === 'sort' && view.sort !== o.dataset.v)
-          view.sortDir = o.dataset.v === 'price' ? 'desc' : 'asc';
-        view[kind] = o.dataset.v;
-        panel.querySelectorAll('[data-brdd]').forEach((x) => x.classList.toggle('sel', x === o));
-        btn.querySelector('.cs-label').textContent = brViewLabels(view)[kind][view[kind]];
-        btn.querySelector('.cs-car').textContent = '▴';
-        panel.hidden = true;
-      }),
-    );
-  });
-  el.querySelector('.br-sheet').addEventListener('click', () =>
-    el.querySelectorAll('.br-dd-panel').forEach((pn) => {
-      pn.hidden = true;
-    }),
-  );
-  const err = el.querySelector('#brErr');
-  const showErr = (m) => {
-    err.textContent = m || '';
-    err.hidden = !m;
-  };
-  const check = () => {
-    const rr = {
-      rarity: r.rarity,
-      color: r.color,
-      type: r.type,
-      finish: r.finish,
-      price: el.querySelector('#brPriceOn').checked ? pr : null,
-    };
-    const clash = binderPriceClash(rr, b.id, state.collection.binders);
-    showErr(
-      clash
-        ? `Price overlaps "${clash.name}" (${brPriceLabel(clash.rules.price)}). Pick a range outside it.`
-        : '',
-    );
-    return !clash;
-  };
-  el.querySelectorAll('[data-brk]').forEach((c) =>
-    c.addEventListener('click', () => {
-      const a = r[c.dataset.brk],
-        v = c.dataset.brv,
-        i = a.indexOf(v);
-      if (i >= 0) a.splice(i, 1);
-      else a.push(v);
-      c.classList.toggle('active', i < 0);
-      check();
-    }),
-  );
-  el.querySelector('#brPriceOn').addEventListener('change', (e) => {
-    el.querySelector('#brPriceBox').hidden = !e.target.checked;
-    check();
-  });
-  wirePriceSlider('brPr', (mn, mx) => {
-    pr.min = mn || 0;
-    pr.max = mx;
-    el.querySelector('#brPriceLab').textContent = brPriceLabel(pr);
-    check();
-  });
-  const close = () => brSheetClose('binderRulesSheet');
-  el.addEventListener('click', (e) => {
-    if (e.target === el) close();
-  });
-  el.querySelector('#brNone').addEventListener('click', () => {
-    delete b.rules;
-    keepGlyphs();
-    saveCollection();
-    afterClose = () => render();
-    close();
-  });
-  el.querySelector('#brSave').addEventListener('click', () => {
-    if (!check()) return;
-    keepGlyphs();
-    const rules = {
-      rarity: r.rarity.slice(),
-      color: r.color.slice(),
-      type: r.type.slice(),
-      finish: r.finish.slice(),
-    };
-    if (el.querySelector('#brPriceOn').checked)
-      rules.price = { min: pr.min || 0, max: pr.max == null ? null : pr.max };
-    if (binderHasRules({ rules })) b.rules = rules;
-    else delete b.rules;
-    saveCollection();
-    afterClose = () => {
-      render();
-      binderApplyRules(b);
-    };
-    close();
-  });
-  check();
-}
-
 /* "Re-sort binders": cards in a binder with rules that no longer fit it
    (prices move every day), and loose cards that fit one, go where they
    belong now. Standard binders are never touched. A list shows what moved. */
@@ -905,82 +677,6 @@ function binderTileHtml(b) {
   </div>`;
 }
 
-async function openBinderArtPicker(binder) {
-  const seed = (state.collection.items.find((it) => it.binder === binder.id) || {}).name || '';
-  const name = await new Promise((res) =>
-    openInAppPrompt('Cover card name', 'Card name…', seed, res),
-  );
-  if (!name || !name.trim()) return;
-  let el = document.getElementById('binderArtOverlay');
-  if (!el) {
-    el = document.createElement('div');
-    el.className = 'overlay';
-    el.id = 'binderArtOverlay';
-  }
-  document.body.appendChild(el); // (re)append — a reused overlay must rise above ones opened after it
-  pushOverlay('binderArt', () => {
-    document.getElementById('binderArtOverlay')?.remove();
-  });
-  el.innerHTML = /* HTML */ `<div class="overlay-inner">
-    ${overlayCapHtml('Choose Cover Art', `<button type="button" class="header-filter" id="baClose" aria-label="Back">${ICONS.back}</button>`)}
-    <main>
-      <div id="baList" class="status"><div class="spinner"></div></div>
-    </main>
-  </div>`;
-  document.getElementById('baClose').addEventListener('click', closeTopOverlay);
-  try {
-    const res = await sfFetch(
-      `${SF_BASE}/cards/search?unique=prints&q=${encodeURIComponent('!"' + name.trim() + '"')}`,
-    );
-    const data = res.ok ? await res.json() : { data: [] };
-    const prints = (data.data || [])
-      .map((p) => {
-        const f =
-          p.image_uris || (p.card_faces && p.card_faces[0] && p.card_faces[0].image_uris) || {};
-        return {
-          art: f.art_crop || artCropFrom(f.normal),
-          set: p.set_name || p.set,
-          cn: p.collector_number,
-        };
-      })
-      .filter((p) => p.art);
-    const box = document.getElementById('baList');
-    if (!box) return;
-    if (!prints.length) {
-      box.innerHTML = /* HTML */ `<div class="empty-note">
-        No printings found under that exact name.
-      </div>`;
-      return;
-    }
-    box.className = '';
-    box.innerHTML = /* HTML */ `<div class="deck-grid">
-      ${prints
-        .map(
-          (p, i) => `
-      <button class="folder-tile binder-tile" data-ba="${i}" style="padding:10px;">
-        <div class="folder-face" style="width:100%;"><img src="${p.art}" alt=""></div>
-        <div class="folder-sub">${escapeHtml(p.set)}${p.cn ? ' · #' + escapeHtml(String(p.cn)) : ''}</div>
-      </button>`,
-        )
-        .join('')}
-    </div>`;
-    box.querySelectorAll('[data-ba]').forEach((btn) =>
-      btn.addEventListener('click', () => {
-        binder.face = prints[+btn.dataset.ba].art;
-        saveCollection();
-        closeTopOverlay();
-        render();
-      }),
-    );
-  } catch (e) {
-    const box = document.getElementById('baList');
-    if (box)
-      box.innerHTML = /* HTML */ `<div class="empty-note">
-        Couldn't reach the archive — try again.
-      </div>`;
-  }
-}
-
 function collectionBindersGridHtml() {
   const binders = state.collection.binders;
   const qtyAll = state.collection.items.reduce((a, it) => a + (it.qty || 1), 0);
@@ -1011,20 +707,19 @@ function collectionBindersGridHtml() {
       <div class="folder-sub">${qtyW} card${qtyW === 1 ? '' : 's'}${eurW ? ` · €${eurW.toFixed(2)}` : ''}</div>
     </div>`;
   const _gc = folderView('col') === 'list' ? 'deck-grid as-list' : 'deck-grid';
-  // The collection page is column-reverse: what comes FIRST here sits LOWEST,
-  // so each label follows its grid to land just above it.
-  return `${
-    binders.length
-      ? `<div class="${_gc}" style="margin-bottom:12px;">${binders.map(binderTileHtml).join('')}</div>
-    <div class="section-label">Binders</div>`
-      : ''
-  }
-    <div class="${_gc}" style="margin-bottom:12px;">${allTile}${wantsTile}</div>
-    <div class="section-label">Automatic folders</div>
-    <button class="deck-fab" id="colFab" title="New binder">＋</button>`;
+  return `<section class="collection-folder-section" aria-labelledby="collectionBindersTitle">
+    <h2 class="section-label" id="collectionBindersTitle">Binders</h2>
+    ${binders.length ? `<div class="${_gc}">${binders.map(binderTileHtml).join('')}</div>` : '<p class="empty-note">Use + to create your first binder.</p>'}
+  </section>
+  <section class="collection-folder-section" aria-labelledby="collectionAutomaticTitle">
+    <h2 class="section-label" id="collectionAutomaticTitle">Automatic folders</h2>
+    <div class="${_gc}">${allTile}${wantsTile}</div>
+  </section>
+  <button class="deck-fab" id="colFab" title="Add cards or binder">＋</button>`;
 }
 
 function openBinderIn(id) {
+  colSelClear();
   state.colFilter.binder = id;
   try {
     history.pushState({ screen: 'collection', binder: id }, '', '#collection');
@@ -1034,8 +729,7 @@ function openBinderIn(id) {
 }
 
 /* A binder's cover, once derived, is written down for good — it never shifts
-   when cards move, and it survives until the binder is deleted or its art is
-   changed by hand. */
+   when cards move, and it survives until the binder is deleted. */
 function ensureBinderFaces() {
   let dirty = false;
   state.collection.binders.forEach((b) => {
@@ -1056,7 +750,6 @@ function openBinderLongMenu(binder, x, y) {
   pop.style.cssText =
     'position:fixed;z-index:120;background:var(--pop-bg);border:1.5px solid var(--pop-line);border-radius:12px;overflow:hidden;box-shadow:0 12px 30px rgba(0,0,0,0.5);display:flex;flex-direction:column;min-width:200px;';
   pop.innerHTML = /* HTML */ `<button data-a="ren">${mIco('edit')}${trS('Rename')}</button
-    ><button data-a="art">${mIco('image')}${trS('Choose cover art')}</button
     ><button data-a="del" style="color:var(--danger);">
       ${mIco('trash')}${trS('Delete binder')}
     </button>`;
@@ -1071,10 +764,6 @@ function openBinderLongMenu(binder, x, y) {
   pop.style.left =
     Math.max(8, Math.min(window.innerWidth - pop.offsetWidth - 8, x - pop.offsetWidth / 2)) + 'px';
   pop.style.top = Math.max(8, Math.min(window.innerHeight - pop.offsetHeight - 8, y)) + 'px';
-  pop.querySelector('[data-a="art"]').addEventListener('click', () => {
-    pop.remove();
-    openBinderArtPicker(binder);
-  });
   pop.querySelector('[data-a="ren"]').addEventListener('click', () => {
     pop.remove();
     openInAppPrompt('Rename binder', 'New binder name', binder.name, (name) => {

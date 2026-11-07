@@ -5,10 +5,10 @@ const APP_VERSION = DECKHAND_VERSION;
 
 const CHANGELOG_NOTES = {
   en: [
-    'Collection search has the same sort control as Search, with name, mana value and price orders',
-    'Card Details shows collection quantities with compact plus/minus controls and grouped discovery buttons',
-    'Tags open in a themed popup and the Combos button is removed from Card Details',
-    'Card swipes keep the header and navigation fixed, with both arrows inside the screen',
+    'Collection folders have headings above Binders, Automatic folders and Unsorted cards',
+    'Trade is available from the Collection overview and Menu; All cards has collection value and history',
+    'Binder settings open full screen from the right through the edit icon or after creating a binder',
+    'Removed binder cover selection; selected cards show a numeric count and reset when changing folders',
   ],
 };
 
@@ -19,6 +19,16 @@ const CHANGELOG_NOTES = {
 const APP_DATE = DECKHAND_RELEASE_DATE;
 
 const CHANGELOG_HISTORY = [
+  {
+    v: '2.0.16',
+    d: '2026-11-07',
+    en: [
+      'Collection search has the same sort control as Search, with name, mana value and price orders',
+      'Card Details shows collection quantities with compact plus/minus controls and grouped discovery buttons',
+      'Tags open in a themed popup and the Combos button is removed from Card Details',
+      'Card swipes keep the header and navigation fixed, with both arrows inside the screen',
+    ],
+  },
   {
     v: '2.0.15',
     d: '2026-11-07',

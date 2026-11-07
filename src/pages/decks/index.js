@@ -1078,11 +1078,11 @@ function renderFolderPicker() {
 }
 
 /* Lightweight anchored popup menu for tile ⋯ buttons. */
-/* The gold selection button's face: ＋ while one card is picked, the count
-   itself from two up -- the number REPLACES the ＋, never sits on its rim. */
-function selFabLabel(n) {
+/* Most selection buttons show ＋ for one card; Collection always shows the
+   selected quantity. Larger counts replace the ＋ rather than sitting on its rim. */
+function selFabLabel(n, showSingle = false) {
   n = +n || 0;
-  if (n < 2) return '\uFF0B';
+  if (n < (showSingle ? 1 : 2)) return '\uFF0B';
   const t = String(n);
   return `<span class="fab-count${t.length > 2 ? ' long' : ''}">${t}</span>`;
 }

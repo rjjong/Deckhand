@@ -1820,6 +1820,9 @@ test('advanced search fills the screen, retains filters through back, and applie
 });
 
 test('Search uses Collection-style spacing with an integrated bar that stays visible while scrolling', async ({page},info)=>{
+  // Compare the search fields themselves; the guest-only backup warning is
+  // separate Collection content and has its own layout coverage.
+  await page.addStyleTag({content:'.account-warning-slot { display:none !important; }'});
   await page.locator('.app-navigation').getByRole('button',{name:'Collection',exact:true}).click();
   const collection=await page.locator('#colSearchQ').evaluate(el=>{
     const bar=el.closest('.searchbar'), viewport=el.closest('.tab-viewport');
@@ -1863,7 +1866,10 @@ test('Search uses Collection-style spacing with an integrated bar that stays vis
     })).toBe(true);
     expect(await bar.evaluate(el=>{
       const r=el.getBoundingClientRect();
-      return document.elementFromPoint(r.left+r.width/2,r.top-6)?.closest('.page-searchbar')===el;
+      // The top margin can be clipped out of the scrolling viewport rather
+      // than belonging to the field itself. Neither may expose card content.
+      const hit=document.elementFromPoint(r.left+r.width/2,r.top-6);
+      return !hit?.closest('.tab-viewport') || hit.closest('.page-searchbar')===el;
     })).toBe(true);
     expect(await bar.evaluate(el=>{
       const r=el.getBoundingClientRect();

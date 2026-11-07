@@ -26,6 +26,7 @@ function menuPageHtml() {
 }
 
 function wireMenuPage() {
+  document.getElementById('tradeRow')?.addEventListener('click', () => switchPage('trade'));
   document.getElementById('menuScanCards')?.addEventListener('click', openCardScanner);
   wireMenuNotice();
   document.getElementById('menuInstallApp')?.addEventListener('click', installPwa);

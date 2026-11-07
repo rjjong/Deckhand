@@ -108,8 +108,14 @@ same themed field and background fade used across the app. Filters and bulk
 editing open full screen; Deck actions groups the other tools.
 Stats charts open the deck list with editable mana-value or color filters applied.
 Backup reminders appear in Menu and add an exclamation badge to the menu logo.
-Collection has a Trade icon in its title bar and the same full-screen sliding
-filters as Search. Its search bar contains no collection-value total.
+Collection's overview groups Binders, Automatic folders and Unsorted cards under
+their headings. Trade appears in the overview's title bar and in Menu. All cards
+has a collection value/history action; individual binders have an edit action
+that opens themed settings full screen from the right. Binder settings are also
+shown after naming a new binder. Covers come from the first filed card; there is
+no cover-art picker. Selection shows its quantity, including 1, and clears on
+folder navigation. Collection uses the same full-screen sliding filters as Search.
+Its search bar contains no collection-value total.
 Collection's Add card opens Search. Each card's Add menu lists collection after the deck choices.
 Trade has two card lists with Add card actions and no separate page search.
 Each traded card has a Cardmarket link for its printing, with name search as a fallback for older entries.

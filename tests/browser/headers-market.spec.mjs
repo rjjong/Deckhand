@@ -189,13 +189,11 @@ test('pages and full-screen tools share the themed header at desktop and narrow 
       await expect(page.locator(selector)).toHaveCount(0);
     }
     await page.evaluate(() => {
-      openBinderArtPicker({ id: 'header-binder', name: 'Test binder' });
+      openBinderRules({ id: 'header-binder', name: 'Test binder' });
     });
-    await page.locator('#iapInput').fill(card.name);
-    await page.locator('#iapOk').click();
-    await check('#binderArtOverlay .app-titlebar', expected);
-    await page.locator('#baClose').click();
-    await expect(page.locator('#binderArtOverlay')).toHaveCount(0);
+    await check('#binderRulesSheet .app-titlebar', expected);
+    await page.locator('#brBack').click();
+    await expect(page.locator('#binderRulesSheet')).toHaveCount(0);
     await page.evaluate(async () => {
       await bulkIndexReady();
       const entry = {

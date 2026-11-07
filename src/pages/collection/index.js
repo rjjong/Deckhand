@@ -111,7 +111,48 @@ function collectionTotalValue(items) {
 function collectionValueKey() {
   const f = state.colFilter;
   // Filtered snapshots must not overwrite the whole collection's price history.
-  return colFilterActive() ? '__col_filtered:' + JSON.stringify(f) : '__col:' + (f.binder || 'all');
+  return colFilterActive()
+    ? '__col_filtered:' + JSON.stringify(f)
+    : '__col:' + (!f.binder || f.binder === '__all__' ? 'all' : f.binder);
+}
+
+function collectionHeaderActionHtml() {
+  const id = state.colFilter.binder;
+  if (!id)
+    return `<button type="button" id="tradeBtn" class="header-filter" aria-label="Trade calculator" title="${trS('Trade')}">${ICONS.trade}</button>`;
+  if (id === '__all__')
+    return `<button type="button" id="collectionStatsBtn" class="header-filter" aria-label="Collection stats" title="Collection value & history">${ICONS.chart}</button>`;
+  if (state.collection.binders.some((b) => b.id === id))
+    return `<button type="button" id="binderSettingsBtn" class="header-filter" aria-label="Edit binder settings" title="Binder settings">${ICONS.edit}</button>`;
+  return '';
+}
+
+function openCollectionStats() {
+  const items = state.collection.items;
+  const value = collectionTotalValue(items);
+  const quantity = items.reduce((n, it) => n + (it.qty ?? 1), 0);
+  recordCollectionTotal(value);
+  openPriceHistory('Collection Value', '__col:all');
+  document.querySelector('#phOverlay main')?.insertAdjacentHTML(
+    'afterbegin',
+    `<section class="collection-stats-summary" aria-label="Total collection">
+      <div><span>Collection Value</span><strong>${fmtEur(value)}</strong></div>
+      <div><span>Cards owned</span><strong>${quantity}</strong></div>
+    </section>`,
+  );
+}
+
+function recordCollectionTotal(value) {
+  // Earlier All cards visits used a separate key. Keep those daily points
+  // alongside the overview's history, with its canonical points taking priority.
+  const legacy = priceHistOf('__col:__all__');
+  if (legacy.length) {
+    _phist['__col:all'] = [...new Map([...legacy, ...priceHistOf('__col:all')]).entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-30);
+    delete _phist['__col:__all__'];
+  }
+  notePrice('__col:all', value, true);
 }
 
 function clearCollectionFilters(rerender = true) {
@@ -275,6 +316,8 @@ function collectionPageHtml() {
   const _idxOf = new Map(state.collection.items.map((x, i) => [x, i]));
   const valueItems = !f.binder && !colFilterActive() ? state.collection.items : items;
   const totalEur = collectionTotalValue(valueItems);
+  recordCollectionTotal(collectionTotalValue(state.collection.items));
+  if (!colFilterActive()) notePrice(collectionValueKey(), totalEur);
   return /* HTML */ `<main class="collection-page">
     <div class="account-warning-slot">${accountWarningHtml()}</div>
     <div class="searchbar page-searchbar collection-searchbar">
@@ -306,9 +349,9 @@ function collectionPageHtml() {
         ${SORT_ICON}
       </button>
     </div>
-    ${(!colFilterActive() && notePrice(collectionValueKey(), totalEur), '')}
     <div id="colAdvSlot">${state.colAdvOpen ? advancedSearchScreenHtml() : ''}</div>
     ${f.binder || colFilterActive() ? '' : collectionBindersGridHtml()}
+    ${!f.binder && !colFilterActive() ? '<h2 class="section-label collection-unsorted-title">Unsorted</h2>' : ''}
     ${f.binder ? `<button class="deck-fab" id="binderFab" title="${trS('Add cards to collection…')}">＋</button>` : ''}
     ${
       items.length
@@ -332,9 +375,19 @@ function collectionPageHtml() {
         </div>
       </button>`,
           )
-        : `<div class="empty-note" style="margin-top:20px;">${wantsMode ? 'Nothing on the Wants list — every card in your decks is in your collection.' : !f.binder && state.collection.items.length && !colFilterActive() ? '' : state.collection.items.length ? 'Nothing matches these filters.' : 'Your collection is empty. Search above, or use "Add to collection" on any card in the app.'}</div>`
+        : `<div class="empty-note" style="margin-top:20px;">${wantsMode ? 'Nothing on the Wants list — every card in your decks is in your collection.' : !f.binder && !colFilterActive() ? 'Cards without a binder appear here.' : state.collection.items.length ? 'Nothing matches these filters.' : 'Your collection is empty. Search above, or use "Add to collection" on any card in the app.'}</div>`
     }
-    ${state.colSel && state.colSel.size ? `<button class="deck-fab col-sel-fab" id="colSelFab" title="Selected cards">${selFabLabel(Array.from(state.colSel).reduce((a, i) => a + ((state.collection.items[i] || {}).qty || 1), 0))}</button>` : ''}
+    ${
+      state.colSel && state.colSel.size
+        ? `<button class="deck-fab col-sel-fab" id="colSelFab" title="Selected cards">${selFabLabel(
+            Array.from(state.colSel).reduce(
+              (a, i) => a + ((state.collection.items[i] || {}).qty || 1),
+              0,
+            ),
+            true,
+          )}</button>`
+        : ''
+    }
   </main>`;
 }
 
@@ -365,7 +418,7 @@ function wireCollectionPage() {
     });
   });
   document.querySelectorAll('[data-binderopen]').forEach((t) => {
-    // Long-press manages the binder (art / rename / delete); a plain tap opens it.
+    // Long-press manages the binder; a plain tap opens it.
     let lpT = null,
       lpFired = false;
     const binder = state.collection.binders.find((x) => x.id === t.dataset.binderopen);
@@ -398,32 +451,22 @@ function wireCollectionPage() {
   });
   document.getElementById('colBackBtn')?.addEventListener('click', () => history.back());
   document.getElementById('tradeBtn')?.addEventListener('click', () => switchPage('trade'));
+  document.getElementById('collectionStatsBtn')?.addEventListener('click', openCollectionStats);
+  document.getElementById('binderSettingsBtn')?.addEventListener('click', () => {
+    const binder = state.collection.binders.find((b) => b.id === state.colFilter.binder);
+    if (binder) openBinderRules(binder, false);
+  });
   document.getElementById('binderFab')?.addEventListener('click', (e) => {
     e.stopPropagation();
     const bid = state.colFilter.binder;
-    openFabMenu(
+    openFabMenu([
       [
-        [
-          'bfAddCard',
-          `<span class="ib">${ICONS.search}</span>${trS('Add card')}`,
-          openCollectionCardSearch,
-        ],
-        ['bfImport', mIco('file') + trS('Import'), () => openCollectionImport(bid)],
-      ].concat(
-        (state.collection.binders || []).some((b) => b.id === bid)
-          ? [
-              [
-                'bfRules',
-                '⚙ ' + 'Binder settings…',
-                () => {
-                  const b = state.collection.binders.find((x) => x.id === bid);
-                  if (b) openBinderRules(b, false);
-                },
-              ],
-            ]
-          : [],
-      ),
-    );
+        'bfAddCard',
+        `<span class="ib">${ICONS.search}</span>${trS('Add card')}`,
+        openCollectionCardSearch,
+      ],
+      ['bfImport', mIco('file') + trS('Import'), () => openCollectionImport(bid)],
+    ]);
   });
   document.getElementById('colFab')?.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -602,7 +645,7 @@ function wireCollectionPage() {
       (document.querySelector('main') || document.body).appendChild(fab);
       wireColSelFab(fab);
     }
-    fab.innerHTML = selFabLabel(colSelQty());
+    fab.innerHTML = selFabLabel(colSelQty(), true);
   };
   const colToggleSel = (ci, tile) => {
     if (!state.colSel) state.colSel = new Set();

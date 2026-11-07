@@ -414,9 +414,9 @@ async function prefetchBudgetData(d) {
 let _phist = null,
   _phistT = null;
 
-function notePrice(name, v) {
+function notePrice(name, v, allowZero = false) {
   try {
-    if (!(v > 0)) return;
+    if (!(v > 0 || (allowZero && v === 0))) return;
     if (_phist == null) {
       try {
         _phist = JSON.parse(localStorage.getItem(LS_PREFIX + 'priceHist') || '{}');

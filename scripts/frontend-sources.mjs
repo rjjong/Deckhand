@@ -27,6 +27,7 @@ export const scripts = [
   'src/pages/collection/index.js',
   'src/services/language.js',
   'src/pages/collection/binders.js',
+  'src/pages/collection/binder-settings.js',
   'src/pages/collection/sort.js',
   'src/pages/collection/add-form.js',
   'src/pages/collection/add-card.js',
@@ -149,6 +150,7 @@ export const styles = [
   'styles/overrides/game-log.css',
   'styles/overrides/search-fields.css',
   'styles/overrides/headers.css',
+  'styles/overrides/collection.css',
   'styles/overrides/scanner.css',
   'styles/overrides/accounts.css',
 ];

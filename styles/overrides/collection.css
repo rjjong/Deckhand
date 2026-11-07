@@ -1,0 +1,206 @@
+/* Collection folders and the full-screen binder editor share the menu palette. */
+
+.collection-folder-section {
+  margin: 10px 0 24px;
+}
+
+.collection-folder-section > .section-label,
+.collection-unsorted-title {
+  margin: 0 0 12px;
+  font-size: 12px;
+}
+
+.collection-folder-section > .deck-grid {
+  margin: 0;
+}
+
+html .collection-page:has(#colSelFab) :is(#colFab, #binderFab) {
+  display: none !important;
+}
+
+html #binderRulesSheet {
+  --ink-text: var(--main-text);
+  --sub-text: var(--main-sub);
+  --line: color-mix(in srgb, var(--main-text) 18%, transparent);
+  --brass: var(--accent-ink);
+  z-index: 205;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--page-backdrop);
+  color: var(--main-text);
+  font-family: 'Inter', system-ui, sans-serif;
+  animation: binder-settings-enter 0.24s ease-out;
+}
+
+html #binderRulesSheet.leaving {
+  pointer-events: none;
+  animation: binder-settings-exit 0.24s ease-in forwards;
+}
+
+html #binderRulesSheet > .overlay-inner {
+  max-width: none;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+}
+
+html #binderRulesSheet .binder-settings-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 20px;
+  width: 100%;
+  max-width: 720px;
+  min-height: 0;
+  margin: 0 auto;
+  padding: 20px 16px 24px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable both-edges;
+}
+
+#binderRulesSheet .binder-settings-body > * {
+  flex: none;
+}
+
+.binder-settings-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--main-text) 4%, var(--ink));
+}
+
+.binder-settings-card h2 {
+  margin: 0;
+  color: var(--main-text);
+  font:
+    600 18px/1.4 'Cinzel',
+    serif;
+}
+
+.binder-settings-card p {
+  margin: 0;
+  color: var(--main-sub);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+#binderRulesSheet .br-h {
+  color: var(--main-sub);
+}
+
+#binderRulesSheet :is(.br-chip, .br-dd-btn) {
+  border: 1px solid color-mix(in srgb, var(--main-text) 18%, transparent);
+  background: color-mix(in srgb, var(--main-text) 5%, var(--ink));
+  color: var(--main-text);
+  font-family: inherit;
+}
+
+#binderRulesSheet .br-chip.active {
+  border-color: var(--gold);
+  background: var(--gold);
+  color: #241a04;
+}
+
+#binderRulesSheet .br-chip svg {
+  flex: none;
+}
+
+#binderRulesSheet .br-dd-panel {
+  flex-direction: column;
+  z-index: 3;
+}
+
+#binderRulesSheet .br-actions {
+  flex: none;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+  border-top: 1px solid var(--line);
+}
+
+#binderRulesSheet .br-actions > button {
+  min-height: 46px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+#binderRulesSheet #brNone {
+  border: 1px solid color-mix(in srgb, var(--main-text) 18%, transparent);
+  background: color-mix(in srgb, var(--main-text) 5%, var(--ink));
+  color: var(--main-text);
+}
+
+#binderRulesSheet #brSave {
+  border: 1px solid var(--gold);
+  background: var(--gold);
+  color: #241a04;
+}
+
+#binderRulesSheet button:focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 3px;
+}
+
+.collection-stats-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 520px;
+  margin: 0 auto 20px;
+  color: var(--main-text);
+}
+
+.collection-stats-summary > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--main-text) 18%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--main-text) 4%, var(--ink));
+}
+
+.collection-stats-summary span {
+  color: var(--main-sub);
+  font-size: 12px;
+}
+
+.collection-stats-summary strong {
+  font:
+    600 clamp(18px, 5vw, 26px)/1.3 'JetBrains Mono',
+    monospace;
+  overflow-wrap: anywhere;
+}
+
+@keyframes binder-settings-enter {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes binder-settings-exit {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html #binderRulesSheet,
+  html #binderRulesSheet.leaving {
+    animation: none;
+  }
+}

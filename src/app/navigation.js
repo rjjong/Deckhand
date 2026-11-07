@@ -804,7 +804,7 @@ function navHtml() {
           ${state.screen === 'spoilers' ? `<button type="button" id="spAdvToggle" class="header-filter" aria-label="Advanced spoiler filters" title="${trS('Advanced filters')}" aria-haspopup="dialog" aria-expanded="${state.spAdvOpen}">${ICONS.filter}</button>` : ''}
           ${state.screen === 'draft' && state.draft?.phase !== 'setup' ? `<button type="button" id="draftResetBtn" class="header-filter" aria-label="${'Reset draft'}" title="${'Reset draft'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2.6 8.4M3 4v6h6"/></svg></button>` : ''}
           ${state.screen === 'decklist' && getDeck(state.activeDeckId) ? `<button type="button" class="header-filter" id="menuBtn" aria-label="Deck actions" title="Deck actions" aria-haspopup="dialog" aria-expanded="${!!state.menuOpen}">${ICONS.dots}</button>` : ''}
-          ${state.screen === 'collection' ? `<button type="button" id="tradeBtn" class="header-filter" aria-label="Trade calculator" title="${trS('Trade')}">${ICONS.trade}</button>` : ''}
+          ${state.screen === 'collection' ? collectionHeaderActionHtml() : ''}
           ${state.screen === 'trade' ? `<button type="button" id="tradeClear" class="header-filter" aria-label="${trS('Clear trade')}" title="${trS('Clear trade')}"${state.trade?.a.length || state.trade?.b.length ? '' : ' disabled'}>${ICONS.trash}</button>` : ''}
           ${state._capNote ? `<span class="cap-note${state.screen === 'collection' || state.screen === 'decklist' ? ' cap-tap' : ''}" id="capNoteBtn"${state.screen === 'decklist' ? ' role="button"' : ''}>${state._capNote}</span>` : ''}
         </div>

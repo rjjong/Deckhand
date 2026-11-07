@@ -292,6 +292,7 @@ function appBackStep(viaHistory) {
   // pushed its own history entry, so this pop simply consumes it — history
   // stays balanced, and repeated open/close can never eat the app's exit path.
   if (state.screen === 'collection' && state.colFilter && state.colFilter.binder) {
+    colSelClear();
     state.colFilter.binder = null;
     render();
     if (!viaHistory) {
