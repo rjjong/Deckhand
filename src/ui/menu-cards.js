@@ -42,3 +42,30 @@ function transferHeaderHtml(
     </button>
   </header>`;
 }
+
+function cardTransferDialogHtml(title, detail, content, actions) {
+  return /* HTML */ `<section
+    class="deckpick app-dialog transfer-dialog card-transfer-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-label="${escapeHtml(title)}"
+  >
+    ${transferHeaderHtml(title, detail, '', 'card-transfer-close', 'Close ' + title.toLowerCase())}
+    <div class="card-transfer-body">${content}</div>
+    <footer class="card-transfer-actions">${actions}</footer>
+  </section>`;
+}
+
+function wireCardTransferDialog(root, close = closeTopOverlay) {
+  root._cardTransferClose = close;
+  if (!root._cardTransferWired) {
+    root._cardTransferWired = true;
+    wireAppDialogKeys(root, () => root._cardTransferClose());
+    root.addEventListener('click', (event) => {
+      if (event.target === root) root._cardTransferClose();
+    });
+  }
+  const button = root.querySelector('.card-transfer-close');
+  button.addEventListener('click', close);
+  button.focus({ preventScroll: true });
+}

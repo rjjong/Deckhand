@@ -1,0 +1,65 @@
+.playing-proxy-option {
+  display: flex;
+  grid-column: 1 / -1;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--main-text) 18%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--main-text) 4%, var(--ink));
+  color: var(--main-text);
+  font:
+    500 12px/1.5 'Inter',
+    system-ui,
+    sans-serif;
+  cursor: pointer;
+}
+
+.playing-proxy-option input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--gold);
+}
+
+.playing-proxy-option span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.playing-proxy-option:focus-within {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 2px;
+}
+
+.playing-decks {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.cb.cb-proxy {
+  width: auto;
+  min-width: 0;
+  padding: 3px 6px;
+  color: #241a04;
+  background: var(--gold);
+  font:
+    700 10px/1.3 'Inter',
+    system-ui,
+    sans-serif;
+}
+
+.deck-proxy-label {
+  flex: none;
+  padding: 2px 5px;
+  border-radius: 5px;
+  color: #241a04;
+  background: var(--gold);
+  font:
+    700 10px/1.3 'Inter',
+    system-ui,
+    sans-serif;
+}

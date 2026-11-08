@@ -975,7 +975,9 @@ function cardBadgesHtml(c) {
   if (!c) return '';
   const b = [];
   if (isPreviewCard(c)) b.push('<i class="cb cb-sp" title="Spoiler — not yet released">🔮</i>');
-  if (ownedNames().has(c.name)) b.push('<i class="cb cb-own" title="In your collection">✓</i>');
+  if (c.proxy) b.push('<span class="cb cb-proxy" title="Proxy · on Wants">Proxy</span>');
+  else if (ownedNames().has(c.name))
+    b.push('<i class="cb cb-own" title="In your collection">✓</i>');
 
   // The flip button for double-faced cards rides along wherever the badge
   // rail is emitted — every grid tile and deck view gets it in one place.
@@ -998,8 +1000,7 @@ function wbClass(c) {
 /* Owned marker: a small check on deck tiles for cards that are in the
    collection under ANY printing. */
 function ownedNames() {
-  if (!state._ownedSet)
-    state._ownedSet = new Set((state.collection.items || []).map((it) => it.name));
+  if (!state._ownedSet) state._ownedSet = new Set(collectionTrackedItems().map((it) => it.name));
   return state._ownedSet;
 }
 

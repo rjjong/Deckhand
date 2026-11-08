@@ -193,7 +193,7 @@ html
   place-items: center;
   width: 36px;
   height: 36px;
-  padding: 8px;
+  padding: 0;
   border: 1px solid color-mix(in srgb, var(--main-text) 24%, transparent);
   border-radius: 9px;
   background: var(--ink);

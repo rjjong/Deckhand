@@ -60,7 +60,7 @@ the recognition models and reference catalog stay cached.
 Recognition initializes in the background after startup and stays ready while the app is open.
 Its roughly 70 MB of data is cached across launches. Recognition is experimental; confirm printing, foil and condition yourself.
 
-In **Settings → Account & sync**, create an optional email/password account,
+In **Menu → Account & sync**, create an optional email/password account,
 verify your email, and sign in on each device. Decks, collections, settings and
 saved games sync to this server's SQLite database. Passwords use salted scrypt
 hashes; they are never stored in a recoverable form. Email recovery uses expiring,
@@ -92,7 +92,9 @@ The mobile shell has five labeled bottom tabs: Decks, Collection, Search,
 Inspiration, and Life. The logo opens Menu, with cards for tools and Settings.
 Format Rules and Ban Lists open dedicated pages from Menu.
 Settings is the last menu card; the life counter is available from Life.
-Settings contains Startup page, Data sources, Card scanner, Color scheme, Sync, and Backup.
+Settings contains Startup page, Card scanner, Color scheme, and Backup.
+Account & sync is available in Menu. Data sources update automatically without
+user-facing refresh/download controls. Scan cards is in the Collection and binder + menus.
 The bottom **Version & changelog** card shows the installed version, release date
 and full release history, newest first.
 The interface is English-only and opens without a first-start introduction.
@@ -112,11 +114,17 @@ Collection's overview groups Binders, Automatic folders and Unsorted cards under
 their headings. Trade appears in the overview's title bar and in Menu. All cards
 has a collection value/history action; individual binders have an edit action
 that opens themed settings full screen from the right. Binder settings are also
-shown after naming a new binder. Covers come from the first filed card; there is
-no cover-art picker. Selection shows its quantity, including 1, and clears on
+shown after naming a new binder. Binder tiles show icons and totals without cover
+images. Each binder's + menu offers Scan cards, adding selected scans to that
+binder. Selection shows its quantity, including 1, and clears on
 folder navigation. Collection uses the same full-screen sliding filters as Search.
 Its search bar contains no collection-value total.
 Collection's Add card opens Search. Each card's Add menu lists collection after the deck choices.
+The automatic **Playing** folder shows owned copies currently used by decks,
+including commanders and constructed sideboards. Search and deck scans reuse
+owned copies and add only missing copies to the collection. Choose **Use proxies**
+when adding, or change a copy in Card Details, to put it on **Wants** instead.
+Playing updates when cards leave a deck; those physical cards remain owned.
 Trade has two card lists with Add card actions and no separate page search.
 Each traded card has a Cardmarket link for its printing, with name search as a fallback for older entries.
 Confirm trade and the price difference stay in a bordered bar below the title as the cards scroll.

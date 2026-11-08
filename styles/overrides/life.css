@@ -448,7 +448,7 @@ html .life-sheet .ghost-btn {
   border: 1px solid var(--line);
   border-radius: 12px;
   background: transparent;
-  color: var(--ink-text);
+  color: var(--main-text);
   font:
     600 12px/1.5 'Inter',
     system-ui,
@@ -488,7 +488,35 @@ html #setLifePopup #setLifeInput {
   }
 }
 
-/* Player roles stay beside the name in the normal and counter views. */
+/* Roles occupy the bottom-left corner; counters flank the player name. */
+.life-player-footer {
+  position: absolute;
+  inset: auto 8px 6px;
+  z-index: 4;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+  gap: 4px;
+  pointer-events: none;
+}
+.life-player-footer:has(.life-counter-chip.extra) {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  row-gap: 0;
+}
+.life-player-footer:has(.life-counter-chip.extra) .life-role-corner {
+  grid-column: 1;
+  grid-row: 2;
+}
+.life-player-footer:has(.life-counter-chip.extra) .life-player-name {
+  grid-column: 1;
+  grid-row: 1;
+  justify-content: flex-start;
+}
+.life-player-footer:has(.life-counter-chip.extra) .life-extra-counters {
+  grid-column: 2;
+  grid-row: 1 / 3;
+}
 .life-player-name {
   position: absolute;
   left: 50%;
@@ -498,25 +526,163 @@ html #setLifePopup #setLifeInput {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  width: max-content;
+  gap: 4px;
   max-width: calc(100% - 20px);
-  color: rgb(255 255 255 / 0.85);
+  color: rgb(255 255 255 / 0.92);
   font:
-    400 clamp(14px, 7cqmin, 19px)/1.4 'Inter',
+    400 clamp(11px, 5cqmin, 18px)/1.4 'Inter',
     system-ui,
     sans-serif;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
   pointer-events: none;
+}
+.life-player-footer .life-player-name {
+  position: static;
+  transform: none;
+  min-width: 0;
+  max-width: 100%;
+  align-self: end;
+  min-height: 28px;
 }
 .life-player-name .pname-input {
   flex: 0 1 auto;
-  min-width: 0;
+  width: auto;
+  min-width: 20px;
   max-width: 100%;
   margin: 0;
+  padding: 4px 0;
+  color: inherit;
   font-size: inherit;
+  letter-spacing: inherit;
+  text-overflow: ellipsis;
   pointer-events: auto;
+}
+.life-role-corner {
+  min-width: 0;
+  align-self: end;
+  text-align: left;
+}
+.life-role-corner:empty {
+  width: 0;
+}
+.life-extra-counters {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  justify-content: end;
+  gap: 3px;
+  min-width: 0;
+}
+.life-counter-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 30px;
+  min-height: 26px;
+  padding: 3px 5px;
+  border: 1px solid rgb(255 255 255 / 0.4);
+  border-radius: 8px;
+  background: rgb(0 0 0 / 0.35);
+  color: #fff;
+  font:
+    500 11px/1.3 'Inter',
+    system-ui,
+    sans-serif;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.life-counter-chip.commander-casts {
+  flex: none;
+}
+.life-counter-chip > span {
+  font-size: 14px;
+}
+.life-counter-chip:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+html .life-face.front.life-total-face {
+  padding: 40px 14px 104px;
+}
+html .life-total-face .lval2 {
+  font-size: clamp(32px, 27cqmin, 100px);
+}
+.life-total-face .ldungeon {
+  top: 8px;
+  max-width: calc(100% - 32px);
+}
+html .life-total-face > .submenu-toggle.lbadge {
+  bottom: 44px;
+  height: 38px;
+  min-width: 100px;
+  padding: 0 14px;
+  gap: 10px;
+}
+html .life-total-face:has(.life-counter-chip.extra) > .submenu-toggle.lbadge {
+  bottom: 68px;
+  height: 32px;
+}
+html .life-total-face:has(.life-counter-chip.extra) {
+  padding-bottom: 118px;
+}
+.life-face > .life-roles,
+.dmg-overlay > .life-roles {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  z-index: 3;
+}
+html .life-face .lf-extras {
+  bottom: 10px;
+  left: 10px;
+  right: 10px;
+  transform: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+html .lf-extras .lf-x {
+  flex: none;
+  width: clamp(28px, 10cqw, 40px);
+  height: 36px;
+}
+html .lf-extras .life-hash {
+  display: inline;
+  font:
+    600 24px/1 'Inter',
+    system-ui,
+    sans-serif;
+}
+html .lf-extras .submenu-toggle.done {
+  position: static;
+  transform: none;
+  flex: 0 1 96px;
+  min-width: 0;
+  height: 36px;
+  padding: 0 5px;
+  font-size: 13px;
+  pointer-events: auto;
+}
+@container (max-width: 220px) {
+  html .lf-extras .submenu-toggle.done {
+    flex-basis: 38px;
+  }
+  .lf-extras .submenu-toggle.done span {
+    display: none;
+  }
+}
+.life-face.pz-face > .life-roles {
+  bottom: 52px;
+}
+html .life-bottom-notch .lf-extras {
+  bottom: 68px;
+}
+html .life-bottom-corner .lf-extras {
+  bottom: 56px;
+}
+html :is(.life-bottom-notch, .life-bottom-corner) .pz-face > .life-roles {
+  bottom: 8px;
 }
 .life-focus-name {
   display: flex;
@@ -540,7 +706,7 @@ html #setLifePopup #setLifeInput {
 .life-roles .life-role-icon {
   position: static;
   transform: none;
-  width: clamp(16px, 8cqmin, 24px);
+  width: clamp(14px, 6cqmin, 22px);
   color: var(--gold);
   filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.55));
   line-height: 0;
@@ -557,4 +723,102 @@ html #setLifePopup #setLifeInput {
     system-ui,
     sans-serif;
   text-align: center;
+}
+
+/* The dungeon action stays with the selected player's dungeon controls. */
+html .dg-actions.life-popup-footer {
+  flex-wrap: wrap;
+}
+html .dg-actions .dg-initiative {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.dg-initiative svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+html .dg-actions .dg-initiative.on {
+  color: var(--accent-ink);
+  border-color: var(--accent-ink);
+  background: color-mix(in srgb, var(--accent-ink) 10%, transparent);
+}
+.life-counter-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.life-counter-option {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+.life-counter-option:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.life-counter-choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  color: var(--ink-text);
+  font-size: 13px;
+  cursor: pointer;
+}
+.life-counter-choice input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent-ink);
+}
+.life-counter-glyph {
+  width: 20px;
+  text-align: center;
+  font-size: 20px;
+}
+.life-counter-stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+html .life-counter-stepper .ghost-btn {
+  width: 40px;
+  min-height: 40px;
+  padding: 4px;
+  font-size: 22px;
+  background: var(--field);
+  color: var(--main-text);
+  box-shadow: none;
+}
+html .life-counter-stepper input {
+  width: 64px;
+  min-width: 0;
+  min-height: 40px;
+  padding: 6px 4px;
+  border: 1px solid var(--field-line);
+  border-radius: 8px;
+  background: var(--field);
+  color: var(--ink-text);
+  text-align: center;
+  font:
+    600 16px/1.4 'Inter',
+    system-ui,
+    sans-serif;
+  appearance: textfield;
+}
+.life-counter-stepper input::-webkit-inner-spin-button,
+.life-counter-stepper input::-webkit-outer-spin-button {
+  appearance: none;
+  margin: 0;
+}
+.life-counter-stepper :disabled {
+  opacity: 0.4;
+  cursor: default;
 }

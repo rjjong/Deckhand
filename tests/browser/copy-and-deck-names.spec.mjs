@@ -16,8 +16,7 @@ test.beforeEach(async ({ page }) => {
 
 test('sync opens optional account controls without creating bearer codes', async ({ page }) => {
   await page.locator('#homeBtn').click();
-  await page.locator('#menuSettings').click();
-  await page.locator('#syncRow').click();
+  await page.locator('#menuAccount').click();
   await expect(page.locator('#accountSheet')).toBeVisible();
   await expect(page.locator('#accountEmail')).toHaveAttribute('type', 'email');
   await expect(page.locator('#accountPassword')).toHaveAttribute('type', 'password');

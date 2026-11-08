@@ -1,0 +1,231 @@
+.trade-toolbar-actions {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: 4px;
+}
+
+html .trade-page .trade-clear {
+  justify-content: center;
+  width: 44px;
+  padding: 0;
+}
+
+html .trade-page .trade-clear svg {
+  color: var(--danger-ink);
+}
+
+.trade-verdict-label {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trade-page .trade-partner-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  max-width: 100%;
+  margin: -6px 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.trade-partner-name svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--accent-ink);
+}
+
+.trade-partner-name:focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 4px;
+}
+
+html #tradeHistoryOverlay {
+  z-index: 200;
+  background: var(--page-backdrop);
+  color: var(--main-text);
+  animation: trade-history-enter 240ms ease-out both;
+}
+
+html #tradeHistoryOverlay > .overlay-inner {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+html #tradeHistoryOverlay .app-titlebar {
+  order: 0 !important;
+  flex: none;
+}
+
+html #tradeHistoryOverlay .trade-history-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  order: 1 !important;
+  gap: 16px;
+  width: 100%;
+  max-width: 900px;
+  min-height: 0;
+  margin: 0 auto;
+  padding: 16px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable both-edges;
+}
+
+html #tradeHistoryOverlay .app-navigation {
+  position: relative !important;
+  inset: auto !important;
+  order: 2 !important;
+  flex: none;
+}
+
+.trade-history-entry {
+  flex: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--main-text) 20%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--main-text) 4%, var(--ink));
+  color: var(--main-text);
+}
+
+html .trade-history-entry > summary {
+  width: 100%;
+  margin: 0;
+  border: 0;
+  border-radius: 16px;
+  background: none;
+  list-style: none;
+  cursor: pointer;
+}
+
+.trade-history-entry > summary::-webkit-details-marker {
+  display: none;
+}
+
+.trade-history-entry .hub-copy {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+html #tradeHistoryOverlay :is(.hub-copy > strong, .hub-arrow) {
+  color: var(--main-text);
+  -webkit-text-fill-color: currentColor;
+}
+
+.trade-history-entry :is(time, small) {
+  display: block;
+  margin-top: 4px;
+  color: var(--main-text);
+  font:
+    400 12px/1.5 'Inter',
+    system-ui,
+    sans-serif;
+}
+
+.trade-history-details {
+  padding: 16px;
+  border-top: 1px solid color-mix(in srgb, var(--main-text) 18%, transparent);
+}
+
+.trade-history-details section + section {
+  margin-top: 22px;
+}
+
+html .trade-history-details h2 {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 8px;
+  color: var(--main-text);
+  font:
+    600 15px/1.5 'Inter',
+    system-ui,
+    sans-serif;
+}
+
+.trade-history-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--main-text) 12%, transparent);
+}
+
+.trade-history-row img {
+  width: 34px;
+  max-height: 48px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.trade-history-row > span:first-of-type {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.trade-history-row strong {
+  color: var(--main-text);
+  font-size: 13px;
+}
+
+.trade-history-row :is(.trade-history-quantity, .trade-history-value) {
+  flex: none;
+  color: var(--main-text);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.trade-history-difference {
+  margin: 18px 0 0;
+  color: var(--main-text);
+  font-size: 13px;
+  text-align: right;
+}
+
+html #tradeHistoryOverlay.leaving {
+  pointer-events: none;
+  animation: trade-history-leave 240ms ease-in both;
+}
+
+@keyframes trade-history-enter {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes trade-history-leave {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html #tradeHistoryOverlay {
+    animation: none;
+  }
+}

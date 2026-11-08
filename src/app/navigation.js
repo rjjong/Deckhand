@@ -357,6 +357,7 @@ try {
 } catch (e) {}
 
 function render() {
+  if (state.homeLoaded) reconcilePlayingOwnership();
   // The navigation ladder: every screen change made by the USER (not by a
   // back press) records its rung. Home resets the ladder; returning to a
   // screen already on it trims back to that rung, so back always retraces
@@ -805,7 +806,7 @@ function navHtml() {
           ${state.screen === 'draft' && state.draft?.phase !== 'setup' ? `<button type="button" id="draftResetBtn" class="header-filter" aria-label="${'Reset draft'}" title="${'Reset draft'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2.6 8.4M3 4v6h6"/></svg></button>` : ''}
           ${state.screen === 'decklist' && getDeck(state.activeDeckId) ? `<button type="button" class="header-filter" id="menuBtn" aria-label="Deck actions" title="Deck actions" aria-haspopup="dialog" aria-expanded="${!!state.menuOpen}">${ICONS.dots}</button>` : ''}
           ${state.screen === 'collection' ? collectionHeaderActionHtml() : ''}
-          ${state.screen === 'trade' ? `<button type="button" id="tradeClear" class="header-filter" aria-label="${trS('Clear trade')}" title="${trS('Clear trade')}"${state.trade?.a.length || state.trade?.b.length ? '' : ' disabled'}>${ICONS.trash}</button>` : ''}
+          ${state.screen === 'trade' ? `<button type="button" id="tradeHistory" class="header-filter" aria-label="Trade history" title="Trade history">${ICONS.history}</button>` : ''}
           ${state._capNote ? `<span class="cap-note${state.screen === 'collection' || state.screen === 'decklist' ? ' cap-tap' : ''}" id="capNoteBtn"${state.screen === 'decklist' ? ' role="button"' : ''}>${state._capNote}</span>` : ''}
         </div>
       `,

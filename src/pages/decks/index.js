@@ -1299,14 +1299,15 @@ function createNewDeck(name, fmt, cmd, partner, { open = true, persist = true } 
     updatedAt: Date.now(),
   };
   if (cmd) {
-    d.admiral = cmd;
+    d.admiral = playingDeckCopy(cmd);
     logDeckChange(d, { type: 'add', name: cmd.name, card: cmd });
   }
   if (cmd && partner) {
-    d.partner = partner;
+    d.partner = playingDeckCopy(partner);
     logDeckChange(d, { type: 'add', name: partner.name, card: partner });
   }
   state.decksIndex.unshift(d);
+  ensurePlayingOwnership(d, deckLeaders(d));
   if (persist) persistDeck(d);
   if (open) openDeck(d.id);
   return d;

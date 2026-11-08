@@ -9,15 +9,12 @@ function menuPageHtml() {
     </section>
     <div class="account-warning-slot">${accountWarningHtml()}</div>
     ${menuNoticeHtml()} ${menuToolsHtml()}
-    <section class="hub-actions" aria-label="Card scanner">
-      ${menuCardHtml('menuScanCards', SCANNER_ICON, 'Scan cards', 'Experimental · Live card scanning')}
-    </section>
     <section class="hub-actions menu-settings" aria-label="Settings">
       ${menuCardHtml('menuAccount', SYNC_ICON, 'Account & sync', escapeHtml(accountStatusLabel()))}
       ${pwaInstallCardHtml()}
       <button type="button" class="hub-card" id="menuSettings">
         <span class="hub-icon">${ICONS.settings}</span
-        ><span><strong>Settings</strong><small>Preferences, sync &amp; backups</small></span
+        ><span><strong>Settings</strong><small>Preferences &amp; backups</small></span
         ><span class="hub-arrow" aria-hidden="true">›</span>
       </button>
     </section>
@@ -27,7 +24,6 @@ function menuPageHtml() {
 
 function wireMenuPage() {
   document.getElementById('tradeRow')?.addEventListener('click', () => switchPage('trade'));
-  document.getElementById('menuScanCards')?.addEventListener('click', openCardScanner);
   wireMenuNotice();
   document.getElementById('menuInstallApp')?.addEventListener('click', installPwa);
   document.getElementById('menuSettings')?.addEventListener('click', () => switchPage('settings'));

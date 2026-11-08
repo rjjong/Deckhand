@@ -141,7 +141,15 @@ function wireResultButtons(list, d, refreshFn, opts) {
           doSwitch(c);
           return;
         }
-        if (d) addCardToDeckValidated(d, c, refreshFn);
+        if (d)
+          addCardToDeckValidated(
+            d,
+            playingDeckCopy(
+              c,
+              state.screen === 'search' && state.searchPinnedDeckId === d.id && state.searchProxy,
+            ),
+            refreshFn,
+          );
         else openDeckPickPopup(c, 'main', refreshFn, null, true);
       });
     });

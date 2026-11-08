@@ -5,7 +5,7 @@ function settingsPageHtml() {
     <section class="hub-intro">
       <span class="hub-eyebrow">YOUR PREFERENCES</span>
       <h1>Make it yours.</h1>
-      <p>Choose your preferences, manage your data, and keep everything backed up and in sync.</p>
+      <p>Choose your startup page, scanner preferences and colors, and manage backups.</p>
     </section>
     ${menuToolsHtml(true)}
   </main>`;
@@ -15,6 +15,8 @@ function wireSettingsPage() {
   wirePreferenceCards();
   wirePreferences();
   wireSettingsChangelog();
+  wireCollectionSettings();
+  wireTradeHistorySettings();
 }
 
 /* ---------------- SETTINGS PAGE ---------------- */
@@ -346,6 +348,7 @@ function startupPageOptions() {
       ...item,
       l: item.l,
     })),
+    [{ k: 'scan-collection', l: 'Scan cards', i: SCANNER_ICON }],
   );
 }
 
@@ -355,11 +358,9 @@ function menuToolsHtml(preferences = false) {
     tradeRow: 'Compare cards and confirm a trade',
     draftRow: 'Seats, timers, pairings and standings',
     crRow: 'Look up rules and ask a question',
-    dataSourcesRow: 'Local library, catalogues and refresh controls',
     guildRow: 'Pick your colors',
     fmtRulesRow: 'Read the rules for each format',
     banListsRow: 'Check banned and restricted cards',
-    syncRow: 'Keep your devices in sync',
     backupRow: 'Save, restore and recover your decks',
     apkBtn: 'Get the Android app',
   };
@@ -371,7 +372,9 @@ function menuToolsHtml(preferences = false) {
       <div class="settings-section">
         ${menuCardHtml('startupRow', ICONS.home, 'Startup page', startupPageOptions().find((item) => item.k === state.startupPage)?.l || 'Home')}
         <div id="startupBody" class="menu-tool-body" hidden>
-          <p class="hint startup-hint">${'Choose which page opens when you launch the app.'}</p>
+          <p class="hint startup-hint">
+            Choose which page opens when you launch the app. Scan cards opens collection scanning.
+          </p>
           <div class="startup-options" role="group" aria-label="${'Startup page'}">
             ${startupPageOptions()
               .map(
@@ -382,19 +385,12 @@ function menuToolsHtml(preferences = false) {
           </div>
         </div>
       </div>
-      <div class="settings-section">
-        ${tile('dataSourcesRow', ICONS.library, 'Data sources')}
-        <div id="dataSourcesBody" class="menu-tool-body" hidden>${dataSourcesHtml()}</div>
-      </div>
-      ${scannerSettingsHtml()}
+      ${scannerSettingsHtml()} ${collectionSettingsHtml()}
       <div class="settings-section">
         <div id="guildBody" class="guild-list xt-body" hidden>
           ${GUILDS.map((x) => `<button type="button" class="guild-opt ${x.k === state.guild ? 'sel' : ''}" data-guild="${x.k}"><span class="guild-swatch" style="--gm:${GUILD_SWATCH[x.main][0]};--gs:${GUILD_SWATCH[x.side][1]};"></span>${manaIconSvg(x.main, 16)}${manaIconSvg(x.side, 16)}<span>${x.n}</span></button>`).join('')}
         </div>
         ${tile('guildRow', `<span id="guildCur">${manaIconSvg(g.main, 22)}${manaIconSvg(g.side, 22)}</span>`, 'Color scheme')}
-      </div>
-      <div class="settings-section">
-        ${tile('syncRow', SYNC_ICON, 'Account & sync', `<div class="l2">${escapeHtml(accountStatusLabel())}</div>`)}
       </div>
       <div class="settings-section">
         <div id="backupBody" class="acc-up xt-body" hidden style="padding:4px 14px 2px;">
@@ -435,7 +431,7 @@ function menuToolsHtml(preferences = false) {
         </div>
         ${tile('backupRow', ICONS.shield, 'Backup')}
       </div>
-      ${settingsChangelogHtml()}
+      ${tradeHistorySettingsHtml()} ${settingsChangelogHtml()}
     </section>`;
   return /* HTML */ ` <section class="menu-tools hub-actions" aria-label="Tools">
     <div class="settings-section">${tile('lifeRow', ICONS.heart, 'Life tracker')}</div>

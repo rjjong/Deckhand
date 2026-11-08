@@ -89,8 +89,13 @@ function leaderZoneHtml(d) {
 function setPartner(d, c) {
   // A copy already sitting in the deck is the one promoted to the second seat.
   const dupIdx = d.cards.findIndex((x) => x.name === c.name);
+  const existing = dupIdx >= 0 ? d.cards[dupIdx] : d.partner?.name === c.name ? d.partner : null;
+  c = existing
+    ? { ...c, proxy: !!existing.proxy, _playingOwned: existing._playingOwned }
+    : playingDeckCopy(c);
   if (dupIdx >= 0) d.cards.splice(dupIdx, 1);
   d.partner = c;
+  if (!existing) ensurePlayingOwnership(d, [c]);
   logDeckChange(d, { type: 'add', name: c.name, card: c });
   state.inspireCache = {};
   scheduleSave(d);
@@ -220,7 +225,9 @@ function openPartnerSearch(d, onDone, opts) {
 }
 
 function wireDecklistInteractions(d, root = document) {
-  root.querySelector('#dlEmptyAdd')?.addEventListener('click', () => openAddCardsFor(d));
+  root
+    .querySelector('#dlEmptyAdd')
+    ?.addEventListener('click', (event) => openDeckAddMenu(d, event));
   root.querySelector('#pairAddBtn')?.addEventListener('click', (e) => {
     e.stopPropagation();
     openPartnerSearch(d);

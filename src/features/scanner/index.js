@@ -3,16 +3,20 @@
 const SCANNER_ICON =
   '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 8V4h4m8 0h4v4M4 16v4h4m8 0h4v-4M3 12h18"/><rect x="8" y="6" width="8" height="12" rx="1"/></svg>';
 
-function openCardScanner({ mode = 'collection' } = {}) {
+function openCardScanner({ mode = 'collection', binder = null, deckId = null } = {}) {
   if (document.getElementById('cardScannerCamera') || document.getElementById('cardScannerOverlay'))
     return;
   const claimedLeaders = new Map();
+  const targetBinder =
+    mode === 'collection' && state.collection.binders.some((b) => b.id === binder) ? binder : null;
   openScannerCamera({
     mode,
+    binder: targetBinder,
     onReview: openScannerReview,
-    onAdd: (batch, options) => openScannerDeckChooser(batch, { ...options, claimedLeaders }),
+    onAdd: (batch, options) =>
+      openScannerDeckChooser(batch, { ...options, claimedLeaders, deckId }),
     onClose() {
-      if (state.screen === 'collection' || state.screen === 'decks') render();
+      if (['collection', 'decks', 'decklist'].includes(state.screen)) render();
     },
   });
 }
@@ -38,7 +42,7 @@ function openScannerReview(result, card, trigger, options = {}) {
           <p>${escapeHtml(card.set_name || card.set?.toUpperCase() || '')}${card.collector_number ? ' · #' + escapeHtml(card.collector_number) : ''}</p>
         </div>
       </section>
-      ${deckMode ? '' : `<section class="scanner-collection" aria-label="Collection details">${collectionAddFieldsHtml(card)}</section>`}
+      ${deckMode ? '' : `<section class="scanner-collection" aria-label="Collection details">${collectionAddFieldsHtml(card, { binder: options.binder })}</section>`}
       <div class="scanner-credits"><span class="scanner-badge">Experimental</span>
         <p>Photos stay on your device. Powered by <a href="https://github.com/HanClinto/CollectorVision" target="_blank" rel="noopener">CollectorVision</a> · <a href="${SCANNER_ASSET_BASE}/NOTICE.txt" target="_blank" rel="noopener">Licenses &amp; source</a></p>
       </div>

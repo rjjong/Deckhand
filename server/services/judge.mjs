@@ -2,6 +2,7 @@
 import crypto from 'node:crypto';
 import { askLocal, localConfig, DEFAULT_LOCAL_MODEL, MAX_LOCAL_PROMPT_CHARS } from './local-ai.mjs';
 import { judgeProgress } from './judge-progress.mjs';
+import { judgeAllowance, judgeRefusal, consumeJudgeAllowance } from './judge-limits.mjs';
 
 const MAX_Q = 500,
   MAX_CARDS = 5,
@@ -129,7 +130,13 @@ export function parseReply(text) {
   };
 }
 
-export async function askJudge(env, fetchImpl, sys, user, { onProgress, signal } = {}) {
+export async function askJudge(
+  env,
+  fetchImpl,
+  sys,
+  user,
+  { onProgress, signal, beforeStart, onStart } = {},
+) {
   let previous = '';
   const onToken = onProgress
     ? (_token, text) => {
@@ -141,13 +148,18 @@ export async function askJudge(env, fetchImpl, sys, user, { onProgress, signal }
         }
       }
     : undefined;
-  const result = await askLocal(env, fetchImpl, sys, user, { schema: 'json', onToken, signal });
+  const result = await askLocal(env, fetchImpl, sys, user, {
+    schema: 'json',
+    onToken,
+    signal,
+    beforeStart,
+    onStart,
+  });
   if (result.error) return result;
   const out = parseReply(result.text);
   return out ? { ...out, provider: result.provider, model: result.model } : { error: 'shape' };
 }
 
-const today = () => new Date().toISOString().slice(0, 10);
 const sha = (s) => crypto.createHash('sha256').update(s).digest('hex');
 
 /* Testable core: deps = { env, fetch, store(name) -> {get(key,{type}), setJSON(key,val)} | null, ip } */
@@ -158,50 +170,47 @@ export async function handle(body, deps) {
   const sys = systemPrompt(),
     readRules = [],
     user = userMessage(c, MAX_PROMPT_CHARS - sys.length, readRules);
-  const dev = sha(String((body && body.device) || '') + '|' + (deps.ip || '')).slice(0, 24);
   const cacheKey = sha(JSON.stringify(['local-v1', modelOf(env), sys, user]));
   const cache = deps.store ? deps.store('judge-cache') : null;
-  const count = deps.store ? deps.store('judge-count') : null;
   // 1. asked before: free and instant
   try {
     const hit = cache && (await cache.get(cacheKey, { type: 'json' }));
-    if (hit && hit.answer)
-      return { status: 200, json: Object.assign({ ok: true, cached: true }, hit) };
+    if (hit && hit.answer) {
+      const { left, limit } = await judgeAllowance(body?.device, deps);
+      return { status: 200, json: Object.assign({ ok: true, cached: true, left, limit }, hit) };
+    }
   } catch (e) {}
   if (!localConfig(env)) return { status: 503, json: { ok: false, error: 'notconfigured' } };
   if (!user) return { status: 400, json: { ok: false, error: 'context' } };
-  // 2. limits
-  const day = today(),
-    perDev = +env.JUDGE_DAILY || 20,
-    all = +env.JUDGE_GLOBAL || 800;
-  let devN = 0,
-    allN = 0;
-  try {
-    if (count) {
-      devN = ((await count.get('d|' + day + '|' + dev, { type: 'json' })) || {}).n || 0;
-      allN = ((await count.get('g|' + day, { type: 'json' })) || {}).n || 0;
-    }
-  } catch (e) {}
-  if (devN >= perDev) return { status: 429, json: { ok: false, error: 'limit', limit: perDev } };
-  if (allN >= all) return { status: 429, json: { ok: false, error: 'quota' } };
-  try {
-    // Bound inference work even when the local model cannot answer.
-    if (count) {
-      await count.setJSON('d|' + day + '|' + dev, { n: devN + 1 });
-      await count.setJSON('g|' + day, { n: allN + 1 });
-    }
-  } catch (e) {}
-  // 3. ask
-  const out = await askJudge(env, deps.fetch, sys, user, deps);
+  // Quotas are checked inside the shared model slot. Busy requests never
+  // enter the quota transaction, and cache hits remain usable at the limit.
+  let allowance,
+    charged = false;
+  const out = await askJudge(env, deps.fetch, sys, user, {
+    ...deps,
+    beforeStart: async () => {
+      allowance = await judgeAllowance(body?.device, deps);
+      return judgeRefusal(allowance);
+    },
+    onStart: async () => {
+      await consumeJudgeAllowance(allowance);
+      charged = true;
+    },
+  });
+  const { left: remaining, limit } = allowance || (await judgeAllowance(body?.device, deps));
+  const left = Math.max(0, remaining - Number(charged));
   if (out.error) {
+    const status = ['limit', 'quota', 'cooldown'].includes(out.error)
+      ? 429
+      : ['busy', 'notconfigured'].includes(out.error)
+        ? 503
+        : out.error === 'context'
+          ? 400
+          : 502;
     return {
-      status:
-        out.error === 'busy' || out.error === 'notconfigured'
-          ? 503
-          : out.error === 'context'
-            ? 400
-            : 502,
-      json: { ok: false, ...out, left: Math.max(0, perDev - devN - 1) },
+      status,
+      headers: out.retryAfter ? { 'retry-after': String(out.retryAfter) } : undefined,
+      json: { ok: false, ...out, left, limit },
     };
   }
   const allowed = new Set(readRules);
@@ -226,6 +235,6 @@ export async function handle(body, deps) {
   } catch (e) {}
   return {
     status: 200,
-    json: Object.assign({ ok: true, cached: false, left: Math.max(0, perDev - devN - 1) }, out),
+    json: Object.assign({ ok: true, cached: false, left, limit }, out),
   };
 }

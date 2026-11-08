@@ -652,8 +652,12 @@ function setPairValidated(d, pr, refreshFn) {
   const go = () => {
     promoteToCommander(d, pr[0]);
     const dup = d.cards.findIndex((x) => x.name === pr[1].name);
+    const existing = dup >= 0 ? d.cards[dup] : null;
     if (dup >= 0) d.cards.splice(dup, 1);
-    d.partner = pr[1];
+    d.partner = existing
+      ? { ...pr[1], proxy: !!existing.proxy, _playingOwned: existing._playingOwned }
+      : playingDeckCopy(pr[1]);
+    if (!existing) ensurePlayingOwnership(d, [d.partner]);
     logDeckChange(d, { type: 'admiral', name: pr[1].name, card: pr[1], prev: null });
     scheduleSave(d);
     toast(`${pr[0].name} and ${pr[1].name} take joint command of ${d.name}.`);

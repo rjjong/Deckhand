@@ -1,5 +1,35 @@
 // services / collection-storage
 
+const COLLECTION_BASIC_LAND_NAMES = new Set([
+  'plains',
+  'island',
+  'swamp',
+  'mountain',
+  'forest',
+  'wastes',
+  'snow-covered plains',
+  'snow-covered island',
+  'snow-covered swamp',
+  'snow-covered mountain',
+  'snow-covered forest',
+]);
+
+function isCollectionBasicLand(card) {
+  if (!card) return false;
+  const name = String(card.name || '')
+    .normalize('NFKC')
+    .trim()
+    .toLowerCase();
+  if (COLLECTION_BASIC_LAND_NAMES.has(name)) return true;
+  const type = String(card.type_line || card.card_faces?.[0]?.type_line || '').split(/[—–]/)[0];
+  return /\bBasic\b/i.test(type) && /\bLand\b/i.test(type);
+}
+
+// Preserve existing records in backups while excluding basics from app inventory.
+function collectionTrackedItems(items = state.collection?.items || []) {
+  return items.filter((item) => !isCollectionBasicLand(item));
+}
+
 /* ---------- Collection: binders + owned cards, stored locally ---------- */
 function loadCollection() {
   try {
@@ -27,7 +57,7 @@ async function repriceCollectionDaily() {
     const last = parseInt(localStorage.getItem(KEY) || '0', 10) || 0;
     if (Date.now() - last < 24 * 3600 * 1000) return;
     const today = String(Date.now());
-    const items = state.collection && state.collection.items;
+    const items = collectionTrackedItems();
     if (!items || !items.length) return;
     if (typeof navigator !== 'undefined' && navigator.onLine === false) return;
     localStorage.setItem(KEY, today);
@@ -82,8 +112,13 @@ async function repriceCollectionDaily() {
 }
 
 function saveCollection() {
+  const changedDecks = reconcilePlayingOwnership();
   state._ownedSet = null;
   if (typeof refreshCardCollectionQuantities === 'function') refreshCardCollectionQuantities();
+  if (state.screen === 'decklist' && state.builderTab === 'list') {
+    const deck = changedDecks.find((deck) => deck.id === state.activeDeckId);
+    if (deck && typeof refreshDecklistBox === 'function') refreshDecklistBox(deck);
+  }
   try {
     localStorage.setItem(LS_PREFIX + 'collection', JSON.stringify(state.collection));
   } catch (e) {

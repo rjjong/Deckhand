@@ -1,7 +1,10 @@
 // A shared quantity control for cards opened from search, decks and collection.
 function refreshCardCollectionQuantities() {
+  const sheet = document.getElementById('cardSheetOverlay');
+  const proxy = sheet?.querySelector('#csProxy');
+  if (proxy && sheet._playingDeckCopy) proxy.checked = !!sheet._playingDeckCopy.proxy;
   const counts = new Map();
-  for (const item of state.collection.items)
+  for (const item of collectionTrackedItems())
     counts.set(item.name, (counts.get(item.name) || 0) + Math.max(0, Number(item.qty ?? 1) || 0));
   document.querySelectorAll('.card-collection-quantity').forEach((widget) => {
     const count = counts.get(widget.dataset.cardName) || 0;
@@ -11,10 +14,11 @@ function refreshCardCollectionQuantities() {
 }
 
 function cardCollectionQuantityHtml(card) {
+  if (isCollectionBasicLand(card)) return '';
   return `<div class="card-collection-quantity" data-card-name="${escapeHtml(card.name)}">
     <span>In collection <strong data-collection-count aria-live="polite">0</strong></span>
     <div><button type="button" data-collection-increase aria-label="Add one to collection" title="Add one to collection">${ICONS.plus}</button>
-    <button type="button" data-collection-decrease aria-label="Remove one from collection" title="Remove one from collection" disabled>−</button></div>
+    <button type="button" data-collection-decrease aria-label="Remove one from collection" title="Remove one from collection" disabled>${ICONS.minus}</button></div>
   </div>`;
 }
 
@@ -30,10 +34,10 @@ function wireCardCollectionQuantity(root, card, { item = null, onChange } = {}) 
     String(candidate.cn || '') === String(card.collector_number || '') &&
     !!candidate.foil === !!card._foilPick;
   const refresh = refreshCardCollectionQuantities;
-  const save = () => {
+  const save = (delta) => {
     saveCollection();
     state._colDirty = true;
-    onChange?.();
+    onChange?.(delta);
   };
   control.querySelector('[data-collection-increase]').onclick = () => {
     if (preferred && !state.collection.items.includes(preferred)) {
@@ -56,7 +60,7 @@ function wireCardCollectionQuantity(root, card, { item = null, onChange } = {}) 
     state.collection.wantsManual = state.collection.wantsManual.filter(
       (candidate) => !sameName(candidate),
     );
-    save();
+    save(1);
   };
   control.querySelector('[data-collection-decrease]').onclick = () => {
     const candidates = state.collection.items.filter(
@@ -72,7 +76,7 @@ function wireCardCollectionQuantity(root, card, { item = null, onChange } = {}) 
     if (!preferred && matchesPrinting(target)) preferred = target;
     target.qty = quantity(target) - 1;
     if (target.qty === 0) state.collection.items.splice(state.collection.items.indexOf(target), 1);
-    save();
+    save(-1);
   };
   refresh();
 }

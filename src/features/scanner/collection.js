@@ -7,7 +7,7 @@ const scannerCollectionKey = (name) =>
 
 function scannerCollectionCounts() {
   const counts = new Map();
-  for (const item of state.collection.items) {
+  for (const item of collectionTrackedItems()) {
     const key = scannerCollectionKey(item.name);
     counts.set(key, (counts.get(key) || 0) + (Number(item.qty) || 0));
   }
@@ -15,9 +15,10 @@ function scannerCollectionCounts() {
 }
 
 // Every scan is one physical copy. Review remains available for foil, condition
-// and binder choices; the quick-add action uses Near Mint, nonfoil, no binder.
-function scannerAddToCollection(cards) {
-  if (!cards.length) return;
+// and binder choices; quick-add uses Near Mint/nonfoil and its source binder.
+function scannerAddToCollection(cards, binder = null) {
+  cards = collectionTrackedItems(cards);
+  if (!cards.length) return 0;
   for (const card of cards) {
     const slim = slimForCollection(card);
     delete slim.foil;
@@ -28,7 +29,7 @@ function scannerAddToCollection(cards) {
         (item.cn || '') === slim.cn &&
         item.cond === 'NM' &&
         !item.foil &&
-        !item.binder,
+        (item.binder || null) === binder,
     );
     if (same) same.qty = (Number(same.qty) || 0) + 1;
     else
@@ -36,7 +37,7 @@ function scannerAddToCollection(cards) {
         ...slim,
         qty: 1,
         cond: 'NM',
-        binder: null,
+        binder,
         addedAt: Date.now(),
       });
     state.collection.wantsManual = state.collection.wantsManual.filter(
@@ -44,4 +45,5 @@ function scannerAddToCollection(cards) {
     );
   }
   saveCollection();
+  return cards.length;
 }

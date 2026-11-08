@@ -118,13 +118,24 @@ retain ascending name/mana and descending price defaults. Missing numeric data s
 last in both directions, with name tie-breaking. Sorting uses owned data and local
 price/library caches without new upstream requests.
 
+Binder group headings precede their card grids for every grouping mode. Color
+groups use the card's own colors and split multicolored cards by exact combination,
+normalizing WUBRG order so different input orders share the same group. Headings
+show each color symbol, the color names and the owned copy count. Combinations
+sort by color count and WUBRG order; colorless cards remain last.
+Tap a heading to collapse or expand that group; the button supports keyboard
+activation and exposes its expanded state. Choices stay in session state per
+binder, grouping mode and group, surviving sorting, filtering and navigation.
+Collapsing retains selections and counts. Card Details navigation skips cards
+in collapsed groups.
+
 The overview places Binders, Automatic folders and Unsorted headings before their
 contents. Its title-bar Trade action is also available in Menu; All cards replaces
 it with total collection value/history, and saved binders replace it with Edit.
 `src/pages/collection/binder-settings.js` owns the full-screen, right-sliding editor
 with a pinned header/footer and an independent scrolling body. Back cancels draft
-changes; Save retains layout, icons and automatic routing rules. Cover art is
-derived from the first filed card without a user-facing picker.
+changes; Save retains layout, icons and automatic routing rules. Binder tiles show
+icons, names and totals without cover images, and no longer generate cover art.
 
 Collection selection always displays its quantity, even for one card; while
 selected, the normal Add button is hidden. Entering any folder, returning to the
@@ -133,6 +144,41 @@ overview, or switching tabs clears the selection. Total collection snapshots use
 and allowing a zero total. The stats icon opens the existing price-history chart
 with the current total and owned copy count.
 
+`src/pages/collection/playing.js` derives the automatic `__playing__` folder from
+owned collection quantities and nonproxy copies in decks (commanders, main deck,
+and constructed sideboards). It allocates each owned copy once, preferring the
+deck's printing, and keeps virtual rows tied to their actual collection item for
+details navigation. The view never copies inventory or moves a card's binder.
+
+Basic lands are outside collection and ownership tracking. `isCollectionBasicLand()`
+uses the Basic Land type and known basic names for older records with no type line,
+including snow-covered basics and Wastes. Nonbasic lands with basic land subtypes
+remain tracked. `collectionTrackedItems()` excludes basics from collection/binder
+views, values, CSV exports, ownership markers and scan counts without deleting
+existing records from backups. Basic deck copies never create inventory or Wants;
+old automatic proxy markers on basics are cleared. Collection imports/additions and
+collection scans skip basics, while deck scans retain them in the physical deck.
+Search/deck-scanner additions call `ensurePlayingOwnership` after validation,
+reusing available inventory and creating only the shortfall among the newly added
+copies. Existing decks are never backfilled merely by opening, loading or syncing.
+`reconcilePlayingOwnership()` enforces one owned allocation or proxy status per
+physical deck slot. It normalizes loaded/restored decks, deck writes, collection
+changes and renders; sync defers reconciliation until all incoming pages finish.
+Uncovered copies become proxies with `_playingMissing: true`, without increasing
+inventory. That marker lets later inventory restore automatic proxies to owned
+copies while leaving explicitly chosen proxies alone. The marker is preserved by
+compact storage, backups and sync; explicit add/proxy actions clear it.
+
+Deck copies persist `proxy` and the optional `_playingOwned` link through compact
+storage, backups and account sync. Proxy choices live in single/multiple deck
+pickers, pinned Search, the scan destination picker and deck Card Details.
+Proxies remain deck cards for legality/counting but are excluded from Playing;
+Wants shows all deck proxies, with quantities even
+when another copy is owned. Switching an automatically registered copy to a proxy
+removes only its linked inventory; reused owned copies remain. Acquiring a Wants
+copy can fulfill a proxy without creating another owned copy. Deck tiles/list rows
+identify proxies and keep physical/proxy stacks separate.
+
 `src/ui/card-collection.js` supplies the shared quantity control and refreshes all
 open counters whenever `saveCollection()` runs. Quantities include every printing
 of the card. Collection-origin actions prefer the opened stack, preserving its
@@ -140,13 +186,55 @@ condition, foil and binder when re-adding at zero. Zero stacks leave the collect
 without closing Card Details; object references keep navigation and late printing
 responses tied to the correct item as array indices change.
 
-Recommendations and Similar cards share a discovery row. Card Details has no
+Wants + opens the themed binder chooser directly, even with zero or one binder.
+Its larger preview opens the shared printing grid above the dialog. Picking a
+printing updates only the pending acquisition and returns to the binder chooser;
+choosing a binder or No binder commits one copy and fulfills a wanted deck proxy.
+Cancel/Back leave inventory and the Wants entry unchanged. Automatic rule conflicts
+reuse the same dialog while retaining their remember-choice option.
+
+`src/pages/collection/wants.js` provides name-keyed multi-selection by long-press,
+Space, or Select all. A fixed action bar adds all displayed wanted quantities to a
+chosen binder or confirms bulk dismissal. Selection clears on Back, folder/tab
+navigation, and when filtering hides selected rows. Failed lookups stay wanted
+and selected; cancelling the binder dialog makes no inventory changes.
+
+Bulk dismissal removes manual wishes and marks existing proxy slots with
+`_wantsDismissed`, keeping those deck cards and owned inventory intact. This flag
+survives compact storage, printing changes, backups and account sync. Newly added
+proxy copies are wanted again, and acquisition fulfills visible wanted proxies
+before previously dismissed copies. Becoming owned clears the dismissal flag.
+
+Single and multiple card additions to the collection, and the deck Card Details
+Add to deck menu, use `cardTransferDialogHtml()` in `src/ui/menu-cards.js` and
+`styles/overrides/card-transfers.css`. The centered dialogs have themed fields,
+quantity controls and destination buttons, with a scrolling body between a fixed
+heading and action row. Existing printing, condition, foil, binder and quantity
+handlers are shared with the scanner; only the popup presentation changes.
+
+Inspiration and Similar cards share a discovery row. Collection +/− buttons use
+matching SVGs to keep both symbols centered. Card Details has no
 Combos action. `src/ui/card-tags.js` opens the existing tag editor in a themed modal,
 with visual-viewport sizing, scrolling, focus restoration and Back support. Global
 tags save independently; deck-specific tag changes still schedule a deck save.
 
 `attachSwipeNav` animates only the `main` viewport. Its outgoing clip excludes the
 header, subtitle and navigation, and the chevrons remain inside the hero bounds.
+
+### Trade history
+
+Trade keeps its working cards, optional `partnerName` and the most recent 100
+confirmed trades in the existing `trade` storage record. Account sync and full
+backups carry that record without a separate protocol or credentials. Clear trade
+resets only the draft. Confirmation copies the exact printings, quantities and
+agreed prices into history; later price refreshes apply only to the working trade.
+Double confirmation is guarded while binder choices resolve.
+
+`src/pages/trade/history.js` owns the history model and full-screen, right-sliding
+read-only page. Entries show the trader, confirmation time and expandable received/
+given lists. The app header and bottom navigation stay fixed while its body
+scrolls. The main Trade title bar opens history, the summary bar contains Confirm
+and Clear, and tapping the other trader's heading opens the shared name dialog.
 
 ### App versions
 
@@ -233,7 +321,7 @@ npm run data:library
 `npm run data:download` is an alias for this full-library command. Both download
 the official source files, trim them, and stage the result before publishing.
 No full source dump is retained on disk. The browser can ingest the served
-cache into IndexedDB through its existing data-source refresh behavior.
+cache into IndexedDB through its automatic background update checks.
 Additional function tags, combo catalogues, and scanner fingerprints are not
 included in this card/rulings cache. Restart the server after changing DATA_DIR.
 
@@ -246,9 +334,12 @@ tools, the AI judge, format rules, and ban lists, with Settings last. The life
 tracker is also available from the Life tab in the bottom navigation.
 The interface is English-only; previous Dutch preferences fall back to English.
 First startup opens the chosen page directly without a guided introduction.
-Settings contains Startup page, Data sources, Color scheme, Sync, and Backup. Related controls
+Settings contains Startup page, Card scanner, Color scheme, and Backup. Related controls
 expand below their card. Notification options, feedback, What's new, About,
-app sharing buttons have been removed. Tapping any main
+app sharing buttons have been removed. Account & sync opens from Menu only;
+Data sources and its manual refresh/download controls have been removed from the
+user interface. Library and catalogue updates continue automatically. Scan cards
+opens from Collection and binder + menus. Tapping any main
 page title returns home. The five labeled bottom tabs are Decks,
 Collection, Search, Inspiration, and Life. Life opens a menu with new-game,
 resume, and restore actions. A deck's title bar has its name and a Deck actions
@@ -388,7 +479,7 @@ repeatedly reloading the blocked page can extend a rate-limit block.
 
 Unreleased-set probes, full tile-art prewarming, and random-card startup
 prefetching are disabled for self-hosted sessions. Random cards use the local
-library when it is loaded. An explicit data-source refresh can still check sets.
+library when it is loaded. Data-source refresh/download controls are not exposed to users.
 Scryfall search 404s meaning no matches become a normal empty results list at
 the local adapter; genuine missing named cards remain 404s.
 
@@ -428,13 +519,17 @@ browser-only decks are not automatically copied to the server until sync is on.
 Both AI features use Ollama on your server. There are no remote AI providers, keys, automatic model fallbacks, or paid requests.
 
 The pinned default is `qwen3:4b-instruct-2507-q4_K_M`, a 2.5 GB text model chosen to leave room on a 4 GB GPU.
-The runtime uses a 4096-token context, one inference at a time, a queue of at most three waiting requests and a ten-second queue wait limit.
+The runtime uses a 4096-token context and one shared inference slot for Judge and deck advice. Competing requests return `503 busy` immediately with `Retry-After: 10`; there is no waiting queue.
 The Judge streams readable progress over SSE while Ollama emits NDJSON tokens.
 The browser keeps the explanation visible when the final ruling and validated
 rule citations arrive. JSON cache hits and early errors remain compatible.
 Leaving or clearing the Judge aborts the request and releases its model slot;
 partial or failed responses are never cached as completed answers.
 Inference has a 75-second deadline; a busy server returns a clear message rather than starting more concurrent models.
+The Judge's defaults allow 10 new generations per account per UTC day (per browser/IP for guests), a 30-second cooldown between new questions, and 100 generations per UTC day across the server.
+The browser displays server availability and the current policy, polling `GET /api/judge/status?device=…` every ten seconds only while the Judge is visible and idle. Polling stops in the rules browser, when hidden, or after leaving the page.
+Cached rulings remain free and available during cooldowns, daily limits, and other players' requests. Busy/unavailable requests do not consume allowance. An accepted generation consumes one even if cancelled or its output fails validation. Quota checks and writes run inside the shared inference slot; counts and cooldown timestamps persist in SQLite. Verified session cookies bind usage to an account across devices; guests use their browser identifier. No account identifiers from request bodies are trusted.
+
 The smaller model has less reasoning capacity than large hosted models. Judge answers remain grounded in tagged Oracle texts and selected rules; unsupported citations are removed and mark an answer uncertain.
 
 For Docker:
@@ -451,8 +546,9 @@ For native development, install [Ollama](https://docs.ollama.com), pull the same
 OLLAMA_URL=http://127.0.0.1:11434
 OLLAMA_MODEL=qwen3:4b-instruct-2507-q4_K_M
 OLLAMA_TIMEOUT_MS=75000
-JUDGE_DAILY=20
-JUDGE_GLOBAL=800
+JUDGE_DAILY=10
+JUDGE_GLOBAL=100
+JUDGE_COOLDOWN_SECONDS=30
 ```
 
 Compose sets its own private `http://ollama:11434` address and publishes no Ollama port. `OLLAMA_NO_CLOUD=1` disables Ollama cloud features.
@@ -464,7 +560,7 @@ See [Ollama structured outputs](https://docs.ollama.com/capabilities/structured-
 
 ## Experimental single-card scanner
 
-Open **Collection → + → Scan cards** or **Menu → Scan cards** to enter the camera
+Open **Collection → + → Scan cards** or a binder's **+ → Scan cards** to enter the camera
 directly. The camera slides in from the right as a separate full-screen
 view, covering the underlying page and navigation. Recognition runs continuously
 while this view is visible, with a newest-first detection log below the preview.
@@ -575,8 +671,11 @@ using the same loaded engine. A background/page-hide pause still requires Resume
 cancel or leave. Space selects with a keyboard; taps toggle while selection is
 active. `log.js` owns selected rows, asynchronous metadata and session-only photos.
 The + action adds only selected ready rows through
-`collection.js`: one NM/nonfoil copy per detection, no binder, merging matching
-collection stacks and saving once. Individual review retains its richer controls.
+`collection.js`: one NM/nonfoil copy per detection, merging matching collection
+stacks and saving once. A binder's + → Scan cards passes its ID through the camera
+and log for bulk additions and preselects it in review. Overview scans default
+to no binder; deck scans retain their separate destination chooser. Individual
+review retains its richer controls.
 Select all snapshots visible rows without automatically selecting later detections.
 The + action is gray and disabled when no eligible rows are selected, and the log
 also enforces selection so bypassing the disabled control cannot add everything.
@@ -587,7 +686,17 @@ still participate in session repeat history so suppressed duplicates do not reap
 Ownership quantities sum card names across printings, finishes and binders; wants
 are excluded. Counts refresh after metadata, review, add and delete operations.
 
-The Decks FAB opens `openCardScanner({ mode: 'deck' })`. In this mode the camera,
+The open deck's + menu offers Search cards (pinned to that deck), Import cards
+(append a list or `.txt` file), and Scan cards. The empty-deck + uses the same
+menu. Import cards preserves existing cards, sideboard and commanders; it reuses
+the transfer dialog with a separate append mode, copy limits and a proxy choice.
+Physical additions reuse owned copies and add only the missing inventory.
+The Deck actions menu's Import deck still replaces the deck after confirmation.
+
+The Decks FAB opens `openCardScanner({ mode: 'deck' })`. An open deck passes
+`deckId` as well, restricting both bulk and review transfers to that captured
+destination while keeping the proxy choice. Closing the camera refreshes the
+deck editor. In this mode the camera,
 selection and photo lifecycle are shared, but repeat delay/session suppression are
 disabled in the session snapshot so a physical deck can contain repeated names.
 Saved preferences are not modified and held-card suppression still applies.
@@ -604,7 +713,8 @@ Each scan is copied with `pin: true` to retain its printing. A matching commande
 or partner occupies its existing command slot once per destination/session; further
 physical copies remain in the main deck. The importer preserves all other copies,
 including those the deck editor may flag as illegal, rather than silently dropping
-parts of the physical deck. No collection writes or remote requests are needed.
+parts of the physical deck. Physical copies reuse owned inventory and add missing
+copies; proxies are tracked on Wants. These bookkeeping operations use local data.
 Single-card review uses the same deck destination in deck mode. Cancelling/back
 restores the parent dialog and focus; closing the scanner also closes its picker
 and any owned new-deck dialog.
@@ -677,7 +787,7 @@ cooldown boundaries, name normalization and typed setting sync/restore.
 
 ## Accounts and device sync
 
-Accounts are optional. **Settings → Account & sync** supports signup, email
+Accounts are optional. **Menu → Account & sync** supports signup, email
 verification, login, logout, password recovery and one-time imports of old sync
 codes. Guests see a warning in Decks, Collection and Menu: data is stored only on
 this device and can be lost without backups. All other app features work locally.

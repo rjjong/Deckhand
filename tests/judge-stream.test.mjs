@@ -18,7 +18,7 @@ const question = {
     { n: '704.5f', t: 'A creature with toughness 0 or less is put into its owner’s graveyard.' },
   ],
 };
-const env = { OLLAMA_URL: 'http://ollama:11434' };
+const env = { OLLAMA_URL: 'http://ollama:11434', JUDGE_COOLDOWN_SECONDS: '0' };
 const tick = () => new Promise((resolve) => setImmediate(resolve));
 const completion = () =>
   Response.json({ done: true, done_reason: 'stop', message: { content: JSON.stringify(answer) } });
@@ -101,28 +101,20 @@ test('incomplete and truncated Ollama streams cannot become completed answers', 
   }
 });
 
-test('cancelling a queued request removes it without occupying the model lane', async () => {
-  const started = Promise.withResolvers(),
-    finish = Promise.withResolvers();
+test('an already-cancelled request neither calls the model nor blocks the following request', async () => {
   let calls = 0;
   const fetchImpl = async () => {
-    if (++calls === 1) {
-      started.resolve();
-      await finish.promise;
-    }
+    calls++;
     return completion();
   };
-  const first = askLocal(env, fetchImpl, 'system', 'question');
-  await started.promise;
   const controller = new AbortController();
-  const cancelled = askLocal(env, fetchImpl, 'system', 'question', { signal: controller.signal });
   controller.abort();
-  assert.equal((await cancelled).error, 'cancelled');
-  const next = askLocal(env, fetchImpl, 'system', 'question');
-  finish.resolve();
-  assert.equal((await first).provider, 'ollama');
-  assert.equal((await next).provider, 'ollama');
-  assert.equal(calls, 2);
+  assert.equal(
+    (await askLocal(env, fetchImpl, 'system', 'question', { signal: controller.signal })).error,
+    'cancelled',
+  );
+  assert.equal((await askLocal(env, fetchImpl, 'system', 'question')).provider, 'ollama');
+  assert.equal(calls, 1);
 });
 
 test('a streaming timeout includes the response body and releases the model lane', async () => {

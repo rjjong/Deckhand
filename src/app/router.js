@@ -104,6 +104,7 @@ function switchPage(p, topnav) {
   // at Search clears the pin unless this visit was armed by an Add Cards
   // button a moment ago.
   if (p === 'search') {
+    state.searchProxy = false;
     if (!state._pinArm) state.searchPinnedDeckId = null;
     state._pinArm = false;
   }
@@ -144,6 +145,7 @@ function switchPage(p, topnav) {
   state.menuOpen = false;
   state.openCSelect = null;
   state.colSel = null;
+  state.wantSel = null;
   pushHistory(p);
   state._deskTop = true;
   render();

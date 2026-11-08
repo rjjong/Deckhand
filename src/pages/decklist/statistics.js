@@ -1029,7 +1029,7 @@ ${escapeHtml(local.note)}</textarea>
 function dlBoxClass() {
   const p = state.dlPanel;
   if (!p) return '';
-  return p === 'import' || p === 'export' ? 'dl-popup' : 'dl-cover';
+  return p === 'import' || p === 'import-cards' || p === 'export' ? 'dl-popup' : 'dl-cover';
 }
 
 function toggleDlPanel(d, panelKey) {
@@ -1408,10 +1408,10 @@ function wireDlPanel(d) {
       .addEventListener('click', () =>
         applyTextToDeck(d, document.getElementById('bulkText').value, 'bulkReport', false),
       );
-  } else if (state.dlPanel === 'import') {
+  } else if (state.dlPanel === 'import' || state.dlPanel === 'import-cards') {
+    const append = state.dlPanel === 'import-cards';
     // Load a downloaded deck list (.txt) straight into the paste box — the
-    // person reviews it there and presses Replace deck themselves; replacing
-    // the deck remains a separate, confirmed action.
+    // person reviews it before adding cards or confirming a deck replacement.
     document
       .getElementById('importFileBtn')
       ?.addEventListener('click', () => document.getElementById('importFile')?.click());
@@ -1425,16 +1425,33 @@ function wireDlPanel(d) {
           ta.value = text;
           ta.scrollTop = 0;
         }
-        toast(`${f.name} ${trS('loaded — press Replace Deck when ready.')}`);
+        toast(`${f.name} loaded — press ${append ? 'Add cards' : 'Replace deck'} when ready.`);
       } catch (err) {
         console.error(err);
         toast(trS('Could not read that file.'));
       }
       e.target.value = ''; // same file can be picked again next time
     });
-    document.getElementById('applyImportBtn').addEventListener('click', () => {
+    document.getElementById('applyImportBtn').addEventListener('click', async (event) => {
       const val = document.getElementById('importText').value;
       if (!val.trim()) return;
+      if (append) {
+        const button = event.currentTarget;
+        if (button.disabled) return;
+        button.disabled = true;
+        try {
+          await applyTextToDeck(d, val, 'importReport', false, {
+            append: true,
+            proxy: document.getElementById('importCardsProxy').checked,
+          });
+        } catch (error) {
+          console.error(error);
+          toast('Could not import cards. Please try again.');
+        } finally {
+          button.disabled = false;
+        }
+        return;
+      }
       const go = () => applyTextToDeck(d, val, 'importReport', true);
       if (d.cards.length || d.admiral) {
         openInAppConfirm(

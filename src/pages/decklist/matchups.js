@@ -661,13 +661,11 @@ ${escapeHtml(lines.join('\n'))}</textarea>
       </div>`,
     );
   }
-  if (state.dlPanel === 'import') {
-    return /* HTML */ `<div
-      class="panel-card transfer-dialog"
-      role="dialog"
-      aria-label="Import deck"
-    >
-      ${transferHeaderHtml('Import deck', 'Paste a deck list or load a text file. Importing replaces this deck.', '', 'dl-panel-x')}
+  if (state.dlPanel === 'import' || state.dlPanel === 'import-cards') {
+    const append = state.dlPanel === 'import-cards';
+    const title = append ? 'Import cards' : 'Import deck';
+    return /* HTML */ `<div class="panel-card transfer-dialog" role="dialog" aria-label="${title}">
+      ${transferHeaderHtml(title, append ? `Add a card list or text file to ${d.name}. Existing cards are kept.` : 'Paste a deck list or load a text file. Importing replaces this deck.', '', 'dl-panel-x')}
       <div class="transfer-body">
         <label class="transfer-label" for="importText">Deck list</label>
         <textarea
@@ -679,8 +677,13 @@ ${escapeHtml(lines.join('\n'))}</textarea>
         <button type="button" class="ghost-btn" id="importFileBtn">
           ${inlIco('file')}${trS('Load a .txt file')}
         </button>
-        <button type="button" class="primary-btn transfer-danger" id="applyImportBtn">
-          Replace deck
+        ${append ? playingProxyOptionHtml('importCardsProxy') : ''}
+        <button
+          type="button"
+          class="primary-btn${append ? '' : ' transfer-danger'}"
+          id="applyImportBtn"
+        >
+          ${append ? 'Add cards' : 'Replace deck'}
         </button>
         <div id="importReport" class="transfer-report" role="status"></div>
       </div>
@@ -829,12 +832,13 @@ function dlEmptyAddHtml(d) {
       class="deck-fab dl-empty-plus"
       id="dlEmptyAdd"
       aria-label="${'Add cards'}"
+      aria-haspopup="menu"
     >
       ＋
     </button>
     <div class="dl-empty-t">${'Add some cards'}</div>
     <div class="dl-empty-s">
-      ${'Search adds them straight to'}
+      ${'Search, import or scan cards into'}
       <strong>${escapeHtml(d.name || '')}</strong>
     </div>
   </div>`;
@@ -873,9 +877,7 @@ function categorizedListHtml(d) {
           if (_fPred && !_fPred(c)) return false;
           return true;
         });
-  // An empty main deck: one big + in the free room (DOM-first in the
-  // reversed box = right above the leader strip), the same errand as the
-  // dock's small + -- Search, adding straight into this deck.
+  // The empty state and floating + share the same add-card choices.
   const _emptyAdd = !d.cards.length && !_dlLive ? dlEmptyAddHtml(d) : '';
   if (!d.cards.length && !d.admiral && !d.maybeboard.length) return _emptyAdd;
   let html = _emptyAdd;
@@ -1047,7 +1049,7 @@ function dedupeIdxs(idxs, arr) {
   const seen = new Map();
   const out = [];
   idxs.forEach((i) => {
-    const n = arr[i].name;
+    const n = arr[i].name + (arr[i].proxy ? '\u0000proxy' : '');
     if (seen.has(n)) out[seen.get(n)].qty++;
     else {
       seen.set(n, out.length);
@@ -1158,8 +1160,11 @@ function cardRowHtml(card, idx, loc, qty) {
     data-loc="${loc}"
   >
     <button type="button" class="vg-hit" data-himg="${escapeHtml(cardImageMed(card))}">
-      <span class="vr-q">${qty || 1}</span><span class="vr-n">${escapeHtml(card.name)}</span
-      ><span class="vr-cost">${costPipsHtml(card)}</span><span class="vr-p">${pv}</span>
+      <span class="vr-q">${qty || 1}</span
+      ><span class="vr-n">${escapeHtml(card.name)}</span
+      >${card.proxy ? '<small class="deck-proxy-label">Proxy</small>' : ''}<span class="vr-cost"
+        >${costPipsHtml(card)}</span
+      ><span class="vr-p">${pv}</span>
     </button>
   </div>`;
 }

@@ -361,8 +361,7 @@ async function restoreFromFile(file) {
 }
 
 function wirePreferences() {
-  wireBackupAndSync();
-  wireDataSources();
+  wireBackupControls();
   wireScannerSettings();
   document.querySelectorAll('input[name="startupPage"]').forEach((input) =>
     input.addEventListener('change', () => {
@@ -386,7 +385,7 @@ function wirePreferences() {
   });
 }
 
-function wireBackupAndSync() {
+function wireBackupControls() {
   document.getElementById('backupBtn').addEventListener('click', () => openBackupSheet());
   document
     .getElementById('restoreBtn')
@@ -410,7 +409,6 @@ function wireBackupAndSync() {
         );
       });
   });
-  document.getElementById('syncRow')?.addEventListener('click', () => openSyncSheet());
   document.getElementById('deletedDecksBtn')?.addEventListener('click', (e) => {
     e.stopPropagation();
     openDeckVersions(null);

@@ -331,7 +331,6 @@ async function bulkSyncCheck(force) {
     });
     _bulkIdx = null;
     _bulkLoadP = null; // rebuilt lazily from the new data
-    state._bulkMetaCache = null; // Data Sources re-reads the new meta
     sfJournal(
       'bulkdb: synced ' +
         _want.join(', ') +

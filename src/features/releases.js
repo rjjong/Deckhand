@@ -5,10 +5,10 @@ const APP_VERSION = DECKHAND_VERSION;
 
 const CHANGELOG_NOTES = {
   en: [
-    'Collection folders have headings above Binders, Automatic folders and Unsorted cards',
-    'Trade is available from the Collection overview and Menu; All cards has collection value and history',
-    'Binder settings open full screen from the right through the edit icon or after creating a binder',
-    'Removed binder cover selection; selected cards show a numeric count and reset when changing folders',
+    'AI Judge shows live availability and immediately reports when it is helping another player',
+    'New-question budgets default to 10 per account per day, a 30-second cooldown and 100 per day for the server',
+    'Saved rulings remain free during cooldowns and daily limits; busy or unavailable requests do not spend allowance',
+    'Judge and deck advice share one model slot, with no waiting queue',
   ],
 };
 
@@ -19,6 +19,124 @@ const CHANGELOG_NOTES = {
 const APP_DATE = DECKHAND_RELEASE_DATE;
 
 const CHANGELOG_HISTORY = [
+  {
+    v: '2.0.29',
+    d: '2026-11-08',
+    en: [
+      'Player options group Monarch, Dungeon and the new counter selector beside Done; Initiative moves into Dungeons',
+      'Dungeon progress sits above life, with crown and torch status icons in the bottom-left corner',
+      'Track mana, energy, experience, commander casts and storm per player; Commander games show cast count by default',
+      'Counter values and visibility are retained in saved games and account sync',
+    ],
+  },
+  {
+    v: '2.0.28',
+    d: '2026-11-08',
+    en: [
+      'Clear trade sits beside Confirm trade; the title bar opens Trade history',
+      'Tap You to name the other trader, with the name saved in the draft and completed trade',
+      'Confirmed trades retain their cards, quantities and agreed prices in a themed history page',
+    ],
+  },
+  {
+    v: '2.0.27',
+    d: '2026-11-08',
+    en: [
+      'Long-press Wants cards or use Select all to select several entries',
+      'Bulk add sends the selected wanted quantities to one binder and fulfills matching proxies',
+      'Bulk removal dismisses selected Wants while preserving deck contents and owned inventory',
+    ],
+  },
+  {
+    v: '2.0.26',
+    d: '2026-11-07',
+    en: [
+      'Basic lands, snow-covered basics and Wastes are excluded from Collection, Playing, Wants and their totals',
+      'Deck search, imports and deck scans keep basic lands without creating collection entries or wanted proxies',
+      'Collection additions, imports and scans skip basic lands; existing records remain preserved in backups',
+    ],
+  },
+  {
+    v: '2.0.25',
+    d: '2026-11-07',
+    en: [
+      'Wants + opens a themed binder dialog directly, with a larger image you can tap to change printing',
+      'Deck copies without owned inventory are marked as proxies and always appear on Wants',
+      'Ownership stays consistent after collection changes, imports, restores and sync without inventing inventory',
+    ],
+  },
+  {
+    v: '2.0.24',
+    d: '2026-11-07',
+    en: [
+      'Add to collection uses a centered themed popup for single cards and deck selections',
+      'The Card Details Add to deck popup has themed destination buttons and clearer quantity controls',
+      'Both popups keep their headings and actions visible while scrolling on smaller screens',
+    ],
+  },
+  {
+    v: '2.0.23',
+    d: '2026-11-07',
+    en: [
+      'The deck + menu offers Search cards, Import cards and Scan cards for the current deck',
+      'Import cards adds a list or text file while keeping existing cards and commanders',
+      'Scanning from a deck keeps that deck selected, with the same physical-copy and proxy choices',
+    ],
+  },
+  {
+    v: '2.0.22',
+    d: '2026-11-07',
+    en: [
+      'The automatic Playing folder shows owned copies currently used in your decks',
+      'Search and deck scans reuse owned copies and add only missing copies to your collection',
+      'Choose proxies in deck pickers, pinned Search or Card Details to put those copies on Wants',
+      'Proxy status survives backups and account sync; removing a deck card keeps the physical copy owned',
+    ],
+  },
+  {
+    v: '2.0.21',
+    d: '2026-11-07',
+    en: [
+      'Settings contains preferences and backups; Account & sync opens from the main menu',
+      'Removed Data sources and manual data refresh/download controls from Settings',
+      'Scan cards opens from Collection and binder + menus instead of the main menu',
+    ],
+  },
+  {
+    v: '2.0.20',
+    d: '2026-11-07',
+    en: [
+      'Card Details uses the Inspiration label and a vertically centered minus icon',
+      'Binder tiles show icons and card totals without cover images',
+      'Scan cards is available from a binder’s + menu and adds scans to that binder',
+    ],
+  },
+  {
+    v: '2.0.19',
+    d: '2026-11-07',
+    en: [
+      'Tap binder group headings to collapse or expand their cards',
+      'Each binder remembers collapsed groups while you browse, sort and filter',
+    ],
+  },
+  {
+    v: '2.0.18',
+    d: '2026-11-07',
+    en: [
+      'Binder group headings appear above their cards in every grouping mode',
+      'Color grouping separates multicolored cards by exact color combination, with matching mana symbols',
+    ],
+  },
+  {
+    v: '2.0.17',
+    d: '2026-11-07',
+    en: [
+      'Collection folders have headings above Binders, Automatic folders and Unsorted cards',
+      'Trade is available from the Collection overview and Menu; All cards has collection value and history',
+      'Binder settings open full screen from the right through the edit icon or after creating a binder',
+      'Removed binder cover selection; selected cards show a numeric count and reset when changing folders',
+    ],
+  },
   {
     v: '2.0.16',
     d: '2026-11-07',

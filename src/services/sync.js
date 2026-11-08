@@ -30,8 +30,6 @@ function syncSaveState() {
 }
 
 function syncPaintStatus() {
-  const label = document.querySelector('#syncRow .hub-copy > div.l2');
-  if (label) label.textContent = accountStatusLabel();
   paintAccountWarnings();
 }
 
@@ -349,6 +347,7 @@ async function syncApply(changes, linked = syncState(), generation = _syncGenera
   }
   state._ownedSet = null;
   state.decksIndex.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  reconcilePlayingOwnership();
   syncSaveMeta();
   return applied;
 }
@@ -485,6 +484,7 @@ async function syncRun(why = 'manual') {
   } finally {
     _syncBusy = false;
     _syncController = null;
+    reconcilePlayingOwnership();
     const label = document.getElementById('syncLastLine');
     if (label) label.textContent = syncLastLabel();
   }

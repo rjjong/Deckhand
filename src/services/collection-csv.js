@@ -443,7 +443,8 @@ async function runCsvImport(text, suggestedBinderName, forcedBinder) {
     ),
   );
   let types = 0,
-    qtyTotal = 0;
+    qtyTotal = 0,
+    ignoredBasics = 0;
   const missing = [];
   const _memo = {};
   for (let i = 0; i < entries.length; i++) {
@@ -451,6 +452,10 @@ async function runCsvImport(text, suggestedBinderName, forcedBinder) {
       c = cards[i];
     if (!c) {
       missing.push(e.name);
+      continue;
+    }
+    if (isCollectionBasicLand(c)) {
+      ignoredBasics += e.qty;
       continue;
     }
     const slim = colFoilSlim(slimForCollection(c), c, e.foil);
@@ -481,6 +486,7 @@ async function runCsvImport(text, suggestedBinderName, forcedBinder) {
   }
   saveCollection();
   let msg = `<span style="color:var(--success);">Imported ${qtyTotal} card${qtyTotal === 1 ? '' : 's'} (${types} unique)${binderLabel ? ` into “${escapeHtml(binderLabel)}”` : ''}.</span>`;
+  if (ignoredBasics) msg += `<br><span class="hint">${ignoredBasics} basic lands excluded.</span>`;
   if (missing.length)
     msg += `<br><span class="hint">${missing.length} not found: ${escapeHtml(missing.slice(0, 6).join(', '))}${missing.length > 6 ? '…' : ''}</span>`;
   setCiReport(msg);
@@ -492,7 +498,7 @@ async function runCsvImport(text, suggestedBinderName, forcedBinder) {
 }
 
 function downloadCollectionCsv() {
-  const items = state.collection.items || [];
+  const items = collectionTrackedItems();
   if (!items.length) {
     toast('Your collection is empty — nothing to export.');
     return;

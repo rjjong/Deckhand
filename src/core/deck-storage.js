@@ -384,6 +384,7 @@ async function loadDecksIndex() {
     });
   } catch (e) {}
   state.homeLoaded = true;
+  reconcilePlayingOwnership();
 }
 
 /* ---- Storage slimming ----
@@ -420,6 +421,10 @@ const SLIM_KEYS = [
   'game_changer', // WotC's live bracket flag, via Scryfall — must survive storage
   'pin',
   '_foilPick',
+  'proxy',
+  '_playingOwned',
+  '_playingMissing',
+  '_wantsDismissed',
 ];
 // 1.39: a slot's own chosen printing (and its foil) survive storage
 const SLIM_FACE_KEYS = [
@@ -769,6 +774,7 @@ async function openDeckVersions(id) {
 }
 
 function persistDeck(d) {
+  reconcilePlayingOwnership(d, { skipDeck: d });
   d.name = normalizeDeckName(d.name);
   return queueDeckStorage(d.id, () => persistDeckLocally(d));
 }

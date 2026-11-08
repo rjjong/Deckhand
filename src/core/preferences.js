@@ -19,6 +19,7 @@ async function loadSettings() {
   state.priceCache = loadPriceCache();
   state.collection = loadCollection();
   state.startupPage = 'home';
+  state.hideCollectionFolderPrices = false;
   Object.assign(state, normalizeScannerSettings());
   try {
     const raw = localStorage.getItem(LS_PREFIX + 'settings:app');
@@ -27,6 +28,7 @@ async function loadSettings() {
       if (s.theme) state.theme = s.theme;
       if (s.guild && GUILDS.some((g) => g.k === s.guild)) state.guild = s.guild;
       if (STARTUP_PAGES.includes(s.startupPage)) state.startupPage = s.startupPage;
+      state.hideCollectionFolderPrices = s.hideCollectionFolderPrices === true;
       Object.assign(state, normalizeScannerSettings(s));
     }
   } catch (e) {
@@ -43,6 +45,7 @@ async function persistSettings() {
         theme: state.theme,
         guild: state.guild,
         startupPage: state.startupPage,
+        hideCollectionFolderPrices: state.hideCollectionFolderPrices === true,
         ...normalizeScannerSettings(state),
       }),
     );
@@ -86,6 +89,7 @@ function applyTheme() {
 const CARET_BY_SIDE = { W: '#8A6A1E', U: '#A6D0EE', B: '#D6D1CA', R: '#F4B6A2', G: '#B4DAB4' };
 
 function scheduleSave(deck) {
+  reconcilePlayingOwnership(deck, { skipDeck: deck });
   deck._saveStatus = 'saving';
   updateSaveIndicator();
   clearTimeout(saveTimers[deck.id]);

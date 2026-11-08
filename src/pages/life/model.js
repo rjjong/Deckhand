@@ -26,6 +26,7 @@ function ensureLifePlayers() {
     if (!p.dmg) p.dmg = [];
     while (p.dmg.length < L.count) p.dmg.push(0);
     p.dmg.length = L.count;
+    ensureLifeCounters(p);
   });
   return L.players;
 }
@@ -303,6 +304,15 @@ function openLifeDungeon(idx) {
         ${D ? cardHtml(D, true) : `<div class="dg-grid">${LIFE_DUNGEONS.map((X) => cardHtml(X, false)).join('')}</div>`}
       </div>
       <div class="dg-actions life-popup-footer">
+        <button
+          type="button"
+          class="ghost-btn dg-initiative${p.initiative ? ' on' : ''}"
+          data-linitiative="${me}"
+          aria-label="Initiative"
+          aria-pressed="${!!p.initiative}"
+        >
+          ${INITIATIVE_SVG}<span>Initiative</span>
+        </button>
         ${D ? `<button type="button" class="ghost-btn" id="dgAll">← ${'All dungeons'}</button>` : ''}${p.dg ? `<button type="button" class="ghost-btn" id="dgLeave">${'Leave'}</button>` : ''}<button
           type="button"
           class="primary-btn"
@@ -315,6 +325,10 @@ function openLifeDungeon(idx) {
     m.querySelector('[data-life-close]').addEventListener('click', () =>
       brSheetClose('lifeDgSheet'),
     );
+    m.querySelector('[data-linitiative]').addEventListener('click', () => {
+      lifeSetInitiative(me);
+      paint();
+    });
     m.querySelectorAll('[data-dgme]').forEach((b) =>
       b.addEventListener('click', () => {
         me = +b.dataset.dgme;

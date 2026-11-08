@@ -573,6 +573,7 @@ function openCROverlay(startMode) {
   let mode = startMode === 'rules' ? 'rules' : 'judge';
   el.innerHTML = `
     ${overlayCapHtml('Ask AI judge', `<button type="button" id="crOpenRules" aria-label="${'Read the Comprehensive Rules'}" title="${'Read the Comprehensive Rules'}">${inlIco('library', 24)}</button>`)}
+    <div class="cj-availability" id="cjAvailability" role="status" aria-live="polite"><span data-judge-availability>Checking judge availability…</span><small data-judge-policy></small></div>
     <div id="crBody"></div>
     <div class="cr-bar">
       <div class="cr-qwrap"><div class="cr-qmirror" id="crQMirror" aria-hidden="true"></div><textarea id="crQ" rows="3" maxlength="500" enterkeyhint="send" autocomplete="off" spellcheck="false"></textarea></div>
@@ -592,8 +593,9 @@ function openCROverlay(startMode) {
     judgeController = null;
     judgeBusy = false;
     el.querySelector('#crJudge').disabled = false;
+    availability.paint();
+    availability.refresh();
   };
-  el._cancelJudge = cancelJudge;
   const q = el.querySelector('#crQ');
   const count = el.querySelector('#crCount');
   const mirror = el.querySelector('#crQMirror');
@@ -606,11 +608,22 @@ function openCROverlay(startMode) {
       count.classList.remove('cr-left');
       return;
     }
-    const l = judgeLeftGet(),
-      n = l == null ? 20 : l;
-    count.textContent = n + ' left';
-    count.title = 'Questions left today';
+    const l = judgeLeftGet();
+    count.textContent = (l == null ? '—' : l) + ' left';
+    count.title = 'New questions left today; saved answers are free';
     count.classList.add('cr-left');
+  };
+  const availability = watchJudgeAvailability(el, {
+    active: () => mode === 'judge' && !judgeBusy,
+    working: () => judgeBusy,
+    onStatus: (status) => {
+      judgeLeftSet(status.left);
+      setCount();
+    },
+  });
+  el._cancelJudge = () => {
+    availability.stop();
+    cancelJudge();
   };
   const title = el.querySelector('.ov-title');
   // TWO-stage back, the app's blessed way: every level pushes its own history
@@ -638,7 +651,7 @@ function openCROverlay(startMode) {
   const keepY = pageScroller().scrollTop,
     keepScreen = state.screen;
   pushOverlay('cr', () => {
-    cancelJudge();
+    el._cancelJudge();
     state._crqArmed = false;
     document.getElementById('crOverlay')?.remove();
     if (state.screen === keepScreen) {
@@ -707,8 +720,9 @@ function openCROverlay(startMode) {
       </div>`;
   };
   const setMode = (m) => {
-    cancelJudge();
     mode = m;
+    cancelJudge();
+    availability.refresh();
     el.classList.toggle('cr-mode-rules', m === 'rules');
     title.textContent = m === 'rules' ? 'Comprehensive Rules' : 'Ask AI judge';
     q.rows = m === 'rules' ? 1 : 3;
@@ -988,25 +1002,6 @@ function openCROverlay(startMode) {
     } catch (err) {}
     paintQ(null);
   });
-  // a one-button notice inside the judge page (the house confirm sits under it)
-  const judgeNotice = (msg) => {
-    el.querySelector('.cj-notice')?.remove();
-    const n = document.createElement('div');
-    n.className = 'cj-notice';
-    n.innerHTML = /* HTML */ `<div class="deckpick" role="alertdialog">
-      <div class="iac-ico">${ICONS.gavel}</div>
-      <div class="iac-msg">${escapeHtml(msg)}</div>
-      <button type="button" class="primary-btn" id="cjNoticeOk" style="width:100%;margin:14px 0 0;">
-        OK
-      </button>
-    </div>`;
-    el.appendChild(n);
-    const shut = () => n.remove();
-    n.querySelector('#cjNoticeOk').addEventListener('click', shut);
-    n.addEventListener('click', (e) => {
-      if (e.target === n) shut();
-    });
-  };
   const askJudge = async () => {
     const query = q.value.trim();
     tagPop.hidden = true;
@@ -1024,6 +1019,7 @@ function openCROverlay(startMode) {
     if (judgeBusy || !el.isConnected || mode !== 'judge') return;
     arm();
     judgeBusy = true;
+    availability.paint();
     const request = ++judgeRequest;
     const controller = new AbortController();
     judgeController = controller;
@@ -1067,6 +1063,8 @@ function openCROverlay(startMode) {
         judgeBusy = false;
         judgeController = null;
         el.querySelector('#crJudge').disabled = false;
+        availability.paint();
+        availability.refresh();
       }
     }
     if (
@@ -1078,7 +1076,6 @@ function openCROverlay(startMode) {
       return;
     if (res && typeof res.left === 'number') {
       judgeLeftSet(res.left);
-      if (res.left === 5) judgeNotice('5 questions left for today. Tomorrow you get 20 again.');
     }
     if (res && res.error === 'limit') judgeLeftSet(0);
     setCount();
@@ -1097,26 +1094,28 @@ function openCROverlay(startMode) {
     const retry = res?.retryAfter;
     const retryText =
       Number.isFinite(retry) && retry > 0
-        ? ` Try again in about ${Math.ceil(retry / 60)} minute${Math.ceil(retry / 60) === 1 ? '' : 's'}.`
+        ? ` Try again in about ${judgeRetryTime(retry)}.`
         : ' Please try again later.';
     const why =
       res && res.error === 'limit'
-        ? `You have asked the judge your ${res.limit || ''} questions for today. More tomorrow. Below, what the rules themselves say.`
+        ? `You have used your ${res.limit || ''} new questions for today. More after midnight UTC; saved answers are still free. Below, what the rules themselves say.`
         : res && res.error === 'notconfigured'
           ? 'The local judge is not set up on this server yet. Below, what the rules themselves say.'
           : res && res.error === 'quota'
-            ? `The AI question allowance is temporarily exhausted.${retryText} Below, what the rules themselves say.`
+            ? 'The server has reached its AI question allowance for today. More after midnight UTC; saved answers are still free. Below, what the rules themselves say.'
             : res && res.error === 'busy'
-              ? 'The local judge is answering another question. Please try again shortly. Below, what the rules themselves say.'
-              : res && res.error === 'model'
-                ? 'The local judge model is not downloaded on this server yet. Below, what the rules themselves say.'
-                : res && res.error === 'context'
-                  ? 'This question needs too much card or rules text. Try asking about fewer cards. Below, what the rules themselves say.'
-                  : res && res.error === 'timeout'
-                    ? 'The local judge took too long to answer. Try a shorter question. Below, what the rules themselves say.'
-                    : res && res.error === 'offline'
-                      ? 'No connection to the judge. Below, what the rules themselves say.'
-                      : 'The judge cannot be reached right now. Below, what the rules themselves say.';
+              ? 'The AI judge is currently helping another player. Your question was not queued and your allowance was not used. Please try again shortly. Below, what the rules themselves say.'
+              : res && res.error === 'cooldown'
+                ? `Please wait before asking another new question.${retryText} Saved answers are still free. Below, what the rules themselves say.`
+                : res && res.error === 'model'
+                  ? 'The local judge model is not downloaded on this server yet. Below, what the rules themselves say.'
+                  : res && res.error === 'context'
+                    ? 'This question needs too much card or rules text. Try asking about fewer cards. Below, what the rules themselves say.'
+                    : res && res.error === 'timeout'
+                      ? 'The local judge took too long to answer. Try a shorter question. Below, what the rules themselves say.'
+                      : res && res.error === 'offline'
+                        ? 'No connection to the judge. Below, what the rules themselves say.'
+                        : 'The judge cannot be reached right now. Below, what the rules themselves say.';
     const toks = crTokens(query);
     body.innerHTML =
       `<p class="hint" style="margin:4px 12px 8px;">⚠ ${escapeHtml(why)}</p>` +

@@ -2,6 +2,7 @@
 
 /* ---------------- COLLECTION PAGE ---------------- */
 function colMatch(it, codes) {
+  if (isCollectionBasicLand(it)) return false;
   const f = state.colFilter;
   if (f.q && !it.name.toLowerCase().includes(f.q.toLowerCase())) return false;
   if (f.type) {
@@ -69,6 +70,7 @@ function colItemLegalIn(it, fmt, codes) {
 function colFilteredItems() {
   const f = state.colFilter;
   const codes = new Set();
+  if (f.binder === '__playing__') return computePlaying().filter((item) => colMatch(item, codes));
   return state.collection.items.filter((it) => {
     // Three scopes: the automatic All binder shows every owned card; a real
     // binder shows its own; the front page shows only LOOSE (unfiled) cards —
@@ -101,11 +103,14 @@ function colFilterActive() {
 function collectionValueItems() {
   const f = state.colFilter;
   if (f.binder === '__wants__') return computeWants().filter((it) => colMatch(it));
-  return !f.binder && !colFilterActive() ? state.collection.items : colFilteredItems();
+  return !f.binder && !colFilterActive() ? collectionTrackedItems() : colFilteredItems();
 }
 
 function collectionTotalValue(items) {
-  return items.reduce((total, it) => total + (it.eur || 0) * (it.qty ?? 1), 0);
+  return collectionTrackedItems(items).reduce(
+    (total, it) => total + (it.eur || 0) * (it.qty ?? 1),
+    0,
+  );
 }
 
 function collectionValueKey() {
@@ -128,7 +133,7 @@ function collectionHeaderActionHtml() {
 }
 
 function openCollectionStats() {
-  const items = state.collection.items;
+  const items = collectionTrackedItems();
   const value = collectionTotalValue(items);
   const quantity = items.reduce((n, it) => n + (it.qty ?? 1), 0);
   recordCollectionTotal(value);
@@ -172,65 +177,71 @@ function clearCollectionFilters(rerender = true) {
 }
 
 function binderName(id) {
+  if (id === '__playing__') return 'Playing';
   if (id === '__wants__') return 'Wants';
   if (id === '__all__') return 'All cards';
   const b = state.collection.binders.find((x) => x.id === id);
   return b ? b.name : null;
 }
 
-/* The Wants binder maintains itself: every card that appears in any of your
-   decks but not in your collection. Manual additions and removals stick. */
+/* Wants includes missing deck copies and explicit proxies, even when another
+   physical copy of that card is already owned. Manual additions remain supported. */
 function computeWants() {
-  const owned = ownedNames();
-  const ex = new Set(state.collection.wantsExclude || []);
+  const owned = playingOwnedCounts();
+  const excluded = new Set((state.collection.wantsExclude || []).map(playingNameKey));
   const map = new Map();
-  // The deck already holds the whole card (Oracle text, art, faces): keep a
-  // pointer to it, so tapping a Wants tile opens the card page at once
-  // instead of asking Scryfall first.
   const src = (state._wantsSrc = new Map());
-  const take = (c, deckName) => {
-    if (c && c.name && !src.has(c.name) && (c.oracle_text != null || Array.isArray(c.card_faces)))
-      src.set(c.name, c);
-    if (!c || !c.name || owned.has(c.name) || ex.has(c.name)) return;
-    const had = map.get(c.name);
-    if (had) {
-      if (deckName && had.decks.indexOf(deckName) < 0) had.decks.push(deckName);
-      else if (!deckName) had.manual = true;
+  const take = (card, decks, qty, manual = false) => {
+    if (!card?.name || qty < 1 || isCollectionBasicLand(card)) return;
+    const key = playingNameKey(card.name);
+    // Deck proxies are always wanted; exclusions only apply to manual wants.
+    if (manual && excluded.has(key)) return;
+    if (!src.has(card.name) && (card.oracle_text != null || Array.isArray(card.card_faces)))
+      src.set(card.name, card);
+    const existing = map.get(key);
+    if (existing) {
+      existing.qty = Math.max(existing.qty, qty);
+      existing.manual ||= manual;
+      for (const name of decks) if (!existing.decks.includes(name)) existing.decks.push(name);
       return;
     }
-    const hit = state.priceCache[c.name];
-    map.set(c.name, {
-      name: c.name,
-      img: c.img || cardImageMed(c),
-      type_line: c.type_line || '',
-      set: c.set || '',
-      set_name: c.set_name || '',
-      colors: c.colors || c.color_identity || [],
-      rarity: c.rarity || '',
-      border_color: c.border_color || '',
+    const hit = state.priceCache[card.name];
+    map.set(key, {
+      name: card.name,
+      img: card.img || cardImageMed(card),
+      type_line: card.type_line || '',
+      set: card.set || '',
+      set_name: card.set_name || '',
+      colors: card.colors || card.color_identity || [],
+      rarity: card.rarity || '',
+      border_color: card.border_color || '',
+      qty,
       eur:
-        c.eur != null
-          ? c.eur
+        card.eur != null
+          ? card.eur
           : hit && typeof hit.v === 'number'
             ? hit.v
-            : brItemEur({ name: c.name }),
-      decks: deckName ? [deckName] : [],
-      manual: !deckName,
+            : brItemEur({ name: card.name }),
+      decks,
+      manual,
     });
   };
-  (state.decksIndex || []).forEach((d) => {
-    const dn = d.name || 'Untitled deck';
-    deckLeaders(d).forEach((c) => take(c, dn));
-    (d.cards || []).forEach((c) => take(c, dn));
-  });
-  (state.collection.wantsManual || []).forEach((c) => take(c, null));
+  for (const [key, entry] of playingDeckDemand()) {
+    const missing = Math.max(0, entry.physical.length - (owned.get(key) || 0));
+    const proxies = entry.proxies.filter(({ card }) => !card._wantsDismissed);
+    const sources = proxies.concat(missing ? entry.physical : []);
+    const decks = Array.from(new Set(sources.map(({ deck }) => deck.name || 'Untitled deck')));
+    take(sources[0]?.card || entry.card, decks, missing + proxies.length);
+  }
+  for (const card of state.collection.wantsManual || [])
+    if (!(owned.get(playingNameKey(card.name)) > 0)) take(card, [], card.qty || 1, true);
   return Array.from(map.values());
 }
 
 function collectionAdvancedPanelHtml() {
   const f = state.colFilter;
   const sets = Array.from(
-    new Map(state.collection.items.map((it) => [it.set, it.set_name || it.set])).entries(),
+    new Map(collectionTrackedItems().map((it) => [it.set, it.set_name || it.set])).entries(),
   ).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
   const setOpts = [{ v: '', l: 'All sets' }].concat(
     sets.map(([code, name]) => ({ v: code, l: name, icons: setIconHtml(code) })),
@@ -308,23 +319,29 @@ function collectionAdvancedPanelHtml() {
 function collectionPageHtml() {
   const f = state.colFilter;
   const wantsMode = f.binder === '__wants__';
+  const playingMode = f.binder === '__playing__';
   const _colLegalCodes = new Set();
   const items = wantsMode
     ? computeWants().filter((it) => colMatch(it, _colLegalCodes))
     : colFilteredItems();
+  if (wantsMode) pruneWantsSelection(items);
+  else state.wantSel = null;
   const sortChoice = collectionSortChoice();
   const _idxOf = new Map(state.collection.items.map((x, i) => [x, i]));
-  const valueItems = !f.binder && !colFilterActive() ? state.collection.items : items;
+  const itemIndex = (item) => _idxOf.get(item._collectionItem || item);
+  const valueItems = !f.binder && !colFilterActive() ? collectionTrackedItems() : items;
   const totalEur = collectionTotalValue(valueItems);
   recordCollectionTotal(collectionTotalValue(state.collection.items));
   if (!colFilterActive()) notePrice(collectionValueKey(), totalEur);
-  return /* HTML */ `<main class="collection-page">
+  return /* HTML */ `<main
+    class="collection-page${wantsMode ? ' wants-page' : ''}${wantsMode && state.wantSel?.size ? ' wants-selecting' : ''}"
+  >
     <div class="account-warning-slot">${accountWarningHtml()}</div>
     <div class="searchbar page-searchbar collection-searchbar">
       <input
         id="colSearchQ"
         enterkeyhint="search"
-        placeholder="${f.binder && f.binder !== '__all__' && f.binder !== '__wants__' ? trS('Search this binder…') : trS('Search collection…')}"
+        placeholder="${playingMode ? 'Search Playing…' : f.binder && f.binder !== '__all__' && f.binder !== '__wants__' ? trS('Search this binder…') : trS('Search collection…')}"
         value="${escapeHtml(f.q || '')}"
         autocomplete="off"
       /><button
@@ -350,6 +367,7 @@ function collectionPageHtml() {
       </button>
     </div>
     <div id="colAdvSlot">${state.colAdvOpen ? advancedSearchScreenHtml() : ''}</div>
+    ${wantsMode ? wantsSelectionHtml(items) : ''}
     ${f.binder || colFilterActive() ? '' : collectionBindersGridHtml()}
     ${!f.binder && !colFilterActive() ? '<h2 class="section-label collection-unsorted-title">Unsorted</h2>' : ''}
     ${f.binder ? `<button class="deck-fab" id="binderFab" title="${trS('Add cards to collection…')}">＋</button>` : ''}
@@ -358,24 +376,26 @@ function collectionPageHtml() {
         ? colGridsHtml(items, (it) =>
             wantsMode
               ? `
-      <div class="sr-tile col-tile want-tile" data-wn="${escapeHtml(it.name)}">
-        <div class="want-img"><img loading="lazy" class="${it.border_color === 'white' ? 'wb-card' : ''}" src="${it.img}" alt="${escapeHtml(it.name)}">${pwPillHtml(it.name)}<button type="button" class="want-have" data-wanthave="${escapeHtml(it.name)}" title="${'I got it'}" aria-label="${'I got it'}">\uFF0B</button></div>
+      <div class="sr-tile col-tile want-tile${state.wantSel?.has(playingNameKey(it.name)) ? ' csel' : ''}" data-wn="${escapeHtml(it.name)}" tabindex="0" role="group" aria-label="${escapeHtml(it.name)}${state.wantSel?.has(playingNameKey(it.name)) ? ', selected' : ''}">
+        <div class="want-img"><img loading="lazy" class="${it.border_color === 'white' ? 'wb-card' : ''}" src="${it.img}" alt="${escapeHtml(it.name)}">${it.qty > 1 ? `<span class="vg-qty">×${it.qty}</span>` : ''}${pwPillHtml(it.name)}<button type="button" class="want-have" data-wanthave="${escapeHtml(it.name)}" title="${'I got it'}" aria-label="${'I got it'}">\uFF0B</button></div>
         <div class="col-tile-info">
           <div class="l1">${escapeHtml(it.name)}</div>
           <div class="l2 want-in">${it.eur != null ? `<span class="wi-eur">€${it.eur.toFixed(2)}</span>` : ''}${wantInLabel(it)}</div>
         </div>
+        ${state.wantSel?.has(playingNameKey(it.name)) ? '<span class="csel-mark">✓</span>' : ''}
       </div>`
               : `
-      <button class="sr-tile col-tile ${state.colSel && state.colSel.has(_idxOf.get(it)) ? 'csel' : ''}" data-ci="${_idxOf.get(it)}">
-        <img loading="lazy" class="${it.border_color === 'white' ? 'wb-card' : ''}" src="${it.img}" alt="${escapeHtml(it.name)}">${it.qty > 1 ? `<span class="vg-qty">×${it.qty}</span>` : ''}${it.foil ? '<i class="foil-star col-foil" title="Foil">✨</i>' : ''}${state.colSel && state.colSel.has(_idxOf.get(it)) ? '<span class="csel-mark">✓</span>' : ''}${collectionMarkHtml(it, _colLegalCodes)}
+      <button class="sr-tile col-tile ${!playingMode && state.colSel && state.colSel.has(itemIndex(it)) ? 'csel' : ''}" ${playingMode ? 'data-playing-ci' : 'data-ci'}="${itemIndex(it)}">
+        <img loading="lazy" class="${it.border_color === 'white' ? 'wb-card' : ''}" src="${it.img}" alt="${escapeHtml(it.name)}">${it.qty > 1 ? `<span class="vg-qty">×${it.qty}</span>` : ''}${it.foil ? '<i class="foil-star col-foil" title="Foil">✨</i>' : ''}${!playingMode && state.colSel && state.colSel.has(itemIndex(it)) ? '<span class="csel-mark">✓</span>' : ''}${collectionMarkHtml(it, _colLegalCodes)}
         <div class="col-tile-info">
           <div class="l1">${escapeHtml(it.name)}</div>
+          ${playingMode ? `<div class="l2 playing-decks">In ${escapeHtml(it.decks.join(', '))}</div>` : ''}
           ${(!f.binder && colFilterActive()) || f.binder === '__all__' ? `<div class="l2 col-bnd">${inlIco('binder', 13)}${escapeHtml(it.binder ? binderName(it.binder) || trS('Binder') : trS('No binder'))}</div>` : ''}
           <div class="l2" style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml((it.set || '').toUpperCase())}${it.cn ? ' #' + escapeHtml(it.cn) : ''} · ${escapeHtml(it.cond)}</span>${it.eur != null ? `<span style="color:var(--brass);font-family:'JetBrains Mono',monospace;flex:none;">€${(it.eur * it.qty).toFixed(2)}</span>` : ''}</div>
         </div>
       </button>`,
           )
-        : `<div class="empty-note" style="margin-top:20px;">${wantsMode ? 'Nothing on the Wants list — every card in your decks is in your collection.' : !f.binder && !colFilterActive() ? 'Cards without a binder appear here.' : state.collection.items.length ? 'Nothing matches these filters.' : 'Your collection is empty. Search above, or use "Add to collection" on any card in the app.'}</div>`
+        : `<div class="empty-note" style="margin-top:20px;">${playingMode ? (colFilterActive() ? 'Nothing matches these filters.' : 'Owned cards used in your decks appear here. Proxies appear in Wants.') : wantsMode ? 'Nothing on the Wants list — every card in your decks is in your collection.' : !f.binder && !colFilterActive() ? 'Cards without a binder appear here.' : collectionTrackedItems().length ? 'Nothing matches these filters.' : 'Your collection is empty. Search above, or use "Add to collection" on any card in the app.'}</div>`
     }
     ${
       state.colSel && state.colSel.size
@@ -391,9 +411,7 @@ function collectionPageHtml() {
   </main>`;
 }
 
-/* Binders as folders, My Stuff style: the tile's face is the first card
-   filed in that binder, its name line carries the colour/rarity glyphs the
-   binder's own name implies, and the sub-line counts cards and value. */
+/* Shared Scryfall art-crop helper, also used by Inspiration. */
 function artCropFrom(img) {
   // Scryfall image paths swap format in-place: …/normal/… → …/art_crop/…
   return img ? String(img).replace('/normal/', '/art_crop/').replace('/large/', '/art_crop/') : img;
@@ -405,8 +423,8 @@ function wireCollectionPage() {
     openCollectionSortMenu(event.currentTarget);
   });
   wireFolderViewToggle('col');
+  wireBinderGroups();
   requestAnimationFrame(() => requestAnimationFrame(fitColTileHeight));
-  ensureBinderFaces();
   document.querySelectorAll('[data-brinfo]').forEach((btn) => {
     const stop = (e) => e.stopPropagation();
     btn.addEventListener('pointerdown', stop);
@@ -459,11 +477,31 @@ function wireCollectionPage() {
   document.getElementById('binderFab')?.addEventListener('click', (e) => {
     e.stopPropagation();
     const bid = state.colFilter.binder;
+    if (bid === '__playing__') {
+      openFabMenu([
+        [
+          'bfAddCard',
+          `<span class="ib">${ICONS.search}</span>Add card to deck`,
+          () => switchPage('search'),
+        ],
+        [
+          'bfScanCards',
+          `<span class="ib">${SCANNER_ICON}</span>Scan deck`,
+          () => openCardScanner({ mode: 'deck' }),
+        ],
+      ]);
+      return;
+    }
     openFabMenu([
       [
         'bfAddCard',
         `<span class="ib">${ICONS.search}</span>${trS('Add card')}`,
         openCollectionCardSearch,
+      ],
+      [
+        'bfScanCards',
+        `<span class="ib">${SCANNER_ICON}</span>Scan cards`,
+        () => openCardScanner({ binder: bid }),
       ],
       ['bfImport', mIco('file') + trS('Import'), () => openCollectionImport(bid)],
     ]);
@@ -561,23 +599,17 @@ function wireCollectionPage() {
       wantGotIt(btn.dataset.wanthave);
     });
   });
-  document.querySelectorAll('.want-tile').forEach((tile) =>
-    tile.addEventListener('click', async () => {
-      // A Wants tile opens the normal card page (with Add to my collection and
-      // Remove from Wants); the little manage sheet survives only as the
-      // offline / not-found fallback.
-      const name = tile.dataset.wn;
-      // Hand over the whole rendered Wants list, so the card page's chevrons
-      // and swipe gestures sail through it card by card.
-      const wpool = Array.from(document.querySelectorAll('.want-tile')).map((t) => t.dataset.wn);
-      const card = await wantCardFor(name);
-      if (card) {
-        openCardInfo(card, { wantName: name, wantPool: wpool, wantIdx: wpool.indexOf(name) });
-        return;
-      }
-      openWantSheet(name);
-    }),
-  );
+  wireWantsSelection();
+  document.querySelectorAll('[data-playing-ci]').forEach((tile) => {
+    tile.addEventListener('click', () =>
+      openCollectionCard(
+        Number(tile.dataset.playingCi),
+        Array.from(document.querySelectorAll('[data-playing-ci]')).map((item) =>
+          Number(item.dataset.playingCi),
+        ),
+      ),
+    );
+  });
   // The top box searches WHAT YOU OWN — the whole collection, or just the
   // open binder (the filter chain already scopes by binder). Instant while
   // typing; adding cards moved to the ＋ button.
@@ -702,7 +734,9 @@ function wireCollectionPage() {
       // swipe gestures sail through it copy by copy.
       openCollectionCard(
         ci,
-        Array.from(document.querySelectorAll('.col-tile[data-ci]')).map((t) => +t.dataset.ci),
+        Array.from(document.querySelectorAll('.col-tile[data-ci]'))
+          .filter((t) => !t.closest('.col-group[hidden]'))
+          .map((t) => +t.dataset.ci),
       );
     });
   });

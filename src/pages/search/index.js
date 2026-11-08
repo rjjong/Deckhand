@@ -41,7 +41,7 @@ function searchPageHtml() {
       </div>
       ${
         pinned
-          ? `<div class="pin-pill"><span class="pp-txt">Adding straight to <strong>${escapeHtml(pinned.name)}</strong></span><button id="unpinBtn" title="Stop adding to this deck">✕</button></div>`
+          ? `<div class="pin-pill"><span class="pp-txt">Adding straight to <strong>${escapeHtml(pinned.name)}</strong></span><button id="unpinBtn" title="Stop adding to this deck">✕</button></div>${playingProxyOptionHtml('pinnedDeckProxy', state.searchProxy)}`
           : ''
       }
       <div id="searchResultsBox"></div>
@@ -394,7 +394,11 @@ function wireSearchPage() {
   }
   document.getElementById('unpinBtn')?.addEventListener('click', () => {
     state.searchPinnedDeckId = null;
+    state.searchProxy = false;
     render();
+  });
+  document.getElementById('pinnedDeckProxy')?.addEventListener('change', (event) => {
+    state.searchProxy = event.target.checked;
   });
   // Enter (the keyboard's search key) does what the Search button did:
   // fold the filter menu away, then run the search.
@@ -1579,7 +1583,13 @@ function openSearchSelMenu(anchor) {
       ? {
           label: '\uFF0B ' + escapeHtml(pinned.name),
           fn: () => {
-            if (addCardsToDeckQuiet(pinned, cards)) done();
+            if (
+              addCardsToDeckQuiet(
+                pinned,
+                cards.map((card) => playingDeckCopy(card, state.searchProxy)),
+              )
+            )
+              done();
           },
         }
       : { label: '\uFF0B ' + trS('Add to deck…'), fn: () => openMultiDeckChooser(cards, done) },

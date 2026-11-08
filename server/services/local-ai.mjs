@@ -35,47 +35,18 @@ export function localConfig(env = {}) {
   };
 }
 
+export function localAvailability(env, fetchImpl) {
+  const config = localConfig(env);
+  return { configured: !!config, busy: !!(config && lanes.get(fetchImpl)?.get(config.url)) };
+}
+
 function reserve(fetchImpl, url, signal) {
   signal?.throwIfAborted();
   let endpoints = lanes.get(fetchImpl);
   if (!endpoints) lanes.set(fetchImpl, (endpoints = new Map()));
-  let lane = endpoints.get(url);
-  if (!lane) endpoints.set(url, (lane = { active: false, waiting: [] }));
-  const release = () => {
-    const next = lane.waiting.shift();
-    if (next) {
-      clearTimeout(next.timer);
-      next.resolve(release);
-    } else lane.active = false;
-  };
-  if (!lane.active) {
-    lane.active = true;
-    return Promise.resolve(release);
-  }
-  if (lane.waiting.length >= 3) return Promise.reject(new Error('busy'));
-  return new Promise((resolve, reject) => {
-    const entry = {
-      resolve: (release) => {
-        signal?.removeEventListener('abort', aborted);
-        resolve(release);
-      },
-      timer: setTimeout(() => {
-        lane.waiting.splice(lane.waiting.indexOf(entry), 1);
-        signal?.removeEventListener('abort', aborted);
-        reject(new Error('busy'));
-      }, 10000),
-    };
-    const aborted = () => {
-      const index = lane.waiting.indexOf(entry);
-      if (index < 0) return;
-      lane.waiting.splice(index, 1);
-      clearTimeout(entry.timer);
-      signal.removeEventListener('abort', aborted);
-      reject(signal.reason);
-    };
-    lane.waiting.push(entry);
-    signal?.addEventListener('abort', aborted, { once: true });
-  });
+  if (endpoints.get(url)) throw new Error('busy');
+  endpoints.set(url, true);
+  return () => endpoints.set(url, false);
 }
 
 export async function askLocal(
@@ -83,17 +54,21 @@ export async function askLocal(
   fetchImpl,
   sys,
   user,
-  { schema = 'json', maxTokens = 640, onToken, signal } = {},
+  { schema = 'json', maxTokens = 640, onToken, signal, beforeStart, onStart } = {},
 ) {
   const config = localConfig(env);
   if (!config) return { error: 'notconfigured' };
   if (typeof user !== 'string' || sys.length + user.length > MAX_LOCAL_PROMPT_CHARS)
     return { error: 'context' };
-  let release, timer;
+  let release, timer, controller;
   try {
-    release = await reserve(fetchImpl, config.url, signal);
+    release = reserve(fetchImpl, config.url, signal);
+    // Admission checks run inside the shared GPU slot, before any generation.
+    // This serializes quota updates and never charges a request declined as busy.
+    const refused = await beforeStart?.();
+    if (refused) return refused;
     signal?.throwIfAborted();
-    const controller = new AbortController();
+    controller = new AbortController();
     timer = setTimeout(() => controller.abort(), config.timeout);
     const response = await fetchImpl(config.url + '/api/chat', {
       method: 'POST',
@@ -128,6 +103,7 @@ export async function askLocal(
               : 'down',
         retryAfter: 10,
       };
+    await onStart?.();
     if (onToken) {
       const text = await readOllamaStream(response, onToken);
       return { text, provider: 'ollama', model: config.model };
@@ -149,6 +125,7 @@ export async function askLocal(
     };
   } finally {
     clearTimeout(timer);
+    controller?.abort();
     release?.();
   }
 }

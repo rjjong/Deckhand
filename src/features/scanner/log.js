@@ -2,7 +2,15 @@
 // Session-only scan results, selection and collection ownership. No photo storage.
 function scannerCreateLog(
   root,
-  { signal, onReview, onIgnored, onChange = () => {}, settings = {} },
+  {
+    signal,
+    binder = null,
+    mode = 'collection',
+    onReview,
+    onIgnored,
+    onChange = () => {},
+    settings = {},
+  },
 ) {
   const list = root.querySelector('#scannerDetections');
   const empty = root.querySelector('#scannerLogEmpty');
@@ -30,6 +38,10 @@ function scannerCreateLog(
       if (entry.deleted || !entry.card) continue;
       const qty = counts.get(scannerCollectionKey(entry.card.name)) || 0;
       const indicator = entry.row.querySelector('.scanner-detection-owned');
+      if (isCollectionBasicLand(entry.card)) {
+        indicator.hidden = true;
+        continue;
+      }
       indicator.hidden = false;
       indicator.textContent = `${entry.added ? (entry.addedLabel || 'Added') + ' · ' : ''}${qty ? '✓ ' : ''}In collection: ${qty}`;
       indicator.classList.toggle('owned', qty > 0);
@@ -159,9 +171,9 @@ function scannerCreateLog(
     addToCollection() {
       if (!live()) return 0;
       const batch = prepareAdd();
-      scannerAddToCollection(batch.cards);
+      const added = scannerAddToCollection(batch.cards, binder);
       batch.commit(undefined, { remove: true });
-      return batch.cards.length;
+      return added;
     },
     deleteSelected() {
       if (!live()) return 0;
@@ -245,7 +257,7 @@ function scannerCreateLog(
         try {
           const card = await details(result);
           if (!live() || entry.deleted) return;
-          if (scannerIsIgnoredCard(card)) {
+          if (scannerIsIgnoredCard(card) || (mode !== 'deck' && isCollectionBasicLand(card))) {
             silentIdentities.add(identity);
             entry.silent = true;
             entry.deleted = true;

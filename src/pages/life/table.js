@@ -116,7 +116,19 @@ function lifeRolesHtml(p) {
 function lifePlayerNameHtml(p, idx, editable = true) {
   return `<div class="life-player-name">
     ${editable ? `<input class="pname-input" data-idx="${idx}" aria-label="Player ${idx + 1} name" value="${escapeHtml(p.name).replace(/"/g, '&quot;')}" size="${Math.max(4, Math.min(14, p.name.length || 8))}">` : `<span class="life-name-text">${escapeHtml(p.name)}</span>`}
-    ${lifeRolesHtml(p)}
+  </div>`;
+}
+
+function lifePlayerFooterHtml(p, idx) {
+  return `<div class="life-player-footer">
+    <div class="life-role-corner">${lifeRolesHtml(p)}</div>
+    <div class="life-player-name">
+      ${lifeCounterChipHtml(p, idx, 'commander')}
+      <input class="pname-input" data-idx="${idx}" aria-label="Player ${idx + 1} name" value="${escapeHtml(p.name).replace(/"/g, '&quot;')}" size="${Math.max(4, Math.min(14, p.name.length || 8))}">
+    </div>
+    <div class="life-extra-counters">${LIFE_COUNTERS.filter(({ id }) => id !== 'commander')
+      .map(({ id }) => lifeCounterChipHtml(p, idx, id))
+      .join('')}</div>
   </div>`;
 }
 
@@ -142,7 +154,7 @@ function lifeCardHtml(p, idx, count) {
           class="dmg-overlay ${lethalDmg() && taken >= lethalDmg() ? 'lethal' : ''}"
           data-dmgfrom="${idx}"
         >
-          ${lifePlayerNameHtml(p, idx, false)}
+          ${lifePlayerNameHtml(p, idx, false)}${lifeRolesHtml(p)}
           <div class="tap-zone left" data-dmgside="minus"><span class="tap-glyph">−</span></div>
           <div class="tap-zone right" data-dmgside="plus"><span class="tap-glyph">+</span></div>
           <div class="lval-row">
@@ -171,7 +183,7 @@ function lifeCardHtml(p, idx, count) {
               : ''
           }
           <div class="focus-name life-focus-name">
-            <span class="life-name-text">${escapeHtml(p.name)}</span>${lifeRolesHtml(p)}
+            <span class="life-name-text">${escapeHtml(p.name)}</span>
           </div>
           ${
             pz
@@ -191,15 +203,6 @@ function lifeCardHtml(p, idx, count) {
               ${CROWN_SVG}<span>Monarch</span></button
             ><button
               type="button"
-              class="lf-x${p.initiative ? ' on' : ''}"
-              data-linitiative="${idx}"
-              title="Initiative"
-              aria-label="Initiative"
-              aria-pressed="${!!p.initiative}"
-            >
-              ${INITIATIVE_SVG}<span>Initiative</span></button
-            ><button
-              type="button"
               class="lf-x${p.dg ? ' on' : ''}"
               data-ldungeon="${idx}"
               title="Dungeon"
@@ -207,8 +210,20 @@ function lifeCardHtml(p, idx, count) {
             >
               ${DUNGEON_SVG}<span>${p.dg ? escapeHtml(p.dg.room) : 'Dungeon'}</span>
             </button>
+            <button
+              type="button"
+              class="lf-x"
+              data-lcounters="${idx}"
+              aria-label="Player counters"
+              title="Counters"
+            >
+              <span class="life-hash" aria-hidden="true">#</span>
+            </button>
+            <button class="submenu-toggle done" data-idx="${idx}" aria-label="Done">
+              ✓ <span>Done</span>
+            </button>
           </div>
-          <button class="submenu-toggle done" data-idx="${idx}">${trS('\u2713 Done')}</button>
+          ${lifeRolesHtml(p)}
         </div>
       </div>
     </div>`;
@@ -226,7 +241,7 @@ function lifeCardHtml(p, idx, count) {
       style="${style}"
     >
       ${won ? `<div class="win-fx" aria-hidden="true">${Array.from({ length: 14 }, (_, i) => `<i style="--i:${i}"></i>`).join('')}</div><div class="win-banner">\u{1F3C6} ${'Winner!'}</div>` : ''}
-      <div class="life-face front ${p.defeated ? 'defeated' : ''}">
+      <div class="life-face front life-total-face ${p.defeated ? 'defeated' : ''}">
         ${p.medal ? `<div class="medal-badge" title="High roll winner">${modeGlyph()}</div>` : ''}
         <div class="tap-zone left" data-idx="${idx}" data-side="minus">
           <span class="tap-glyph">−</span>
@@ -234,7 +249,7 @@ function lifeCardHtml(p, idx, count) {
         <div class="tap-zone right" data-idx="${idx}" data-side="plus">
           <span class="tap-glyph">+</span>
         </div>
-        ${lifePlayerNameHtml(p, idx)}
+        ${lifePlayerFooterHtml(p, idx)}
         ${p.dg ? `<div class="ldungeon">${DUNGEON_SVG}<span>${escapeHtml(p.dg.room)}</span></div>` : ''}
         <div class="lval-row">
           <span
@@ -250,7 +265,8 @@ function lifeCardHtml(p, idx, count) {
         <button
           class="submenu-toggle lbadge"
           data-idx="${idx}"
-          title="${escapeHtml('Poison & ' + lifeLeaderWord() + ' damage')}"
+          title="More player options"
+          aria-label="More options for ${escapeHtml(p.name)}"
         >
           ${lifeBadgeHtml(p, idx)}
         </button>
@@ -295,6 +311,7 @@ function renderLifeGrid() {
     renderLifeOverlay();
   });
   wireLifeGrid();
+  layoutLifeCards();
   requestAnimationFrame(layoutLifeCards);
   if (state.life.setupDone) lifeAutosave(); // 1.46
   {
@@ -432,6 +449,11 @@ function layoutLifeCards() {
         card._cutIdx = k;
       }
       card.style.clipPath = clip;
+      card.classList.toggle('life-bottom-notch', card._cutKind === 'edge' && card._cutIdx === 2);
+      card.classList.toggle(
+        'life-bottom-corner',
+        card._cutKind === 'corner' && [2, 3].includes(card._cutIdx),
+      );
       // the first-player mark sits top-right; when that corner is cut, top-left
       card.classList.toggle('medal-alt', card._cutKind === 'corner' && card._cutIdx === 1);
       // (The old trim bars along the cuts drew the dark diagonal strokes —
@@ -541,15 +563,6 @@ function wireLifeGrid() {
       lifeSetMonarch(+b.dataset.lmonarch);
     });
   });
-  document.querySelectorAll('[data-linitiative]').forEach((b) => {
-    ['pointerdown', 'touchstart'].forEach((ev) =>
-      b.addEventListener(ev, (e) => e.stopPropagation(), { passive: true }),
-    );
-    b.addEventListener('click', (e) => {
-      e.stopPropagation();
-      lifeSetInitiative(+b.dataset.linitiative);
-    });
-  });
   document.querySelectorAll('[data-ldungeon]').forEach((b) => {
     ['pointerdown', 'touchstart'].forEach((ev) =>
       b.addEventListener(ev, (e) => e.stopPropagation(), { passive: true }),
@@ -557,6 +570,18 @@ function wireLifeGrid() {
     b.addEventListener('click', (e) => {
       e.stopPropagation();
       openLifeDungeon(+b.dataset.ldungeon);
+    });
+  });
+  document.querySelectorAll('[data-lcounters], [data-life-counter]').forEach((button) => {
+    ['pointerdown', 'touchstart'].forEach((event) =>
+      button.addEventListener(event, (e) => e.stopPropagation(), { passive: true }),
+    );
+    button.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openLifeCounters(
+        Number(button.dataset.lcounters ?? button.dataset.player),
+        button.dataset.lifeCounter,
+      );
     });
   });
   document.querySelectorAll('.revive-btn').forEach((b) => {

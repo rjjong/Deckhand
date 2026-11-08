@@ -72,8 +72,8 @@ test('Local model setup and capacity failures show relevant rules without asking
   await expect.poll(() => page.evaluate(() => state.homeLoaded)).toBe(true);
   for (const [status, body, text] of [
     [503, { error: 'notconfigured' }, 'local judge is not set up on this server'],
-    [429, { error: 'quota', retryAfter: 120 }, 'Try again in about 2 minutes'],
-    [503, { error: 'busy' }, 'answering another question'],
+    [429, { error: 'quota', retryAfter: 120 }, 'More after midnight UTC'],
+    [503, { error: 'busy' }, 'currently helping another player'],
     [502, { error: 'model' }, 'local judge model is not downloaded'],
     [400, { error: 'context' }, 'Try asking about fewer cards'],
   ]) {

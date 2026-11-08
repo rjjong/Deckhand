@@ -18,6 +18,7 @@ const SYNC_SETTING_FIELDS = [
   'theme',
   'guild',
   'startupPage',
+  'hideCollectionFolderPrices',
   'scannerDebounceMs',
   'scannerIgnoreSession',
   'scannerIdThreshold',

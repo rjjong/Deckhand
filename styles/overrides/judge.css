@@ -24,6 +24,34 @@ html #crOverlay .cr-bar {
   margin: 0;
 }
 
+/* Availability belongs to the fixed page chrome, above the scrolling ruling. */
+.cj-availability {
+  flex: none;
+  order: 1;
+  width: 100%;
+  max-width: 680px;
+  align-self: center;
+  padding: 12px 22px 4px;
+  color: var(--main-text);
+  font:
+    500 12px/1.5 'Inter',
+    system-ui,
+    sans-serif;
+}
+.cj-availability > span {
+  display: block;
+}
+.cj-availability > small {
+  display: block;
+  margin-top: 4px;
+  color: var(--main-sub);
+  font-size: 10px;
+  line-height: 1.5;
+}
+#crOverlay.cr-mode-rules .cj-availability {
+  display: none;
+}
+
 /* The judge and its rules browser share the menu's cards and typography. */
 
 html #crOverlay {

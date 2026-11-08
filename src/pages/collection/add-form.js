@@ -1,6 +1,7 @@
 // pages / collection / add-form
 // Shared by the collection sheet and the scanner's integrated review page.
-function collectionAddFieldsHtml(card) {
+function collectionAddFieldsHtml(card, { binder = state.colFilter?.binder } = {}) {
+  const selectedBinder = state.collection.binders.find((b) => b.id === binder)?.id;
   return /* HTML */ `<div class="collection-add-fields">
     <div class="adv-row">
       <label id="acPrintingLabel">Printing</label>
@@ -52,9 +53,9 @@ function collectionAddFieldsHtml(card) {
     <div class="adv-row">
       <label for="acBinder">Binder</label>
       <select id="acBinder" class="col-select">
-        ${ruledBinders().length ? `<option value="__auto__"${state.colFilter && state.collection.binders.some((b) => b.id === state.colFilter.binder) ? '' : ' selected'}>✦ Automatic (binder rules)</option>` : ''}
+        ${ruledBinders().length ? `<option value="__auto__"${selectedBinder ? '' : ' selected'}>✦ Automatic (binder rules)</option>` : ''}
         <option value="">— No binder —</option>
-        ${state.collection.binders.map((b) => `<option value="${escapeHtml(b.id)}"${state.colFilter && state.colFilter.binder === b.id ? ' selected' : ''}>${escapeHtml(b.name)}</option>`).join('')}
+        ${state.collection.binders.map((b) => `<option value="${escapeHtml(b.id)}"${selectedBinder === b.id ? ' selected' : ''}>${escapeHtml(b.name)}</option>`).join('')}
         <option value="__wants__">🔖 Wants list</option>
         <option value="__new__">＋ New binder…</option>
       </select>
@@ -88,9 +89,11 @@ async function wireCollectionAddForm(root, card, { onAdded, onPrintingChange } =
     find('acQty').value = Math.max(1, quantity() - 1);
   });
   const submit = find('acAdd');
+  if (isCollectionBasicLand(card)) submit.disabled = true;
   submit.addEventListener('click', () => {
     if (busy || !root.isConnected) return;
     const printing = prints[selected] || card;
+    if (isCollectionBasicLand(printing)) return;
     const chosen = find('acBinder').value || null;
     if (chosen === '__new__') {
       openInAppPrompt('New binder name', 'Binder name', '', (name) => {

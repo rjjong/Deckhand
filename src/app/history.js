@@ -437,6 +437,8 @@ function appBackStep(viaHistory) {
 
 initialSettings.then(() => {
   render();
+  if (launchCollectionScanner && state.screen === 'collection' && !state.overlayStack?.length)
+    openCardScanner({ mode: 'collection' });
   try {
     ensureCmdrBans();
   } catch (e) {}

@@ -86,7 +86,7 @@ release (or recreate its app container) afterward to load the settings. Developm
 can use the same environment keys locally; `.env` remains ignored by Git. Never
 paste account passwords or API keys into chat or commit them.
 
-Users create an account under **Settings → Account & sync**, verify their email,
+Users create an account under **Menu → Account & sync**, verify their email,
 then sign in on each device. Passwords are salted scrypt hashes in SQLite, never
 reversibly encrypted. Recovery emails contain single-use 30-minute links and a
 successful reset signs out every session. Session cookies use HTTPS, HttpOnly,
@@ -314,8 +314,22 @@ Ollama produces NDJSON tokens; the backend emits readable answer/explanation
 progress and a final result after parsing and checking citations. Heartbeats
 keep the connection active while the model reads the prompt. Cache hits and
 early errors retain ordinary JSON responses. Leaving the page aborts the
-request, including any queued or active local inference. Failed or incomplete
+request, including active local inference. Failed or incomplete
 streams show the rules fallback and are not cached as completed rulings.
+
+Public Judge protection defaults to **10 new questions per account per day**, a
+**30-second cooldown**, and **100 new questions per day across the server**.
+Guests have a separate allowance per browser/IP. All daily budgets reset at
+midnight UTC. Configure `JUDGE_DAILY`, `JUDGE_GLOBAL` and
+`JUDGE_COOLDOWN_SECONDS` in `/srv/deckhand/.env`, then deploy or recreate the app.
+Counts and cooldowns persist in SQLite; no schema migration is needed.
+
+Judge and deck advice share one model slot. Other requests receive an immediate
+busy response rather than joining a queue. The Judge page shows live availability
+without exposing questions, identities or answers, and polls only while visible.
+Busy requests, unavailable-model responses and cached rulings do not use a
+question; accepted generations count even if their output is invalid or cancelled.
+Cached rulings remain available after a daily budget is used.
 
 Known accuracy limitation: a live multipart test about zero toughness and
 indestructible produced an answer that contradicted its own explanation.

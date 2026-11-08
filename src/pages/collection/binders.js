@@ -320,12 +320,19 @@ const BR_TYPE_ORDER = [
 // The group a copy belongs to: [order, key, label].
 function binderGroupOf(it, group) {
   if (group === 'color') {
-    const cs = brCardColors(it).filter((c) => 'WUBRG'.indexOf(c) >= 0);
+    const colors = 'WUBRG';
+    const cardColors = brCardColors(it);
+    // Normalize order and remove duplicates so W/U and U/W share one group.
+    const cs = Array.from(colors).filter((c) => cardColors.includes(c));
     const N = { W: 'White', U: 'Blue', B: 'Black', R: 'Red', G: 'Green' };
-    if (cs.length === 1)
-      return ['WUBRG'.indexOf(cs[0]), cs[0], manaIconSvg(cs[0], 16) + ' ' + N[cs[0]]];
-    if (cs.length > 1) return [5, 'M', multiIconSvg(16) + ' ' + 'Multicolor'];
-    return [6, 'C', manaIconSvg('C', 16) + ' ' + 'Colorless'];
+    // Base six puts single colors first, then pairs, triples, and so on,
+    // preserving WUBRG order within each color count. Colorless stays last.
+    const order = cs.reduce((rank, c) => rank * 6 + colors.indexOf(c) + 1, 0);
+    return [
+      cs.length ? order : Infinity,
+      cs.join('') || 'C',
+      `<span class="col-group-colors" aria-hidden="true">${(cs.length ? cs : ['C']).map((c) => manaIconSvg(c, 16)).join('')}</span><span class="col-group-name">${cs.length ? cs.map((c) => N[c]).join(' / ') : 'Colorless'}</span>`,
+    ];
   }
   if (group === 'rarity') {
     const r = String(it.rarity || '').toLowerCase(),
@@ -343,9 +350,8 @@ function binderGroupOf(it, group) {
   return [0, 'all', ''];
 }
 
-/* The collection grid(s). Inside a binder its own view applies: sorted, and
-   split into labelled groups. The page is column-reverse, so each label
-   follows its grid in the DOM to sit above it. */
+/* Inside a binder its own view applies: sorted cards, with each group
+   heading preceding its grid in reading order. */
 function colGridsHtml(items, tileFn) {
   const f = state.colFilter;
   const b =
@@ -368,14 +374,59 @@ function colGridsHtml(items, tileFn) {
     .sort((a, c) => a.o - c.o)
     .map((g) => {
       const n = g.list.reduce((a, it) => a + (it.qty || 1), 0);
-      return /* HTML */ `<div class="col-grid col-group" data-colgroup="${escapeHtml(g.k)}">
+      const collapseKey = encodeURIComponent(JSON.stringify([b.id, v.group, g.k]));
+      const collapsed = !!state.colGroupCollapsed[collapseKey];
+      const gridId = 'collectionGroup-' + v.group + '-' + g.k;
+      return /* HTML */ `<h2 class="section-label col-group-label">
+          <button
+            type="button"
+            class="col-group-toggle"
+            data-colgroup-toggle="${escapeHtml(collapseKey)}"
+            aria-expanded="${!collapsed}"
+            aria-controls="${escapeHtml(gridId)}"
+          >
+            ${v.group === 'color' ? g.label : `<span class="col-group-name">${g.label}</span>`}
+            <span class="cg-n">· ${n}</span>
+            <svg
+              class="col-group-chevron"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+        </h2>
+        <div
+          class="col-grid col-group"
+          id="${escapeHtml(gridId)}"
+          data-colgroup="${escapeHtml(g.k)}"
+          ${collapsed ? ' hidden' : ''}
+        >
           ${g.list.map(tileFn).join('')}
-        </div>
-        <div class="section-label col-group-label">
-          ${g.label} <span class="cg-n">· ${n}</span>
         </div>`;
     })
     .join('');
+}
+
+function wireBinderGroups() {
+  document.querySelectorAll('[data-colgroup-toggle]').forEach((button) => {
+    const grid = document.getElementById(button.getAttribute('aria-controls'));
+    if (!grid) return;
+    button.addEventListener('click', () => {
+      const collapsed = button.getAttribute('aria-expanded') === 'true';
+      const key = button.dataset.colgroupToggle;
+      if (collapsed) state.colGroupCollapsed[key] = true;
+      else delete state.colGroupCollapsed[key];
+      button.setAttribute('aria-expanded', String(!collapsed));
+      grid.hidden = collapsed;
+      requestAnimationFrame(fitColTileHeight);
+    });
+  });
 }
 
 const BR_GLYPHS = [
@@ -485,42 +536,62 @@ function openBinderConflict(it, cands, o) {
     };
     document.getElementById('binderConflict')?.remove();
     const el = document.createElement('div');
-    el.className = 'deckpick-scrim';
+    el.className = 'deckpick-scrim card-transfer-backdrop';
     el.id = 'binderConflict';
     el.style.zIndex = Math.max(210, o.zIndex || 0);
-    el.style.alignItems = 'flex-end';
-    // column-reverse sheet: the first binder sits at the foot, by the thumb.
-    el.innerHTML = /* HTML */ `<div class="deckpick bc-sheet">
-      ${cands.map((b) => `<button type="button" class="primary-btn bc-opt" data-bc="${b.id}"><b>${escapeHtml(b.name)}</b><small>${escapeHtml(binderRulesSummary(b))}</small></button>`).join('')}
-      <button type="button" class="ghost-btn bc-opt" data-bc="">${'No binder'}</button>
-      ${o.noneFit ? '' : `<label class="bc-rem"><input type="checkbox" id="bcRemember"> ${'Same choice for the rest of these cards'}</label>`}
-      <div class="bc-head">
-        ${it.img ? `<img src="${it.img}" alt="">` : ''}
-        <div>
-          <b>${escapeHtml(it.name)}</b
-          ><span
-            >${
-              o.noneFit
-                ? 'fits no binder with rules. Where should it go?'
-                : 'fits more than one binder. Where should it go?'
-            }</span
-          >
-        </div>
-      </div>
-    </div>`;
+    let printing = o.printingCard || null;
+    const cancelable = !!printing || !!o.cancelable;
+    const paint = () => {
+      el.innerHTML = cardTransferDialogHtml(
+        'Choose binder',
+        it.name,
+        `${printing ? `<button type="button" class="binder-printing-preview" aria-label="Choose printing for ${escapeHtml(it.name)}"><img class="${wbClass(printing)}" src="${cardImageMed(printing)}" alt="${escapeHtml(it.name)}"><span>${escapeHtml(printing.set_name || String(printing.set || '').toUpperCase())}${printing.collector_number ? ' · #' + escapeHtml(printing.collector_number) : ''}${printing._foilPick ? ' · Foil' : ''}</span><small>Change printing</small></button>` : ''}
+      <div class="binder-choice-list">${cands.map((b) => `<button type="button" class="hub-card" data-bc="${escapeHtml(b.id)}"><span class="hub-icon" aria-hidden="true">${ICONS.binder}</span><span class="hub-copy"><strong>${escapeHtml(b.name)}</strong><small>${escapeHtml(binderRulesSummary(b))}</small></span><span class="hub-arrow" aria-hidden="true">›</span></button>`).join('')}</div>
+      ${o.noneFit ? '' : '<label class="binder-choice-remember"><input type="checkbox" id="bcRemember"><span>Same choice for the rest of these cards</span></label>'}`,
+        `${cancelable ? '<button type="button" class="ghost-btn card-transfer-cancel" id="bcCancel">Cancel</button>' : ''}<button type="button" class="ghost-btn" data-bc="">No binder</button>`,
+      );
+      wireCardTransferDialog(el, () => brSheetClose('binderConflict'));
+      el.querySelector('#bcCancel')?.addEventListener('click', () =>
+        brSheetClose('binderConflict'),
+      );
+      el.querySelectorAll('[data-bc]').forEach((btn) =>
+        btn.addEventListener('click', () => {
+          pick = {
+            id: btn.dataset.bc || null,
+            remember: !!el.querySelector('#bcRemember')?.checked,
+            ...(printing ? { card: printing } : {}),
+            ...(cancelable ? { cancelled: false } : {}),
+          };
+          brSheetClose('binderConflict');
+        }),
+      );
+      el.querySelector('.binder-printing-preview')?.addEventListener('click', () => {
+        el.inert = true;
+        openPrintingGrid(
+          printing,
+          async (chosen) => {
+            await brAfterPop();
+            if (!el.isConnected) return;
+            printing = chosen;
+            paint();
+            el.querySelector('.binder-printing-preview').focus({ preventScroll: true });
+          },
+          {
+            noCustom: true,
+            zIndex: (parseInt(el.style.zIndex, 10) || 210) + 1,
+            onClose() {
+              el.inert = false;
+              el.querySelector('.binder-printing-preview')?.focus({ preventScroll: true });
+            },
+          },
+        );
+      });
+    };
     // The answer is handed over only once the sheet's history entry is gone,
     // so a next sheet can never be closed by this one's late back-step.
-    let pick = { id: null, remember: false }; // back = no binder
+    let pick = { id: null, remember: false, ...(cancelable ? { cancelled: true } : {}) };
     brSheetOpen(el, 'binderConflict', () => setTimeout(() => done(pick), 0));
-    el.querySelectorAll('[data-bc]').forEach((btn) =>
-      btn.addEventListener('click', () => {
-        pick = {
-          id: btn.dataset.bc || null,
-          remember: !!(document.getElementById('bcRemember') || {}).checked,
-        };
-        brSheetClose('binderConflict');
-      }),
-    );
+    paint();
   });
 }
 
@@ -572,7 +643,7 @@ async function binderApplyRules(b) {
   if (!binderHasRules(b)) return;
   const memo = {},
     moved = [];
-  for (const it of state.collection.items.slice()) {
+  for (const it of collectionTrackedItems()) {
     const cur = it.binder ? (state.collection.binders || []).find((x) => x.id === it.binder) : null;
     let to;
     if (it.binder === b.id) {
@@ -634,7 +705,7 @@ async function binderResort() {
   }
   const memo = {},
     moved = [];
-  const list = state.collection.items.slice();
+  const list = collectionTrackedItems();
   for (const it of list) {
     const cur = it.binder ? (state.collection.binders || []).find((x) => x.id === it.binder) : null;
     if (cur && !binderHasRules(cur)) continue; // standard binder: hands off
@@ -659,28 +730,24 @@ async function binderResort() {
 }
 
 function binderTileHtml(b) {
-  const items = state.collection.items.filter((it) => it.binder === b.id);
-  const first = items.find((it) => it.img);
+  const items = collectionTrackedItems().filter((it) => it.binder === b.id);
   const qty = items.reduce((a, it) => a + (it.qty || 1), 0);
   const eur = items.reduce((a, it) => a + (it.eur != null ? it.eur : 0) * (it.qty || 1), 0);
-  const face = b.face || (first ? artCropFrom(first.img) : null);
-  return /* HTML */ `<div class="folder-tile binder-tile" data-binderopen="${b.id}">
+  return /* HTML */ `<div class="folder-tile binder-tile binder-no-art" data-binderopen="${b.id}">
     <div class="binder-glyph-row">${binderTileGlyphs(b)}</div>
     ${binderHasRules(b) ? `<button type="button" class="br-info" data-brinfo="${b.id}" aria-label="Auto-fill">i</button>` : ''}
-    <div class="folder-face">
-      ${face ? `<img loading="lazy" src="${face}" alt="">` : `<span class="big-ico">${ICONS.binder}</span>`}
-    </div>
     <div class="folder-name">${escapeHtml(b.name)}</div>
     <div class="folder-sub">
-      ${qty} card${qty === 1 ? '' : 's'}${eur ? ` · €${eur.toFixed(2)}` : ''}
+      ${qty}
+      card${qty === 1 ? '' : 's'}${!state.hideCollectionFolderPrices && eur ? ` · €${eur.toFixed(2)}` : ''}
     </div>
   </div>`;
 }
 
 function collectionBindersGridHtml() {
   const binders = state.collection.binders;
-  const qtyAll = state.collection.items.reduce((a, it) => a + (it.qty || 1), 0);
-  const eurAll = state.collection.items.reduce(
+  const qtyAll = collectionTrackedItems().reduce((a, it) => a + (it.qty || 1), 0);
+  const eurAll = collectionTrackedItems().reduce(
     (a, it) => a + (it.eur != null ? it.eur : 0) * (it.qty || 1),
     0,
   );
@@ -699,12 +766,20 @@ function collectionBindersGridHtml() {
   const allTile = `<div class="folder-tile binder-tile" data-binderopen="__all__">
       <div class="folder-face colfold-ico">${ICONS.collection}</div>
       <div class="folder-name">All cards</div>
-      <div class="folder-sub">${qtyAll} card${qtyAll === 1 ? '' : 's'}${eurAll ? ` · €${eurAll.toFixed(2)}` : ''}</div>
+      <div class="folder-sub">${qtyAll} card${qtyAll === 1 ? '' : 's'}${!state.hideCollectionFolderPrices && eurAll ? ` · €${eurAll.toFixed(2)}` : ''}</div>
     </div>`;
   const wantsTile = `<div class="folder-tile binder-tile" data-binderopen="__wants__">
       <div class="folder-face"><span style="font-size:44px;line-height:1;">🔖</span></div>
       <div class="folder-name">Wants</div>
-      <div class="folder-sub">${qtyW} card${qtyW === 1 ? '' : 's'}${eurW ? ` · €${eurW.toFixed(2)}` : ''}</div>
+      <div class="folder-sub">${qtyW} card${qtyW === 1 ? '' : 's'}${!state.hideCollectionFolderPrices && eurW ? ` · €${eurW.toFixed(2)}` : ''}</div>
+    </div>`;
+  const playing = computePlaying();
+  const qtyPlaying = playing.reduce((sum, item) => sum + item.qty, 0);
+  const eurPlaying = collectionTotalValue(playing);
+  const playingTile = `<div class="folder-tile binder-tile" data-binderopen="__playing__">
+      <div class="folder-face colfold-ico">${ICONS.decks}</div>
+      <div class="folder-name">Playing</div>
+      <div class="folder-sub">${qtyPlaying} card${qtyPlaying === 1 ? '' : 's'}${!state.hideCollectionFolderPrices && eurPlaying ? ` · €${eurPlaying.toFixed(2)}` : ''}</div>
     </div>`;
   const _gc = folderView('col') === 'list' ? 'deck-grid as-list' : 'deck-grid';
   return `<section class="collection-folder-section" aria-labelledby="collectionBindersTitle">
@@ -713,34 +788,20 @@ function collectionBindersGridHtml() {
   </section>
   <section class="collection-folder-section" aria-labelledby="collectionAutomaticTitle">
     <h2 class="section-label" id="collectionAutomaticTitle">Automatic folders</h2>
-    <div class="${_gc}">${allTile}${wantsTile}</div>
+    <div class="${_gc}">${allTile}${playingTile}${wantsTile}</div>
   </section>
   <button class="deck-fab" id="colFab" title="Add cards or binder">＋</button>`;
 }
 
 function openBinderIn(id) {
   colSelClear();
+  state.wantSel = null;
   state.colFilter.binder = id;
   try {
     history.pushState({ screen: 'collection', binder: id }, '', '#collection');
   } catch (e) {}
   render();
   scrollToPageFoot();
-}
-
-/* A binder's cover, once derived, is written down for good — it never shifts
-   when cards move, and it survives until the binder is deleted. */
-function ensureBinderFaces() {
-  let dirty = false;
-  state.collection.binders.forEach((b) => {
-    if (b.face) return;
-    const first = state.collection.items.find((it) => it.binder === b.id && it.img);
-    if (first) {
-      b.face = artCropFrom(first.img);
-      dirty = true;
-    }
-  });
-  if (dirty) saveCollection();
 }
 
 function openBinderLongMenu(binder, x, y) {
@@ -811,7 +872,7 @@ function openBinderLongMenu(binder, x, y) {
    real tile on this screen. */
 function fitColTileHeight() {
   try {
-    const grid = document.querySelector('.col-grid');
+    const grid = document.querySelector('.col-grid:not([hidden])');
     if (!grid) return;
     let h = 0;
     for (const t of grid.children) {
@@ -1162,56 +1223,59 @@ function wantInLabel(it) {
   return 'wanted · added by you';
 }
 
-/* "I got it" on a Wants tile: pick the printing you have (the normal Change
-   printing screen), then it joins the collection -- in the binder whose rules
-   it meets, the player choosing if several fit, or if none does. */
+/* Wants + opens the binder chooser first. Its image opens printing selection;
+   choosing a binder commits the pending card, while Back/Cancel leave it wanted. */
+let wantAcquisitionPending = false;
 async function wantGotIt(name) {
-  const card = await wantCardFor(name);
-  if (!card) {
-    toast('Card not found.');
-    return;
+  if (wantAcquisitionPending) return;
+  wantAcquisitionPending = true;
+  try {
+    const card = await wantCardFor(name);
+    if (!card) {
+      toast('Card not found.');
+      return;
+    }
+    if (isCollectionBasicLand(card)) return;
+    const result = await openBinderConflict(
+      slimForCollection(card),
+      state.collection.binders || [],
+      {
+        noneFit: true,
+        printingCard: card,
+      },
+    );
+    if (result.cancelled) return;
+    const chosen = result.card || card;
+    const slim = colFoilSlim(slimForCollection(chosen), chosen, !!chosen._foilPick);
+    const bid = result.id;
+    const same = state.collection.items.find(
+      (x) =>
+        x.name === slim.name &&
+        x.set === slim.set &&
+        x.cn === slim.cn &&
+        x.cond === 'NM' &&
+        !!x.foil === !!slim.foil &&
+        (x.binder || null) === (bid || null),
+    );
+    if (same) same.qty += 1;
+    else
+      state.collection.items.unshift(
+        Object.assign({}, slim, { cond: 'NM', qty: 1, binder: bid, addedAt: Date.now() }),
+      );
+    state.collection.wantsManual = (state.collection.wantsManual || []).filter(
+      (w) => w.name !== slim.name,
+    );
+    fulfillPlayingProxy(slim.name);
+    saveCollection();
+    if (pwAll()[slim.name]) {
+      delete pwAll()[slim.name];
+      pwSave();
+    }
+    toast(`${slim.name} \u2192 ${brBinderName(bid)}`);
+    if (state.screen === 'collection') render();
+  } finally {
+    wantAcquisitionPending = false;
   }
-  openPrintingGrid(
-    card,
-    async (chosen) => {
-      await brAfterPop();
-      const slim = slimForCollection(chosen || card);
-      const it = Object.assign({}, slim, { cond: 'NM', qty: 1 });
-      const binders = state.collection.binders || [];
-      let bid = null;
-      if (binders.length) {
-        const cands = binderCandidates(it);
-        if (cands.length === 1) bid = cands[0].id;
-        else if (cands.length > 1) bid = (await openBinderConflict(it, cands)).id;
-        else bid = (await openBinderConflict(it, binders, { noneFit: true })).id;
-      }
-      const same = state.collection.items.find(
-        (x) =>
-          x.name === slim.name &&
-          x.set === slim.set &&
-          x.cn === slim.cn &&
-          x.cond === 'NM' &&
-          !!x.foil === !!slim.foil &&
-          (x.binder || null) === (bid || null),
-      );
-      if (same) same.qty += 1;
-      else
-        state.collection.items.unshift(
-          Object.assign({}, slim, { cond: 'NM', qty: 1, binder: bid, addedAt: Date.now() }),
-        );
-      state.collection.wantsManual = (state.collection.wantsManual || []).filter(
-        (w) => w.name !== slim.name,
-      );
-      saveCollection();
-      if (pwAll()[slim.name]) {
-        delete pwAll()[slim.name];
-        pwSave();
-      }
-      toast(`${slim.name} \u2192 ${brBinderName(bid)}`);
-      if (state.screen === 'collection') render();
-    },
-    { noCustom: true },
-  );
 }
 
 async function wantCardFor(name) {
@@ -1252,6 +1316,7 @@ function openWantSheet(name) {
         <button
           class="ghost-btn"
           id="wsRemove"
+          ${playingWantsRequired(name) ? 'hidden' : ''}
           style="width:100%;color:var(--danger);border-color:var(--danger);margin-bottom:8px;"
         >
           Remove from Wants
@@ -1267,6 +1332,7 @@ function openWantSheet(name) {
     } catch (e) {}
   });
   el.querySelector('#wsRemove').addEventListener('click', () => {
+    if (playingWantsRequired(name)) return;
     state.collection.wantsExclude.push(name);
     state.collection.wantsManual = state.collection.wantsManual.filter((w) => w.name !== name);
     saveCollection();

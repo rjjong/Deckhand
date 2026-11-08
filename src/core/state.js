@@ -2,11 +2,20 @@
 
 /* ========================= STATE ========================= */
 
-const STARTUP_PAGES = ['home', 'decks', 'collection', 'search', 'browse', 'life'];
+const STARTUP_PAGES = [
+  'home',
+  'decks',
+  'collection',
+  'search',
+  'browse',
+  'life',
+  'scan-collection',
+];
 
 let state = {
   screen: 'home', // home | decks | decklist | search | inspiration | settings
   startupPage: 'home',
+  hideCollectionFolderPrices: false,
   scannerDebounceMs: 0,
   scannerIgnoreSession: false,
   scannerIdThreshold: 0.6,
@@ -35,6 +44,7 @@ let state = {
 
   // search page
   searchName: '',
+  searchProxy: false,
   advOpen: false,
   searchOtag: '',
   searchColors: { W: false, U: false, B: false, R: false, G: false, C: false },
@@ -81,6 +91,8 @@ let state = {
     eurMax: null,
   },
   colAdvOpen: false,
+  wantSel: null,
+  colGroupCollapsed: {},
   spFilter: {
     q: '',
     type: '',

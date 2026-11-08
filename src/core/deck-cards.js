@@ -5,16 +5,14 @@
    the card (a non-foil copy first). A pinned/hand-picked printing is left
    alone, and Change printing still overrides it afterwards. */
 function ownedPrintingOf(name) {
-  const items = ((state.collection && state.collection.items) || []).filter(
-    (it) => it && it.name === name && it.set && it.cn,
-  );
+  const items = collectionTrackedItems().filter((it) => it && it.name === name && it.set && it.cn);
   if (!items.length) return null;
   return items.find((it) => !it.foil) || items[0];
 }
 
 async function useOwnedPrinting(d, arr, c) {
   try {
-    if (!c || c.pin || c._foilPick) return;
+    if (!c || c.proxy || c.pin || c._foilPick) return;
     const it = ownedPrintingOf(c.name);
     if (!it) return;
     if (
@@ -29,6 +27,8 @@ async function useOwnedPrinting(d, arr, c) {
     const i = arr.indexOf(c);
     if (i < 0) return; // moved or removed meanwhile
     if (it.foil && !items_hasNonFoil(c.name)) full._foilPick = true;
+    full.proxy = !!c.proxy;
+    if (c._playingOwned) full._playingOwned = c._playingOwned;
     arr[i] = full;
     scheduleSave(d);
     if (state.screen === 'decklist' && state.activeDeckId === d.id) {
@@ -40,9 +40,7 @@ async function useOwnedPrinting(d, arr, c) {
 }
 
 function items_hasNonFoil(name) {
-  return ((state.collection && state.collection.items) || []).some(
-    (it) => it && it.name === name && !it.foil,
-  );
+  return collectionTrackedItems().some((it) => it && it.name === name && !it.foil);
 }
 
 function addCardToDeckValidated(d, c, refreshFn) {
@@ -75,12 +73,14 @@ function addCardToDeckValidated(d, c, refreshFn) {
     );
     return false;
   }
-  d.cards.push(c);
-  logDeckChange(d, { type: 'add', name: c.name, card: c });
+  const copy = playingDeckCopy(c);
+  d.cards.push(copy);
+  ensurePlayingOwnership(d, [copy]);
+  logDeckChange(d, { type: 'add', name: copy.name, card: copy });
   toast(`${c.name} added to ${d.name}.`);
   scheduleSave(d);
   if (refreshFn) refreshFn(c); // callers that care can refresh just this card's tile
-  useOwnedPrinting(d, d.cards, c); // 1.43
+  useOwnedPrinting(d, d.cards, copy); // 1.43
   return true;
 }
 
@@ -96,12 +96,14 @@ function addToMaybeValidated(d, c, refreshFn) {
     toast(`${c.name}: the copy limit counts the sideboard too.`);
     return false;
   }
-  ensureMaybeboard(d).push(c);
-  logDeckChange(d, { type: 'addMaybe', name: c.name, card: c });
+  const copy = playingDeckCopy(c);
+  ensureMaybeboard(d).push(copy);
+  if (deckIsConstructed(d)) ensurePlayingOwnership(d, [copy]);
+  logDeckChange(d, { type: 'addMaybe', name: copy.name, card: copy });
   toast(`${c.name} added to ${d.name}'s ${sideName(d)}.`);
   scheduleSave(d);
   if (refreshFn) refreshFn(c);
-  useOwnedPrinting(d, d.maybeboard, c); // 1.43
+  useOwnedPrinting(d, d.maybeboard, copy); // 1.43
   return true;
 }
 
@@ -127,10 +129,15 @@ function promoteToCommander(d, c) {
   const prev = d.admiral || null;
 
   const dupIdx = d.cards.findIndex((x) => x.name === c.name);
+  const existing =
+    dupIdx >= 0 ? d.cards[dupIdx] : deckLeaders(d).find((card) => card.name === c.name);
+  c = existing
+    ? { ...c, proxy: !!existing.proxy, _playingOwned: existing._playingOwned }
+    : playingDeckCopy(c);
   if (dupIdx >= 0) d.cards.splice(dupIdx, 1);
   // Promoting the second seat to the first simply vacates the second seat.
   if (d.partner && d.partner.name === c.name) d.partner = null;
-  if (prev) {
+  if (prev && prev.name !== c.name) {
     if (d.cards.some((x) => x.name === prev.name) && !allowsDuplicates(prev)) {
       toast(`${prev.name} steps down — a copy was already in the deck.`);
     } else {
@@ -140,6 +147,7 @@ function promoteToCommander(d, c) {
   }
   d.admiral = c;
   reconcilePartner(d);
+  if (!existing) ensurePlayingOwnership(d, [c]);
   logDeckChange(d, { type: 'admiral', name: c.name, card: c, prev, prevKept: true });
   state.inspireCache = {};
   scheduleSave(d);
@@ -226,13 +234,16 @@ function openDeckPickPopup(card, mode, refreshFn, pairWith, withCollection) {
   closeDeckPickPopup();
   const nm = pairWith ? `${card.name} & ${pairWith.name}` : card.name;
   const act = (d) => {
-    if (mode === 'maybe') addToMaybeValidated(d, card, refreshFn);
+    const proxy = !!el.querySelector('#dpProxy')?.checked;
+    const selected = playingDeckCopy(card, proxy);
+    const pair = pairWith ? [selected, playingDeckCopy(pairWith, proxy)] : null;
+    if (mode === 'maybe') addToMaybeValidated(d, selected, refreshFn);
     else if (mode === 'admiral') {
-      if (pairWith) setPairValidated(d, [card, pairWith], refreshFn);
-      else setCommanderValidated(d, card, refreshFn);
+      if (pair) setPairValidated(d, pair, refreshFn);
+      else setCommanderValidated(d, selected, refreshFn);
     } else {
-      if (pairWith) addPairToDeckValidated(d, [card, pairWith], refreshFn);
-      else addCardToDeckValidated(d, card, refreshFn);
+      if (pair) addPairToDeckValidated(d, pair, refreshFn);
+      else addCardToDeckValidated(d, selected, refreshFn);
     }
   };
   const verb =
@@ -253,13 +264,14 @@ function openDeckPickPopup(card, mode, refreshFn, pairWith, withCollection) {
   el.innerHTML = /* HTML */ `<div class="deckpick">
     <h4>${verb}</h4>
     <p class="dp-sub">${mode === 'reco' ? sub : escapeHtml(nm)}</p>
+    ${mode === 'reco' ? '' : playingProxyOptionHtml('dpProxy', !!card.proxy)}
     <div class="deckpick-list">
       ${mode === 'reco' && isLegendary(card) && hasPowerToughness(card) && isNonlandFront(card) && !isBanned(card) ? `<button class="dp-row" data-asadmiral="1"><div class="dp-txt">${modeGlyph()} As ${fmtName()}<div class="dp-meta">Build around ${escapeHtml(card.name)} — recommendations in its own colors, pick cards, launch a deck</div></div></button>` : ''}
       ${mode === 'reco' ? `<button class="dp-row" data-anycolors="1"><div class="dp-txt">Any colors<div class="dp-meta">No color restriction</div></div></button><div id="recoColorPick"></div>` : ''}
       ${mode !== 'reco' ? `<button class="dp-row" data-newdeck="1"><div class="dp-txt">＋ New deck<div class="dp-meta">Create a fresh deck and add ${escapeHtml(nm)} to it</div></div></button>` : ''}
       ${mode !== 'reco' ? deckPickRowsHtml() : ''}
     </div>
-    ${withCollection ? `<button type="button" class="dp-row dp-collection" data-tocollection="1"><span class="ib" aria-hidden="true">${ICONS.collection}</span><div class="dp-txt">${trS('Add to collection')}<div class="dp-meta">Choose printing, quantity, and binder</div></div></button>` : ''}
+    ${withCollection && !isCollectionBasicLand(card) ? `<button type="button" class="dp-row dp-collection" data-tocollection="1"><span class="ib" aria-hidden="true">${ICONS.collection}</span><div class="dp-txt">${trS('Add to collection')}<div class="dp-meta">Choose printing, quantity, and binder</div></div></button>` : ''}
     <button class="dp-cancel" id="dpCancel">Cancel</button>
   </div>`;
   document.body.appendChild(el);
@@ -379,11 +391,12 @@ function openDeckPickPopup(card, mode, refreshFn, pairWith, withCollection) {
           // away, then offer a folder, then the card goes in. Backing
           // out of the appoint step leaves no empty deck husk behind.
           openAppointSearch(nd, (leader) => {
-            nd.admiral = leader;
+            nd.admiral = playingDeckCopy(leader);
             logDeckChange(nd, { type: 'admiral', name: leader.name, card: leader });
             const commit = (folderId) => {
               nd.folderId = folderId || null;
               state.decksIndex.unshift(nd);
+              ensurePlayingOwnership(nd, deckLeaders(nd));
               persistDeck(nd);
               toast(`${leader.name} takes command of ${nd.name}.`);
               act(nd);

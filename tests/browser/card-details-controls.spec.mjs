@@ -161,6 +161,11 @@ test('collection quantities reach zero without closing details, restore the prin
   const amount = sheet.locator('[data-collection-count]');
   const minus = sheet.getByRole('button', { name: 'Remove one from collection', exact: true });
   const plus = sheet.getByRole('button', { name: 'Add one to collection', exact: true });
+  for (const button of [plus, minus]) {
+    const bounds = await button.boundingBox();
+    const icon = await button.locator('svg').boundingBox();
+    expect(icon.y + icon.height / 2).toBeCloseTo(bounds.y + bounds.height / 2, 0);
+  }
   await expect(amount).toHaveText('3');
   await expect(sheet.locator('#ciAddOne, #ciRemOne, [data-cmbbtn]')).toHaveCount(0);
   for (const count of ['2', '1', '0']) {
@@ -196,6 +201,8 @@ test('discovery actions are grouped and the themed tag popup saves and removes t
   const sheet = page.locator('#cardSheetOverlay');
   const group = sheet.getByRole('group', { name: 'Discover cards', exact: true });
   await expect(group.getByRole('button')).toHaveCount(2);
+  await expect(group.getByRole('button', { name: 'Inspiration', exact: true })).toBeVisible();
+  await expect(group.getByRole('button', { name: 'Recommendations', exact: true })).toHaveCount(0);
   await expect(sheet.locator('[data-cmbbtn]')).toHaveCount(0);
   await sheet.locator('#ciTags').click();
   const popup = page.getByRole('dialog', { name: 'Tags', exact: true });
@@ -241,6 +248,7 @@ test('discovery actions are grouped and the themed tag popup saves and removes t
     sheet.getByRole('group', { name: 'Discover cards', exact: true }).getByRole('button'),
   ).toHaveCount(2);
   await expect(sheet.locator('[data-cmbbtn]')).toHaveCount(0);
+  await expect(sheet.locator('#csReco')).toHaveText('Inspiration');
   await sheet.locator('#csTags').click();
   await popup.locator('#tagInput').fill('Deck tag');
   await popup.locator('#tagAddBtn').click();

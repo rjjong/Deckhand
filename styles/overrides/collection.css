@@ -14,6 +14,80 @@
   margin: 0;
 }
 
+.collection-page .binder-no-art {
+  min-height: 110px;
+  gap: 8px;
+  padding: 20px 12px;
+}
+
+.collection-page .binder-no-art .binder-glyph-row {
+  margin: 0;
+}
+
+.collection-page .as-list .binder-no-art {
+  min-height: 52px;
+  padding: 11px 14px;
+}
+
+.collection-page .col-group-label {
+  display: block;
+  font-size: 12px;
+}
+
+.col-group-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.col-group-toggle:focus-visible {
+  border-radius: 6px;
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 3px;
+}
+
+.col-group-chevron {
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+
+.col-group-toggle[aria-expanded='false'] .col-group-chevron {
+  transform: rotate(-90deg);
+}
+
+html .collection-page .col-group[hidden] {
+  display: none;
+}
+
+.col-group-colors {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 3px;
+}
+
+.col-group-name {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.col-group-label .cg-n {
+  flex: none;
+}
+
 html .collection-page:has(#colSelFab) :is(#colFab, #binderFab) {
   display: none !important;
 }

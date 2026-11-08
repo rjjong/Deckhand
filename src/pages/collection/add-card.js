@@ -12,8 +12,11 @@ function openCollectionCardSearch() {
    condition, one amount per card, one binder -- the single-card sheet's
    fields, each card keeping the printing it already shows. */
 function openAddManyToCollection(cards, onDone) {
-  cards = (cards || []).filter(Boolean);
-  if (!cards.length) return;
+  cards = (cards || []).filter((card) => card && !isCollectionBasicLand(card));
+  if (!cards.length) {
+    toast('Basic lands are excluded from Collection and Wants.');
+    return;
+  }
   if (cards.length === 1) {
     openAddToCollection(cards[0]);
     if (onDone) onDone();
@@ -24,65 +27,66 @@ function openAddManyToCollection(cards, onDone) {
   let el = document.getElementById('addCollOverlay');
   if (!el) {
     el = document.createElement('div');
-    el.className = 'overlay';
+    el.className = 'overlay card-transfer-backdrop';
     el.id = 'addCollOverlay';
   }
   document.body.appendChild(el);
-  el.innerHTML = /* HTML */ `<div class="overlay-inner" style="max-width:380px;">
-    <main style="padding:14px;">
-      <div class="panel-card">
-        <div class="panel-h">
-          <span class="ib">${ICONS.collection}</span>${trS('Add to collection')}
-        </div>
-        <div class="acm-fan">
-          ${cards
-            .slice(0, 5)
-            .map((c) => `<img class="${wbClass(c)}" src="${cardImageMed(c)}" alt="">`)
-            .join('')}
-        </div>
-        <p class="hint" style="margin-bottom:8px;text-align:center;">${n} cards</p>
-        <div class="adv-row" style="margin-top:10px;">
-          <label>Condition</label>
+  el.innerHTML = cardTransferDialogHtml(
+    'Add to collection',
+    `${n} cards`,
+    /* HTML */ ` <div class="acm-fan">
+        ${cards
+          .slice(0, 5)
+          .map((c) => `<img class="${wbClass(c)}" src="${cardImageMed(c)}" alt="">`)
+          .join('')}
+      </div>
+      <div class="collection-add-fields">
+        <div class="adv-row">
+          <label for="acCond">Condition</label>
           <select id="acCond" class="col-select">
             ${COL_CONDS.map(([k, l]) => `<option value="${k}" ${k === 'NM' ? 'selected' : ''}>${l}</option>`).join('')}
           </select>
         </div>
         <div class="adv-row">
-          <label>Foil</label
-          ><label class="ac-foil"><input type="checkbox" id="acFoil" /> ✨ Foil</label>
+          <span class="collection-field-label">Finish</span
+          ><label class="ac-foil" for="acFoil"><input type="checkbox" id="acFoil" /> Foil</label>
         </div>
         <div class="adv-row">
-          <label>${trS('Amount (each)')}</label>
-          <div class="action-row" style="margin:0;">
-            <button class="ghost-btn" id="acQminus" style="flex:none;width:44px;">−</button>
+          <label for="acQty">Amount each</label>
+          <div class="action-row collection-add-quantity">
+            <button type="button" class="ghost-btn" id="acQminus" aria-label="Decrease amount">
+              ${ICONS.minus}
+            </button>
             <input
               id="acQty"
               type="number"
+              inputmode="numeric"
               min="1"
               value="1"
               class="col-filter-input"
-              style="max-width:70px;text-align:center;"
             />
-            <button class="ghost-btn" id="acQplus" style="flex:none;width:44px;">＋</button>
+            <button type="button" class="ghost-btn" id="acQplus" aria-label="Increase amount">
+              ${ICONS.plus}
+            </button>
           </div>
         </div>
         <div class="adv-row">
-          <label>Binder</label>
+          <label for="acBinder">Binder</label>
           <select id="acBinder" class="col-select">
             ${ruledBinders().length ? `<option value="__auto__" selected>✦ ${'Automatic (binder rules)'}</option>` : ''}
             <option value="">— No binder —</option>
-            ${state.collection.binders.map((b) => `<option value="${b.id}">${escapeHtml(b.name)}</option>`).join('')}
+            ${state.collection.binders.map((b) => `<option value="${escapeHtml(b.id)}">${escapeHtml(b.name)}</option>`).join('')}
             <option value="__wants__">🔖 Wants list</option>
             <option value="__new__">＋ New binder…</option>
           </select>
         </div>
-        <button class="primary-btn" id="acAdd" style="margin-top:12px;">
-          ${trS('Add to collection')} (${n})
-        </button>
-        <button class="ghost-btn" id="acCancel" style="width:100%;margin-top:8px;">Cancel</button>
-      </div>
-    </main>
-  </div>`;
+      </div>`,
+    /* HTML */ ` <button type="button" class="ghost-btn card-transfer-cancel" id="acCancel">
+        Cancel
+      </button>
+      <button type="button" class="primary-btn" id="acAdd">Add to collection (${n})</button>`,
+  );
+  wireCardTransferDialog(el);
   document.getElementById('acQplus')?.addEventListener('click', () => {
     const q = document.getElementById('acQty');
     q.value = (+q.value || 1) + 1;
@@ -154,6 +158,7 @@ function openAddManyToCollection(cards, onDone) {
 function addCardsToDeckQuiet(d, cards) {
   let added = 0,
     skipped = 0;
+  const copies = [];
   if (!d.admiral && !deckIsConstructed(d)) {
     toast(`Appoint a ${fmtName(d)} for ${d.name} first.`);
     return 0;
@@ -168,11 +173,16 @@ function addCardsToDeckQuiet(d, cards) {
       skipped++;
       return;
     }
-    d.cards.push(c);
-    logDeckChange(d, { type: 'add', name: c.name, card: c });
+    const copy = playingDeckCopy(c);
+    d.cards.push(copy);
+    copies.push(copy);
+    logDeckChange(d, { type: 'add', name: copy.name, card: copy });
     added++;
   });
-  if (added) scheduleSave(d);
+  if (added) {
+    ensurePlayingOwnership(d, copies);
+    scheduleSave(d);
+  }
   toast(`${added} added to ${d.name}` + (skipped ? ` \u00B7 ${skipped} can't join it` : '') + '.');
   return added;
 }
@@ -188,6 +198,7 @@ function openMultiDeckChooser(cards, onDone) {
   const n = cards.length;
   el.innerHTML = /* HTML */ `<div class="deckpick">
     <h4>Add ${n} card${n > 1 ? 's' : ''} to…</h4>
+    ${playingProxyOptionHtml('multiDeckProxy')}
     <div class="deckpick-list">
       ${
         state.decksIndex
@@ -211,7 +222,10 @@ function openMultiDeckChooser(cards, onDone) {
     row.addEventListener('click', () => {
       close();
       const d = getDeck(row.dataset.deck);
-      if (d && addCardsToDeckQuiet(d, cards) && onDone) onDone();
+      const copies = cards.map((card) =>
+        playingDeckCopy(card, el.querySelector('#multiDeckProxy').checked),
+      );
+      if (d && addCardsToDeckQuiet(d, copies) && onDone) onDone();
     }),
   );
 }
@@ -407,6 +421,10 @@ function clearSelectionOnBack() {
     colSelClear();
     return true;
   }
+  if (state.screen === 'collection' && state.wantSel?.size) {
+    clearWantsSelection();
+    return true;
+  }
   if (state.screen === 'search' && state.searchSel && state.searchSel.size) {
     searchSelClear();
     return true;
@@ -419,37 +437,31 @@ function clearSelectionOnBack() {
 }
 
 async function openAddToCollection(card) {
+  if (isCollectionBasicLand(card)) {
+    toast('Basic lands are excluded from Collection and Wants.');
+    return;
+  }
   pushOverlay('addColl', () => document.getElementById('addCollOverlay')?.remove());
   let el = document.getElementById('addCollOverlay');
   if (!el) {
     el = document.createElement('div');
-    el.className = 'overlay';
+    el.className = 'overlay card-transfer-backdrop';
     el.id = 'addCollOverlay';
   }
   document.body.appendChild(el);
-  el.innerHTML = /* HTML */ `<div class="overlay-inner" style="max-width:380px;">
-    <main style="padding:14px;">
-      <div class="panel-card">
-        <div class="panel-h"><span class="ib">${ICONS.collection}</span>Add to collection</div>
-        <div style="text-align:center;margin:6px 0 10px;">
-          <img
-            class="${wbClass(card)}"
-            src="${cardImageMed(card)}"
-            alt="${escapeHtml(card.name)}"
-            style="width:120px;"
-          />
-        </div>
-        <p class="hint" style="margin-bottom:8px;text-align:center;">${escapeHtml(card.name)}</p>
-        ${collectionAddFieldsHtml(card)}
-        <button type="button" class="primary-btn" id="acAdd" style="margin-top:12px;">
-          Add to collection
-        </button>
-        <button type="button" class="ghost-btn" id="acCancel" style="width:100%;margin-top:8px;">
-          Cancel
-        </button>
+  el.innerHTML = cardTransferDialogHtml(
+    'Add to collection',
+    card.name,
+    /* HTML */ ` <div class="card-transfer-preview">
+        <img class="${wbClass(card)}" src="${cardImageMed(card)}" alt="${escapeHtml(card.name)}" />
       </div>
-    </main>
-  </div>`;
+      ${collectionAddFieldsHtml(card)}`,
+    /* HTML */ ` <button type="button" class="ghost-btn card-transfer-cancel" id="acCancel">
+        Cancel
+      </button>
+      <button type="button" class="primary-btn" id="acAdd">Add to collection</button>`,
+  );
+  wireCardTransferDialog(el);
   el.querySelector('#acCancel').addEventListener('click', closeTopOverlay);
   await wireCollectionAddForm(el, card, {
     onAdded() {

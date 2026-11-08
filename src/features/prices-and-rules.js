@@ -101,7 +101,7 @@ function openPriceHistory(card, key) {
   if (_key.startsWith('__col:')) {
     const b = _key.slice(6);
     if (b !== '__wants__') {
-      const scope = state.collection.items.filter((it) => (b === 'all' ? true : it.binder === b));
+      const scope = collectionTrackedItems().filter((it) => (b === 'all' ? true : it.binder === b));
       const seen = new Set();
       const deltas = [];
       scope.forEach((it) => {

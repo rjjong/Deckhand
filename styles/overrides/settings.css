@@ -1,0 +1,4 @@
+.settings-page .hub-card:disabled {
+  opacity: 0.55;
+  cursor: default;
+}

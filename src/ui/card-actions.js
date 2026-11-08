@@ -98,6 +98,7 @@ function openCardActionSheet(d, card, loc, idx) {
 }
 
 function renderCardSheet(d, card, loc, idx) {
+  reconcilePlayingOwnership(d);
   _cardSheetGen++; // this render owns csPrice/csRulings from here on
   let el = document.getElementById('cardSheetOverlay');
   if (!el) {
@@ -123,7 +124,17 @@ function renderCardSheet(d, card, loc, idx) {
   }
   const admiralEligible = leaderFitsFormat(card, deckFormat(d)) && !isBanned(card, d);
   const actions = [];
-  const _reco = `<button class="ghost-btn" id="csReco" style="width:100%;"><span class="ib">${ICONS.reco}</span>${trS('Recommendations')}</button>`;
+  const deckCopy =
+    loc === 'admiral'
+      ? d.admiral
+      : loc === 'partner'
+        ? d.partner
+        : loc === 'maybe'
+          ? d.maybeboard[idx]
+          : d.cards[idx];
+  const inPlaying = loc !== 'maybe' || deckIsConstructed(d);
+  el._playingDeckCopy = inPlaying ? deckCopy : null;
+  const _reco = `<button class="ghost-btn" id="csReco" style="width:100%;"><span class="ib">${ICONS.reco}</span>Inspiration</button>`;
   const _sim = `<button class="ghost-btn" id="csSimilar" style="width:100%;"><span class="ib">${ICONS.similar}</span>${trS('Similar cards')}</button>`;
   const _shr = `<button class="ghost-btn" id="csShare" style="width:100%;"><span class="ib">${ICONS.share}</span>${trS('Share')}</button>`;
   const _prt = `<button class="ghost-btn" id="csChangePrinting" style="width:100%;"><span class="ib">${ICONS.swap}</span>${trS('Change printing')}</button>`;
@@ -201,6 +212,7 @@ function renderCardSheet(d, card, loc, idx) {
       </div>
       <div class="cs-actions-grid">
         ${cardCollectionQuantityHtml(card)}
+        ${inPlaying && deckCopy && !isCollectionBasicLand(deckCopy) ? playingProxyOptionHtml('csProxy', !!deckCopy.proxy, 'Proxy in this deck · Add to Wants') : ''}
         <div class="card-editing-actions">${editingActions.join('')}</div>
         <div class="card-secondary-actions">${_shr}${_tag}</div>
         <div class="card-discovery-actions" role="group" aria-label="Discover cards">
@@ -238,6 +250,12 @@ function renderCardSheet(d, card, loc, idx) {
     .getElementById('dcImg')
     ?.addEventListener('click', () => showCardPreview(card, cardImageLarge(card)));
   wireCardCollectionQuantity(el, card);
+  el.querySelector('#csProxy')?.addEventListener('change', (event) => {
+    setPlayingProxy(d, deckCopy, event.target.checked);
+    refreshDecklistBox(d);
+    renderCardSheet(d, deckCopy, loc, idx);
+    el.querySelector('#csProxy')?.focus({ preventScroll: true });
+  });
   try {
     paintPendingArt();
   } catch (e) {}
@@ -286,6 +304,7 @@ function renderCardSheet(d, card, loc, idx) {
     }
     d.maybeboard.splice(idx, 1);
     d.cards.push(card);
+    ensurePlayingOwnership(d, [card]);
     logDeckChange(d, { type: 'toMain', name: card.name, card });
     scheduleSave(d);
     toast(`${card.name} moved to Main Deck.`);
@@ -300,45 +319,69 @@ function renderCardSheet(d, card, loc, idx) {
   document.getElementById('csAddOne')?.addEventListener('click', () => {
     document.getElementById('csAddSheet')?.remove();
     const m = document.createElement('div');
-    m.className = 'deckpick-scrim';
+    m.className = 'deckpick-scrim card-transfer-backdrop';
     m.id = 'csAddSheet';
     m.style.zIndex = 1300;
-    m.style.alignItems = 'flex-end';
     let q = 1,
       chosen = null;
-    m.innerHTML = /* HTML */ `<div class="deckpick br-sheet pt-menu add-sheet">
-      <button type="button" class="primary-btn" data-addk="deck">
-        ${'Add to'} ${escapeHtml(d.name)}
-      </button>
-      <button type="button" class="ghost-btn" data-addk="coll">
-        <span class="ib">${ICONS.binder}</span>${'To your collection'}
-      </button>
-      <button type="button" class="ghost-btn" data-addk="other">
-        <span class="ib">${ICONS.addOne}</span>${'To another deck…'}
-      </button>
-      <div class="add-qty">
-        <button type="button" class="ghost-btn" data-q="-1">−</button><b id="csAddQ">1</b
-        ><button type="button" class="ghost-btn" data-q="1">＋</button>
-      </div>
-      <div class="br-title">
-        <b>${escapeHtml(card.name)}</b><span>${'How many, and where to?'}</span>
-      </div>
-    </div>`;
+    m.innerHTML = cardTransferDialogHtml(
+      'Add to deck',
+      card.name,
+      /* HTML */ `
+        <div class="card-transfer-amount">
+          <span>Amount</span>
+          <div class="add-qty">
+            <button
+              type="button"
+              class="ghost-btn"
+              data-q="-1"
+              aria-label="Decrease amount"
+              disabled
+            >
+              ${ICONS.minus}
+            </button>
+            <b id="csAddQ" aria-live="polite">1</b>
+            <button type="button" class="ghost-btn" data-q="1" aria-label="Increase amount">
+              ${ICONS.plus}
+            </button>
+          </div>
+        </div>
+        <button type="button" class="primary-btn" data-addk="deck">
+          ${'Add to'} ${escapeHtml(d.name)}
+        </button>
+        <button type="button" class="hub-card" data-addk="coll">
+          <span class="hub-icon" aria-hidden="true">${ICONS.collection}</span>
+          <span class="hub-copy"
+            ><strong>Add to collection</strong><small>Choose printing and binder</small></span
+          >
+          <span class="hub-arrow" aria-hidden="true">›</span>
+        </button>
+        <button type="button" class="hub-card" data-addk="other">
+          <span class="hub-icon" aria-hidden="true">${ICONS.decks}</span>
+          <span class="hub-copy"
+            ><strong>Add to another deck</strong><small>Choose a destination deck</small></span
+          >
+          <span class="hub-arrow" aria-hidden="true">›</span>
+        </button>
+      `,
+      '<button type="button" class="ghost-btn card-transfer-cancel" id="csAddCancel">Cancel</button>',
+    );
     m.querySelectorAll('[data-q]').forEach((b) =>
       b.addEventListener('click', () => {
         q = Math.max(1, Math.min(99, q + +b.dataset.q));
         m.querySelector('#csAddQ').textContent = q;
+        m.querySelector('[data-q="-1"]').disabled = q === 1;
+        m.querySelector('[data-q="1"]').disabled = q === 99;
       }),
     );
+    if (isCollectionBasicLand(card)) m.querySelector('[data-addk="coll"]').remove();
     m.querySelectorAll('[data-addk]').forEach((b) =>
       b.addEventListener('click', () => {
         chosen = b.dataset.addk;
         brSheetClose('csAddSheet');
       }),
     );
-    m.addEventListener('click', (e) => {
-      if (e.target === m) brSheetClose('csAddSheet');
-    });
+    m.querySelector('#csAddCancel').addEventListener('click', () => brSheetClose('csAddSheet'));
     brSheetOpen(m, 'csAddSheet', () => {
       const k = chosen;
       chosen = null;
@@ -354,6 +397,7 @@ function renderCardSheet(d, card, loc, idx) {
         else csAddCopies(q);
       }, 0);
     });
+    wireCardTransferDialog(m, () => brSheetClose('csAddSheet'));
   });
   const csAddCopies = (q) => {
     if (loc === 'maybe' && !deckIsConstructed(d)) {
@@ -361,6 +405,7 @@ function renderCardSheet(d, card, loc, idx) {
       return;
     }
     let added = 0;
+    const playingCopies = [];
     for (let i = 0; i < q; i++) {
       if (deckIsConstructed(d)) {
         if (atCopyLimit(d, card)) {
@@ -373,7 +418,9 @@ function renderCardSheet(d, card, loc, idx) {
           break;
         }
         if (loc === 'maybe') {
-          ensureMaybeboard(d).push(JSON.parse(JSON.stringify(card)));
+          const copy = playingDeckCopy(card);
+          ensureMaybeboard(d).push(copy);
+          playingCopies.push(copy);
           logDeckChange(d, { type: 'addMaybe', name: card.name, card });
           added++;
           continue;
@@ -382,11 +429,14 @@ function renderCardSheet(d, card, loc, idx) {
         toast('Singleton rules: only basic lands (and cards that say otherwise) may repeat.');
         break;
       }
-      d.cards.push(JSON.parse(JSON.stringify(card)));
+      const copy = playingDeckCopy(card);
+      d.cards.push(copy);
+      playingCopies.push(copy);
       logDeckChange(d, { type: 'add', name: card.name, card });
       added++;
     }
     if (!added) return;
+    ensurePlayingOwnership(d, playingCopies);
     scheduleSave(d);
     toast(added === 1 ? `Another ${card.name} added.` : `${added} × ${card.name} added.`);
     closeTopOverlay();
@@ -407,7 +457,9 @@ function renderCardSheet(d, card, loc, idx) {
         return;
       }
       if (loc === 'maybe') {
-        ensureMaybeboard(d).push(JSON.parse(JSON.stringify(card)));
+        const copy = playingDeckCopy(card);
+        ensureMaybeboard(d).push(copy);
+        ensurePlayingOwnership(d, [copy]);
         logDeckChange(d, { type: 'addMaybe', name: card.name, card });
         scheduleSave(d);
         toast(`Another ${card.name} in the sideboard.`);
@@ -418,7 +470,9 @@ function renderCardSheet(d, card, loc, idx) {
       toast('Singleton rules: only basic lands (and cards that say otherwise) may repeat.');
       return;
     }
-    d.cards.push(JSON.parse(JSON.stringify(card)));
+    const copy = playingDeckCopy(card);
+    d.cards.push(copy);
+    ensurePlayingOwnership(d, [copy]);
     logDeckChange(d, { type: 'add', name: card.name, card });
     scheduleSave(d);
     toast(`Another ${card.name} added.`);
@@ -521,7 +575,7 @@ let _cardSheetGen = 0;
    the sheet never disagree about the same card. */
 function syncCollectionPrice(card, eur) {
   try {
-    const items = state.collection && state.collection.items;
+    const items = collectionTrackedItems();
     if (!items || !card || !card.name) return;
     const set = String(card.set || '').toLowerCase(),
       cn = String(card.collector_number || '');

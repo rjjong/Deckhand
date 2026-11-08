@@ -7,19 +7,26 @@
    balance the trade. Persists in localStorage so a trade survives closing
    the app mid-negotiation. */
 function loadTrade() {
-  if (state.trade) return state.trade;
-  let t = null;
-  try {
-    t = JSON.parse(localStorage.getItem(LS_PREFIX + 'trade') || 'null');
-  } catch (e) {}
-  state.trade = t && Array.isArray(t.a) && Array.isArray(t.b) ? t : { a: [], b: [] };
+  if (!state.trade) {
+    let t = null;
+    try {
+      t = JSON.parse(localStorage.getItem(LS_PREFIX + 'trade') || 'null');
+    } catch (e) {}
+    state.trade = t && Array.isArray(t.a) && Array.isArray(t.b) ? t : { a: [], b: [] };
+  }
+  state.trade.partnerName = normalizeTradePartnerName(state.trade.partnerName);
+  if (!Array.isArray(state.trade.history)) state.trade.history = [];
   return state.trade;
 }
 
 function saveTrade() {
   try {
     localStorage.setItem(LS_PREFIX + 'trade', JSON.stringify(state.trade));
-  } catch (e) {}
+    return true;
+  } catch (e) {
+    toast('The trade could not be saved. Free some browser storage and try again.');
+    return false;
+  }
 }
 
 /* Trade prices are always LIVE: each time the trade page shows, every card
@@ -27,7 +34,8 @@ function saveTrade() {
    postWithTimeout). A price younger than ten minutes counts as live. Without
    a line -- or when Scryfall does not answer -- the stored price stays: that
    is the fallback, never the first choice. */
-let _tradeFailAt = 0;
+let _tradeFailAt = 0,
+  tradeConfirmBusy = false;
 
 async function refreshTradePrices() {
   try {
@@ -212,42 +220,55 @@ function tradePageHtml() {
   // Me (a) receives cards; You (b) holds the cards leaving my collection.
   const diff = totA - totB;
   const even = Math.abs(diff) < 0.005;
+  const partner = state.trade.partnerName || 'You';
   const verdict = even
     ? trS('Even trade.')
     : diff > 0
-      ? `${trS('You add')} <span class="tr-eur">€${diff.toFixed(2)}</span>`
+      ? `<span class="trade-verdict-label">${state.trade.partnerName ? escapeHtml(partner) + ' adds' : trS('You add')}</span> <span class="tr-eur">€${diff.toFixed(2)}</span>`
       : `${trS('I add')} <span class="tr-eur">€${(-diff).toFixed(2)}</span>`;
   const sideCard = (
     key,
     label,
     tot,
-  ) => `<section class="panel-card trade-side" aria-label="${label}">
-    ${toolPanelHeadingHtml(key === 'a' ? ICONS.imp : ICONS.exp, label, key === 'a' ? 'Cards you receive' : 'Cards you give', `<strong class="trade-total">€${tot.toFixed(2)}</strong>`)}
+  ) => `<section class="panel-card trade-side" aria-label="${escapeHtml(label)}">
+    ${toolPanelHeadingHtml(key === 'a' ? ICONS.imp : ICONS.exp, key === 'b' ? `<button type="button" id="tradePartnerName" class="trade-partner-name" aria-label="Edit trading partner name" title="Edit trading partner name">${escapeHtml(label)}${ICONS.edit}</button>` : label, key === 'a' ? 'Cards you receive' : 'Cards you give', `<strong class="trade-total">€${tot.toFixed(2)}</strong>`)}
     ${tradeRowsHtml(key)}
     <button type="button" class="hub-card trade-add" data-tradeadd="${key}"><span class="hub-icon" aria-hidden="true">${ICONS.plus}</span><span class="hub-copy"><strong>${trS('Add card')}</strong><small>${'Choose the exact printing'}</small></span><span class="hub-arrow" aria-hidden="true">›</span></button>
   </section>`;
   return /* HTML */ `<main class="hub-page tools-page trade-page">
     <div class="trade-toolbar-shell">
       <div class="panel-card trade-toolbar" role="group" aria-label="Trade summary">
-        <button
-          type="button"
-          id="tradeConfirm"
-          class="trade-confirm"
-          ${state.trade.a.length || state.trade.b.length ? '' : ' disabled'}
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
+        <div class="trade-toolbar-actions">
+          <button
+            type="button"
+            id="tradeConfirm"
+            class="trade-confirm"
+            ${!tradeConfirmBusy && (state.trade.a.length || state.trade.b.length) ? '' : ' disabled'}
           >
-            <path d="m5 12 4 4L19 6" />
-          </svg>
-          <span>${trS('Confirm trade')}</span>
-        </button>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m5 12 4 4L19 6" />
+            </svg>
+            <span>${trS('Confirm trade')}</span>
+          </button>
+          <button
+            type="button"
+            id="tradeClear"
+            class="trade-confirm trade-clear"
+            aria-label="Clear trade"
+            title="Clear trade"
+            ${!tradeConfirmBusy && (state.trade.a.length || state.trade.b.length) ? '' : ' disabled'}
+          >
+            ${ICONS.trash}
+          </button>
+        </div>
         <div
           class="trade-verdict ${even ? 'even' : ''}"
           role="status"
@@ -258,7 +279,7 @@ function tradePageHtml() {
       </div>
     </div>
     <section class="hub-actions tool-sections" aria-label="${'Trade cards'}">
-      ${sideCard('b', 'You', totB)} ${sideCard('a', 'Me', totA)}
+      ${sideCard('b', partner, totB)} ${sideCard('a', 'Me', totA)}
     </section>
     ${missing ? `<p class="hint">${trS('Some cards have no listed price and count as €0.00.')}</p>` : ''}
     <p class="hub-footnote">
@@ -300,12 +321,29 @@ function wireTradePage() {
     }),
   );
   document.getElementById('tradeConfirm')?.addEventListener('click', confirmTrade);
+  document.getElementById('tradeHistory')?.addEventListener('click', openTradeHistory);
+  document.getElementById('tradePartnerName')?.addEventListener('click', () => {
+    if (tradeConfirmBusy) return;
+    openInAppPrompt(
+      'Trading partner',
+      'Name',
+      state.trade.partnerName || '',
+      (name) => {
+        if (name === null) return;
+        state.trade.partnerName = normalizeTradePartnerName(name);
+        saveTrade();
+        render();
+      },
+      { maxLength: 99 },
+    );
+  });
   document.getElementById('tradeClear')?.addEventListener('click', () => {
+    if (tradeConfirmBusy) return;
     openInAppConfirm(
       trS('Clear the whole trade?'),
       (ok) => {
         if (!ok) return;
-        state.trade = { a: [], b: [] };
+        resetCurrentTrade();
         saveTrade();
         render();
       },
@@ -320,73 +358,102 @@ function wireTradePage() {
    the collection as their exact printing (name+set+number), pulled from any
    binder and condition until the traded quantity is covered. */
 function confirmTrade() {
+  if (tradeConfirmBusy) return;
   loadTrade();
   // Panels swapped in .358: ME (a) = what I RECEIVE, YOU (b) = what leaves
   // my binders. Joining and leaving follow suit.
-  const gives = state.trade.b,
-    gets = state.trade.a;
+  const original = state.trade;
+  const snapshot = captureTradeHistory(original);
+  const gives = snapshot.b,
+    gets = snapshot.a;
   if (!gives.length && !gets.length) return;
-  const q = 'Confirm this trade? Cards under Me join your collection; cards under You leave it.';
+  const q =
+    'Confirm this trade? Cards under Me join your collection; cards under ' +
+    (snapshot.partnerName || 'You') +
+    ' leave it.';
   openInAppConfirm(
     q,
     async (okd) => {
-      if (!okd) return;
-      const _memo = {};
-      for (const it of gets) {
-        const neu = {
-          name: it.name,
-          set: it.set || '',
-          set_name: it.set_name || '',
-          cn: it.cn || '',
-          img: it.img || '',
-          type_line: it.type_line || '',
-          colors: it.colors || [],
-          rarity: it.rarity || '',
-          border_color: it.wb ? 'white' : '',
-          eur: it.eur != null ? it.eur : null,
-          foil: it.foil ? true : undefined,
-          cond: 'NM',
-          qty: it.qty,
-          binder: null,
-          addedAt: Date.now(),
-        };
-        neu.binder = ruledBinders().length ? await routeBinder(neu, _memo) : null;
-        const same = state.collection.items.find(
-          (x) =>
-            x.name === it.name &&
-            x.set === (it.set || '') &&
-            (x.cn || '') === (it.cn || '') &&
-            x.cond === 'NM' &&
-            !!x.foil === !!neu.foil &&
-            (x.binder || null) === (neu.binder || null),
-        );
-        if (same) same.qty += it.qty;
-        else state.collection.items.unshift(neu);
-        state.collection.wantsManual = (state.collection.wantsManual || []).filter(
-          (w) => w.name !== it.name,
-        );
-      }
-      gives.forEach((it) => {
-        let need = it.qty;
-        state.collection.items.forEach((ci) => {
-          if (need <= 0) return;
-          if (ci.name === it.name && ci.set === (it.set || '') && (ci.cn || '') === (it.cn || '')) {
-            const take = Math.min(ci.qty, need);
-            ci.qty -= take;
-            need -= take;
-          }
+      if (!okd || tradeConfirmBusy) return;
+      tradeConfirmBusy = true;
+      document
+        .querySelectorAll(
+          '#tradeConfirm, #tradeClear, #tradePartnerName, [data-tradeadd], [data-tq], [data-tdel]',
+        )
+        .forEach((button) => (button.disabled = true));
+      try {
+        const _memo = {};
+        const received = [];
+        for (const it of gets) {
+          if (isCollectionBasicLand(it)) continue;
+          const neu = {
+            name: it.name,
+            set: it.set || '',
+            set_name: it.set_name || '',
+            cn: it.cn || '',
+            img: it.img || '',
+            type_line: it.type_line || '',
+            colors: it.colors || [],
+            rarity: it.rarity || '',
+            border_color: it.wb ? 'white' : '',
+            eur: it.eur != null ? it.eur : null,
+            foil: it.foil ? true : undefined,
+            cond: 'NM',
+            qty: it.qty,
+            binder: null,
+            addedAt: Date.now(),
+          };
+          neu.binder = ruledBinders().length ? await routeBinder(neu, _memo) : null;
+          received.push(neu);
+        }
+        for (const it of received) {
+          const same = state.collection.items.find(
+            (x) =>
+              x.name === it.name &&
+              x.set === it.set &&
+              (x.cn || '') === it.cn &&
+              x.cond === 'NM' &&
+              !!x.foil === !!it.foil &&
+              (x.binder || null) === (it.binder || null),
+          );
+          if (same) same.qty += it.qty;
+          else state.collection.items.unshift(it);
+          state.collection.wantsManual = (state.collection.wantsManual || []).filter(
+            (w) => w.name !== it.name,
+          );
+        }
+        gives.forEach((it) => {
+          if (isCollectionBasicLand(it)) return;
+          let need = it.qty;
+          state.collection.items.forEach((ci) => {
+            if (need <= 0) return;
+            if (
+              ci.name === it.name &&
+              ci.set === (it.set || '') &&
+              (ci.cn || '') === (it.cn || '')
+            ) {
+              const take = Math.min(ci.qty, need);
+              ci.qty -= take;
+              need -= take;
+            }
+          });
         });
-      });
-      state.collection.items = state.collection.items.filter((x) => x.qty > 0);
-      saveCollection();
-      state.trade = { a: [], b: [] };
-      saveTrade();
-      tradeFireworks();
-      // The new cards wait unfiled on the collection page — land there so
-      // filing them into a binder is the natural next tap.
-      setTimeout(() => switchPage('collection'), 900);
-      toast(trS('Trade confirmed. Enjoy the new cards.') + ' 🎆');
-      render();
+        state.collection.items = state.collection.items.filter((x) => x.qty > 0);
+        saveCollection();
+        completeTradeHistory(snapshot, original);
+        saveTrade();
+        tradeFireworks();
+        // The new cards wait unfiled on the collection page — land there so
+        // filing them into a binder is the natural next tap.
+        setTimeout(() => switchPage('collection'), 900);
+        toast(trS('Trade confirmed. Enjoy the new cards.') + ' 🎆');
+      } catch (error) {
+        console.error(error);
+        toast('Could not complete the trade. Please try again.');
+      } finally {
+        tradeConfirmBusy = false;
+        if (state.screen === 'trade') render();
+      }
     },
     { ok: trS('Confirm trade'), title: trS('Confirm trade'), icon: 'trade' },
   );

@@ -5,7 +5,15 @@
 // and launcher shortcuts still open their requested destinations afterwards.
 const initialSettings = loadSettings();
 
-state.screen = state.startupPage;
+const scannerLaunchQuery = new URLSearchParams(location.search);
+const launchCollectionScanner =
+  state.startupPage === 'scan-collection' &&
+  !pendingShareToken() &&
+  !accountIncomingLink &&
+  !['card', 'go', 'share_text', 'share_url', 'share_title'].some((key) =>
+    scannerLaunchQuery.has(key),
+  );
+state.screen = state.startupPage === 'scan-collection' ? 'collection' : state.startupPage;
 
 state.navLadder = state.screen === 'home' ? ['home'] : ['home', state.screen];
 

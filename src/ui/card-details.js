@@ -833,7 +833,7 @@ function openCardInfo(card, opts) {
       <div class="card-details-actions">
         <div class="cs-actions-grid" style="margin:0;">
           ${(() => {
-            const reco = `<button type="button" class="ghost-btn" id="ciReco"><span class="ib">${ICONS.reco}</span>Recommendations</button>`;
+            const reco = `<button type="button" class="ghost-btn" id="ciReco"><span class="ib">${ICONS.reco}</span>Inspiration</button>`;
             const similar = `<button type="button" class="ghost-btn" id="ciSimilar"><span class="ib">${ICONS.similar}</span>Similar cards</button>`;
             const utilities = `<div class="card-secondary-actions"><button type="button" class="ghost-btn" id="ciShare"><span class="ib">${ICONS.share}</span>Share</button><button type="button" class="ghost-btn" id="ciTags"><span class="ib">${ICONS.tag}</span>Tags</button></div>`;
             const discovery = `<div class="card-discovery-actions" role="group" aria-label="Discover cards">${reco}${similar}</div>`;
@@ -842,9 +842,10 @@ function openCardInfo(card, opts) {
               colIdx != null
                 ? ''
                 : `<button type="button" class="ghost-btn" id="ciAdd" ${ciBlockWhy(card, pinned) ? 'disabled' : ''}>${ciBlockWhy(card, pinned) ? escapeHtml(trS(ciBlockWhy(card, pinned))) : pinned ? (pinnedHasCard() ? `− Remove from ${escapeHtml(pinned.name)}` : `+ Add to ${escapeHtml(pinned.name)}`) : `${modeGlyph()} ${trS('Add to…')}`}</button>`;
-            const wants = opts.wantName
-              ? '<button type="button" class="ghost-btn card-action-wide" id="ciWantRm">Remove from Wants</button>'
-              : '';
+            const wants =
+              opts.wantName && !playingWantsRequired(opts.wantName)
+                ? '<button type="button" class="ghost-btn card-action-wide" id="ciWantRm">Remove from Wants</button>'
+                : '';
             return `${cardCollectionQuantityHtml(card)}${add}${printing}${wants}${utilities}${discovery}`;
           })()}
         </div>
@@ -882,7 +883,8 @@ function openCardInfo(card, opts) {
     );
   wireCardCollectionQuantity(el, card, {
     item: collectionItem,
-    onChange() {
+    onChange(delta) {
+      if (opts.wantName && delta > 0) fulfillPlayingProxy(opts.wantName);
       if (collectionItem) state._colSheetIdx = state.collection.items.indexOf(collectionItem);
     },
   });
@@ -954,6 +956,7 @@ function openCardInfo(card, opts) {
   });
   document.getElementById('ciWantRm')?.addEventListener('click', () => {
     const nm = opts.wantName;
+    if (playingWantsRequired(nm)) return;
     state.collection.wantsExclude.push(nm);
     state.collection.wantsManual = (state.collection.wantsManual || []).filter(
       (w) => w.name !== nm,
@@ -984,7 +987,7 @@ function openCardInfo(card, opts) {
         logDeckChange(pinned, { type: 'remove', name: rm.name, card: rm });
         toast(`${rm.name} removed from ${pinned.name}.`);
         scheduleSave(pinned);
-      } else if (!addCardToDeckValidated(pinned, card)) {
+      } else if (!addCardToDeckValidated(pinned, playingDeckCopy(card, state.searchProxy))) {
         return; // rejected (off-color, in command, …) — nothing changed
       }
       syncCiAdd();

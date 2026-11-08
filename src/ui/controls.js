@@ -522,10 +522,9 @@ function closeAllFolds() {
 function toggleAccordionBody(body, id) {
   const ico = {
     guild: '#guildCur .fold-ico',
-    dataSrc: '#dataSourcesRow .fold-ico',
     about: '#aboutRow .fold-ico',
   }[id];
-  const row = { guild: 'guildRow', dataSrc: 'dataSourcesRow', about: 'aboutRow' }[id];
+  const row = { guild: 'guildRow', about: 'aboutRow' }[id];
   foldToggle(
     body,
     (open) => {
@@ -559,17 +558,6 @@ document.addEventListener('click', (e) => {
       );
       if (!b.hidden) dropReveal(abRow);
     }
-    return;
-  }
-  const dsRow = e.target.closest && e.target.closest('#dataSourcesRow');
-  if (dsRow) {
-    const b = document.getElementById('dataSourcesBody');
-    if (b)
-      keepAnchored(
-        dsRow,
-        () => toggleAccordionBody(b, 'dataSrc'),
-        () => (dsRow.isConnected ? dsRow : null),
-      );
     return;
   }
   const gOpt = e.target.closest && e.target.closest('[data-guild]');

@@ -111,6 +111,7 @@ function renderLifeSetup(el, m) {
       p.defeatMsg = '';
       p.monarch = false;
       p.initiative = false;
+      p.counters = lifeDefaultCounters();
     });
     closeModal();
     renderLifeOverlay();

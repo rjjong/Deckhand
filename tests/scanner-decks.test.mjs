@@ -7,10 +7,26 @@ async function setup() {
   const changes = [],
     saves = [];
   const context = vm.createContext({
+    state: {
+      decksIndex: [],
+      collection: { items: [], binders: [], wantsManual: [], wantsExclude: [] },
+    },
     deckLeaders: (deck) => [deck.admiral, deck.partner].filter(Boolean),
+    deckIsConstructed: (deck) => deck.format === 'modern',
+    cardImageMed: () => '/icon-192.png',
+    scheduleSave() {},
     logDeckChange: (deck, change) => changes.push(change),
     persistDeck: (deck) => saves.push(deck),
   });
+  vm.runInContext(
+    await readFile(new URL('../src/services/collection-storage.js', import.meta.url), 'utf8'),
+    context,
+  );
+  context.saveCollection = () => {};
+  vm.runInContext(
+    await readFile(new URL('../src/pages/collection/playing.js', import.meta.url), 'utf8'),
+    context,
+  );
   for (const name of ['collection', 'decks'])
     vm.runInContext(
       await readFile(new URL(`../src/features/scanner/${name}.js`, import.meta.url), 'utf8'),

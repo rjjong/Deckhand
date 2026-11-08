@@ -9,6 +9,7 @@ import { createDataCache, DATA_FILES } from './data.mjs';
 import { createScryfallClient } from './scryfall.mjs';
 import { handle as sync } from './services/sync.mjs';
 import { handle as judge } from './services/judge.mjs';
+import { judgeStatus } from './services/judge-limits.mjs';
 import { handle as deckai, DECKAI_V } from './services/deckai.mjs';
 import { handle as news } from './services/news.mjs';
 import { scannerAssets } from '../scripts/scanner-assets.mjs';
@@ -87,7 +88,7 @@ async function streamResult(res, run) {
     const result = await run({ signal: controller.signal,
       onProgress: fields => send('progress', fields) });
     if (res.destroyed) return;
-    if (!started) return json(res, result.status, result.json);
+    if (!started) return json(res, result.status, result.json, result.headers);
     send('result', result.json);
     res.end();
   } catch (error) {
@@ -151,19 +152,38 @@ export function createApp({ databasePath = resolve('./var/deckhand.dev.sqlite'),
           }
           return json(res, 200, newsCache.value, { 'cache-control': 'public, max-age=1800' });
         }
+        if (api === 'judge/status') {
+          if (req.method !== 'GET') return json(res, 405, { ok: false, error: 'method' });
+          const user = accounts.session(req);
+          const device = new URL(req.url, 'http://localhost').searchParams.get('device');
+          return json(res, 200, await judgeStatus(device, {
+            store: storage.store, env, fetch: fetchImpl, ip: req.socket.remoteAddress || '',
+            accountId: user?.verified_at ? user.id : null,
+          }));
+        }
         const handler = { sync, judge, deckai }[api];
         if (!Object.hasOwn({ sync, judge, deckai }, api)) return json(res, 404, { ok: false, error: 'not_found' });
         if (req.method !== 'POST') return json(res, 405, { ok: false, error: 'method' }, { allow: 'POST' });
         const auth = api === 'sync' ? accounts.authorize(req) : null;
         if (auth?.failure) return json(res, auth.failure.status, auth.failure.json);
         const body = await readBody(req, api === 'sync' ? 64 * 1024 * 1024 : 1024 * 1024);
+        const judgeUser = api === 'judge' ? accounts.session(req) : null;
         const deps = api === 'sync' ? { sync: storage.sync, accountScope: auth.user.sync_space }
-          : { store: storage.store, env, fetch: fetchImpl, ip: req.socket.remoteAddress || '' };
+          : { store: storage.store, env, fetch: fetchImpl, ip: req.socket.remoteAddress || '',
+              accountId: judgeUser?.verified_at ? judgeUser.id : null };
         if (api === 'judge' && String(req.headers.accept || '').includes('text/event-stream'))
           return await streamResult(res, hooks => judge(body, { ...deps, ...hooks }));
-        const result = await handler(body, deps);
-        if (api === 'deckai') result.json.v = DECKAI_V;
-        return json(res, result.status, result.json);
+        const controller = new AbortController();
+        const disconnected = () => { if (!res.writableEnded) controller.abort(); };
+        if (api === 'judge') res.once('close', disconnected);
+        try {
+          const result = await handler(body, api === 'judge' ? { ...deps, signal: controller.signal } : deps);
+          if (res.destroyed) return;
+          if (api === 'deckai') result.json.v = DECKAI_V;
+          return json(res, result.status, result.json, result.headers);
+        } finally {
+          res.off('close', disconnected);
+        }
       }
       if (req.method !== 'GET' && req.method !== 'HEAD') {
         return json(res, 405, { ok: false, error: 'method' }, { allow: 'GET, HEAD' });

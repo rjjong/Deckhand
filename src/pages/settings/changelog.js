@@ -1,10 +1,15 @@
 // pages / settings / changelog
 
+function settingsChangelogEntries() {
+  const major = String(APP_VERSION).split('.')[0];
+  return changelogAll().filter((entry) => String(entry.v).split('.')[0] === major);
+}
+
 function settingsChangelogHtml() {
   return /* HTML */ `<div class="settings-section settings-changelog">
     ${menuCardHtml('settingsChangelogRow', ICONS.list, 'Version &amp; changelog', `Version ${escapeHtml(APP_VERSION)} · ${escapeHtml(changelogDate(APP_DATE))}`)}
     <div id="settingsChangelogBody" class="menu-tool-body" hidden>
-      ${changelogListHtml(changelogAll(), true)}
+      ${changelogListHtml(settingsChangelogEntries(), true)}
     </div>
   </div>`;
 }

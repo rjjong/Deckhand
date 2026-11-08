@@ -299,8 +299,9 @@ test('Life saved-game and dungeon menus restore games and retain room progress',
 test('Life tracks Monarch and Initiative independently with crown and torch badges', async ({page},info)=>{
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
+  await page.locator('.app > .app-navigation').getByRole('button',{name:'Life',exact:true}).click();
   await page.evaluate(()=>{
-    state.guild='dimir';applyTheme();switchPage('life');
+    state.guild='dimir';applyTheme();
     state.life.count=4;state.life.layout='4q';state.life.rotate=true;state.life.setupDone=true;
     openLifeOverlay();
   });
@@ -313,46 +314,39 @@ test('Life tracks Monarch and Initiative independently with crown and torch badg
     await page.locator('.submenu-toggle.done').click();
     await expect(page.locator('.life-card-v2.focused')).toHaveCount(0);
   };
+  const initiative=async index=>{
+    await card(index).getByRole('button',{name:'Dungeon',exact:true}).click();
+    await page.locator('#lifeDgSheet').getByRole('button',{name:'Initiative',exact:true}).click();
+    await page.locator('#dgOk').click();
+    await expect(page.locator('#lifeDgSheet')).toHaveCount(0);
+  };
   await edit(0);
+  await expect(card(0).locator('[data-linitiative]')).toHaveCount(0);
   await card(0).getByRole('button',{name:'Monarch',exact:true}).click();
-  await card(0).getByRole('button',{name:'Initiative',exact:true}).click();
-  await expect(card(0).locator('.focus-name .lmonarch')).toBeVisible();
-  await expect(card(0).locator('.focus-name .linitiative')).toBeVisible();
-  const roleControls=await card(0).locator('.lf-extras').evaluate(el=>{
-    const torch=el.querySelector('[data-linitiative]'), dungeon=el.querySelector('[data-ldungeon]');
-    return {torchTop:torch.offsetTop,dungeonTop:dungeon.offsetTop,
-      gap:dungeon.offsetLeft-torch.offsetLeft-torch.offsetWidth,
-      position:getComputedStyle(torch).position};
+  await initiative(0);
+  await expect(card(0).locator('.life-roles .lmonarch')).toBeVisible();
+  await expect(card(0).locator('.life-roles .linitiative')).toBeVisible();
+  const controls=await card(0).locator('.lf-extras').evaluate(el=>{
+    const items=[...el.children];
+    return items.map(item=>({left:item.offsetLeft,right:item.offsetLeft+item.offsetWidth,top:item.offsetTop}));
   });
-  expect(roleControls.position).toBe('static');
-  expect(roleControls.torchTop).toBe(roleControls.dungeonTop);
-  expect(roleControls.gap).toBeGreaterThanOrEqual(0);
-  expect(roleControls.gap).toBeLessThanOrEqual(12);
-  await expect(card(0).getByRole('button',{name:'Monarch',exact:true})).toHaveAttribute('aria-pressed','true');
-  await expect(card(0).getByRole('button',{name:'Initiative',exact:true})).toHaveAttribute('aria-pressed','true');
-  await mkdir('var/previews',{recursive:true});
-  await page.screenshot({path:`var/previews/life-role-controls-${info.project.name}.png`});
+  expect(controls).toHaveLength(4);
+  for(let i=1;i<controls.length;i++){
+    expect(controls[i].left).toBeGreaterThanOrEqual(controls[i-1].right);
+    expect(controls[i].top).toBe(controls[0].top);
+  }
   await done();
-  await expect(card(0).getByRole('img',{name:'Monarch',exact:true})).toBeVisible();
-  await expect(card(0).getByRole('img',{name:'Initiative',exact:true})).toBeVisible();
-  await expect(card(0).locator('.life-player-name .life-role-icon')).toHaveCount(2);
-  await expect(card(0).locator('.lval-row .life-role-icon')).toHaveCount(0);
-  await expect.poll(()=>card(0).locator('.life-player-name').evaluate(el=>el.scrollWidth>el.clientWidth+1)).toBe(false);
-  const nameRoles=await card(0).locator('.life-player-name').evaluate(el=>{
-    const name=el.querySelector('.pname-input'), roles=el.querySelector('.life-roles');
-    return {nameRight:name.offsetLeft+name.offsetWidth,rolesLeft:roles.offsetLeft,
-      nameCenter:name.offsetTop+name.offsetHeight/2,rolesCenter:roles.offsetTop+roles.offsetHeight/2,
-      overflow:el.scrollWidth>el.clientWidth+1,client:el.clientWidth,scroll:el.scrollWidth,
-      nameWidth:name.offsetWidth,rolesWidth:roles.offsetWidth};
+  await expect(card(0).locator('.life-role-corner .life-role-icon')).toHaveCount(2);
+  await expect(card(0).locator('.life-player-name .life-role-icon')).toHaveCount(0);
+  const corner=await card(0).locator('.life-player-footer').evaluate(el=>{
+    const roles=el.querySelector('.life-roles');
+    return {left:roles.offsetLeft,width:el.clientWidth,rolesRight:roles.offsetLeft+roles.offsetWidth};
   });
-  expect(nameRoles.rolesLeft).toBeGreaterThanOrEqual(nameRoles.nameRight);
-  expect(Math.abs(nameRoles.nameCenter-nameRoles.rolesCenter)).toBeLessThanOrEqual(1);
-  expect(nameRoles.overflow,JSON.stringify(nameRoles)).toBe(false);
-  const crown=await card(0).locator('.lmonarch').boundingBox(), torch=await card(0).locator('.linitiative').boundingBox();
-  expect(crown.x+crown.width<=torch.x || torch.x+torch.width<=crown.x || crown.y+crown.height<=torch.y || torch.y+torch.height<=crown.y).toBe(true);
+  expect(corner.left).toBe(0);
+  expect(corner.rolesRight).toBeLessThan(corner.width/2);
   await edit(1);
-  await expect(card(0).locator('.dmg-overlay .life-player-name .life-role-icon')).toHaveCount(2);
-  await card(1).getByRole('button',{name:'Initiative',exact:true}).click();
+  await expect(card(0).locator('.dmg-overlay > .life-roles .life-role-icon')).toHaveCount(2);
+  await initiative(1);
   await done();
   await expect(card(0).locator('.linitiative')).toHaveCount(0);
   await expect(card(0).locator('.lmonarch')).toBeVisible();
@@ -373,7 +367,7 @@ test('Life tracks Monarch and Initiative independently with crown and torch badg
   await page.locator('[data-lr="0"]').click();
   await expect(card(1).locator('.life-role-icon')).toHaveCount(2);
   await edit(1);
-  await card(1).getByRole('button',{name:'Initiative',exact:true}).click();
+  await initiative(1);
   await done();
   await expect(card(1).locator('.linitiative')).toHaveCount(0);
   await expect(card(1).locator('.lmonarch')).toBeVisible();
@@ -396,8 +390,8 @@ test('Undercity shows its dungeon face, follows room choices and keeps Initiativ
     openLifeOverlay();
   });
   await page.locator('.submenu-toggle[data-idx="0"]').click();
-  await page.locator('[data-linitiative="0"]').click();
   await page.locator('[data-ldungeon="0"]').click();
+  await page.locator('#lifeDgSheet [data-linitiative="0"]').click();
   const dungeon=page.getByRole('dialog',{name:'Dungeons',exact:true});
   const undercity=dungeon.locator('.dg-grid [data-dgcard="uc"]');
   await expect(undercity.locator('.dg-card-name')).toHaveText('Undercity');
@@ -426,7 +420,7 @@ test('logo opens menu, settings remains accessible, and the title returns home',
   await expect(page.locator('#homeBtn img')).toHaveJSProperty('naturalWidth', 192);
   await mkdir('var/previews', { recursive: true });
   await page.screenshot({ path: `var/previews/menu-${info.project.name}.png` });
-  await page.getByRole('button', { name: 'Settings Preferences, sync & backups' }).click();
+  await page.getByRole('button', { name: 'Settings Preferences & backups' }).click();
   await expect(page.locator('#brandTitle')).toHaveText('SETTINGS');
   await page.goBack();
   await expect(page.locator('#brandTitle')).toHaveText('MENU');
@@ -517,14 +511,19 @@ test('Format Rules and Ban Lists are standalone pages with working details and p
   expect(errors).toEqual([]);
 });
 
-test('Settings owns working preferences, sync and backup controls', async ({page},info)=>{
+test('Settings keeps preferences and backups while account controls stay in Menu', async ({page},info)=>{
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
   await page.getByRole('button',{name:'Open menu',exact:true}).click();
+  await expect(page.locator('#menuScanCards, .menu-page [aria-label="Card scanner"]')).toHaveCount(0);
+  await page.locator('#menuAccount').click();
+  await expect(page.locator('#accountSheet')).toBeVisible();
+  await page.evaluate(()=>dismissAllOverlays());
   await page.locator('#menuSettings').click();
   await expect(page.locator('.settings-page .hub-card')).toHaveCount(7);
+  await expect(page.locator('#dataSourcesRow, #dataSourcesBody, #bulkDlNow, [data-srcrefresh], #syncRow, .settings-page #menuAccount')).toHaveCount(0);
   await expect(page.locator('.settings-page .hub-card').last()).toHaveAttribute('id','settingsChangelogRow');
-  for(const [row,body] of [['startupRow','startupBody'],['dataSourcesRow','dataSourcesBody'],['scannerSettingsRow','scannerSettingsBody'],['guildRow','guildBody'],['backupRow','backupBody'],['settingsChangelogRow','settingsChangelogBody']]){
+  for(const [row,body] of [['startupRow','startupBody'],['scannerSettingsRow','scannerSettingsBody'],['collectionSettingsRow','collectionSettingsBody'],['guildRow','guildBody'],['backupRow','backupBody'],['settingsChangelogRow','settingsChangelogBody']]){
     await page.locator(`#${row}`).click();
     await expect(page.locator(`#${body}`)).toBeVisible();
     await page.locator(`#${row}`).click();
@@ -533,7 +532,7 @@ test('Settings owns working preferences, sync and backup controls', async ({page
   await expect(page.locator('#settingsChangelogRow .l2')).toContainText(await page.evaluate(()=>APP_VERSION));
   await page.locator('#settingsChangelogRow').click();
   const releases=page.locator('#settingsChangelogBody .cl-entry');
-  expect(await releases.count()).toBe(await page.evaluate(()=>changelogAll().length));
+  expect(await releases.count()).toBe(await page.evaluate(()=>settingsChangelogEntries().length));
   await expect(releases.first().locator('.cl-notes')).toBeVisible();
   await expect(releases.first().locator('.cl-head')).toHaveAttribute('aria-expanded','true');
   await releases.nth(1).locator('.cl-head').click();
@@ -544,21 +543,12 @@ test('Settings owns working preferences, sync and backup controls', async ({page
   await expect(page.locator('#settingsChangelogBody')).toBeHidden();
   await expect(page.locator('#langRow, #languageBody, [data-lang-choice]')).toHaveCount(0);
   expect(await page.evaluate(()=>appLang())).toBe('en');
-  await page.locator('#dataSourcesRow').click();
-  await expect(page.locator('#bulkDlNow')).toBeVisible();
-  await page.goBack();
-  await expect(page.locator('#brandTitle')).toHaveText('SETTINGS');
-  await expect(page.locator('#dataSourcesBody')).toBeHidden();
   await page.locator('#guildRow').click();
   const color=page.locator('[data-guild]:not(.sel)').first();
   const selected=await color.getAttribute('data-guild');
   await color.click();
   expect(await page.evaluate(()=>state.guild)).toBe(selected);
   await expect(page.locator('#guildBody')).toBeHidden();
-  await page.locator('#syncRow').click();
-  await expect(page.locator('#accountSheet')).toBeVisible();
-  await page.evaluate(()=>dismissAllOverlays());
-  await expect(page.locator('#brandTitle')).toHaveText('SETTINGS');
   await page.locator('#backupRow').click();
   await page.locator('#backupBtn').click();
   await expect(page.locator('#backupSheet')).toBeVisible();
@@ -586,7 +576,7 @@ test('Startup page preference persists and launches each selected main page', as
     await page.getByRole('button',{name:'Open menu',exact:true}).click();
     await page.locator('#menuSettings').click();
     await page.locator('#startupRow').click();
-    await expect(page.locator('#startupBody input[type="radio"]')).toHaveCount(6);
+    await expect(page.locator('#startupBody input[type="radio"]')).toHaveCount(7);
     await page.locator('#startupBody').getByRole('radio',{name:label,exact:true}).check();
     await expect(page.locator('#startupRow .l2')).toHaveText(label);
     await expect(page.locator('#brandTitle')).toHaveText('SETTINGS');
@@ -672,7 +662,9 @@ test('Ask AI Judge keeps its question above navigation and reads answers from th
     expect(h.y).toBe(0);
     expect(h.height).toBeCloseTo((await page.locator('.app > .app-header').boundingBox()).height,0);
     expect(await header.locator('.ov-title').evaluate(el=>parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(15);
-    expect(b.y).toBeCloseTo(h.y+h.height,0);
+    const availability=await overlay.locator('#cjAvailability').boundingBox();
+    expect(availability.y).toBeCloseTo(h.y+h.height,0);
+    expect(b.y).toBeCloseTo(availability.y+availability.height,0);
     expect(b.y+b.height).toBeCloseTo(bar.y,0);
     expect(bar.y+bar.height).toBeCloseTo(n.y,0);
     expect(q.y+q.height).toBeLessThanOrEqual(n.y);
@@ -1347,8 +1339,10 @@ test('Trade pins a bordered confirmation bar below its title and keeps its dialo
   await expect(toolbar.locator('#tradeConfirm svg')).toHaveCount(1);
   await expect(viewport.locator('#tradeConfirm, .trade-verdict')).toHaveCount(0);
   await expect(page.locator('.app-header #tradeConfirm')).toHaveCount(0);
-  await expect(page.locator('.app-header #tradeClear')).toBeVisible();
-  await expect(page.locator('.app-header #tradeClear svg')).toHaveCount(1);
+  await expect(toolbar.locator('#tradeClear')).toBeVisible();
+  await expect(page.locator('.app-header #tradeClear')).toHaveCount(0);
+  await expect(page.locator('.app-header #tradeHistory')).toBeVisible();
+  await expect(page.locator('.app-header #tradeHistory svg')).toHaveCount(1);
   await expect(page.locator('#tradeClear')).toHaveCSS('border-top-width','0px');
   const surfaceStyle=el=>{
     const css=getComputedStyle(el);
@@ -2437,7 +2431,7 @@ test('Packages has no settings, search, card action, or inspiration entry and is
   });
   expect(legacySync).toEqual({pending:{},stored:'legacy data'});
   await page.locator('#homeBtn').click();
-  await page.getByRole('button',{name:'Settings Preferences, sync & backups'}).click();
+  await page.getByRole('button',{name:'Settings Preferences & backups'}).click();
   await expect(page.getByText(/packages|pakketten/i)).toHaveCount(0);
   await expect(page.locator('#pkgRow')).toHaveCount(0);
   await page.evaluate(()=>{createNewDeck('No packages fixture','commander');getDeck(state.activeDeckId).admiral={name:'Fixture Commander',type_line:'Legendary Creature — Human',color_identity:[],oracle_text:''};state.screen='inspiration';render();});

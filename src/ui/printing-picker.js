@@ -46,6 +46,7 @@ async function openPrintingGrid(card, onPick, gOpts) {
     el.id = 'printOverlay';
   }
   el.classList.add('printing-page');
+  el.style.zIndex = gOpts?.zIndex ? String(gOpts.zIndex) : '';
   const session = {};
   el._printingSession = session;
   const trigger = document.activeElement;
@@ -53,6 +54,7 @@ async function openPrintingGrid(card, onPick, gOpts) {
   pushOverlay('printing', () => {
     document.getElementById('printOverlay')?.remove();
     if (trigger?.isConnected) trigger.focus({ preventScroll: true });
+    gOpts?.onClose?.();
   });
   el.innerHTML = /* HTML */ `<div
     class="overlay-inner"
@@ -190,7 +192,7 @@ async function openPrintingGrid(card, onPick, gOpts) {
     // trader, so every trace of MY ownership — shelf, \u2713, \u00d7counts — stays out.
     const ownQty = {};
     if (!(gOpts && gOpts.noOwned))
-      (state.collection.items || []).forEach((x) => {
+      collectionTrackedItems().forEach((x) => {
         const k = x.name + '|' + (x.set || '') + '|' + (x.cn || '');
         ownQty[k] = (ownQty[k] || 0) + (x.qty || 1);
       });
@@ -281,7 +283,13 @@ function openPrintingPicker(d, card, loc, idx) {
     card,
     (picked) => {
       // 1.39: this deck's slot wears the pick; other decks keep their own
-      const chosen = Object.assign({}, picked, { pin: 1 });
+      const chosen = Object.assign({}, picked, {
+        pin: 1,
+        proxy: !!card.proxy,
+        _playingOwned: card._playingOwned,
+        _playingMissing: card._playingMissing,
+        _wantsDismissed: card._wantsDismissed,
+      });
       if (loc === 'admiral') d.admiral = chosen;
       else if (loc === 'partner') d.partner = chosen;
       else if (loc === 'maybe') d.maybeboard[idx] = chosen;
@@ -334,7 +342,13 @@ function stripDeckLineDecorations(nm) {
     .trim();
 }
 
-async function applyTextToDeck(d, raw, reportElId, isImport) {
+async function applyTextToDeck(
+  d,
+  raw,
+  reportElId,
+  isImport,
+  { append = false, proxy = false } = {},
+) {
   let admiralName = null,
     partnerName = null;
   const cardNames = [];
@@ -369,7 +383,7 @@ async function applyTextToDeck(d, raw, reportElId, isImport) {
   const rawLines = raw.split(/\r?\n/).map((l) => l.trim());
   let isoLeaderNames = [],
     isoTailSection = null;
-  {
+  if (!append) {
     let i = 0;
     while (i < rawLines.length && !rawLines[i]) i++;
     let j = i;
@@ -431,13 +445,15 @@ async function applyTextToDeck(d, raw, reportElId, isImport) {
     }
     const m = l.match(/^(?:COMMANDER):\s*(.+)$/i);
     if (m) {
-      admiralName = stripDeckLineDecorations(m[1]);
+      if (append) cardNames.push(stripDeckLineDecorations(m[1]));
+      else admiralName = stripDeckLineDecorations(m[1]);
       section = 'main';
       return;
     }
     const pm = l.match(/^PARTNER:\s*(.+)$/i);
     if (pm) {
-      partnerName = stripDeckLineDecorations(pm[1]);
+      if (append) cardNames.push(stripDeckLineDecorations(pm[1]));
+      else partnerName = stripDeckLineDecorations(pm[1]);
       section = 'main';
       return;
     }
@@ -448,7 +464,7 @@ async function applyTextToDeck(d, raw, reportElId, isImport) {
     }
     const q = l.match(/^(\d+)x?\s+(.+)$/i);
     const nm = stripDeckLineDecorations(q ? q[2] : l);
-    if (section === 'leader') {
+    if (section === 'leader' && !append) {
       if (!admiralName) admiralName = nm;
       else if (!partnerName) partnerName = nm;
       else cardNames.push(nm);
@@ -625,7 +641,8 @@ async function applyTextToDeck(d, raw, reportElId, isImport) {
     } catch (e) {}
   };
 
-  const newDeck = [];
+  const newDeck = append ? d.cards.slice() : [];
+  const appendedCards = [];
   results.forEach((r) => {
     if (!r || !r.found) {
       if (r && r.networkIssue)
@@ -666,7 +683,11 @@ async function applyTextToDeck(d, raw, reportElId, isImport) {
       report.push({ name: c.name, status: 'bad', msg: 'Off-color' });
       return;
     }
-    if (copiesIn(newDeck, c.name) >= copyLimit(c, d)) {
+    if (
+      copiesIn(newDeck, c.name) +
+        (append && deckIsConstructed(d) ? copiesIn(d.maybeboard || [], c.name) : 0) >=
+      copyLimit(c, d)
+    ) {
       report.push({
         name: c.name,
         status: 'bad',
@@ -674,7 +695,9 @@ async function applyTextToDeck(d, raw, reportElId, isImport) {
       });
       return;
     }
-    newDeck.push(c);
+    const copy = append ? playingDeckCopy(c, proxy) : c;
+    newDeck.push(copy);
+    if (append) appendedCards.push(copy);
     report.push({ name: c.name, status: 'ok', msg: 'Added' });
   });
   // Log the diff so the construction history reflects bulk edits too.
@@ -682,7 +705,7 @@ async function applyTextToDeck(d, raw, reportElId, isImport) {
     const oldNames = d.cards.map((c) => c.name),
       newNames = newDeck.map((c) => c.name);
     const removed = d.cards.filter((c) => !newNames.includes(c.name));
-    const added = newDeck.filter((c) => !oldNames.includes(c.name));
+    const added = append ? appendedCards : newDeck.filter((c) => !oldNames.includes(c.name));
     if (removed.length + added.length > 40) {
       logDeckChange(d, {
         type: 'bulk',
@@ -704,7 +727,8 @@ async function applyTextToDeck(d, raw, reportElId, isImport) {
   // it, so saving replaces it wholesale: deleting a line there removes the
   // card, exactly like the main list. Imports likewise: SIDEBOARD /
   // MAYBEBOARD sections land here.
-  let newMaybe = [];
+  let newMaybe = append ? (d.maybeboard || []).slice() : [];
+  const appendedMaybe = [];
   if (maybeNames.length) {
     const _mOff = allN - maybeNames.length;
     _resolving(_mOff);
@@ -716,15 +740,19 @@ async function applyTextToDeck(d, raw, reportElId, isImport) {
       },
       deckFormat(d),
     );
-    const collected = [];
+    const collected = append ? newMaybe : [];
     mres.forEach((r) => {
       if (r && r.found && r.card) {
         if (
-          copiesIn(collected, r.card.name) <
+          copiesIn(collected, r.card.name) +
+            (append && deckIsConstructed(d) ? copiesIn(newDeck, r.card.name) : 0) <
           (deckIsConstructed(d) ? copyLimit(r.card, d) : allowsDuplicates(r.card) ? Infinity : 1)
-        )
-          collected.push(r.card);
-        report.push({ name: r.card.name, status: 'ok', msg: 'To ' + sideName(d) });
+        ) {
+          const copy = append ? playingDeckCopy(r.card, proxy) : r.card;
+          collected.push(copy);
+          if (append) appendedMaybe.push(copy);
+          report.push({ name: r.card.name, status: 'ok', msg: 'To ' + sideName(d) });
+        } else report.push({ name: r.card.name, status: 'bad', msg: 'Over the copy limit' });
       } else {
         report.push({
           name: r && r.input ? r.input : '?',
@@ -737,9 +765,13 @@ async function applyTextToDeck(d, raw, reportElId, isImport) {
   }
   d.cards = newDeck;
   d.maybeboard = newMaybe;
-  if (newCommander) d.admiral = newCommander;
-  if (newPartner !== undefined) d.partner = newPartner;
-  reconcilePartner(d);
+  if (!append) {
+    if (newCommander) d.admiral = newCommander;
+    if (newPartner !== undefined) d.partner = newPartner;
+    reconcilePartner(d);
+  }
+  if (append)
+    ensurePlayingOwnership(d, appendedCards.concat(deckIsConstructed(d) ? appendedMaybe : []));
   scheduleSave(d);
   const added = report.filter((r) => r.status === 'ok').length;
   const retryable = report.filter((r) => r.status !== 'ok' && /network|try again/i.test(r.msg));
@@ -749,7 +781,13 @@ async function applyTextToDeck(d, raw, reportElId, isImport) {
     // not just the body — the Main x/y dock lives in the page shell and was
     // painted when the deck held only its leader (the "1/100 until reopen" bug).
     state.dlPanel = null;
-    toast(isImport ? `Deck imported — ${added} cards added.` : `Deck updated — ${added} cards.`);
+    toast(
+      append
+        ? `${added} cards added to ${d.name}.`
+        : isImport
+          ? `Deck imported — ${added} cards added.`
+          : `Deck updated — ${added} cards.`,
+    );
     render();
     _btLine('clean');
     return;
@@ -771,19 +809,27 @@ async function applyTextToDeck(d, raw, reportElId, isImport) {
       retryable.map((r) => r.name),
       reportElId,
       newCommander,
+      { append, proxy },
     ),
   );
   _pinFoot();
   _btLine('report');
 }
 
-async function retryFailedCards(d, names, reportElId, admiralForColorCheck) {
+async function retryFailedCards(
+  d,
+  names,
+  reportElId,
+  admiralForColorCheck,
+  { append = false, proxy = false } = {},
+) {
   document.getElementById(reportElId).innerHTML = /* HTML */ `<div class="status">
     <div class="spinner"></div>
     Retrying ${names.length} card${names.length > 1 ? 's' : ''}…
   </div>`;
   const results = await runLimited(names, resolveCardByName, 2);
   const report = [];
+  const appendedCards = [];
   results.forEach((r) => {
     if (!r || !r.found) {
       report.push({
@@ -829,10 +875,13 @@ async function retryFailedCards(d, names, reportElId, admiralForColorCheck) {
       });
       return;
     }
-    d.cards.push(c);
+    const copy = append ? playingDeckCopy(c, proxy) : c;
+    d.cards.push(copy);
+    if (append) appendedCards.push(copy);
     logDeckChange(d, { type: 'add', name: c.name, card: c });
     report.push({ name: c.name, status: 'ok', msg: 'Added' });
   });
+  if (append) ensurePlayingOwnership(d, appendedCards);
   scheduleSave(d);
   const added = report.filter((r) => r.status === 'ok').length;
   const stillRetryable = report.filter(
@@ -853,6 +902,7 @@ async function retryFailedCards(d, names, reportElId, admiralForColorCheck) {
       stillRetryable.map((r) => r.name),
       reportElId,
       admiralForColorCheck,
+      { append, proxy },
     ),
   );
 }

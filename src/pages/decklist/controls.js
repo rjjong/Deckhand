@@ -1,5 +1,26 @@
 // Deck overview, display controls, and the full-screen deck actions menu.
 
+function openDeckAddMenu(d, event) {
+  event.stopPropagation();
+  openFabMenu([
+    [
+      'deckAddSearch',
+      `<span class="ib">${ICONS.search}</span>Search cards`,
+      () => openAddCardsFor(d),
+    ],
+    [
+      'deckAddImport',
+      `<span class="ib">${ICONS.imp}</span>Import cards`,
+      () => toggleDlPanel(d, 'import-cards'),
+    ],
+    [
+      'deckAddScan',
+      `<span class="ib">${SCANNER_ICON}</span>Scan cards`,
+      () => openCardScanner({ mode: 'deck', deckId: d.id }),
+    ],
+  ]);
+}
+
 function deckSummaryPriceHtml(d) {
   const price = deckPriceFromCache(d);
   if (!price.total && !price.complete && (d.cards.length || deckLeaders(d).length))

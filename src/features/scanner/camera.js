@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // One inference at a time; the preview stays live while detections fill the log.
-function openScannerCamera({ mode = 'collection', onReview, onClose, onAdd }) {
+function openScannerCamera({ mode = 'collection', binder = null, onReview, onClose, onAdd }) {
   if (document.getElementById('cardScannerCamera')) return;
   const settings = normalizeScannerSettings(state);
   const deckMode = mode === 'deck';
@@ -72,7 +72,9 @@ function openScannerCamera({ mode = 'collection', onReview, onClose, onAdd }) {
   const framerate = scannerCreateFramerate();
   const fps = el.querySelector('#scannerFramerate');
   const log = scannerCreateLog(el, {
+    mode,
     signal: controller.signal,
+    binder,
     onReview: (result, card, trigger, options) => {
       tracker.pause();
       framerate.reset();
@@ -82,6 +84,7 @@ function openScannerCamera({ mode = 'collection', onReview, onClose, onAdd }) {
       onReview(result, card, trigger, {
         ...options,
         mode,
+        binder,
         onAdd: (batch, more) => onAdd?.(batch, { ...more, signal: controller.signal }),
         onClose() {
           options.onClose();

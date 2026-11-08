@@ -1,0 +1,111 @@
+.wants-select-tools {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0 16px 12px;
+}
+
+html .wants-select-tools button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin: 0;
+  border: 1px solid color-mix(in srgb, var(--main-text) 20%, transparent);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--main-text);
+  font:
+    500 13px/1.4 'Inter',
+    system-ui,
+    sans-serif;
+}
+
+.wants-select-tools svg,
+.wants-selection-bar svg {
+  width: 22px;
+  height: 22px;
+}
+
+html .wants-selection-bar {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--nav-h) + 12px + env(safe-area-inset-bottom));
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: min(480px, calc(100% - 32px));
+  padding: 8px;
+  box-sizing: border-box;
+  transform: translateX(-50%);
+  border: 1px solid color-mix(in srgb, var(--main-text) 22%, transparent);
+  border-radius: 18px;
+  background: var(--page-backdrop);
+  box-shadow: 0 8px 32px rgb(0 0 0 / 0.3);
+  color: var(--main-text);
+}
+
+html .wants-selection-bar[hidden],
+.wants-selecting :is(#binderFab, .want-have) {
+  display: none;
+}
+
+.wants-selecting .wants-select-tools {
+  visibility: hidden;
+}
+
+.wants-page.wants-selecting {
+  padding-bottom: 100px;
+}
+
+#wantSelectionCount {
+  flex: 1;
+  min-width: 0;
+  padding-left: 4px;
+  font:
+    600 13px/1.4 'Inter',
+    system-ui,
+    sans-serif;
+}
+
+html .wants-selection-bar button {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--main-text) 18%, transparent);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--main-text);
+}
+
+html .wants-selection-bar #wantSelectionAdd {
+  border: 0;
+  background: var(--gold);
+  color: #241a04;
+}
+
+html .wants-selection-bar #wantSelectionRemove {
+  border-color: color-mix(in srgb, var(--danger-ink) 40%, transparent);
+  color: var(--danger-ink);
+}
+
+.wants-selection-bar button:focus-visible,
+.want-tile:focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 2px;
+}
+
+.wants-page .want-tile {
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: pan-y;
+}
+
+.wants-page .want-tile .csel-mark {
+  left: 8px;
+  right: auto;
+}

@@ -69,6 +69,12 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+async function openCollectionScanner(page) {
+  await page.evaluate(() => switchPage('collection'));
+  await page.locator('#colFab').click();
+  await page.locator('#fabScanCards').click();
+}
+
 async function mockCamera(page, { width, height, source } = {}) {
   await page.route('**/scanner-test-photo.jpg', (route) =>
     route.fulfill({ path: sample, contentType: 'image/jpeg' }),
@@ -111,7 +117,7 @@ async function mockCamera(page, { width, height, source } = {}) {
   );
 }
 
-test('startup warms recognition without opening the camera; menu and collection reuse it', async ({
+test('startup warms recognition without opening the camera; collection and binders reuse it', async ({
   page,
 }, info) => {
   test.setTimeout(90000);
@@ -124,13 +130,16 @@ test('startup warms recognition without opening the camera; menu and collection 
   page.on('request', (r) => {
     if (/\.(onnx|wasm|bin)(\?|$)/.test(r.url())) modelRequests.push(r.url());
   });
-  for (const entry of ['menu', 'collection']) {
-    if (entry === 'collection') {
-      await page.evaluate(() => switchPage('collection'));
-      await page.locator('#colFab').click();
-      await expect(page.locator('#fabScanCards')).toHaveText('Scan cards');
-      await page.locator('#fabScanCards').click();
-    } else await page.locator('#menuScanCards').click();
+  for (const entry of ['collection', 'binder']) {
+    if (entry === 'binder') {
+      await page.evaluate(() => {
+        state.collection.binders = [{ id: 'warm-scanner', name: 'Scan binder' }];
+        openBinderIn('warm-scanner');
+      });
+      await page.locator('#binderFab').click();
+      await expect(page.locator('#bfScanCards')).toHaveText('Scan cards');
+      await page.locator('#bfScanCards').click();
+    } else await openCollectionScanner(page);
     await expect(page.getByRole('dialog', { name: 'Scan card camera', exact: true })).toBeVisible();
     await expect(page.locator('#cardScannerCamera')).toHaveAttribute('data-scanning', 'true');
     expect(await page.evaluate(() => scannerTestConstraints.video.width.ideal)).toBe(
@@ -171,7 +180,7 @@ test('live camera logs stable cards once, rearms after removal and keeps the log
       lookups.push(request.url());
   });
   await mockCamera(page);
-  await page.locator('#menuScanCards').click();
+  await openCollectionScanner(page);
   const camera = page.getByRole('dialog', { name: 'Scan card camera', exact: true });
   await expect(camera).toBeVisible();
   await expect(page.locator('#scannerCapture')).toHaveCount(0);
@@ -397,7 +406,7 @@ test('log order follows detection time even when earlier card details arrive lat
     };
   }, card);
   await mockCamera(page);
-  await page.locator('#menuScanCards').click();
+  await openCollectionScanner(page);
   const names = page.locator('.scanner-detection-name');
   await expect(names).toHaveText(['Identifying card…'], { timeout: 10000 });
   await page.evaluate(() => {
@@ -439,7 +448,7 @@ test('a failed card lookup stays in the log and retries only when tapped', async
     };
   }, card);
   await mockCamera(page);
-  await page.locator('#menuScanCards').click();
+  await openCollectionScanner(page);
   const names = page.locator('.scanner-detection-name');
   await expect(names).toHaveText(['Card details unavailable'], { timeout: 10000 });
   const frames = await page.evaluate(() => fakeFrames);
@@ -484,7 +493,7 @@ test('session setting ignores matching names across printings and resets on a ne
     });
   }, card);
   await mockCamera(page);
-  await page.locator('#menuScanCards').click();
+  await openCollectionScanner(page);
   const visibleNames = page.locator('.scanner-detection:not([hidden]) .scanner-detection-name');
   await expect(visibleNames).toHaveText(['Scrying Glass'], { timeout: 10000 });
   await expect(page.locator('#scannerIgnored')).toContainText('Already scanned this session');
@@ -513,7 +522,7 @@ test('session setting ignores matching names across printings and resets on a ne
   await page.locator('#scannerCameraBack').click();
   await expect(page.locator('#cardScannerCamera')).toHaveCount(0);
   await page.evaluate(() => clearInterval(scannerTestTimer));
-  await page.locator('#menuScanCards').click();
+  await openCollectionScanner(page);
   await expect(visibleNames).toHaveText(['Sol Ring'], { timeout: 10000 });
   expect(await page.evaluate(() => scannerWorkerCreates)).toBe(1);
   await page.locator('#scannerCameraBack').click();
@@ -569,7 +578,7 @@ test('live scanning applies thresholds, interval and optional framerate using th
     };
   }, card);
   await mockCamera(page, { width: 1280, height: 720 });
-  await page.locator('#menuScanCards').click();
+  await openCollectionScanner(page);
   await expect(page.locator('.scanner-detection-name')).toHaveText(['Scrying Glass'], {
     timeout: 10000,
   });
@@ -612,7 +621,7 @@ test('live scanning applies thresholds, interval and optional framerate using th
     await persistSettings();
   });
   await mockCamera(page);
-  await page.locator('#menuScanCards').click();
+  await openCollectionScanner(page);
   await expect.poll(() => page.evaluate(() => scanSettingsFrames.length)).toBeGreaterThanOrEqual(3);
   await expect(page.locator('.scanner-detection-name')).toHaveCount(0);
   await expect(fps).toBeHidden();
@@ -696,7 +705,7 @@ test('scan log scroll releases and reopens the camera; multiple scans can be sel
     },
     { card, other },
   );
-  await page.locator('#menuScanCards').click();
+  await openCollectionScanner(page);
   await expect(page.locator('.scanner-detection')).toHaveCount(8, { timeout: 15000 });
   await expect(page.locator('.scanner-detection[data-state="ready"]')).toHaveCount(8);
   await expect(page.locator('#scannerCameraStatus')).toBeHidden();
@@ -848,7 +857,7 @@ test('scan log scroll releases and reopens the camera; multiple scans can be sel
   await page.evaluate(() => clearInterval(scannerTestTimer));
 });
 
-test('Scan deck adds every physical copy to an existing or new deck and keeps collection scanning separate', async ({
+test('Scan deck preserves every physical copy and registers ownership for existing and new decks', async ({
   page,
 }, info) => {
   test.setTimeout(90000);
@@ -927,7 +936,9 @@ test('Scan deck adds every physical copy to an existing or new deck and keeps co
     other.id,
     card.id,
   ]);
-  expect(await page.evaluate(() => state.collection.items)).toEqual([]);
+  expect(
+    await page.evaluate(() => state.collection.items.reduce((total, item) => total + item.qty, 0)),
+  ).toBe(3);
   await expect(page.locator('.scanner-detection-owned').first()).toContainText(
     'Added to Existing deck',
   );
@@ -965,7 +976,9 @@ test('Scan deck adds every physical copy to an existing or new deck and keeps co
     { id: other.id, pin: true },
     { id: card.id, pin: true },
   ]);
-  expect(await page.evaluate(() => state.collection.items)).toEqual([]);
+  expect(
+    await page.evaluate(() => state.collection.items.reduce((total, item) => total + item.qty, 0)),
+  ).toBe(5);
   // Single-card review in deck mode also offers a deck destination.
   await page.evaluate((other) => {
     deckScanQueue = [other, other];
@@ -1074,7 +1087,7 @@ test('slow inference preserves preview quality; refocus and resolution reporting
       };
     };
   }, card);
-  await page.locator('#menuScanCards').click();
+  await openCollectionScanner(page);
   await expect(page.locator('.scanner-detection-name')).toHaveText(['Scrying Glass']);
   // The old downgrade triggered after seven over-budget frames. Let twelve finish.
   await expect
@@ -1153,7 +1166,7 @@ test('Blank Card predictions never create rows, lookups, borders or ignore notic
     };
   });
   await mockCamera(page, { width: 1280, height: 720 });
-  await page.locator('#menuScanCards').click();
+  await openCollectionScanner(page);
   await expect.poll(() => page.evaluate(() => blankTestFrames)).toBeGreaterThanOrEqual(4);
   await expect(page.locator('.scanner-detection')).toHaveCount(0);
   await expect(page.locator('#scannerIgnored')).toBeHidden();
@@ -1261,7 +1274,7 @@ test('Fastweb recognizes smaller off-center cards in perspective and draws their
     contentType: 'application/json',
   });
   await mockCamera(page, { source: scenes[0] });
-  await page.locator('#menuScanCards').click();
+  await openCollectionScanner(page);
   await expect(page.locator('.scanner-detection-name')).toHaveText(['Scrying Glass'], {
     timeout: 10000,
   });
@@ -1340,7 +1353,7 @@ test('shared recognition handles rotated cards and canceled scans without replac
 test('denial, back, backgrounding and late permission replies close only the camera', async ({
   page,
 }) => {
-  await page.locator('#menuScanCards').click();
+  await openCollectionScanner(page);
   await expect(page.locator('#scannerCameraStatus')).toContainText(
     'Camera permission was declined',
   );
@@ -1350,7 +1363,7 @@ test('denial, back, backgrounding and late permission replies close only the cam
     navigator.mediaDevices.getUserMedia = () =>
       new Promise((resolve) => (window.finishScannerPermission = resolve));
   });
-  await page.locator('#menuScanCards').click();
+  await openCollectionScanner(page);
   await expect.poll(() => page.evaluate(() => typeof finishScannerPermission)).toBe('function');
   await page.goBack();
   await expect(page.locator('#cardScannerCamera')).toHaveCount(0);
@@ -1360,7 +1373,7 @@ test('denial, back, backgrounding and late permission replies close only the cam
   });
   await expect.poll(() => page.evaluate(() => scannerTrackStopped)).toBe(true);
   await mockCamera(page);
-  await page.locator('#menuScanCards').click();
+  await openCollectionScanner(page);
   await expect(page.locator('#cardScannerCamera')).toHaveAttribute('data-scanning', 'true', {
     timeout: 75000,
   });

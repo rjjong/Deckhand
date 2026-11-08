@@ -344,3 +344,74 @@ test('upgrading an existing link preserves an offline deck deletion', async ({ p
   expect(result.remote.del).toBe(1);
   expect(result.protocol).toBe(2);
 });
+
+test('deck ownership waits for collection sync pages and restores automatically missing proxies when inventory arrives', async ({
+  page,
+}) => {
+  await prepare(page);
+  await seed(page, 'Ownership');
+  await link(page);
+  const result = await page.evaluate(async () => {
+    clearTimeout(_syncTimer);
+    const card = {
+      id: 'sync-owned-card',
+      name: 'Sync Owned Adept',
+      set: 'tst',
+      collector_number: '1',
+      type_line: 'Creature',
+      colors: [],
+      color_identity: [],
+    };
+    const deck = {
+      id: 'sync-owned',
+      name: 'Synced ownership',
+      format: 'modern',
+      cards: [card],
+      maybeboard: [],
+    };
+    const t = Date.now() + 1000;
+    const inventory = {
+      binders: [],
+      items: [{ name: card.name, set: 'tst', cn: '1', qty: 1, cond: 'NM' }],
+      wantsManual: [],
+      wantsExclude: [],
+    };
+    const records = Object.fromEntries(
+      Object.entries(syncProjectStorage('collection', JSON.stringify(inventory))).map(
+        ([key, v]) => [key, { t, v }],
+      ),
+    );
+    _syncBusy = true;
+    await syncApply({ ['deck:' + deck.id]: { t, v: JSON.stringify(deck) } });
+    const betweenPages = getDeck(deck.id).cards[0].proxy;
+    await syncApply(records);
+    _syncBusy = false;
+    reconcilePlayingOwnership();
+    const afterSync = getDeck(deck.id).cards[0].proxy;
+    state.collection.items = state.collection.items.filter((item) => item.name !== card.name);
+    saveCollection();
+    const missing = getDeck(deck.id).cards[0].proxy;
+    _syncBusy = true;
+    await syncApply(
+      Object.fromEntries(
+        Object.entries(records).map(([key, change]) => [key, { ...change, t: t + 1000 }]),
+      ),
+    );
+    _syncBusy = false;
+    reconcilePlayingOwnership();
+    return {
+      betweenPages,
+      afterSync,
+      missing,
+      recovered: getDeck(deck.id).cards[0].proxy,
+      owned: playingOwnedCounts().get(playingNameKey(card.name)),
+    };
+  });
+  expect(result).toEqual({
+    betweenPages: undefined,
+    afterSync: false,
+    missing: true,
+    recovered: false,
+    owned: 1,
+  });
+});

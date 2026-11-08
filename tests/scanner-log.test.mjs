@@ -18,11 +18,36 @@ test('scan ownership totals all printings and finishes, excluding wants and zero
       },
     },
   });
+  vm.runInContext(await source('src/services/collection-storage.js'), context);
   vm.runInContext(await source('src/features/scanner/collection.js'), context);
   const counts = context.scannerCollectionCounts();
   assert.equal(counts.get('scrying glass'), 5);
   assert.equal(counts.get('other card'), 0);
   assert.equal(counts.has('wanted card'), false);
+});
+
+test('collection scans skip basics and do not count older basic records as owned', async () => {
+  const context = vm.createContext({
+    state: { collection: { items: [{ name: 'Forest', qty: 100 }], wantsManual: [] } },
+    cardImageMed: () => '/reference-card.jpg',
+  });
+  vm.runInContext(await source('src/services/collection-storage.js'), context);
+  context.saveCollection = () => {};
+  vm.runInContext(await source('src/features/scanner/collection.js'), context);
+  const added = context.scannerAddToCollection([
+    { name: 'Snow-Covered Island', type_line: 'Basic Snow Land — Island' },
+    { name: 'Wastes' },
+    {
+      name: 'Hallowed Fountain',
+      type_line: 'Land — Plains Island',
+      set: 'tst',
+      collector_number: '1',
+    },
+  ]);
+  assert.equal(added, 1);
+  assert.equal(context.scannerCollectionCounts().has('forest'), false);
+  assert.equal(context.scannerCollectionCounts().get('hallowed fountain'), 1);
+  assert.equal(context.state.collection.items.length, 2);
 });
 
 test('quick add counts every scan copy, merges only matching regular stacks and saves no camera photos', async () => {
@@ -60,6 +85,34 @@ test('quick add counts every scan copy, merges only matching regular stacks and 
     ['Other Card'],
   );
   context.scannerAddToCollection([]);
+  assert.equal(saves, 1);
+});
+
+test('binder scanning merges only matching stacks in its destination binder', async () => {
+  const card = { name: 'Scrying Glass', set: 'uds', collector_number: '137' };
+  const items = [
+    { name: card.name, set: 'uds', cn: '137', qty: 2, cond: 'NM', binder: null },
+    { name: card.name, set: 'uds', cn: '137', qty: 1, cond: 'NM', binder: 'binder-a' },
+    { name: card.name, set: 'uds', cn: '137', qty: 3, cond: 'NM', binder: 'binder-b' },
+    { name: card.name, set: 'uds', cn: '137', qty: 1, cond: 'NM', foil: true, binder: 'binder-a' },
+  ];
+  let saves = 0;
+  const context = vm.createContext({
+    state: { collection: { items, wantsManual: [] } },
+    cardImageMed: () => '/reference-card.jpg',
+  });
+  vm.runInContext(await source('src/services/collection-storage.js'), context);
+  context.saveCollection = () => saves++;
+  vm.runInContext(await source('src/features/scanner/collection.js'), context);
+  context.scannerAddToCollection([card, card, { ...card, set: 'another-set' }], 'binder-a');
+  assert.equal(
+    items.find((item) => item.set === 'uds' && item.binder === 'binder-a' && !item.foil).qty,
+    3,
+  );
+  assert.equal(items.find((item) => !item.binder).qty, 2);
+  assert.equal(items.find((item) => item.binder === 'binder-b').qty, 3);
+  assert.equal(items.find((item) => item.foil).qty, 1);
+  assert.equal(items.find((item) => item.set === 'another-set').binder, 'binder-a');
   assert.equal(saves, 1);
 });
 

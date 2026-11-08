@@ -31,7 +31,7 @@ function fixture(t, fetchImpl, env = {}) {
   return {
     store: storage.store,
     fetch: fetchImpl,
-    env: { OLLAMA_URL: 'http://ollama:11434', ...env },
+    env: { OLLAMA_URL: 'http://ollama:11434', JUDGE_COOLDOWN_SECONDS: '0', ...env },
   };
 }
 
@@ -148,26 +148,25 @@ test('Unsupported citations and truncated generations are not cached as confiden
   assert.equal((await handle(question, cut)).json.error, 'shape');
 });
 
-test('One local request runs at a time; a small bounded queue protects memory', async () => {
-  const finishes = [];
-  let active = 0,
-    maxActive = 0;
+test('One local request runs at a time; competing calls are declined without a waiting queue', async () => {
+  const started = Promise.withResolvers(),
+    finish = Promise.withResolvers();
+  let calls = 0;
   const fetchImpl = async () => {
-    active++;
-    maxActive = Math.max(maxActive, active);
-    await new Promise((resolve) => finishes.push(resolve));
-    active--;
+    calls++;
+    started.resolve();
+    await finish.promise;
     return completion();
   };
   const env = { OLLAMA_URL: 'http://ollama:11434' };
-  const jobs = Array.from({ length: 4 }, () => askLocal(env, fetchImpl, 'system', 'question'));
-  assert.equal((await askLocal(env, fetchImpl, 'system', 'question')).error, 'busy');
-  for (let i = 0; i < jobs.length; i++) {
-    await new Promise((resolve) => setImmediate(resolve));
-    finishes.shift()();
-    assert.equal((await jobs[i]).provider, 'ollama');
-  }
-  assert.equal(maxActive, 1);
+  const running = askLocal(env, fetchImpl, 'system', 'question');
+  await started.promise;
+  for (let i = 0; i < 5; i++)
+    assert.equal((await askLocal(env, fetchImpl, 'system', 'question')).error, 'busy');
+  assert.equal(calls, 1);
+  finish.resolve();
+  assert.equal((await running).provider, 'ollama');
+  assert.equal((await askLocal(env, fetchImpl, 'system', 'question')).provider, 'ollama');
 });
 
 test('Inference timeout aborts the request and frees the local slot', async () => {
@@ -184,13 +183,13 @@ test('Inference timeout aborts the request and frees the local slot', async () =
   assert.equal((await askLocal(env, fetchImpl, 'system', 'question')).provider, 'ollama');
 });
 
-test('Failed attempts consume the daily allowance without charging cache hits', async (t) => {
+test('Accepted but invalid generations consume the daily allowance', async (t) => {
   let calls = 0;
   const deps = fixture(
     t,
     async () => {
       calls++;
-      return new Response('', { status: 500 });
+      return completion({ invalid: true });
     },
     { JUDGE_DAILY: '1' },
   );

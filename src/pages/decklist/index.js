@@ -118,6 +118,7 @@ function decklistPageHtml() {
       class="deck-fab"
       id="dockAddCards"
       aria-label="Add cards to this deck"
+      aria-haspopup="menu"
       title="Add cards"
     >
       ${ICONS.plus}
@@ -310,7 +311,9 @@ function wireDecklistPage() {
     return;
   }
   document.getElementById('menuBtn')?.addEventListener('click', () => openDeckActions(d));
-  document.getElementById('dockAddCards')?.addEventListener('click', () => openAddCardsFor(d));
+  document
+    .getElementById('dockAddCards')
+    ?.addEventListener('click', (event) => openDeckAddMenu(d, event));
   if (deckIsConstructed(d)) {
     try {
       ensureFmtBans(deckFormat(d));
