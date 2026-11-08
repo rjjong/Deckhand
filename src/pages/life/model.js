@@ -291,12 +291,10 @@ function openLifeDungeon(idx) {
       aria-modal="true"
       aria-label="Dungeons"
     >
-      ${lifePopupHeadHtml(
-        D ? D.name : 'Dungeons',
-        D
-          ? `Tap the room ${p.name} ventures into. Gold = can go next.`
-          : 'Tap a dungeon. The dots show who is where.',
-      )}
+      <div class="dg-toolbar">
+        ${D ? `<button type="button" class="life-popup-close" id="dgAll" aria-label="All dungeons" title="All dungeons">${ICONS.back}</button>` : ''}
+        ${lifePopupCloseHtml()}
+      </div>
       <div class="life-popup-body">
         <div class="dg-players">
           ${ps.map((q, i) => `<button type="button" class="dg-pl${i === me ? ' on' : ''}" data-dgme="${i}" style="--pc:${dotCol(i)}"><i class="dg-dot" style="--pc:${dotCol(i)}"></i>${escapeHtml(q.name)}</button>`).join('')}
@@ -313,13 +311,7 @@ function openLifeDungeon(idx) {
         >
           ${INITIATIVE_SVG}<span>Initiative</span>
         </button>
-        ${D ? `<button type="button" class="ghost-btn" id="dgAll">← ${'All dungeons'}</button>` : ''}${p.dg ? `<button type="button" class="ghost-btn" id="dgLeave">${'Leave'}</button>` : ''}<button
-          type="button"
-          class="primary-btn"
-          id="dgOk"
-        >
-          ${'Done'}
-        </button>
+        ${p.dg ? `<button type="button" class="ghost-btn" id="dgLeave">Leave</button>` : ''}
       </div>
     </section>`;
     m.querySelector('[data-life-close]').addEventListener('click', () =>
@@ -354,7 +346,6 @@ function openLifeDungeon(idx) {
       paint();
       renderLifeGrid();
     });
-    m.querySelector('#dgOk').addEventListener('click', () => brSheetClose('lifeDgSheet'));
   };
   paint();
   m.addEventListener('click', (e) => {

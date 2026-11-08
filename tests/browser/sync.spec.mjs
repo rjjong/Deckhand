@@ -1,5 +1,87 @@
 import { test, expect, prepare, seed, syncNow, link } from './helpers/accounts.mjs';
 
+test('collection price visibility and pending data sync across account devices with true and false values', async ({
+  page,
+  browser,
+}) => {
+  await prepare(page);
+  await seed(page, 'PricePreference');
+  await link(page);
+  await page.evaluate(async () => {
+    state.hideCollectionFolderPrices = true;
+    state.startupPage = 'scan-collection';
+    await persistSettings();
+  });
+  await syncNow(page);
+  const other = await browser.newContext();
+  try {
+    const second = await other.newPage();
+    await prepare(second);
+    await link(second);
+    expect(await second.evaluate(() => state.hideCollectionFolderPrices)).toBe(true);
+    expect(await second.evaluate(() => state.startupPage)).toBe('scan-collection');
+    expect(await second.evaluate(() => state.decksIndex[0].name)).toBe('PricePreference deck');
+    expect(await second.evaluate(() => state.collection.items[0].qty)).toBe(2);
+    await second.evaluate(async () => {
+      state.hideCollectionFolderPrices = false;
+      await persistSettings();
+    });
+    await syncNow(second);
+    await syncNow(page);
+    expect(await page.evaluate(() => state.hideCollectionFolderPrices)).toBe(false);
+    const saved = await page.evaluate(
+      async () => (await syncCall({ op: 'sync', since: 0 })).changes,
+    );
+    expect(saved['setting:hideCollectionFolderPrices'].v).toBe('false');
+    expect(JSON.parse(saved['deck:sync-PricePreference'].v).name).toBe('PricePreference deck');
+  } finally {
+    await other.close();
+  }
+});
+
+test('a rejected sync explains the server validation error and retries the same pending local data', async ({
+  page,
+}) => {
+  await prepare(page);
+  await seed(page, 'RetryPreference');
+  await link(page);
+  await expect(page.locator('#accountSheet')).toHaveCount(0);
+  await page.evaluate(() => openAccountSheet('profile'));
+  let rejected = true;
+  await page.route('**/api/sync', (route) =>
+    rejected
+      ? route.fulfill({ status: 400, json: { ok: false, error: 'change' } })
+      : route.continue(),
+  );
+  await page.evaluate(async () => {
+    state.decksIndex[0].name = 'Pending retry deck';
+    await persistDeck(state.decksIndex[0]);
+    state.collection.items[0].qty = 9;
+    saveCollection();
+    state.hideCollectionFolderPrices = true;
+    await persistSettings();
+    clearTimeout(_syncTimer);
+  });
+  await page.locator('#accountSync').click();
+  await expect(page.locator('#accountStatus')).toContainText(
+    'could not accept part of your saved data',
+  );
+  await expect(page.locator('#accountStatus')).not.toContainText('Could not connect');
+  await expect(page.locator('#syncLastLine')).toContainText('could not accept part');
+  expect(await page.evaluate(() => state.decksIndex[0].name)).toBe('Pending retry deck');
+  expect(await page.evaluate(() => state.collection.items[0].qty)).toBe(9);
+  expect(await page.evaluate(() => syncState().err)).toBe('change');
+  expect(await page.evaluate(() => Object.keys(syncPending()).length)).toBeGreaterThan(0);
+  rejected = false;
+  await page.locator('#accountSync').click();
+  await expect(page.locator('#accountStatus')).toHaveText('Saved to this server.');
+  expect(await page.evaluate(() => syncState().err)).toBeNull();
+  const saved = await page.evaluate(async () => (await syncCall({ op: 'sync', since: 0 })).changes);
+  expect(saved['setting:hideCollectionFolderPrices'].v).toBe('true');
+  expect(JSON.parse(saved['deck:sync-RetryPreference'].v).name).toBe('Pending retry deck');
+  expect(Object.values(saved).some((entry) => entry.v?.includes('"qty":9'))).toBe(true);
+});
+
 test('offline changes remain pending and are sent to SQLite when the device reconnects', async ({
   page,
   context,

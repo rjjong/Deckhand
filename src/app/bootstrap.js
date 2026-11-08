@@ -41,6 +41,13 @@ window.addEventListener(
         '',
         '#' + (state.screen || 'home'),
       );
+      // A startup overlay may have opened before the first gesture. Keep it
+      // above the re-armed guard so its Back button closes the overlay first.
+      const top = state.overlayStack?.at(-1);
+      if (top && !top.noHist) {
+        history.pushState({ overlay: top.id }, '', '#' + top.id);
+        top.pushed = true;
+      }
     } catch (e) {}
   },
   { once: true, capture: true },

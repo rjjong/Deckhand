@@ -153,19 +153,19 @@ test('scanner cooldown keeps detection order when matching names resolve out of 
     });
     testLog.append({ cardId: 'first-printing', secondaryId: 'first-identity' });
     testLog.append({ cardId: 'other-printing', secondaryId: 'other-identity' });
-    testLog.append({ cardId: 'island', secondaryId: 'island' });
+    testLog.append({ cardId: 'opt', secondaryId: 'opt' });
   });
   await expect.poll(() => page.evaluate(() => Object.keys(pendingCards).length)).toBe(3);
   await page.evaluate(() => {
     pendingCards['other-printing']({ name: 'SOL RING' });
-    pendingCards.island({ name: 'Island' });
+    pendingCards.opt({ name: 'Opt' });
   });
   await expect(page.locator('#testScannerLog [data-state="ready"]')).toHaveCount(2);
   await page.evaluate(() => pendingCards['first-printing']({ name: 'Sol Ring' }));
   const visibleNames = page.locator(
     '#testScannerLog .scanner-detection:not([hidden]) .scanner-detection-name',
   );
-  await expect(visibleNames).toHaveText(['Island', 'Sol Ring']);
+  await expect(visibleNames).toHaveText(['Opt', 'Sol Ring']);
   await expect(page.locator('#testScannerLog #scannerLogCount')).toHaveText('2 cards');
   await page.clock.setFixedTime(start + 2500);
   await page.evaluate(() =>
@@ -176,6 +176,6 @@ test('scanner cooldown keeps detection order when matching names resolve out of 
   await page.evaluate(() =>
     testLog.append({ cardId: 'other-printing', secondaryId: 'other-identity' }),
   );
-  await expect(visibleNames).toHaveText(['SOL RING', 'Island', 'Sol Ring']);
+  await expect(visibleNames).toHaveText(['SOL RING', 'Opt', 'Sol Ring']);
   await expect(page.locator('#testScannerLog #scannerLogCount')).toHaveText('3 cards');
 });

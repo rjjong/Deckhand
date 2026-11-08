@@ -5,20 +5,46 @@ const APP_VERSION = DECKHAND_VERSION;
 
 const CHANGELOG_NOTES = {
   en: [
-    'AI Judge shows live availability and immediately reports when it is helping another player',
-    'New-question budgets default to 10 per account per day, a 30-second cooldown and 100 per day for the server',
-    'Saved rulings remain free during cooldowns and daily limits; busy or unavailable requests do not spend allowance',
-    'Judge and deck advice share one model slot, with no waiting queue',
+    'Fixed cloud sync rejecting the hide binder and folder prices preference, including its default false value',
+    'Sync now distinguishes rejected data and cloud storage limits from connection failures while preserving pending local changes',
   ],
 };
 
 /* The history. When publishing release notes, move the previous CHANGELOG_NOTES
    to the top of CHANGELOG_HISTORY (with its date), then write the new notes
    above. Version and date come from the build. The start-up note shows every release since the
-   player's last visit; Settings -> Version & changelog shows the full history. */
+   player's last visit; Settings -> Version & changelog shows the current major version history. */
 const APP_DATE = DECKHAND_RELEASE_DATE;
 
 const CHANGELOG_HISTORY = [
+  {
+    v: '2.0.32',
+    d: '2026-11-08',
+    en: [
+      'Dungeon dialogs use a compact icon-only header with All dungeons on the left and Close on the right; the title, description and Done button are removed',
+      'Larger Monarch and Initiative badges keep the same bottom-left position in normal play and player options',
+    ],
+  },
+  {
+    v: '2.0.31',
+    d: '2026-11-08',
+    en: [
+      'Settings can clear completed trade history while preserving the current trade and collection',
+      'Scan cards is a startup option that opens collection scanning and returns to Collection on Back',
+      'Settings shows changelog entries for the current major version',
+      'Hide binder and folder prices in Settings while keeping individual card prices visible; the preference syncs across devices',
+    ],
+  },
+  {
+    v: '2.0.30',
+    d: '2026-11-08',
+    en: [
+      'AI Judge shows live availability and immediately reports when it is helping another player',
+      'New-question budgets default to 10 per account per day, a 30-second cooldown and 100 per day for the server',
+      'Saved rulings remain free during cooldowns and daily limits; busy or unavailable requests do not spend allowance',
+      'Judge and deck advice share one model slot, with no waiting queue',
+    ],
+  },
   {
     v: '2.0.29',
     d: '2026-11-08',

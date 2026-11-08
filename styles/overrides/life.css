@@ -499,6 +499,9 @@ html #setLifePopup #setLifeInput {
   gap: 4px;
   pointer-events: none;
 }
+.life-player-footer:has(.life-roles) {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
 .life-player-footer:has(.life-counter-chip.extra) {
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-rows: auto auto;
@@ -559,6 +562,8 @@ html #setLifePopup #setLifeInput {
   pointer-events: auto;
 }
 .life-role-corner {
+  display: flex;
+  align-items: flex-end;
   min-width: 0;
   align-self: end;
   text-align: left;
@@ -603,7 +608,7 @@ html #setLifePopup #setLifeInput {
   outline-offset: 2px;
 }
 html .life-face.front.life-total-face {
-  padding: 40px 14px 104px;
+  padding: min(40px, 20cqh) 14px min(104px, 55cqh);
 }
 html .life-total-face .lval2 {
   font-size: clamp(32px, 27cqmin, 100px);
@@ -624,17 +629,10 @@ html .life-total-face:has(.life-counter-chip.extra) > .submenu-toggle.lbadge {
   height: 32px;
 }
 html .life-total-face:has(.life-counter-chip.extra) {
-  padding-bottom: 118px;
-}
-.life-face > .life-roles,
-.dmg-overlay > .life-roles {
-  position: absolute;
-  bottom: 8px;
-  left: 8px;
-  z-index: 3;
+  padding-bottom: min(118px, 65cqh);
 }
 html .life-face .lf-extras {
-  bottom: 10px;
+  bottom: var(--life-options-bottom, 10px);
   left: 10px;
   right: 10px;
   transform: none;
@@ -646,6 +644,10 @@ html .lf-extras .lf-x {
   flex: none;
   width: clamp(28px, 10cqw, 40px);
   height: 36px;
+}
+html .lf-extras [data-lmonarch] svg {
+  width: 26px;
+  height: 26px;
 }
 html .lf-extras .life-hash {
   display: inline;
@@ -672,17 +674,16 @@ html .lf-extras .submenu-toggle.done {
     display: none;
   }
 }
-.life-face.pz-face > .life-roles {
-  bottom: 52px;
+@container (max-width: 350px) {
+  .pz-face:has(.life-player-status-footer .life-roles) {
+    --life-options-bottom: 44px;
+  }
 }
 html .life-bottom-notch .lf-extras {
   bottom: 68px;
 }
 html .life-bottom-corner .lf-extras {
   bottom: 56px;
-}
-html :is(.life-bottom-notch, .life-bottom-corner) .pz-face > .life-roles {
-  bottom: 8px;
 }
 .life-focus-name {
   display: flex;
@@ -706,7 +707,7 @@ html :is(.life-bottom-notch, .life-bottom-corner) .pz-face > .life-roles {
 .life-roles .life-role-icon {
   position: static;
   transform: none;
-  width: clamp(14px, 6cqmin, 22px);
+  width: clamp(20px, 8cqmin, 28px);
   color: var(--gold);
   filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.55));
   line-height: 0;
@@ -726,6 +727,17 @@ html :is(.life-bottom-notch, .life-bottom-corner) .pz-face > .life-roles {
 }
 
 /* The dungeon action stays with the selected player's dungeon controls. */
+.dg-toolbar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px 4px;
+}
+.dg-toolbar [data-life-close] {
+  margin-left: auto;
+}
 html .dg-actions.life-popup-footer {
   flex-wrap: wrap;
 }
@@ -736,8 +748,8 @@ html .dg-actions .dg-initiative {
   gap: 6px;
 }
 .dg-initiative svg {
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   flex: none;
 }
 html .dg-actions .dg-initiative.on {

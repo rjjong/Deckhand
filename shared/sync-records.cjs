@@ -156,7 +156,11 @@ function syncRecordValid(key, raw) {
       return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1;
     if (key === 'setting:scannerIntervalMs')
       return Number.isInteger(value) && value >= 100 && value <= 10000;
-    if (key === 'setting:scannerIgnoreSession' || key === 'setting:scannerShowFramerate')
+    if (
+      key === 'setting:hideCollectionFolderPrices' ||
+      key === 'setting:scannerIgnoreSession' ||
+      key === 'setting:scannerShowFramerate'
+    )
       return typeof value === 'boolean';
     if (key.startsWith('setting:')) return typeof value === 'string' && value.length <= 80;
     if (key.startsWith('want-exclude:')) return value === 1;

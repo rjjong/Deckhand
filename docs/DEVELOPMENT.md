@@ -334,8 +334,18 @@ tools, the AI judge, format rules, and ban lists, with Settings last. The life
 tracker is also available from the Life tab in the bottom navigation.
 The interface is English-only; previous Dutch preferences fall back to English.
 First startup opens the chosen page directly without a guided introduction.
-Settings contains Startup page, Card scanner, Color scheme, and Backup. Related controls
-expand below their card. Notification options, feedback, What's new, About,
+Settings contains Startup page, Card scanner, Collection, Color scheme, Backup,
+Clear trade history, and Version & changelog. Related controls expand below their card.
+Scan cards is a startup choice for collection scanning; closing its camera returns
+to Collection. Launcher shortcuts, shared cards/decks, incoming shares and account
+verification/recovery links take precedence and do not request camera access.
+Collection's Hide binder and folder prices preference hides only tile totals,
+preserving card counts and individual card prices. It persists with the other
+app preferences and syncs as `setting:hideCollectionFolderPrices`.
+Clear trade history requires confirmation, keeps the current trade and collection,
+and saves the cleared history through the existing trade sync record. Settings
+shows changelog entries from the installed version's major release; older notes
+remain in the source for update notices. Notification options, feedback, What's new, About,
 app sharing buttons have been removed. Account & sync opens from Menu only;
 Data sources and its manual refresh/download controls have been removed from the
 user interface. Library and catalogue updates continue automatically. Scan cards

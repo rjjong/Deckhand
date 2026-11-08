@@ -170,6 +170,7 @@ function syncSnapshot() {
         theme: state.theme,
         guild: state.guild,
         startupPage: state.startupPage,
+        hideCollectionFolderPrices: state.hideCollectionFolderPrices === true,
         ...normalizeScannerSettings(state),
       });
     Object.assign(out, syncProjectStorage(source, raw));
@@ -495,6 +496,8 @@ function syncLastLabel() {
   if (!linked?.accountId) return 'Not signed in';
   if (linked.err === 'signin_required' || linked.err === 'csrf')
     return 'Sign in again to resume cloud saving. Local changes are kept.';
+  if (['change', 'size', 'revision'].includes(linked.err))
+    return accountErrorMessage({ message: linked.err });
   if (linked.err) return 'Sync could not connect. Your local changes are kept for retry.';
   if (!linked.last) return 'Not synced yet';
   return 'Last synced: ' + new Date(linked.last).toLocaleString('en-GB');

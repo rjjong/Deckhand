@@ -281,7 +281,22 @@ test('Life saved-game and dungeon menus restore games and retain room progress',
   await page.locator('[data-ldungeon="0"]').click();
   const dungeon=page.getByRole('dialog',{name:'Dungeons',exact:true});
   await expect(dungeon.locator('.dg-grid .dg-card')).toHaveCount(4);
+  await expect(dungeon.locator('h2, .hub-eyebrow, .life-popup-head, #dgOk')).toHaveCount(0);
+  await expect(dungeon.getByRole('button',{name:'Done',exact:true})).toHaveCount(0);
+  await expect(dungeon.locator('#dgAll')).toHaveCount(0);
+
   await dungeon.locator('.dg-grid .dg-card').first().click();
+  const all = dungeon.getByRole('button',{name:'All dungeons',exact:true});
+  const close = dungeon.getByRole('button',{name:'Close',exact:true});
+  await expect(all.locator('svg')).toHaveCount(1);
+  expect((await all.textContent()).trim()).toBe('');
+  await expect(all).toHaveCSS('border-top-width','0px');
+  expect((await all.boundingBox()).x).toBeLessThan((await close.boundingBox()).x);
+  expect((await all.boundingBox()).y).toBe((await close.boundingBox()).y);
+  await all.click();
+  await expect(dungeon.locator('.dg-grid .dg-card')).toHaveCount(4);
+  await dungeon.locator('.dg-grid .dg-card').first().click();
+
   await dungeon.locator('.dg-spot.next').first().click();
   expect(await page.evaluate(()=>state.life.players[0].dg?.room)).toBeTruthy();
   await mkdir('var/previews',{recursive:true});
@@ -290,7 +305,7 @@ test('Life saved-game and dungeon menus restore games and retain room progress',
   await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
   expect(await dungeon.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
   expect(await dungeon.locator('.life-popup-footer button').evaluateAll(buttons=>buttons.every(b=>b.scrollWidth<=b.clientWidth))).toBe(true);
-  await dungeon.locator('#dgOk').click();
+  await dungeon.locator('[data-life-close]').click();
   await expect(dungeon).toHaveCount(0);
   expect(await page.evaluate(()=>state.life.players[0].dg?.room)).toBeTruthy();
   expect(errors).toEqual([]);
@@ -317,7 +332,7 @@ test('Life tracks Monarch and Initiative independently with crown and torch badg
   const initiative=async index=>{
     await card(index).getByRole('button',{name:'Dungeon',exact:true}).click();
     await page.locator('#lifeDgSheet').getByRole('button',{name:'Initiative',exact:true}).click();
-    await page.locator('#dgOk').click();
+    await page.locator('#lifeDgSheet [data-life-close]').click();
     await expect(page.locator('#lifeDgSheet')).toHaveCount(0);
   };
   await edit(0);
@@ -345,7 +360,7 @@ test('Life tracks Monarch and Initiative independently with crown and torch badg
   expect(corner.left).toBe(0);
   expect(corner.rolesRight).toBeLessThan(corner.width/2);
   await edit(1);
-  await expect(card(0).locator('.dmg-overlay > .life-roles .life-role-icon')).toHaveCount(2);
+  await expect(card(0).locator('.dmg-overlay .life-role-corner .life-role-icon')).toHaveCount(2);
   await initiative(1);
   await done();
   await expect(card(0).locator('.linitiative')).toHaveCount(0);
@@ -397,7 +412,7 @@ test('Undercity shows its dungeon face, follows room choices and keeps Initiativ
   await expect(undercity.locator('.dg-card-name')).toHaveText('Undercity');
   await expect(undercity.locator('img')).toHaveAttribute('src',/cards\.scryfall\.io\/normal\/front\/2\/c\/2c65185b-6cf0-451d-985e-56aa45d9a57d\.jpg/);
   await undercity.click();
-  await expect(dungeon.locator('h2')).toHaveText('Undercity');
+  await expect(dungeon.locator('.dg-card.big img')).toHaveAttribute('alt','Undercity');
   await expect(dungeon.locator('.dg-spot.next')).toHaveAttribute('data-room','Secret Entrance');
   await dungeon.locator('[data-room="Secret Entrance"]').click();
   expect(await page.evaluate(()=>state.life.players[0].dg)).toEqual({id:'uc',room:'Secret Entrance'});
@@ -406,7 +421,7 @@ test('Undercity shows its dungeon face, follows room choices and keeps Initiativ
   await page.screenshot({path:`var/previews/undercity-dungeon-${info.project.name}.png`});
   for(const room of ['Forge','Trap!','Archives','Throne of the Dead Three']) await dungeon.locator('.dg-spot.next').filter({has:page.locator(`.dg-spot-name`,{hasText:room})}).click();
   expect(await page.evaluate(()=>({dungeon:state.life.players[0].dg,completed:state.life.players[0].dgDone.uc,initiative:state.life.players[0].initiative}))).toEqual({dungeon:null,completed:1,initiative:true});
-  await dungeon.locator('#dgOk').click();
+  await dungeon.locator('[data-life-close]').click();
   await page.locator('.submenu-toggle.done').click();
   await expect(page.locator('.life-card-v2[data-idx="0"] .linitiative')).toBeVisible();
   expect(errors).toEqual([]);

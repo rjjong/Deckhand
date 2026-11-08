@@ -113,6 +113,13 @@ function lifeRolesHtml(p) {
   </div>`;
 }
 
+function lifePlayerStatusFooterHtml(p) {
+  const roles = lifeRolesHtml(p);
+  return roles
+    ? `<div class="life-player-footer life-player-status-footer"><div class="life-role-corner">${roles}</div></div>`
+    : '';
+}
+
 function lifePlayerNameHtml(p, idx, editable = true) {
   return `<div class="life-player-name">
     ${editable ? `<input class="pname-input" data-idx="${idx}" aria-label="Player ${idx + 1} name" value="${escapeHtml(p.name).replace(/"/g, '&quot;')}" size="${Math.max(4, Math.min(14, p.name.length || 8))}">` : `<span class="life-name-text">${escapeHtml(p.name)}</span>`}
@@ -154,7 +161,7 @@ function lifeCardHtml(p, idx, count) {
           class="dmg-overlay ${lethalDmg() && taken >= lethalDmg() ? 'lethal' : ''}"
           data-dmgfrom="${idx}"
         >
-          ${lifePlayerNameHtml(p, idx, false)}${lifeRolesHtml(p)}
+          ${lifePlayerNameHtml(p, idx, false)}${lifePlayerStatusFooterHtml(p)}
           <div class="tap-zone left" data-dmgside="minus"><span class="tap-glyph">−</span></div>
           <div class="tap-zone right" data-dmgside="plus"><span class="tap-glyph">+</span></div>
           <div class="lval-row">
@@ -223,7 +230,7 @@ function lifeCardHtml(p, idx, count) {
               ✓ <span>Done</span>
             </button>
           </div>
-          ${lifeRolesHtml(p)}
+          ${lifePlayerStatusFooterHtml(p)}
         </div>
       </div>
     </div>`;

@@ -101,6 +101,7 @@ test('counters can be selected and edited per player, saved, restored and reset 
 test('dungeon rooms sit above life; roles and counters fit the player footer and options fit narrow cards', async ({
   page,
 }, info) => {
+  await mkdir('var/previews', { recursive: true });
   await page.evaluate(() => {
     const p = ensureLifePlayers()[0];
     p.monarch = p.initiative = true;
@@ -147,6 +148,18 @@ test('dungeon rooms sit above life; roles and counters fit the player footer and
       expect(geometry.overflow, `${layout} ${JSON.stringify(geometry)}`).toBe(false);
       expect(geometry.nameWidth).toBeGreaterThan(15);
       expect(geometry.commanderBeforeName).toBe(true);
+      const normalRoles = await player(page)
+        .locator('.life-role-icon')
+        .evaluateAll((icons) =>
+          icons.map((icon) => {
+            const rect = icon.getBoundingClientRect();
+            return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+          }),
+        );
+      expect(normalRoles).toHaveLength(2);
+      normalRoles.forEach((role) =>
+        expect(Math.min(role.width, role.height)).toBeGreaterThanOrEqual(20),
+      );
       await player(page).locator('.lbadge').click();
       await page.evaluate(
         () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
@@ -161,6 +174,41 @@ test('dungeon rooms sit above life; roles and counters fit the player footer and
         overflow: false,
         count: 4,
       });
+      const focusedRoles = await player(page)
+        .locator('.life-role-icon')
+        .evaluateAll((icons) =>
+          icons.map((icon) => {
+            const rect = icon.getBoundingClientRect();
+            return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+          }),
+        );
+      for (let i = 0; i < normalRoles.length; i++)
+        for (const field of ['x', 'y', 'width', 'height'])
+          expect(focusedRoles[i][field], `${layout} role ${i} ${field}`).toBeCloseTo(
+            normalRoles[i][field],
+            1,
+          );
+      const overlap = await player(page).evaluate((card) => {
+        const roles = [...card.querySelectorAll('.life-role-icon')].map((icon) =>
+          icon.getBoundingClientRect(),
+        );
+        return [...card.querySelectorAll('.lf-extras button')].some((button) => {
+          const r = button.getBoundingClientRect();
+          return roles.some(
+            (role) =>
+              r.left < role.right - 1 &&
+              r.right > role.left + 1 &&
+              r.top < role.bottom - 1 &&
+              r.bottom > role.top + 1,
+          );
+        });
+      });
+      expect(overlap, `${layout} status icons overlap player controls`).toBe(false);
+      if (layout === '4q' && size.width === 320)
+        await page.screenshot({
+          path: `var/previews/life-player-options-${info.project.name}.png`,
+        });
+
       await player(page).locator('.done').click();
     }
   }

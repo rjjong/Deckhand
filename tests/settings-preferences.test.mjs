@@ -39,6 +39,20 @@ test('scanner startup and hidden collection totals survive saving, loading and i
   });
   await context.persistSettings();
   const projected = records.syncProjectStorage('settings:app', stored.get('test:settings:app'));
+  const savedSettings = JSON.parse(stored.get('test:settings:app'));
+  for (const field of Object.keys(savedSettings)) {
+    const key = 'setting:' + field;
+    assert.equal(
+      projected[key],
+      JSON.stringify(savedSettings[field]),
+      `${field} must be projected`,
+    );
+    assert.equal(
+      records.syncRecordValid(key, projected[key]),
+      true,
+      `${field} must pass server validation`,
+    );
+  }
   assert.equal(projected['setting:hideCollectionFolderPrices'], 'true');
   assert.equal(projected['setting:startupPage'], '"scan-collection"');
   assert.equal(records.syncRecordAllowed('setting:hideCollectionFolderPrices'), true);
@@ -56,6 +70,12 @@ test('scanner startup and hidden collection totals survive saving, loading and i
     ],
     'false',
   );
+  assert.equal(records.syncRecordValid('setting:hideCollectionFolderPrices', 'false'), true);
+  for (const value of ['true', 'false', 0, 1, null, {}, []])
+    assert.equal(
+      records.syncRecordValid('setting:hideCollectionFolderPrices', JSON.stringify(value)),
+      false,
+    );
 });
 
 test('existing or malformed preferences show collection totals by default', async () => {

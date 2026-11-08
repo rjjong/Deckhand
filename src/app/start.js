@@ -1,6 +1,7 @@
 // app / start
 
-// Warm recognition after the first page loads; camera permission stays user-triggered.
+// Warm recognition after the first page loads. The camera opens on demand or
+// when collection scanning is the explicitly selected startup page.
 scheduleScannerWarmup();
 
 setTimeout(() => {

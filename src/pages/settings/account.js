@@ -17,6 +17,11 @@ function accountErrorMessage(error) {
       signin_required: 'Sign in again to continue.',
       csrf: 'Your session changed. Close this panel and sign in again.',
       storage: 'Could not prepare local storage. Your existing data is still kept.',
+      change:
+        'The server could not accept part of your saved data. Your local data is still kept; update Deckhand and try Sync now again.',
+      size: 'This account has reached the cloud storage limit. Your local data is still kept.',
+      revision:
+        'The cloud save changed unexpectedly. Your local data is still kept; please try syncing again.',
     }[error.message] || 'Could not connect. Your local data is still kept; please try again.'
   );
 }

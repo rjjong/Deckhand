@@ -9,6 +9,7 @@ import { createApp } from '../server/app.mjs';
 import { idOf } from '../server/services/sync.mjs';
 import { normalizeEmail } from '../server/services/accounts.mjs';
 import { createMailer } from '../server/mail.mjs';
+import syncRecords from '../shared/sync-records.cjs';
 
 const password = 'My very long testing password!';
 const digest = (value) => createHash('sha256').update(value).digest('hex');
@@ -76,6 +77,50 @@ async function fixture(t, options = {}) {
   };
   return { app, directory, base, messages, call, token, register, login };
 }
+
+test('authenticated sync accepts both values of the collection-price preference without blocking decks or collection', async (t) => {
+  const f = await fixture(t);
+  const session = await f.register('boolean-settings@example.test');
+  const deck = { id: 'boolean-settings-deck', name: 'Pending deck', cards: [], maybeboard: [] };
+  const item = { name: 'Pending collection card', qty: 3, set: 'tst', cn: '1', cond: 'NM' };
+  const itemKey = syncRecords.syncItemKey(item);
+  const changes = {
+    ['deck:' + deck.id]: { t: 1, v: JSON.stringify(deck) },
+    [itemKey]: { t: 1, v: JSON.stringify(item) },
+    'setting:hideCollectionFolderPrices': { t: 1, v: 'false' },
+    'setting:startupPage': { t: 1, v: '"scan-collection"' },
+  };
+  const first = await f.call({ op: 'sync', since: 0, changes }, session, '/api/sync');
+  assert.equal(first.status, 200);
+  assert.equal(first.body.changes['setting:hideCollectionFolderPrices'].v, 'false');
+  assert.equal(JSON.parse(first.body.changes['deck:' + deck.id].v).name, 'Pending deck');
+  assert.equal(JSON.parse(first.body.changes[itemKey].v).qty, 3);
+  const second = await f.call(
+    {
+      op: 'sync',
+      since: first.body.rev,
+      changes: { 'setting:hideCollectionFolderPrices': { t: 2, v: 'true' } },
+    },
+    session,
+    '/api/sync',
+  );
+  assert.equal(second.status, 200);
+  const anotherDevice = await f.login('boolean-settings@example.test');
+  const saved = await f.call({ op: 'sync', since: 0 }, anotherDevice, '/api/sync');
+  assert.equal(saved.body.changes['setting:hideCollectionFolderPrices'].v, 'true');
+  assert.equal(JSON.parse(saved.body.changes['deck:' + deck.id].v).name, 'Pending deck');
+  assert.equal(JSON.parse(saved.body.changes[itemKey].v).qty, 3);
+  assert.equal(
+    (
+      await f.call(
+        { op: 'sync', changes: { 'setting:hideCollectionFolderPrices': { t: 3, v: '"false"' } } },
+        session,
+        '/api/sync',
+      )
+    ).status,
+    400,
+  );
+});
 
 test('accounts store salted password hashes, verify email and use protected sessions', async (t) => {
   const f = await fixture(t);
