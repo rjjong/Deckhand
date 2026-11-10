@@ -179,7 +179,8 @@ test('decks, folders and binders share full-cover tile dimensions and readable o
       await page
         .locator('[data-binderopen="blue"] .folder-name')
         .evaluate((element) => getComputedStyle(element).color),
-    ).toBe('rgb(255, 255, 255)');
+    ).toBe(theme === 'light' ? 'rgb(17, 17, 17)' : 'rgb(255, 255, 255)');
+    if (theme === 'light') await page.screenshot({ path: `var/previews/library-collection-light-${info.project.name}.png` });
   }
   await page.evaluate(() => {
     state.theme = 'dark';

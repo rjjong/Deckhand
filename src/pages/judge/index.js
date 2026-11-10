@@ -573,11 +573,10 @@ function openCROverlay(startMode) {
   let mode = startMode === 'rules' ? 'rules' : 'judge';
   el.innerHTML = `
     ${overlayCapHtml('Ask AI judge', `<button type="button" id="crOpenRules" aria-label="${'Read the Comprehensive Rules'}" title="${'Read the Comprehensive Rules'}">${inlIco('library', 24)}</button>`)}
-    <div class="cj-availability" id="cjAvailability" role="status" aria-live="polite"><span data-judge-availability>Checking judge availability…</span><small data-judge-policy></small></div>
     <div id="crBody"></div>
     <div class="cr-bar">
       <div class="cr-qwrap"><div class="cr-qmirror" id="crQMirror" aria-hidden="true"></div><textarea id="crQ" rows="3" maxlength="500" enterkeyhint="send" autocomplete="off" spellcheck="false"></textarea></div>
-      <div class="cr-side"><button type="button" class="primary-btn cr-judge" id="crJudge" title="${'Ask the judge'}" aria-label="${'Ask the judge'}">${ICONS.gavel}</button><span class="cr-count" id="crCount">0/500</span></div>
+      <div class="cr-side"><button type="button" class="primary-btn cr-judge" id="crJudge" title="${'Ask the judge'}" aria-label="${'Ask the judge'}"><svg class="judge-button-progress" viewBox="0 0 56 56" aria-hidden="true"><circle class="judge-progress-track" cx="28" cy="28" r="25"/><circle class="judge-progress-arc" cx="28" cy="28" r="25" pathLength="1"/></svg><span class="judge-button-icon">${ICONS.gavel}</span><span class="judge-button-timer" aria-hidden="true"></span></button><span class="cr-count" id="crCount">0/500</span></div>
       <div class="cr-tagpop" id="crTagPop" hidden></div>
     </div>
     ${overlayNavHtml()}`;

@@ -1,0 +1,46 @@
+/* A shared narrow page gutter keeps controls and content on the same edges. */
+:root {
+  --page-gutter: 8px;
+}
+html.desk {
+  --dw: min(1600px, calc(100vw - 24px));
+}
+
+html .app > main:is(.page-frame, .search-page),
+html.desk .app > main:is(.page-frame, .search-page),
+html .app > main.page-frame.hub-page {
+  max-width: var(--dw, 100%);
+  padding-inline: var(--page-gutter) !important;
+}
+
+html .app > main.page-frame > .page-content,
+html .app > main.page-frame.hub-page > .page-content,
+html .app > main.search-page > .search-content {
+  width: calc(100% + 2 * var(--page-gutter));
+  margin-inline: calc(-1 * var(--page-gutter));
+  padding-inline: var(--page-gutter);
+}
+
+html .app .deck-workspace .deck-controls {
+  margin-inline: calc(-1 * var(--page-gutter));
+  padding-inline: var(--page-gutter);
+}
+
+html .app > main .page-searchbar.sticky-searchbar::before {
+  left: calc(-1 * var(--page-gutter));
+  right: calc(-1 * var(--page-gutter));
+}
+
+html .app > main.page-frame > .page-controls {
+  margin-inline: calc(-1 * var(--page-gutter)) !important;
+}
+
+html #crOverlay #crBody,
+html #crOverlay .cr-bar {
+  max-width: var(--dw, 100%);
+  padding-inline: var(--page-gutter);
+}
+
+html :is(.binder-settings-body, .life-setup-body, .trade-history-body, .card-detail-scroll) {
+  padding-inline: var(--page-gutter);
+}

@@ -116,36 +116,6 @@ function wireFolderViewToggle(page) {
   });
 }
 
-/* The drop-up menu of a page's big \uFF0B -- My Decks and the collection
-   alike: the same small sheet just above the button. Items: [id, html, fn]. */
-function openFabMenu(items) {
-  const old = document.getElementById('fabMenu');
-  if (old) {
-    old.remove();
-    return;
-  }
-  const menu = document.createElement('div');
-  menu.id = 'fabMenu';
-  menu.innerHTML = items
-    .map(([id, html]) => `<button id="${id}">${menuLabel(html)}</button>`)
-    .join('');
-  document.body.appendChild(menu);
-  items.forEach(([id, , fn]) =>
-    document.getElementById(id).addEventListener('click', () => {
-      menu.remove();
-      fn();
-    }),
-  );
-  setTimeout(
-    () =>
-      document.addEventListener('click', function once() {
-        menu.remove();
-        document.removeEventListener('click', once);
-      }),
-    0,
-  );
-}
-
 /* ---- Salt: EDHREC's per-card salt score, kept as a NUMBER per card name
    (never the whole EDHREC page -- that would fill the phone). The salt
    survey runs about once a year, so a score is good for 90 days; a card
@@ -447,7 +417,7 @@ function homeHtml() {
         ${SORT_ICON}
       </button>
     </div>
-    <button class="deck-fab" id="deckFab" title="New">＋</button>
+    <button class="deck-fab" id="deckFab" title="New">${ICONS.plus}</button>
     ${
       !state.homeLoaded
         ? '<div class="status"><div class="spinner"></div>Loading your decks…</div>'
@@ -585,21 +555,24 @@ function wireHome() {
   if (fab) {
     fab.addEventListener('click', (e) => {
       e.stopPropagation();
-      openFabMenu([
-        ['fabNewDeck', '⚔ New deck', () => openModal('newdeck')],
+      openFabMenu(
         [
-          'fabScanDeck',
-          `<span class="ib">${SCANNER_ICON}</span>Scan deck`,
-          () => openCardScanner({ mode: 'deck' }),
+          ['fabNewDeck', '⚔ New deck', () => openModal('newdeck')],
+          [
+            'fabScanDeck',
+            `<span class="ib">${SCANNER_ICON}</span>Scan deck`,
+            () => openCardScanner({ mode: 'deck' }),
+          ],
+          [
+            'fabNewFolder',
+            `<span class="ib">${ICONS.decks}</span>New folder`,
+            () => openNewFolderPrompt(state.folderNav || null),
+          ],
+          // One Import: the sheet takes a pasted list AND loads a .txt file.
+          ['fabImportDeck', mIco('file') + trS('Import deck'), () => openPasteListSheet()],
         ],
-        [
-          'fabNewFolder',
-          `<span class="ib">${ICONS.decks}</span>New folder`,
-          () => openNewFolderPrompt(state.folderNav || null),
-        ],
-        // One Import: the sheet takes a pasted list AND loads a .txt file.
-        ['fabImportDeck', mIco('file') + trS('Import'), () => openPasteListSheet()],
-      ]);
+        e.currentTarget,
+      );
     });
   }
   // Open a deck (but not when a tile button was tapped)

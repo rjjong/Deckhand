@@ -5,10 +5,11 @@ const APP_VERSION = DECKHAND_VERSION;
 
 const CHANGELOG_NOTES = {
   en: [
-    'The deck overview always uses tiles and shows every deck in expandable format sections, with custom folders still available',
-    'Sort decks by last changed, name or price from the search bar; the choice syncs across devices',
-    'Pulling down to refresh the random card gives a short vibration',
-    'Device appearance sets the default scheme: Rakdos in dark mode and Azorius in light mode; saved colour choices take priority',
+    'Light-theme deck, folder and binder artwork uses pale translucent overlays with dark text',
+    'Floating add buttons share animated, separate action bubbles and matching deck-editor add controls',
+    'AI Judge availability moves to the hammer button with a busy indicator and live cooldown countdown',
+    'Unsorted shows only unfiled spare copies, excludes Wants, and keeps Playing copies safe during bulk moves and removals',
+    'Narrower page margins give content and search fields more screen space',
   ],
 };
 
@@ -19,6 +20,16 @@ const CHANGELOG_NOTES = {
 const APP_DATE = DECKHAND_RELEASE_DATE;
 
 const CHANGELOG_HISTORY = [
+  {
+    v: '2.0.42',
+    d: '2026-11-10',
+    en: [
+      'The deck overview always uses tiles and shows every deck in expandable format sections, with custom folders still available',
+      'Sort decks by last changed, name or price from the search bar; the choice syncs across devices',
+      'Pulling down to refresh the random card gives a short vibration',
+      'Device appearance sets the default scheme: Rakdos in dark mode and Azorius in light mode; saved colour choices take priority',
+    ],
+  },
   {
     v: '2.0.41',
     d: '2026-11-10',

@@ -25,6 +25,7 @@ export const scripts = [
   'src/pages/judge/stream.js',
   'src/pages/judge/index.js',
   'src/ui/library-tiles.js',
+  'src/ui/fab-menu.js',
   'src/pages/decks/sort.js',
   'src/pages/decks/index.js',
   'src/pages/collection/index.js',
@@ -172,6 +173,9 @@ export const styles = [
   'styles/overrides/news.css',
   'styles/overrides/scroll-feedback.css',
   'styles/overrides/deck-library.css',
+  'styles/overrides/light-tiles.css',
+  'styles/overrides/fab-menu.css',
+  'styles/overrides/page-spacing.css',
 ];
 
 export const media = ['assets/images/deckhand-badge.webp'];

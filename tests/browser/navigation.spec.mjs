@@ -677,9 +677,8 @@ test('Ask AI Judge keeps its question above navigation and reads answers from th
     expect(h.y).toBe(0);
     expect(h.height).toBeCloseTo((await page.locator('.app > .app-header').boundingBox()).height,0);
     expect(await header.locator('.ov-title').evaluate(el=>parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(15);
-    const availability=await overlay.locator('#cjAvailability').boundingBox();
-    expect(availability.y).toBeCloseTo(h.y+h.height,0);
-    expect(b.y).toBeCloseTo(availability.y+availability.height,0);
+    await expect(overlay.locator('#cjAvailability')).toHaveCount(0);
+    expect(b.y).toBeCloseTo(h.y+h.height,0);
     expect(b.y+b.height).toBeCloseTo(bar.y,0);
     expect(bar.y+bar.height).toBeCloseTo(n.y,0);
     expect(q.y+q.height).toBeLessThanOrEqual(n.y);
@@ -922,7 +921,7 @@ test('Decks and Collection search bars fill the page width and scroll with conte
     }
     expect(await input.evaluate(el=>{
       const viewport=el.closest('.tab-viewport'), bar=el.closest('.searchbar');
-      return !!viewport && Math.abs(bar.getBoundingClientRect().width-(viewport.clientWidth-32))<2;
+      return !!viewport && Math.abs(bar.getBoundingClientRect().width-(viewport.clientWidth-16))<2;
     })).toBe(true);
     const viewport=page.locator('.tab-viewport[data-screen]');
     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
@@ -1852,7 +1851,7 @@ test('Search uses Collection-style spacing with an integrated bar that stays vis
     const viewport=el.closest('.tab-viewport'), rect=el.getBoundingClientRect(), bounds=viewport.getBoundingClientRect(), style=getComputedStyle(el);
     return {inset:rect.left-bounds.left,top:rect.top-bounds.top,height:rect.height,
       padding:style.padding,border:style.borderBottomWidth,shadow:style.boxShadow,
-      fillsWidth:Math.abs(rect.width-(viewport.clientWidth-32))<2};
+      fillsWidth:Math.abs(rect.width-(viewport.clientWidth-16))<2};
   });
   expect(await bar.evaluate(el=>{
     const rect=el.getBoundingClientRect(),bounds=el.closest('.tab-viewport').getBoundingClientRect();
@@ -1884,7 +1883,7 @@ test('Search uses Collection-style spacing with an integrated bar that stays vis
     })).toBe(true);
     expect(await bar.evaluate(el=>{
       const r=el.getBoundingClientRect();
-      return [r.left-8,r.right+8].every(x=>[r.top+8,r.bottom+8].every(y=>
+      return [r.left-4,r.right+4].every(x=>[r.top+8,r.bottom+8].every(y=>
         document.elementFromPoint(x,y)?.closest('.sticky-searchbar')===el));
     })).toBe(true);
     expect(await page.locator('.app-header').boundingBox()).toEqual(header);
@@ -2201,7 +2200,7 @@ test('Inspiration integrates and pins its search bar with space above scrolling 
     const initial=await bar.boundingBox(), bounds=await viewport.boundingBox();
     expect(initial.x-bounds.x).toBeCloseTo(bounds.x+bounds.width-initial.x-initial.width,1);
     expect(initial.y-bounds.y).toBeCloseTo(12,0);
-    expect(await bar.evaluate(el=>Math.abs(el.getBoundingClientRect().width-(el.closest('.tab-viewport').clientWidth-32)))).toBeLessThan(2);
+    expect(await bar.evaluate(el=>Math.abs(el.getBoundingClientRect().width-(el.closest('.tab-viewport').clientWidth-16)))).toBeLessThan(2);
     await viewport.evaluate(el=>el.scrollTop=500);
     expect(await viewport.evaluate(el=>el.scrollTop)).toBeGreaterThan(0);
     expect(await bar.boundingBox()).toEqual(initial);
@@ -2215,7 +2214,7 @@ test('Inspiration integrates and pins its search bar with space above scrolling 
     await expect(page.locator('#advancedSearchScreen')).toHaveCount(0);
     expect(await bar.evaluate(el=>{
       const r=el.getBoundingClientRect();
-      return [r.left-8,r.right+8].every(x=>[r.top+8,r.bottom+8].every(y=>
+      return [r.left-4,r.right+4].every(x=>[r.top+8,r.bottom+8].every(y=>
         document.elementFromPoint(x,y)?.closest('.sticky-searchbar')===el));
     })).toBe(true);
   }

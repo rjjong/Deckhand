@@ -24,34 +24,6 @@ html #crOverlay .cr-bar {
   margin: 0;
 }
 
-/* Availability belongs to the fixed page chrome, above the scrolling ruling. */
-.cj-availability {
-  flex: none;
-  order: 1;
-  width: 100%;
-  max-width: 680px;
-  align-self: center;
-  padding: 12px 22px 4px;
-  color: var(--main-text);
-  font:
-    500 12px/1.5 'Inter',
-    system-ui,
-    sans-serif;
-}
-.cj-availability > span {
-  display: block;
-}
-.cj-availability > small {
-  display: block;
-  margin-top: 4px;
-  color: var(--main-sub);
-  font-size: 10px;
-  line-height: 1.5;
-}
-#crOverlay.cr-mode-rules .cj-availability {
-  display: none;
-}
-
 /* The judge and its rules browser share the menu's cards and typography. */
 
 html #crOverlay {
@@ -214,6 +186,7 @@ html #crOverlay #crQ {
 }
 
 html #crOverlay #crJudge {
+  position: relative;
   width: 50px;
   height: 50px;
   min-height: 50px;
@@ -223,6 +196,75 @@ html #crOverlay #crJudge {
   background: var(--gold);
   color: #241a04;
   text-shadow: none;
+}
+
+html #crOverlay #crJudge .judge-button-progress {
+  position: absolute;
+  inset: -3px;
+  width: calc(100% + 6px);
+  height: calc(100% + 6px);
+  overflow: visible;
+  display: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  transform: rotate(-90deg);
+  pointer-events: none;
+}
+
+.judge-progress-track {
+  opacity: 0.2;
+}
+.judge-progress-arc {
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: calc(1 - var(--judge-progress, 0));
+}
+
+html
+  #crOverlay
+  #crJudge:is([data-state='busy'], [data-state='working'], .judge-waiting)
+  .judge-button-progress {
+  display: block;
+}
+
+html #crOverlay #crJudge:is([data-state='busy'], [data-state='working']) .judge-button-progress {
+  animation: judge-button-spin 1s linear infinite;
+}
+
+html #crOverlay #crJudge:is([data-state='busy'], [data-state='working']) .judge-progress-arc {
+  stroke-dashoffset: 0.7;
+}
+
+.judge-button-timer {
+  position: absolute;
+  bottom: 3px;
+  left: 0;
+  width: 100%;
+  font:
+    700 9px/1 'Inter',
+    system-ui,
+    sans-serif;
+}
+
+.judge-waiting .judge-button-icon {
+  transform: translateY(-5px);
+}
+.judge-button-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes judge-button-spin {
+  to {
+    transform: rotate(270deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html #crOverlay #crJudge .judge-button-progress {
+    animation: none !important;
+  }
 }
 
 html #crOverlay #crJudge:disabled {

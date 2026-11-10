@@ -513,6 +513,7 @@ function layoutPageViewport(page) {
 }
 
 function renderInner() {
+  closeFabMenu({ immediate: true });
   const root = document.getElementById('root');
   const previousViewport = root.querySelector('.tab-viewport');
   const tabScroll =
@@ -927,8 +928,8 @@ document.addEventListener('click', (e) => {
   document.addEventListener(
     'touchstart',
     (e) => {
-      const h = e.target.closest('.appoint-head, .dp-title, #fabMenu');
-      sheet = h ? (h.id === 'fabMenu' ? h : h.closest('.appoint-sheet, .deckpick')) : null;
+      const h = e.target.closest('.appoint-head, .dp-title');
+      sheet = h ? h.closest('.appoint-sheet, .deckpick') : null;
       sy = sheet ? e.touches[0].clientY : null;
     },
     { passive: true },
@@ -941,10 +942,6 @@ document.addEventListener('click', (e) => {
         const el = sheet;
         sheet = null;
         sy = null;
-        if (el.id === 'fabMenu') {
-          el.remove();
-          return;
-        }
         const btn = el.querySelector('#appointClose, #ciClose, .dp-cancel');
         if (btn) {
           btn.click();

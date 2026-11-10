@@ -71,6 +71,8 @@ function colFilteredItems() {
   const f = state.colFilter;
   const codes = new Set();
   if (f.binder === '__playing__') return computePlaying().filter((item) => colMatch(item, codes));
+  if (!f.binder && !colFilterActive())
+    return collectionUnsortedItems().filter((item) => colMatch(item, codes));
   return state.collection.items.filter((it) => {
     // Three scopes: the automatic All binder shows every owned card; a real
     // binder shows its own; the front page shows only LOOSE (unfiled) cards —
@@ -84,6 +86,17 @@ function colFilteredItems() {
     } // searching the front page = searching everything
     return colMatch(it, codes);
   });
+}
+
+function collectionSelectedRows() {
+  const indices = new Map(state.collection.items.map((item, index) => [item, index]));
+  return colFilteredItems()
+    .filter((row) => state.colSel?.has(indices.get(row._collectionItem || row)))
+    .map((row) => ({ item: row._collectionItem || row, qty: Number(row.qty ?? 1) || 0 }));
+}
+
+function collectionSelectedQuantity() {
+  return collectionSelectedRows().reduce((sum, row) => sum + row.qty, 0);
 }
 
 function colFilterActive() {
@@ -370,7 +383,7 @@ function collectionPageHtml() {
     ${wantsMode ? wantsSelectionHtml(items) : ''}
     ${f.binder || colFilterActive() ? '' : collectionBindersGridHtml()}
     ${!f.binder && !colFilterActive() ? '<h2 class="section-label collection-unsorted-title">Unsorted</h2>' : ''}
-    ${f.binder ? `<button class="deck-fab" id="binderFab" title="${trS('Add cards to collection…')}">＋</button>` : ''}
+    ${f.binder ? `<button class="deck-fab" id="binderFab" title="${trS('Add cards to collection…')}">${ICONS.plus}</button>` : ''}
     ${
       items.length
         ? colGridsHtml(items, (it) =>
@@ -400,10 +413,7 @@ function collectionPageHtml() {
     ${
       state.colSel && state.colSel.size
         ? `<button class="deck-fab col-sel-fab" id="colSelFab" title="Selected cards">${selFabLabel(
-            Array.from(state.colSel).reduce(
-              (a, i) => a + ((state.collection.items[i] || {}).qty || 1),
-              0,
-            ),
+            collectionSelectedQuantity(),
             true,
           )}</button>`
         : ''
@@ -482,33 +492,39 @@ function wireCollectionPage() {
     e.stopPropagation();
     const bid = state.colFilter.binder;
     if (bid === '__playing__') {
-      openFabMenu([
+      openFabMenu(
+        [
+          [
+            'bfAddCard',
+            `<span class="ib">${ICONS.search}</span>Add card to deck`,
+            () => switchPage('search'),
+          ],
+          [
+            'bfScanCards',
+            `<span class="ib">${SCANNER_ICON}</span>Scan deck`,
+            () => openCardScanner({ mode: 'deck' }),
+          ],
+        ],
+        e.currentTarget,
+      );
+      return;
+    }
+    openFabMenu(
+      [
         [
           'bfAddCard',
-          `<span class="ib">${ICONS.search}</span>Add card to deck`,
-          () => switchPage('search'),
+          `<span class="ib">${ICONS.search}</span>${trS('Add card')}`,
+          openCollectionCardSearch,
         ],
         [
           'bfScanCards',
-          `<span class="ib">${SCANNER_ICON}</span>Scan deck`,
-          () => openCardScanner({ mode: 'deck' }),
+          `<span class="ib">${SCANNER_ICON}</span>Scan cards`,
+          () => openCardScanner({ binder: bid }),
         ],
-      ]);
-      return;
-    }
-    openFabMenu([
-      [
-        'bfAddCard',
-        `<span class="ib">${ICONS.search}</span>${trS('Add card')}`,
-        openCollectionCardSearch,
+        ['bfImport', mIco('file') + trS('Import'), () => openCollectionImport(bid)],
       ],
-      [
-        'bfScanCards',
-        `<span class="ib">${SCANNER_ICON}</span>Scan cards`,
-        () => openCardScanner({ binder: bid }),
-      ],
-      ['bfImport', mIco('file') + trS('Import'), () => openCollectionImport(bid)],
-    ]);
+      e.currentTarget,
+    );
   });
   document.getElementById('colFab')?.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -541,6 +557,7 @@ function wireCollectionPage() {
           ? [['fabResort', '↻ ' + 'Re-sort binders', () => binderResort()]]
           : [],
       ),
+      e.currentTarget,
     );
   });
   document
@@ -652,13 +669,7 @@ function wireCollectionPage() {
   // selection visibly lag behind the finger.
   // The selection counts CARDS (quantities summed), matching the header's
   // "N cards" — a ×2 stack selected counts as 2, not 1.
-  const colSelQty = () =>
-    state.colSel
-      ? Array.from(state.colSel).reduce(
-          (a, i) => a + ((state.collection.items[i] || {}).qty || 1),
-          0,
-        )
-      : 0;
+  const colSelQty = collectionSelectedQuantity;
   const wireColSelFab = (fab) => {
     fab.addEventListener('click', (e) => {
       const anchor = e.currentTarget;
@@ -766,10 +777,9 @@ function wireCollectionPage() {
           openBindersPop(
             anchor,
             (bid) => {
-              state.colSel.forEach((i) => {
-                const it = state.collection.items[i];
-                if (it) it.binder = bid || null;
-              });
+              collectionSelectedRows().forEach(({ item, qty }) =>
+                collectionMoveCopies(item, qty, bid),
+              );
               state.colSel = null;
               saveCollection();
               toast(trS('Moved.'));
@@ -788,9 +798,12 @@ function wireCollectionPage() {
             q,
             (ok) => {
               if (!ok) return;
-              state.collection.items = state.collection.items.filter(
-                (_, i) => !state.colSel.has(i),
-              );
+              const removed = new Set();
+              collectionSelectedRows().forEach(({ item, qty }) => {
+                item.qty = Math.max(0, Number(item.qty ?? 1) - qty);
+                if (!item.qty) removed.add(item);
+              });
+              state.collection.items = state.collection.items.filter((item) => !removed.has(item));
               state.colSel = null;
               saveCollection();
               render();

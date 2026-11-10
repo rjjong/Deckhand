@@ -44,7 +44,7 @@ async function prepare(page, initial = {}) {
     ];
     openCROverlay('judge');
   });
-  await expect(page.locator('#cjAvailability')).toHaveAttribute('data-state', status.state);
+  await expect(page.locator('#crJudge')).toHaveAttribute('data-state', status.state);
   return {
     setStatus: (next) => {
       status = { ...status, ...next };
@@ -79,9 +79,11 @@ test('busy status updates automatically, leaves questions intact and does not ch
         : { status: 503, json: { ok: false, error: 'busy', left: 10, limit: 10, retryAfter: 10 } },
     );
   });
-  await expect(page.locator('#cjAvailability')).toContainText('helping another player');
+  await expect(page.locator('#crJudge')).toHaveAttribute('title', /helping another player/);
   await expect(page.locator('#crCount')).toHaveText('10 left');
   await expect(page.locator('#crJudge')).toBeEnabled();
+  await expect(page.locator('#crJudge .judge-button-progress')).toBeVisible();
+  await expect(page.locator('#cjAvailability')).toHaveCount(0);
   await page.locator('#crQ').fill('Does a creature with zero toughness die?');
   await page.locator('#crJudge').click();
   await expect(page.locator('#crBody')).toContainText('your allowance was not used');
@@ -92,7 +94,8 @@ test('busy status updates automatically, leaves questions intact and does not ch
   f.setStatus({ state: 'ready', busy: false });
   await page.clock.fastForward(10000);
   await expect.poll(f.calls).toBeGreaterThan(previous);
-  await expect(page.locator('#cjAvailability')).toContainText('ready for a question');
+  await expect(page.locator('#crJudge')).toHaveAttribute('data-state', 'ready');
+  await expect(page.locator('#crJudge .judge-button-progress')).toBeHidden();
   cached = true;
   await page.locator('#crJudge').click();
   await expect(page.locator('.cja-a')).toContainText('Yes. Zero toughness');
@@ -112,7 +115,11 @@ test('cooldowns and daily limits show the rules and still allow cached questions
     json: { ok: false, error: 'cooldown', left: 9, limit: 10, retryAfter: 18 },
   };
   await page.route('**/api/judge', (route) => route.fulfill(response));
-  await expect(page.locator('#cjAvailability')).toContainText('18 seconds');
+  await expect(page.locator('#crJudge')).toHaveAttribute('data-remaining', '18');
+  await expect(page.locator('.judge-button-timer')).toHaveText('18s');
+  await page.clock.fastForward(1000);
+  await expect(page.locator('#crJudge')).toHaveAttribute('data-remaining', '17');
+  await expect(page.locator('.judge-button-timer')).toHaveText('17s');
   await page.locator('#crQ').fill('Does a creature with zero toughness die?');
   await page.locator('#crJudge').click();
   await expect(page.locator('#crBody')).toContainText('Try again in about 18 seconds');
@@ -121,7 +128,10 @@ test('cooldowns and daily limits show the rules and still allow cached questions
   f.setStatus({ state: 'limit', left: 0 });
   await page.locator('#crJudge').click();
   await expect(page.locator('#crBody')).toContainText('10 new questions for today');
-  await expect(page.locator('#cjAvailability')).toContainText('Saved answers are still available');
+  await expect(page.locator('#crJudge')).toHaveAttribute(
+    'title',
+    /Saved answers are still available/,
+  );
   await expect(page.locator('#crJudge')).toBeEnabled();
   response = {
     status: 200,
@@ -161,12 +171,12 @@ test('availability polling stops while hidden, in the rules browser and after le
   });
   await expect.poll(f.calls).toBeGreaterThan(hidden);
   await page.locator('#crOpenRules').click();
-  await expect(page.locator('#cjAvailability')).toBeHidden();
+  await expect(page.locator('#crJudge')).toBeHidden();
   const rules = f.calls();
   await page.clock.fastForward(30000);
   expect(f.calls()).toBe(rules);
   await page.goBack();
-  await expect(page.locator('#cjAvailability')).toBeVisible();
+  await expect(page.locator('#crJudge')).toBeVisible();
   await expect.poll(f.calls).toBeGreaterThan(rules);
   await page
     .locator('#crOverlay .app-navigation')
@@ -178,7 +188,7 @@ test('availability polling stops while hidden, in the rules browser and after le
   expect(f.calls()).toBe(closed);
 });
 
-test('availability and policy text fit small screens and remain readable in every color scheme', async ({
+test('gavel status indicator fits small screens and remains readable in every color scheme', async ({
   page,
 }) => {
   await prepare(page, { state: 'busy', busy: true });
@@ -208,10 +218,10 @@ test('availability and policy text fit small screens and remain readable in ever
         { theme, guild },
       );
       expect(
-        await page.locator('#cjAvailability').evaluate((el) => el.scrollWidth <= el.clientWidth),
+        await page.locator('#crOverlay').evaluate((el) => el.scrollWidth <= el.clientWidth),
       ).toBe(true);
       await expect(page.locator('#crJudge')).toBeInViewport();
-      const samples = await auditContrast(page, '#cjAvailability');
+      const samples = await auditContrast(page, '#crJudge');
       expect(
         samples.filter((sample) => sample.ratio < sample.minimum),
         `${theme} ${guild}`,

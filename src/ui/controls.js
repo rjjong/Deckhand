@@ -325,7 +325,7 @@ document.addEventListener(
     if (fm) {
       if (!inside('#fabMenu')) {
         swallow();
-        fm.remove();
+        closeFabMenu();
       }
       return;
     }

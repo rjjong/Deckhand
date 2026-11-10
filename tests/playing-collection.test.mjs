@@ -50,6 +50,48 @@ async function setup() {
   return { context, state, deckSaves, collectionSaves: () => collectionSaves };
 }
 
+test('Unsorted displays only spare copies without changing inventory or duplicating Playing', async () => {
+  const { context, state } = await setup();
+  const card = fixture();
+  const item = { name: card.name, set: 'tst', cn: '1', cond: 'NM', qty: 4 };
+  state.collection.items.push(item, { name: 'Loose relic', qty: 1 }, { name: 'Filed relic', qty: 2, binder: 'safe' });
+  state.decksIndex.push({ id: 'a', name: 'A', format: 'modern', cards: [{ ...card, proxy: false }, { ...card, proxy: false }] });
+  const rows = context.collectionUnsortedItems();
+  assert.equal(rows.length, 2);
+  assert.equal(rows[0].qty, 2);
+  assert.equal(rows[0]._collectionItem, item);
+  assert.equal(item.qty, 4);
+  assert.equal(context.computePlaying()[0].qty, 2);
+  context.collectionMoveCopies(item, rows[0].qty, 'safe');
+  assert.equal(item.qty, 2);
+  assert.equal(item.binder, undefined);
+  assert.equal(state.collection.items.find((row) => row.name === item.name && row.binder === 'safe').qty, 2);
+  assert.equal(context.computePlaying()[0].qty, 2);
+  assert.equal(context.collectionUnsortedItems().some((row) => row.name === item.name), false);
+  assert.equal(state.collection.items.filter((row) => row.name === item.name).reduce((sum, row) => sum + row.qty, 0), 4);
+});
+
+test('cards shown in Wants are excluded from Unsorted while remaining in All cards', async () => {
+  const { context, state } = await setup();
+  const card = fixture();
+  const item = { name: card.name, set: 'tst', cn: '1', cond: 'NM', qty: 2 };
+  state.collection.items.push(item);
+  state.decksIndex.push({ id: 'proxy', name: 'Proxy deck', format: 'modern', cards: [{ ...card, proxy: true }] });
+  assert.equal(context.computeWants()[0].name, item.name);
+  assert.equal(context.collectionUnsortedItems().length, 0);
+  assert.equal(state.collection.items[0].qty, 2);
+});
+
+test('moving spare copies into a legacy binder stack preserves its implicit single copy', async () => {
+  const { context, state } = await setup();
+  const item = { name: 'Adept', set: 'tst', cn: '1', cond: 'NM', qty: 4 };
+  const legacy = { name: 'Adept', set: 'tst', cn: '1', cond: 'NM', binder: 'safe' };
+  state.collection.items.push(item, legacy);
+  context.collectionMoveCopies(item, 2, 'safe');
+  assert.equal(item.qty, 2);
+  assert.equal(legacy.qty, 3);
+});
+
 test('deck adds reuse owned copies and create only the shortfall without moving binders', async () => {
   const { context, state } = await setup();
   const card = fixture();

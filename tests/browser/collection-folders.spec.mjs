@@ -98,6 +98,77 @@ test('Collection headings lead their folders and Unsorted shows only unfiled car
   await expect(page.locator('#binderLongPop')).toContainText('Cover art');
 });
 
+test('Unsorted shows spare copies and removing them leaves Playing copies intact', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    const card = {
+      name: 'Shared adept',
+      set: 'tst',
+      collector_number: '1',
+      type_line: 'Creature',
+      image_uris: { normal: '/icon-192.png' },
+    };
+    state.collection.items = [
+      {
+        name: card.name,
+        set: 'tst',
+        cn: '1',
+        type_line: 'Creature',
+        img: '/icon-192.png',
+        qty: 4,
+        cond: 'NM',
+      },
+      {
+        name: 'Wanted proxy',
+        set: 'tst',
+        cn: '2',
+        type_line: 'Artifact',
+        img: '/icon-192.png',
+        qty: 1,
+        cond: 'NM',
+      },
+    ];
+    state.decksIndex = [
+      {
+        id: 'playing',
+        name: 'Playing deck',
+        format: 'modern',
+        cards: [
+          { ...card, proxy: false },
+          { ...card, proxy: false },
+          { ...card, name: 'Wanted proxy', proxy: true },
+        ],
+        maybeboard: [],
+      },
+    ];
+    render();
+  });
+  await expect(page.locator('.col-tile .l1')).toHaveText(['Shared adept']);
+  await expect(page.locator('.col-tile .vg-qty')).toHaveText('×2');
+  const tile = page.locator('.col-tile');
+  await tile.dispatchEvent('pointerdown', { pointerType: 'touch', clientX: 80, clientY: 400 });
+  await expect(page.locator('#colSelFab')).toHaveText('2');
+  await tile.dispatchEvent('pointerup');
+  await page.locator('#colSelFab').click();
+  await page
+    .locator('#tileMenuPop')
+    .getByRole('button', { name: /Remove from collection/ })
+    .click();
+  await expect(page.locator('#inAppConfirm')).toContainText('Remove 2 cards');
+  await page.locator('#iacOk').click();
+  await expect(page.locator('.col-tile')).toHaveCount(0);
+  expect(await page.evaluate(() => state.collection.items[0].qty)).toBe(2);
+  expect(await page.evaluate(() => computePlaying()[0].qty)).toBe(2);
+  expect(
+    await page.evaluate(() =>
+      getDeck('playing')
+        .cards.slice(0, 2)
+        .some((card) => card.proxy),
+    ),
+  ).toBe(false);
+});
+
 test('Collection header actions follow the folder and Trade is available from Menu', async ({
   page,
 }) => {

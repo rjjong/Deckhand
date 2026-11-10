@@ -144,6 +144,45 @@ function computePlaying() {
   return Array.from(allocated.values());
 }
 
+// Unsorted contains unfiled spare copies, excluding the visible Wants list.
+// View rows link to inventory so displaying a partial stack never duplicates it.
+function collectionUnsortedItems() {
+  const allocated = new Map(computePlaying().map((row) => [row._collectionItem, row.qty]));
+  const wanted = new Set(computeWants().map((row) => playingNameKey(row.name)));
+  return collectionTrackedItems().flatMap((item) => {
+    if (item.binder || wanted.has(playingNameKey(item.name))) return [];
+    const quantity = Math.max(0, Number(item.qty ?? 1) || 0);
+    const spare = Math.max(0, quantity - (allocated.get(item) || 0));
+    if (!spare) return [];
+    return [spare === quantity ? item : { ...item, qty: spare, _collectionItem: item }];
+  });
+}
+
+function collectionMoveCopies(item, quantity, binder) {
+  const destination = binder || null;
+  if ((item.binder || null) === destination) return;
+  const amount = Math.min(quantity, Number(item.qty ?? 1) || 0);
+  if (amount <= 0) return;
+  const twin = state.collection.items.find(
+    (candidate) =>
+      candidate !== item &&
+      playingNameKey(candidate.name) === playingNameKey(item.name) &&
+      candidate.set === item.set &&
+      String(candidate.cn || '') === String(item.cn || '') &&
+      !!candidate.foil === !!item.foil &&
+      candidate.cond === item.cond &&
+      (candidate.binder || null) === destination,
+  );
+  if (twin) {
+    twin.qty = (Number(twin.qty ?? 1) || 0) + amount;
+    item.qty = (Number(item.qty ?? 1) || 0) - amount;
+    if (!item.qty) state.collection.items.splice(state.collection.items.indexOf(item), 1);
+  } else if (amount < Number(item.qty ?? 1)) {
+    item.qty -= amount;
+    state.collection.items.push({ ...item, qty: amount, binder: destination });
+  } else item.binder = destination;
+}
+
 // Only new additions can create owned copies; opening/syncing old decks cannot.
 function ensurePlayingOwnership(deck, cards) {
   const demand = playingDeckDemand(deck);

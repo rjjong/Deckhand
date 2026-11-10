@@ -2,23 +2,26 @@
 
 function openDeckAddMenu(d, event) {
   event.stopPropagation();
-  openFabMenu([
+  openFabMenu(
     [
-      'deckAddSearch',
-      `<span class="ib">${ICONS.search}</span>Search cards`,
-      () => openAddCardsFor(d),
+      [
+        'deckAddSearch',
+        `<span class="ib">${ICONS.search}</span>Search cards`,
+        () => openAddCardsFor(d),
+      ],
+      [
+        'deckAddImport',
+        `<span class="ib">${ICONS.imp}</span>Import cards`,
+        () => toggleDlPanel(d, 'import-cards'),
+      ],
+      [
+        'deckAddScan',
+        `<span class="ib">${SCANNER_ICON}</span>Scan cards`,
+        () => openCardScanner({ mode: 'deck', deckId: d.id }),
+      ],
     ],
-    [
-      'deckAddImport',
-      `<span class="ib">${ICONS.imp}</span>Import cards`,
-      () => toggleDlPanel(d, 'import-cards'),
-    ],
-    [
-      'deckAddScan',
-      `<span class="ib">${SCANNER_ICON}</span>Scan cards`,
-      () => openCardScanner({ mode: 'deck', deckId: d.id }),
-    ],
-  ]);
+    document.getElementById('dockAddCards') || event.currentTarget,
+  );
 }
 
 function deckSummaryPriceHtml(d) {

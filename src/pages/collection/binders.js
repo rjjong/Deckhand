@@ -797,7 +797,7 @@ function collectionBindersGridHtml() {
     <h2 class="section-label" id="collectionAutomaticTitle">Automatic folders</h2>
     <div class="${gridClass}">${collectionFolderTileHtml('__all__', ICONS.collection)}${collectionFolderTileHtml('__playing__', ICONS.decks)}${collectionFolderTileHtml('__wants__', ICONS.bookmark || ICONS.collection)}</div>
   </section>
-  <button class="deck-fab" id="colFab" title="Add cards or binder">＋</button>`;
+  <button class="deck-fab" id="colFab" title="Add cards or binder">${ICONS.plus}</button>`;
 }
 
 function openBinderIn(id) {

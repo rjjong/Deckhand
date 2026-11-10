@@ -87,6 +87,11 @@ function appBackStep(viaHistory) {
       } catch (err) {}
     }
   };
+  if (document.getElementById('fabMenu')) {
+    closeFabMenu();
+    rearm({ screen: state.screen, folder: state.folderNav || null }, '#' + state.screen);
+    return true;
+  }
   // An open picker inside a sheet (the game-log MVP/Weakest drop-ups) is the
   // topmost transient of all: back closes it and nothing else moves.
   if (state._localCsClose) {
@@ -170,13 +175,11 @@ function appBackStep(viaHistory) {
   }
   const tileMenu = document.getElementById('tileMenuPop');
   const deckPick = document.getElementById('deckPickScrim');
-  const fabMenu = document.getElementById('fabMenu');
   const bindersPopEl = document.getElementById('bindersPop');
   const openPd = Array.from(document.querySelectorAll('.pd-panel')).find((p) => !p.hidden);
-  if (tileMenu || deckPick || fabMenu || bindersPopEl || openPd) {
+  if (tileMenu || deckPick || bindersPopEl || openPd) {
     if (tileMenu) tileMenu.remove();
     if (deckPick) deckPick.remove();
-    if (fabMenu) fabMenu.remove();
     if (bindersPopEl) bindersPopEl.remove();
     if (openPd) openPd.hidden = true;
     rearm({ screen: state.screen, folder: state.folderNav || null }, '#' + state.screen);

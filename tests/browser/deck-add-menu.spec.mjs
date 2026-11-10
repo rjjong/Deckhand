@@ -29,7 +29,13 @@ test.beforeEach(async ({ page }) => {
     if (url.pathname === '/api/scryfall/cards/' + card.id) return route.fulfill({ json: card });
     if (url.pathname === '/api/scryfall/cards/named') return route.fulfill({ json: card });
     if (url.pathname === '/api/scryfall/cards/search')
-      return route.fulfill({ json: { object: 'list', data: [card], has_more: false } });
+      return route.fulfill({
+        json: {
+          object: 'list',
+          data: /(?:banned|restricted):/.test(url.searchParams.get('q') || '') ? [] : [card],
+          has_more: false,
+        },
+      });
     if (url.pathname.startsWith('/api/scryfall/'))
       return route.fulfill({ json: { object: 'list', data: [], has_more: false } });
     return url.origin === 'http://127.0.0.1:3100' ? route.continue() : route.abort();
@@ -63,14 +69,55 @@ test.beforeEach(async ({ page }) => {
 
 async function openAddMenu(page, option, trigger = '#dockAddCards') {
   await page.locator(trigger).click();
-  await expect(page.locator('#fabMenu button')).toHaveText([
-    'Search cards',
-    'Import cards',
+  await expect(page.locator('#fabMenu .fab-action')).toHaveText([
     'Scan cards',
+    'Import cards',
+    'Search cards',
   ]);
   if (option)
     await page.locator('#fabMenu').getByRole('button', { name: option, exact: true }).click();
 }
+
+test('add actions animate separately, close cleanly, and match the other floating buttons', async ({
+  page,
+}) => {
+  const deckStyle = await page.locator('#dockAddCards').evaluate((button) => {
+    const style = getComputedStyle(button);
+    return {
+      width: style.width,
+      height: style.height,
+      radius: style.borderRadius,
+      background: style.backgroundColor,
+    };
+  });
+  await openAddMenu(page);
+  await expect(page.locator('.fab-action-icon')).toHaveCount(3);
+  expect(
+    await page
+      .locator('.fab-action')
+      .first()
+      .evaluate((button) => getComputedStyle(button).animationName),
+  ).toBe('fab-action-in');
+  await page.getByRole('button', { name: 'Close add menu', exact: true }).click();
+  await expect(page.locator('#fabMenu')).toHaveCount(0);
+  await expect(page.locator('#dockAddCards')).toBeVisible();
+  await openAddMenu(page);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#fabMenu')).toHaveCount(0);
+  await expect(page.locator('#dockAddCards')).toBeFocused();
+  await page.evaluate(() => switchPage('decks'));
+  expect(
+    await page.locator('#deckFab').evaluate((button) => {
+      const style = getComputedStyle(button);
+      return {
+        width: style.width,
+        height: style.height,
+        radius: style.borderRadius,
+        background: style.backgroundColor,
+      };
+    }),
+  ).toEqual(deckStyle);
+});
 
 test('deck plus menu and empty-state plus offer the same choices and pin Search to the deck', async ({
   page,

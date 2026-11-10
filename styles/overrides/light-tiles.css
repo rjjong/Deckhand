@@ -1,0 +1,51 @@
+/* Light schemes keep the artwork visible through pale information overlays. */
+html[data-theme='light'] .app .collection-page .section-label {
+  background: none;
+  color: var(--main-text);
+  -webkit-text-fill-color: currentColor;
+}
+
+html[data-theme='light'] .library-tile :is(.library-tile-heading, .library-tile-details) {
+  background: rgb(255 255 255 / 0.76);
+  color: #111;
+  text-shadow: none;
+}
+
+html[data-theme='light']
+  .library-tile
+  :is(
+    .nm,
+    .folder-name,
+    .folder-sub,
+    .meta,
+    .edited,
+    .dk-salt,
+    .bkt-mini,
+    .library-tile-format,
+    .binder-glyph-row
+  ) {
+  background: none;
+  color: #111;
+  -webkit-text-fill-color: currentColor;
+  text-shadow: none;
+}
+
+html[data-theme='light'] .library-tile .library-count-bad {
+  color: #7b1a1a;
+}
+
+html[data-theme='light'] .deck-grid .library-tile .library-binder-symbols {
+  background: none;
+  filter: drop-shadow(0 1px 1px rgb(255 255 255 / 0.8));
+}
+
+html[data-theme='light'] .deck-grid:not(.as-list) .library-tile .tile-fav,
+html[data-theme='light'] .library-tile .br-info {
+  background: rgb(255 255 255 / 0.8);
+  color: #111;
+  -webkit-text-fill-color: currentColor;
+}
+
+html[data-theme='light'] .deck-grid .library-tile .tile-fav.on {
+  color: #714500;
+}
