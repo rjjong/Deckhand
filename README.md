@@ -1,8 +1,7 @@
 # Deckhand: personal self-hosted fork
 
 Build decks for Commander, Pauper Commander, PreDH, Duel Commander, Standard,
-Pauper, Modern, Legacy, and Vintage. Unsupported saved formats fall back to
-Commander while keeping their cards, commanders, and folders.
+Pauper, Modern, Legacy, and Vintage.
 
 Collection search includes sorting by name, mana value and price in either direction;
 binder choices keep their grouping. Card Details shows the owned quantity with compact
