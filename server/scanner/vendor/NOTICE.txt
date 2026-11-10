@@ -1,0 +1,13 @@
+CollectorVision catalog v2 client by HanClinto and contributors
+Source: https://hanclinto.github.io/CollectorVision/lib/collectorvision-catalog-v2.mjs
+Retrieved: 2026-11-10
+Original SHA-256: 2f9bb888a79fd541d29c581941c1d47068f53fffd14e0eed4298d7800b772e39
+License: GNU Affero General Public License v3 or later.
+Full license: ../../../assets/scanner/collectorvision/LICENSE
+Local change: bound decompressed assets to 256 MiB on the server.
+The upstream browser-independent feed loader and matcher run in a Node worker.
+Its IndexedDB adapter is unused; Deckhand persists atomic snapshots on disk.
+
+Catalog source: https://github.com/HanClinto/CollectorVisionCatalog
+Feed: https://hanclinto.github.io/CollectorVisionCatalog/catalog-v2/catalog-feed-v2.json
+Only milo1/scryfall/mtg is selected, with its model fingerprint verified.

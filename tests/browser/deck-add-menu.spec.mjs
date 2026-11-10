@@ -78,6 +78,26 @@ async function openAddMenu(page, option, trigger = '#dockAddCards') {
     await page.locator('#fabMenu').getByRole('button', { name: option, exact: true }).click();
 }
 
+async function expectAlignedActionCircles(page, anchor) {
+  const bounds = await anchor.boundingBox();
+  const close = page.locator('#fabMenu .fab-menu-close');
+  await expect(close).toHaveCSS('border-radius', '50%');
+  expect(await close.boundingBox()).toEqual(bounds);
+  const icons = page.locator('#fabMenu .fab-action-icon');
+  // End the entrance animations so geometry checks measure the resting layout.
+  await page.locator('#fabMenu').evaluate(menu => Promise.all(
+    menu.getAnimations({ subtree: true }).map(animation => animation.finished),
+  ));
+  for (const icon of await icons.all()) {
+    const circle = await icon.boundingBox();
+    await expect(icon).toHaveCSS('border-radius', '50%');
+    expect(circle.width).toBe(44);
+    expect(circle.height).toBe(44);
+    expect(circle.x + circle.width / 2).toBeCloseTo(bounds.x + bounds.width / 2, 1);
+    expect(circle.width).toBeLessThan(bounds.width);
+  }
+}
+
 test('add actions animate separately, close cleanly, and match the other floating buttons', async ({
   page,
 }) => {
@@ -91,6 +111,7 @@ test('add actions animate separately, close cleanly, and match the other floatin
     };
   });
   await openAddMenu(page);
+  await expectAlignedActionCircles(page, page.locator('#dockAddCards'));
   await expect(page.locator('.fab-action-icon')).toHaveCount(3);
   expect(
     await page
@@ -117,6 +138,47 @@ test('add actions animate separately, close cleanly, and match the other floatin
       };
     }),
   ).toEqual(deckStyle);
+  await page.locator('#deckFab').click();
+  await expectAlignedActionCircles(page, page.locator('#deckFab'));
+  await page.getByRole('button', { name: 'Close add menu', exact: true }).click();
+  await page.evaluate(() => switchPage('collection'));
+  await page.locator('#colFab').click();
+  await expectAlignedActionCircles(page, page.locator('#colFab'));
+});
+
+test('Collection multiselect shares the circular animated actions and preserves selection on close', async ({ page }, info) => {
+  await page.evaluate(() => {
+    state.collection.items.push({ ...state.collection.items[0], name: 'Second Adept', qty: 2 });
+    switchPage('collection');
+    openBinderIn('__all__');
+  });
+  const tile = page.locator('.col-tile').first();
+  await tile.dispatchEvent('pointerdown', { pointerType: 'touch' });
+  await expect(page.locator('#colSelFab')).toHaveText('1');
+  await tile.dispatchEvent('pointerup');
+  await page.locator('#colSelFab').click();
+  await expect(page.getByRole('dialog', { name: 'Selected cards', exact: true })).toBeVisible();
+  await expect(page.locator('#fabMenu .fab-action')).toHaveCount(4);
+  expect(await page.locator('#fabMenu .fab-action').first().evaluate(button => getComputedStyle(button).animationName))
+    .toBe('fab-action-in');
+  await expectAlignedActionCircles(page, page.locator('#colSelFab'));
+  await mkdir('var/previews', { recursive: true });
+  await page.screenshot({ path: `var/previews/collection-selection-actions-${info.project.name}.png` });
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#fabMenu')).toHaveCount(0);
+  await expect(page.locator('#colSelFab')).toBeFocused();
+  await expect(page.locator('#colSelFab')).toHaveText('1');
+  await page.locator('#colSelFab').click();
+  await page.getByRole('button', { name: 'Select all', exact: true }).click();
+  await expect(page.locator('#colSelFab')).toHaveText('3');
+  await page.locator('#colSelFab').click();
+  await page.getByRole('button', { name: 'Close selection menu', exact: true }).click();
+  await expect(page.locator('#fabMenu')).toHaveCount(0);
+  await expect(page.locator('#colSelFab')).toHaveText('3');
+  await page.locator('#colSelFab').click();
+  await page.getByRole('button', { name: 'Deselect all', exact: true }).click();
+  await expect(page.locator('#colSelFab, #fabMenu')).toHaveCount(0);
+  await expect(page.locator('#binderFab')).toBeVisible();
 });
 
 test('deck plus menu and empty-state plus offer the same choices and pin Search to the deck', async ({

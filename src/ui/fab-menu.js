@@ -17,7 +17,11 @@ function closeFabMenu({ immediate = false } = {}) {
   current.anchor.focus({ preventScroll: true });
 }
 
-function openFabMenu(items, anchor = document.activeElement) {
+function openFabMenu(
+  items,
+  anchor = document.activeElement,
+  { label = 'Add options', closeLabel = 'Close add menu' } = {},
+) {
   if (!anchor?.getBoundingClientRect || !anchor.classList.contains('deck-fab'))
     anchor = [...document.querySelectorAll('.deck-fab:not(.col-sel-fab)')].find(
       (button) => button.getClientRects().length,
@@ -33,14 +37,25 @@ function openFabMenu(items, anchor = document.activeElement) {
   menu.className = 'fab-speed-dial';
   menu.setAttribute('role', 'dialog');
   menu.setAttribute('aria-modal', 'true');
-  menu.setAttribute('aria-label', 'Add options');
+  menu.setAttribute('aria-label', label);
+  menu.style.setProperty('--fab-anchor-size', bounds.width + 'px');
+  const actions = items.map((item, index) =>
+    Array.isArray(item)
+      ? { id: item[0], html: item[1], action: item[2] }
+      : {
+          id: 'fabSelectionAction' + index,
+          html: item.label,
+          action: item.fn,
+          danger: item.danger,
+        },
+  );
   const icons = {
     fabNewDeck: ICONS.plus,
     fabNewFolder: ICONS.folderPlus,
     fabImportDeck: ICONS.imp,
   };
-  const rows = items
-    .map(([id, html], index) => {
+  const rows = actions
+    .map(({ id, html, danger }, index) => {
       const template = document.createElement('template');
       template.innerHTML = menuLabel(html);
       const graphic = template.content.querySelector('.ib, svg');
@@ -50,11 +65,11 @@ function openFabMenu(items, anchor = document.activeElement) {
         ICONS.plus;
       graphic?.remove();
       const label = template.content.textContent.trim();
-      return `<button type="button" class="fab-action" id="${id}" style="--fab-order:${index}"><span class="fab-action-label">${escapeHtml(label)}</span><span class="fab-action-icon" aria-hidden="true">${icon}</span></button>`;
+      return `<button type="button" class="fab-action${danger ? ' fab-action-danger' : ''}" id="${id}" style="--fab-order:${index}"><span class="fab-action-label">${escapeHtml(label)}</span><span class="fab-action-icon" aria-hidden="true">${icon}</span></button>`;
     })
     .reverse()
     .join('');
-  menu.innerHTML = `<div class="fab-menu-backdrop"></div><div class="fab-menu-options">${rows}</div><button type="button" class="fab-menu-close" aria-label="Close add menu">${ICONS.close}</button>`;
+  menu.innerHTML = `<div class="fab-menu-backdrop"></div><div class="fab-menu-options">${rows}</div><button type="button" class="fab-menu-close" aria-label="${escapeHtml(closeLabel)}">${ICONS.close}</button>`;
   const close = menu.querySelector('.fab-menu-close');
   const options = menu.querySelector('.fab-menu-options');
   const right = Math.max(8, innerWidth - bounds.right);
@@ -77,7 +92,7 @@ function openFabMenu(items, anchor = document.activeElement) {
   anchor.setAttribute('aria-haspopup', 'dialog');
   anchor.setAttribute('aria-expanded', 'true');
   options.scrollTop = options.scrollHeight;
-  items.forEach(([id, , action]) =>
+  actions.forEach(({ id, action }) =>
     menu.querySelector('#' + id).addEventListener(
       'click',
       (event) => {
@@ -108,5 +123,5 @@ function openFabMenu(items, anchor = document.activeElement) {
     },
     { capture: true, signal: controller.signal },
   );
-  menu.querySelector('#' + items[0][0]).focus({ preventScroll: true });
+  menu.querySelector('#' + actions[0].id).focus({ preventScroll: true });
 }

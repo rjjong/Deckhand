@@ -759,60 +759,69 @@ function wireCollectionPage() {
   if (sf) wireColSelFab(sf);
   function openColSelMenu(anchor) {
     const n = colSelQty();
-    openTileMenu(anchor, [
-      {
-        label: '☑ ' + trS('Select all'),
-        fn: () => {
-          state.colSel = new Set(
-            Array.from(document.querySelectorAll('.col-tile[data-ci]')).map((t) => +t.dataset.ci),
-          );
-          const y = pageScroller().scrollTop;
-          render();
-          pageScroller().scrollTo(0, y);
+    openFabMenu(
+      [
+        {
+          label: `<span class="ib">${ICONS.selectAll}</span>` + trS('Select all'),
+          fn: () => {
+            state.colSel = new Set(
+              Array.from(document.querySelectorAll('.col-tile[data-ci]')).map((t) => +t.dataset.ci),
+            );
+            const y = pageScroller().scrollTop;
+            render();
+            pageScroller().scrollTo(0, y);
+          },
         },
-      },
-      {
-        label: mIco('folder') + trS('Move to binder…'),
-        fn: () => {
-          openBindersPop(
-            anchor,
-            (bid) => {
-              collectionSelectedRows().forEach(({ item, qty }) =>
-                collectionMoveCopies(item, qty, bid),
-              );
-              state.colSel = null;
-              saveCollection();
-              toast(trS('Moved.'));
-              render();
-            },
-            false,
-          );
+        {
+          label: mIco('folder') + trS('Move to binder…'),
+          fn: () => {
+            openBindersPop(
+              anchor,
+              (bid) => {
+                collectionSelectedRows().forEach(({ item, qty }) =>
+                  collectionMoveCopies(item, qty, bid),
+                );
+                state.colSel = null;
+                saveCollection();
+                toast(trS('Moved.'));
+                render();
+              },
+              false,
+            );
+          },
         },
-      },
-      {
-        label: mIco('trash') + trS('Remove from collection'),
-        danger: true,
-        fn: () => {
-          const q = 'Remove ' + n + ' card' + (n === 1 ? '' : 's') + ' from your collection?';
-          openInAppConfirm(
-            q,
-            (ok) => {
-              if (!ok) return;
-              const removed = new Set();
-              collectionSelectedRows().forEach(({ item, qty }) => {
-                item.qty = Math.max(0, Number(item.qty ?? 1) - qty);
-                if (!item.qty) removed.add(item);
-              });
-              state.collection.items = state.collection.items.filter((item) => !removed.has(item));
-              state.colSel = null;
-              saveCollection();
-              render();
-            },
-            { danger: true, ok: trS('Delete') },
-          );
+        {
+          label: mIco('trash') + trS('Remove from collection'),
+          danger: true,
+          fn: () => {
+            const q = 'Remove ' + n + ' card' + (n === 1 ? '' : 's') + ' from your collection?';
+            openInAppConfirm(
+              q,
+              (ok) => {
+                if (!ok) return;
+                const removed = new Set();
+                collectionSelectedRows().forEach(({ item, qty }) => {
+                  item.qty = Math.max(0, Number(item.qty ?? 1) - qty);
+                  if (!item.qty) removed.add(item);
+                });
+                state.collection.items = state.collection.items.filter(
+                  (item) => !removed.has(item),
+                );
+                state.colSel = null;
+                saveCollection();
+                render();
+              },
+              { danger: true, ok: trS('Delete') },
+            );
+          },
         },
-      },
-      { label: '✕ ' + trS('Deselect all'), fn: () => colSelClear() },
-    ]);
+        {
+          label: `<span class="ib">${ICONS.close}</span>` + trS('Deselect all'),
+          fn: () => colSelClear(),
+        },
+      ],
+      anchor,
+      { label: 'Selected cards', closeLabel: 'Close selection menu' },
+    );
   }
 }

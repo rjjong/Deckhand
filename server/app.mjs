@@ -103,7 +103,7 @@ async function streamResult(res, run) {
 }
 
 export function createApp({ databasePath = resolve('./var/deckhand.dev.sqlite'),
-  dataDirectory = resolve('./var/data-sample'), env = process.env, fetchImpl = fetch, mailer } = {}) {
+  dataDirectory = resolve('./var/data-sample'), env = process.env, fetchImpl = fetch, mailer, scanner = null } = {}) {
   const storage = openStorage(databasePath);
   const accounts = createAccountService({ storage, env, mailer: mailer || createMailer(env, fetchImpl) });
   const cache = createDataCache({ directory: dataDirectory });
@@ -136,6 +136,21 @@ export function createApp({ databasePath = resolve('./var/deckhand.dev.sqlite'),
         if (api === 'health' && req.method === 'GET') {
           storage.healthy();
           return json(res, 200, { ok: true, storage: 'sqlite' });
+        }
+        if (api === 'scanner/status') {
+          if (req.method !== 'GET') return json(res, 405, { ok: false, error: 'method' });
+          return json(res, 200, scanner?.status() ?? { ready: false });
+        }
+        if (api === 'scanner/lookup') {
+          if (req.method !== 'POST') return json(res, 405, { ok: false, error: 'method' });
+          const body = await readBody(req, 8192);
+          if (!scanner) return json(res, 503, { ok: false, error: 'catalog_unavailable' });
+          try { return json(res, 200, await scanner.lookup(body, req, env)); }
+          catch (error) {
+            if (!error.status) throw error;
+            return json(res, error.status, { ok: false, error: error.message },
+              error.status === 429 || error.status === 503 ? { 'retry-after': '2' } : {});
+          }
         }
         if (api === 'account') {
           if (!['GET', 'POST'].includes(req.method)) return json(res, 405, { ok: false, error: 'method' });
@@ -228,6 +243,7 @@ export function createApp({ databasePath = resolve('./var/deckhand.dev.sqlite'),
       await new Promise((done, reject) => server.close(error => error ? reject(error) : done()));
     }
     await accounts.flush();
+    await scanner?.close();
     storage.close();
   } };
 }

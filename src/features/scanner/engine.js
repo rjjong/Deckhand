@@ -97,7 +97,7 @@ function scannerLoadMessage(progress) {
   const label = {
     detector: 'Loading card detector',
     embedder: 'Loading card recognition',
-    catalog: 'Loading card reference data',
+    catalog: 'Connecting to card catalog',
   }[progress.stage];
   return label
     ? label + (progress.ratio > 0 ? `… ${Math.round(progress.ratio * 100)}%` : '…')
@@ -122,7 +122,7 @@ async function scannerCreateEngine({ signal, onProgress = () => {}, detectorOnly
   signal?.throwIfAborted();
   // A new URL prevents a cached Cornelius manifest from selecting the old model.
   const response = await fetch(
-    SCANNER_ASSET_BASE + '/assets/manifest.json?detector=fastweb-single-1.39-05d2b90b928a',
+    SCANNER_ASSET_BASE + '/assets/manifest.json?detector=fastweb-single-1.39-05d2b90b928a&catalog=server-v2',
     { signal },
   );
   if (!response.ok)
@@ -186,10 +186,22 @@ async function scannerCreateEngine({ signal, onProgress = () => {}, detectorOnly
       return;
     }
     if (data.type === 'error') {
-      dispose(new Error('Card recognition failed. Close the scanner and try again.'));
+      const error = Object.assign(
+        new Error(data.recoverable ? data.message : 'Card recognition failed. Close the scanner and try again.'),
+        { recoverable: data.recoverable },
+      );
+      if (data.recoverable && pending) {
+        clearTimeout(pending.timeout);
+        pending.reject(error);
+        pending = null;
+      } else if (!data.recoverable) dispose(error);
       return;
     }
     if (data.type !== 'result') return;
+    if (diagnostics && Number.isInteger(data.catalogRows)) {
+      diagnostics.catalogRows = diagnostics.catalogTotalRows = data.catalogRows;
+      diagnostics.catalogVersion = data.catalogVersion;
+    }
     if (diagnostics && data.inferenceMode) diagnostics.inferenceMode = data.inferenceMode;
     try {
       if (disposed || !pending) return;
@@ -231,7 +243,7 @@ async function scannerCreateEngine({ signal, onProgress = () => {}, detectorOnly
     type: 'init',
     manifest,
     assetBasePath: SCANNER_ASSET_BASE + '/assets',
-    catalogMode: 'v1',
+    catalogMode: 'server-v2',
     enableWebGpu: true,
     rotationInvariant: true,
     minCornerConfidence: 0.02,

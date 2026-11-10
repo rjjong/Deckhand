@@ -203,8 +203,16 @@ python3 scripts/server/deploy.py
 
 The deploy command packages the current working files, including uncommitted
 customizations, without `.env`, databases, generated frontend bundles or dependencies.
-The public CollectorVision models/catalog are prepared locally and included
-under `assets/scanner/generated/`; these contain no user photos or private data.
+The public CollectorVision models are prepared locally under
+`assets/scanner/generated/`; these contain no user photos or private data.
+The scanner catalog is downloaded automatically into persistent
+`/srv/deckhand/data/scanner-catalog/` (inside the container: `/app/var/scanner-catalog/`).
+It is checked at startup and every six hours, with verified incremental updates
+and a retained last-good snapshot. No catalog is downloaded by phones. Only the
+Milo1 embedding goes to the server; camera photos stay on-device.
+Inspect readiness/version with `GET /api/scanner/status`. A failed upstream check
+retries after five minutes while existing catalog searches continue.
+First startup needs internet access for the catalog download.
 It reserves the next **Major.Minor.Build** number in the development checkout's
 `version.json` before packaging. The image build and server startup reuse that
 number, so a deployment increments only once. A new major/minor starts at build

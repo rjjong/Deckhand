@@ -20,7 +20,7 @@
 //   { type: 'error',    message }
 
 import * as ort from "./vendor/onnxruntime-web/ort.webgpu.min.mjs?v=8b295ab80a99";
-import { rectifyRgba, searchPackedCatalog, selectInferenceSession, runModel, normalizeRgba } from "./performance.mjs?v=__DECKHAND_BUILD__";
+import { rectifyRgba, selectInferenceSession, runModel, normalizeRgba } from "./performance.mjs?v=__DECKHAND_BUILD__";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -261,82 +261,6 @@ function snakeToCamel(value) {
   return String(value).replace(/_([a-zA-Z0-9])/g, (_, char) => char.toUpperCase());
 }
 
-function secondaryCatalogKeyToFieldName(catalogKey) {
-  const key = String(catalogKey ?? "").trim();
-  if (!key) {
-    return null;
-  }
-  const base = key.replace(/_ids$/i, "_id");
-  const fieldName = snakeToCamel(base);
-  return fieldName || null;
-}
-
-function resolveSecondaryIdSource(catalog = {}) {
-  const explicitPath = typeof catalog.secondary_ids === "string"
-    ? catalog.secondary_ids
-    : null;
-  const explicitField = typeof catalog.secondary_id_field === "string"
-    ? catalog.secondary_id_field
-    : null;
-
-  if (explicitPath) {
-    return {
-      assetPath: explicitPath,
-      fieldName: explicitField || "secondaryId",
-    };
-  }
-
-  const candidates = Object.entries(catalog)
-    .filter(([key, value]) => key !== "card_ids" && /_ids$/i.test(key) && typeof value === "string")
-    .sort(([a], [b]) => a.localeCompare(b));
-  if (candidates.length === 0) {
-    return null;
-  }
-
-  const [catalogKey, assetPath] = candidates[0];
-  return {
-    assetPath,
-    fieldName: explicitField || secondaryCatalogKeyToFieldName(catalogKey) || "secondaryId",
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Float16 / catalog decode
-// ---------------------------------------------------------------------------
-
-function float16ToFloat32(value) {
-  const sign = (value & 0x8000) >> 15;
-  const exponent = (value & 0x7c00) >> 10;
-  const fraction = value & 0x03ff;
-
-  if (exponent === 0) {
-    if (fraction === 0) {
-      return sign ? -0 : 0;
-    }
-    return (sign ? -1 : 1) * 2 ** (-14) * (fraction / 1024);
-  }
-
-  if (exponent === 0x1f) {
-    return fraction ? Number.NaN : (sign ? -Infinity : Infinity);
-  }
-
-  return (sign ? -1 : 1) * 2 ** (exponent - 15) * (1 + fraction / 1024);
-}
-
-function createFloat16LookupTable() {
-  const table = new Float32Array(65536);
-  for (let value = 0; value < table.length; value += 1) {
-    table[value] = float16ToFloat32(value);
-  }
-  return table;
-}
-
-const FLOAT16_LOOKUP = createFloat16LookupTable();
-
-function wrapFloat16Buffer(buffer) {
-  return new Uint16Array(buffer);
-}
-
 // ---------------------------------------------------------------------------
 // IndexedDB asset cache (same DB as the main thread — shared origin storage)
 // ---------------------------------------------------------------------------
@@ -426,18 +350,23 @@ async function fetchWithProgress(url, responseType, expectedTotal, onProgress) {
   return await blob.arrayBuffer();
 }
 
-async function fetchJsonCached(url, version, expectedTotal, onProgress) {
-  const key = `${version}:${url}:json`;
-  const cached = await readCachedAsset(key);
-  if (cached) {
-    onProgress?.(1, 1, 1, true);
-    return cached;
-  }
-  const json = await fetchWithProgress(url, "json", expectedTotal, (ratio, loaded, total) => {
-    onProgress?.(ratio, loaded, total, false);
-  });
-  await writeCachedAsset(key, json);
-  return json;
+async function clearObsoleteCatalogCache() {
+  try {
+    const db = await openAssetDb();
+    await new Promise((resolve, reject) => {
+      const transaction = db.transaction(ASSET_STORE_NAME, 'readwrite');
+      const request = transaction.objectStore(ASSET_STORE_NAME).openKeyCursor();
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (!cursor) return;
+        if (String(cursor.key).includes('/assets/catalog/')) transaction.objectStore(ASSET_STORE_NAME).delete(cursor.key);
+        cursor.continue();
+      };
+      transaction.oncomplete = resolve;
+      transaction.onerror = () => reject(transaction.error);
+    });
+    db.close();
+  } catch { /* Cache cleanup can retry the next time the worker starts. */ }
 }
 
 async function fetchBufferCached(url, version, expectedTotal, onProgress) {
@@ -545,10 +474,8 @@ class WorkerRuntime {
     manifest,
     assetBasePath,
     useWebGpu = false,
-    catalogLimit = null,
     rotationInvariant = true,
     minCornerConfidence = DEFAULT_MIN_CORNER_CONFIDENCE,
-    catalogMode = "v1",
   ) {
     this.manifest = manifest;
     this.assetBasePath = assetBasePath ?? "./assets";
@@ -556,21 +483,14 @@ class WorkerRuntime {
     this.useWebGpu = useWebGpu;
     this.rotationInvariant = rotationInvariant;
     this.minCornerConfidence = clamp01(minCornerConfidence);
-    this.catalogMode = catalogMode;
-    this.catalogVersion = manifest.version;
-    this.catalogKey = "bundled";
-    this.catalogLimit = Number.isFinite(catalogLimit) && catalogLimit > 0
-      ? Math.floor(catalogLimit)
-      : null;
-    this.catalogRows = manifest.catalog?.rows ?? 0;
-    this.catalogTotalRows = manifest.catalog?.rows ?? 0;
+    this.catalogMode = "server-v2";
+    this.catalogVersion = null;
+    this.catalogKey = "milo1/scryfall/mtg";
+    this.catalogRows = 0;
+    this.catalogTotalRows = 0;
     this.detector = null;
     this.embedder = null;
     this.inputNames = {};
-    this.embeddings = null;
-    this.cardIds = null;
-    this.cardNames = null;
-    this.secondaryIds = null;
     this.secondaryIdField = null;
     this.dewarpCanvas = new OffscreenCanvas(DEWARP_W, DEWARP_H);
     this.dewarpCtx = this.dewarpCanvas.getContext("2d", { willReadFrequently: true });
@@ -670,122 +590,26 @@ class WorkerRuntime {
     }
     this.inputNames.embedder = this.embedder.inputNames[0];
 
-    if (this.catalogMode === "v2") {
-      await this.loadCatalogV2(onStage);
-      return;
-    }
-
-    const catalogAssetSizes = this.manifest.catalog.asset_sizes ?? {};
-    const secondarySource = resolveSecondaryIdSource(this.manifest.catalog);
-    const catalogParts = [
-      { key: "embeddings", size: catalogAssetSizes.embeddings },
-      { key: "card_ids", size: catalogAssetSizes.card_ids },
-      ...(secondarySource ? [{ key: "oracle_ids", size: catalogAssetSizes.oracle_ids }] : []),
-    ];
-    const catalogTotal = catalogParts.reduce(
-      (total, part) => total + (Number.isSafeInteger(part.size) && part.size > 0 ? part.size : 0),
-      0,
-    );
-    const reportCatalogProgress = (partIndex, loaded, total, cached) => {
-      const completed = catalogParts.slice(0, partIndex).reduce(
-        (sum, part) => sum + (Number.isSafeInteger(part.size) && part.size > 0 ? part.size : 0),
-        0,
-      );
-      const expected = catalogParts[partIndex].size;
-      if (catalogTotal > 0 && Number.isSafeInteger(expected) && expected > 0) {
-        const current = cached ? expected : Math.min(loaded, expected);
-        const aggregate = completed + current;
-        onStage?.("catalog", aggregate / catalogTotal, aggregate, catalogTotal, false);
-        return;
-      }
-      onStage?.("catalog", total > 0 ? loaded / total : 0, loaded, total, cached);
-    };
-    const embeddingBuffer = await fetchBufferCached(
-      `${this.assetBasePath}/${this.manifest.catalog.embeddings}`,
-      version,
-      catalogAssetSizes.embeddings,
-      (ratio, loaded, total, cached) => reportCatalogProgress(0, loaded, total, cached),
-    );
-    const ids = await fetchJsonCached(
-      `${this.assetBasePath}/${this.manifest.catalog.card_ids}`,
-      version,
-      catalogAssetSizes.card_ids,
-      (ratio, loaded, total, cached) => reportCatalogProgress(1, loaded, total, cached),
-    );
-    const secondaryIds = secondarySource
-      ? await fetchJsonCached(
-        `${this.assetBasePath}/${secondarySource.assetPath}`,
-        version,
-        catalogAssetSizes.oracle_ids,
-        (ratio, loaded, total, cached) => reportCatalogProgress(2, loaded, total, cached),
-      )
-      : null;
-    // Keep the catalog in its packed float16 form.  Expanding the full MTG
-    // matrix to Float32Array roughly doubles steady-state catalog memory and
-    // can push iOS WebKit into tab reloads.  Search converts individual values
-    // through a 256 KB lookup table instead.
-    const dims = this.manifest.catalog.dims;
-    const declaredRows = this.manifest.catalog.rows;
-    const requestedRows = this.catalogLimit
-      ? Math.min(this.catalogLimit, declaredRows, ids.length)
-      : Math.min(declaredRows, ids.length);
-    const embeddingBytes = requestedRows * dims * 2;
-    // Diagnostic-only catalog limiting still fetches the monolithic asset, so
-    // it does not remove the transient load peak.  It does keep only the small
-    // prefix after load, which is enough to test steady-state catalog pressure.
-    const retainedEmbeddingBuffer = requestedRows < declaredRows
-      ? embeddingBuffer.slice(0, embeddingBytes)
-      : embeddingBuffer;
-    this.embeddings = wrapFloat16Buffer(retainedEmbeddingBuffer);
-    this.cardIds = requestedRows < ids.length ? ids.slice(0, requestedRows) : ids;
-    this.secondaryIdField = secondarySource?.fieldName ?? null;
-    this.secondaryIds = Array.isArray(secondaryIds)
-      ? (requestedRows < secondaryIds.length ? secondaryIds.slice(0, requestedRows) : secondaryIds)
-      : null;
-    this.catalogRows = Math.min(
-      requestedRows,
-      this.cardIds.length,
-      Math.floor(this.embeddings.length / dims),
-    );
-    this.catalogTotalRows = declaredRows;
+    // Models remain warm on the device; the reference catalog lives on Deckhand.
+    // Warming inference is useful even while offline or the server is updating.
+    onStage?.("catalog", 0, 0, 0, false);
+    await this.refreshCatalogStatus();
+    onStage?.("catalog", 1, 0, 0, false);
+    void clearObsoleteCatalogCache();
   }
 
-  async loadCatalogV2(onStage) {
-    onStage?.("catalog", 0, 0, 0, false);
-    const moduleUrl = new URL("./lib/collectorvision-catalog-v2.mjs", import.meta.url);
-    moduleUrl.search = new URL(import.meta.url).search;
-    const { BrowserCatalogV2 } = await import(moduleUrl.href);
-    const catalog = await BrowserCatalogV2.forGame("mtg", {
-      includeMetadata: false,
-      fetchImpl: (...args) => globalThis.fetch(...args),
-    });
-    const expectedDimensions = this.manifest.catalog.dims;
-    if (catalog.dimension !== expectedDimensions) {
-      throw new Error(
-        `Catalog v2 dimensions (${catalog.dimension}) do not match the scanner embedder (${expectedDimensions})`,
-      );
-    }
+  async refreshCatalogStatus() {
+    try {
+      const response = await fetch('/api/scanner/status', { cache: 'no-store', signal: AbortSignal.timeout(5000) });
+      if (response.ok) this.setCatalogStatus(await response.json());
+    } catch { /* An offline warm-up must not discard cached inference models. */ }
+  }
 
-    const requestedRows = this.catalogLimit
-      ? Math.min(this.catalogLimit, catalog.rows)
-      : catalog.rows;
-    const records = requestedRows < catalog.rows
-      ? catalog.records.slice(0, requestedRows)
-      : catalog.records;
-
-    this.embeddings = requestedRows < catalog.rows
-      ? catalog.embeddings.slice(0, requestedRows * catalog.dimension)
-      : catalog.embeddings;
-    this.cardIds = records.map((record) => record.id);
-    this.cardNames = records.map((record) => record.name);
-    this.secondaryIdField = "scryfallOracleId";
-    this.secondaryIds = records.map((record) => record.identifiers.scryfall_oracle ?? null);
-    this.catalogRows = requestedRows;
-    this.catalogTotalRows = catalog.rows;
-    this.catalogVersion = catalog.version;
-    this.catalogKey = catalog.catalogKey;
-    this.catalogDims = catalog.dimension;
-    onStage?.("catalog", 1, 0, 0, false);
+  setCatalogStatus(status) {
+    if (!status) return;
+    this.catalogRows = this.catalogTotalRows = status.rows || 0;
+    this.catalogVersion = status.version;
+    this.catalogKey = status.catalog || this.catalogKey;
   }
 
   async detect(frameCanvas) {
@@ -932,7 +756,7 @@ class WorkerRuntime {
     const rotateFirst = this.preferredOrientation === 'rotated_180';
     const upright = await this.embed(cropCanvas, rotateFirst);
     const tSearchStart = performance.now();
-    let best = { ...this.search(upright.embedding), orientation: rotateFirst ? 'rotated_180' : 'upright' };
+    let best = { ...await this.search(upright.embedding), orientation: rotateFirst ? 'rotated_180' : 'upright' };
     let searchMs = performance.now() - tSearchStart;
     let timing = upright.timing;
 
@@ -940,7 +764,7 @@ class WorkerRuntime {
     if (this.rotationInvariant && best.score < Math.max(0.85, this.idThreshold || 0)) {
       const rotated = await this.embed(cropCanvas, !rotateFirst);
       const tRotatedSearchStart = performance.now();
-      const rotatedBest = { ...this.search(rotated.embedding), orientation: rotateFirst ? 'upright' : 'rotated_180' };
+      const rotatedBest = { ...await this.search(rotated.embedding), orientation: rotateFirst ? 'upright' : 'rotated_180' };
       searchMs += performance.now() - tRotatedSearchStart;
       timing = sumTiming(timing, rotated.timing);
       best = chooseBetterMatch(best, rotatedBest);
@@ -950,24 +774,37 @@ class WorkerRuntime {
     return { best, timing: { ...timing, orientationPasses }, searchMs };
   }
 
-  search(query) {
-    const dims = this.catalogDims ?? this.manifest.catalog.dims;
-    const rows = this.catalogRows ?? this.manifest.catalog.rows;
-    const { bestScore, bestIndex } = searchPackedCatalog(this.embeddings, query, rows, dims, FLOAT16_LOOKUP);
-
-    const secondaryId = this.secondaryIds?.[bestIndex] ?? null;
-    const best = {
-      score: bestScore,
-      cardId: this.cardIds[bestIndex],
-      cardName: this.cardNames?.[bestIndex] ?? null,
-      secondaryId,
-      secondaryIdField: this.secondaryIdField,
-    };
-    if (this.secondaryIdField && secondaryId !== null && secondaryId !== undefined) {
-      best[this.secondaryIdField] = secondaryId;
+  async search(query) {
+    const unavailable = 'Card lookup needs a connection to Deckhand. Reconnecting…';
+    if (this.lookupRetryAt > Date.now())
+      throw Object.assign(new Error(this.lookupError || unavailable), { recoverable: true });
+    try {
+      this.lookupController = new AbortController();
+      const response = await fetch('/api/scanner/lookup', {
+        method: 'POST', headers: { 'content-type': 'application/json' }, cache: 'no-store',
+        signal: AbortSignal.any([this.lookupController.signal, AbortSignal.timeout(7000)]),
+        body: JSON.stringify({ model: this.manifest.model_hashes.milo, embedding: Array.from(query) }),
+      });
+      if (!response.ok) {
+        const message = response.status === 429 ? 'Card lookup is busy. Retrying…'
+          : response.status === 503 ? 'The card catalog is warming up. Retrying…' : unavailable;
+        throw new Error(message);
+      }
+      const result = await response.json();
+      if (!result.match || !Number.isFinite(result.match.score)) throw new Error(unavailable);
+      this.setCatalogStatus(result.catalog);
+      this.lookupRetryAt = 0;
+      return result.match;
+    } catch (error) {
+      const message = error.message?.includes('Retrying') ? error.message : unavailable;
+      this.lookupRetryAt = Date.now() + 2000;
+      this.lookupError = message;
+      throw Object.assign(new Error(message), { recoverable: true });
+    } finally {
+      this.lookupController = null;
     }
-    return best;
   }
+
 }
 
 // ---------------------------------------------------------------------------
@@ -1098,6 +935,8 @@ async function processFrame(bitmap, captureRequested = false, includeDebugBitmap
     secondaryId: best.secondaryId,
     secondaryIdField: best.secondaryIdField,
     score: best.score,
+    catalogRows: runtime.catalogRows,
+    catalogVersion: runtime.catalogVersion,
     orientation: best.orientation,
     inferenceMode: runtime.inferenceMode,
     rawCorners: runtime._lastRawCorners,
@@ -1137,6 +976,7 @@ function roundTiming(timing) {
 // ---------------------------------------------------------------------------
 
 function clearFrameData() {
+  runtime?.lookupController?.abort();
   if (frameCanvas) {
     frameCanvas.width = frameCanvas.height = 0;
     frameCanvas = null;
@@ -1175,17 +1015,12 @@ self.onmessage = async ({ data }) => {
       self.postMessage({ type: "progress", stage: "webgpu", inferenceMode });
       self.postMessage({ type: "progress", stage: "dewarp", ratio: 1 });
 
-      const catalogLimit = Number.isFinite(data.catalogLimit) && data.catalogLimit > 0
-        ? Math.floor(data.catalogLimit)
-        : null;
       runtime = new WorkerRuntime(
         data.manifest,
         data.assetBasePath,
         useWebGpu,
-        catalogLimit,
         data.rotationInvariant !== false,
         data.minCornerConfidence,
-        data.catalogMode,
       );
       runtime.detectorOnly = data.detectorOnly === true;
       await runtime.load((stage, ratio, loaded, total, cached) => {
@@ -1199,7 +1034,6 @@ self.onmessage = async ({ data }) => {
         backendTimings: { detector: runtime.detector.timings, embedder: runtime.embedder?.timings },
         catalogRows: runtime.catalogRows,
         catalogTotalRows: runtime.catalogTotalRows,
-        catalogLimit: runtime.catalogLimit,
         catalogMode: runtime.catalogMode,
         catalogVersion: runtime.catalogVersion,
         catalogKey: runtime.catalogKey,
@@ -1222,6 +1056,6 @@ self.onmessage = async ({ data }) => {
       });
     }
   } catch (error) {
-    self.postMessage({ type: "error", message: error?.message ?? String(error) });
+    self.postMessage({ type: "error", message: error?.message ?? String(error), recoverable: error?.recoverable === true });
   }
 };

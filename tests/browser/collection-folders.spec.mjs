@@ -152,7 +152,7 @@ test('Unsorted shows spare copies and removing them leaves Playing copies intact
   await tile.dispatchEvent('pointerup');
   await page.locator('#colSelFab').click();
   await page
-    .locator('#tileMenuPop')
+    .locator('#fabMenu')
     .getByRole('button', { name: /Remove from collection/ })
     .click();
   await expect(page.locator('#inAppConfirm')).toContainText('Remove 2 cards');
@@ -507,7 +507,7 @@ test('one selected card shows 1 and folder navigation clears every selection', a
   await expect(page.locator('#colSelFab')).toHaveText('1');
   await page.locator('#colSelFab').click();
   await page
-    .locator('#tileMenuPop')
+    .locator('#fabMenu')
     .getByRole('button', { name: 'Deselect all', exact: false })
     .click();
   await expect(page.locator('#colFab')).toBeVisible();

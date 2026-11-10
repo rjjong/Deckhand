@@ -11,9 +11,10 @@ export default defineConfig({
     { name: 'desktop', use: { browserName: 'chromium', viewport: { width: 1280, height: 900 } } }
   ],
   webServer: {
-    command: 'node server/index.mjs',
+    command: 'node tests/browser/helpers/start-server.mjs',
     url: 'http://127.0.0.1:3100/api/health',
     reuseExistingServer: false,
-    env: { HOST: '127.0.0.1', PORT: '3100', DATABASE_PATH: './var/browser-tests.sqlite', DATA_DIR: './var/data-sample', OLLAMA_URL: '' }
+    env: { HOST: '127.0.0.1', PORT: '3100', DATABASE_PATH: './var/browser-tests.sqlite', DATA_DIR: './var/data-sample', OLLAMA_URL: '',
+      SCANNER_CATALOG_DIR: './var/browser-scanner-catalog', SCANNER_CATALOG_AUTO_UPDATE: '0' }
   }
 });

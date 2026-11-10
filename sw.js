@@ -53,7 +53,7 @@ self.addEventListener('fetch', (e) => {
   // copy of roughly 11 MB that nothing ever read back.
   if (/\.(jsonl|tsv)\.gz$/.test(url.pathname)) return;
 
-  // Models/catalogs already live in IndexedDB. Cache their manifest and the
+  // Models already live in IndexedDB; the catalog stays on the server. Cache their manifest and the
   // ONNX runtime here so restarting the app does not download WASM again.
   const scannerBase = '/assets/scanner/collectorvision/';
   if (url.origin === location.origin &&

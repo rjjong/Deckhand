@@ -1,5 +1,6 @@
-import { resolve } from 'node:path';
+import { resolve, dirname } from 'node:path';
 import { createApp } from './app.mjs';
+import { createScannerService } from './scanner/service.mjs';
 import { buildFrontend, watchFrontend } from '../scripts/build-frontend.mjs';
 
 await buildFrontend();
@@ -9,7 +10,11 @@ const host = process.env.HOST || '127.0.0.1';
 const port = Number(process.env.PORT || 3000);
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Invalid PORT');
 const databasePath = resolve(process.env.DATABASE_PATH || './var/deckhand.dev.sqlite');
-const app = createApp({ databasePath, dataDirectory: resolve(process.env.DATA_DIR || './var/data-sample') });
+const scanner = createScannerService({
+  directory: resolve(process.env.SCANNER_CATALOG_DIR || dirname(databasePath) + '/scanner-catalog'),
+  autoUpdate: process.env.SCANNER_CATALOG_AUTO_UPDATE !== '0',
+});
+const app = createApp({ databasePath, scanner, dataDirectory: resolve(process.env.DATA_DIR || './var/data-sample') });
 app.server.on('error', error => {
   console.error(error.message);
   process.exitCode = 1;

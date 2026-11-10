@@ -13,9 +13,6 @@ export const scannerDetector = {
 };
 export const scannerBundleFiles = [
   'assets/models/milo.onnx',
-  'assets/catalog/scryfall-mtg-embeddings.f16.bin',
-  'assets/catalog/scryfall-mtg-card-ids.json',
-  'assets/catalog/scryfall-mtg-oracle-ids.json',
   'assets/samples/mtg-sample.jpg',
   'vendor/onnxruntime-web/ort.webgpu.min.mjs',
   'vendor/onnxruntime-web/ort.webgpu.min.mjs.map',

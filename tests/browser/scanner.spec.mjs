@@ -7,6 +7,7 @@ import { scannerBundleDirectory } from '../../scripts/scanner-assets.mjs';
 import { makeScannerPerspectiveScenes } from './helpers/scanner-perspective.mjs';
 
 const sample = resolve(scannerBundleDirectory, 'assets/samples/mtg-sample.jpg');
+const scannerRequests = new WeakMap();
 const card = {
   id: '7286819f-6c57-4503-898c-528786ad86e9',
   oracle_id: 'ca16b32c-3f1e-4f8d-821a-064f922c45d8',
@@ -18,7 +19,14 @@ const card = {
   prices: {},
 };
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ page, context }) => {
+  const requests = [];
+  scannerRequests.set(page, requests);
+  context.on('request', request => {
+    const path = new URL(request.url()).pathname;
+    if (path === '/api/scanner/lookup' || path.includes('/assets/catalog/'))
+      requests.push({ path, body: request.postDataJSON() });
+  });
   await markCurrentReleaseSeen(page);
   await page.addInitScript(() => {
     window.scannerWorkerCreates = 0;
@@ -130,7 +138,7 @@ async function mockCamera(page, { width, height, source } = {}) {
   );
 }
 
-test('scanner exposes the full catalog, threaded backend and live processing timings', async ({ page }, info) => {
+test('scanner uses server catalog lookup, cached inference and live processing timings', async ({ page }, info) => {
   test.setTimeout(90000);
   const diagnostics = await page.evaluate(async () => ({
     isolated: crossOriginIsolated,
@@ -138,19 +146,45 @@ test('scanner exposes the full catalog, threaded backend and live processing tim
   }));
   expect(diagnostics.isolated).toBe(true);
   expect(diagnostics.numThreads).toBe(info.project.name === 'mobile' ? 2 : 4);
-  expect(diagnostics.catalogRows).toBe(109711);
+  expect(diagnostics.catalogRows).toBe(1); // Deterministic server fixture; full catalog is verified separately.
   expect(diagnostics.catalogRows).toBe(diagnostics.catalogTotalRows);
   expect(diagnostics.inferenceMode).toMatch(/WASM|WebGPU/);
   await page.evaluate(() => { state.scannerShowFramerate = true; });
   await mockCamera(page);
   await openCollectionScanner(page);
   await expect(page.locator('.scanner-detection-name')).toHaveText(['Scrying Glass'], { timeout: 15000 });
+  const requests = scannerRequests.get(page);
+  expect(requests.some(request => request.path.includes('/assets/catalog/'))).toBe(false);
+  const lookups = requests.filter(request => request.path === '/api/scanner/lookup');
+  expect(lookups.length).toBeGreaterThan(0);
+  for (const { body } of lookups) {
+    expect(Object.keys(body).sort()).toEqual(['embedding', 'model']);
+    expect(body.embedding).toHaveLength(128);
+    expect(Math.hypot(...body.embedding)).toBeCloseTo(1, 3);
+  }
   await expect(page.locator('#scannerBackend')).toContainText('CPU threads');
   await expect(page.locator('#scannerProcessing')).toContainText('Frame');
   await expect(page.locator('#scannerTimings')).toContainText('Lookup');
   await expect(page.locator('#scannerTimings')).toContainText('Warp');
   await page.locator('#scannerCameraBack').click();
   await expect(page.locator('#cardScannerCamera')).toHaveCount(0);
+  await page.evaluate(() => clearInterval(scannerTestTimer));
+});
+
+test('a temporary lookup outage retries live scanning without reloading models or reopening the camera', async ({ page }) => {
+  let unavailable = true;
+  await page.route('**/api/scanner/lookup', route => unavailable
+    ? route.fulfill({ status: 503, json: { error: 'catalog_unavailable' } }) : route.continue());
+  await mockCamera(page);
+  await openCollectionScanner(page);
+  await expect(page.locator('#scannerCameraStatus')).toContainText('Retrying', { timeout: 15000 });
+  expect(await page.evaluate(() => scannerIsReady())).toBe(true);
+  unavailable = false;
+  await expect(page.locator('.scanner-detection-name')).toHaveText(['Scrying Glass'], { timeout: 10000 });
+  await expect(page.locator('#scannerCameraStatus')).toBeHidden();
+  expect(await page.evaluate(() => scannerCameraRequests)).toBe(1);
+  expect(await page.evaluate(() => scannerWorkerCreates)).toBe(1);
+  await page.locator('#scannerCameraBack').click();
   await page.evaluate(() => clearInterval(scannerTestTimer));
 });
 
@@ -177,8 +211,12 @@ test('thread isolation still loads external images without requiring cross-origi
   } finally { await new Promise((resolve) => imageServer.close(resolve)); }
 });
 
-test('corners follow a moving card while identification is blocked, then success vibrates once', async ({ page }) => {
+test('corners follow a moving card while identification is blocked, then success vibrates once', async ({ page }, info) => {
   test.setTimeout(90000);
+  // This synthetic camera fits the card to the stage. A very wide desktop
+  // stage shrinks it below the corner sharpness threshold; use a camera-shaped
+  // viewport here. Separate perspective tests cover the full desktop layout.
+  if (info.project.name === 'desktop') await page.setViewportSize({ width: 640, height: 844 });
   await page.evaluate(async () => {
     const engine = await scannerGetEngine();
     if (!engine.canPreviewCorners) throw new Error('Expected independent corner worker');
@@ -390,8 +428,15 @@ test('live camera logs stable cards once, rearms after removal and keeps the log
   expect(await page.evaluate(() => scannerIsReady())).toBe(true);
   await page.evaluate(() => clearInterval(scannerTestTimer));
   // Collection repricing may POST card identifiers after adding a scan; camera
-  // pixels must never be sent. Check the payload rather than banning metadata.
+  // pixels must never be sent. Only Milo1 vectors and card metadata IDs are allowed.
   for (const request of uploads) {
+    if (request.path === '/api/scanner/lookup') {
+      expect(request.contentType).toContain('application/json');
+      const body = JSON.parse(request.body);
+      expect(Object.keys(body).sort()).toEqual(['embedding', 'model']);
+      expect(body.embedding).toHaveLength(128);
+      continue;
+    }
     expect(request.path).toBe('/api/scryfall/cards/collection');
     expect(request.contentType).toContain('application/json');
     const body = JSON.parse(request.body);
@@ -1537,7 +1582,7 @@ test('denial, back, backgrounding and late permission replies close only the cam
 
 test.describe('recognition cache across launches', () => {
   test.use({ serviceWorkers: 'allow' });
-  test('a new offline launch warms from cached models and runtime without camera permission', async ({
+  test('an offline launch warms cached models and resumes server lookup after reconnecting', async ({
     page,
     context,
   }) => {
@@ -1564,12 +1609,22 @@ test.describe('recognition cache across launches', () => {
     await context.setOffline(true);
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => scannerIsReady(), null, { timeout: 30000 });
-    const id = await page.evaluate(async (data) => {
+    const offline = await page.evaluate(async (data) => {
       const image = new Image();
       image.src = data;
       await image.decode();
       const engine = await scannerGetEngine();
-      return (await engine.recognize(scannerImageCanvas(image))).cardId;
+      try { await engine.recognize(scannerImageCanvas(image)); }
+      catch (error) { return { message: error.message, recoverable: error.recoverable, disposed: engine.disposed }; }
+    }, data);
+    expect(offline.message).toContain('needs a connection');
+    expect(offline.recoverable).toBe(true);
+    expect(offline.disposed).toBe(false);
+    await context.setOffline(false);
+    await page.waitForTimeout(2100); // Lookup retry delay, models remain warm.
+    const id = await page.evaluate(async data => {
+      const image = new Image(); image.src = data; await image.decode();
+      return (await (await scannerGetEngine()).recognize(scannerImageCanvas(image))).cardId;
     }, data);
     expect(id).toBe(card.id);
     expect(await page.evaluate(() => scannerCameraRequests)).toBe(0);

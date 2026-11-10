@@ -124,6 +124,7 @@ function openScannerCamera({ mode = 'collection', binder = null, onReview, onClo
     busy = false,
     paused = false,
     cameraError = '',
+    lookupError = '',
     engineError = '',
     progress = '',
     cameraRequest = 0,
@@ -185,6 +186,7 @@ function openScannerCamera({ mode = 'collection', binder = null, onReview, onClo
     retry.disabled = cameraPending || enginePending;
     retry.textContent = paused ? 'Resume camera' : 'Try again';
     const message =
+      lookupError ||
       cameraError ||
       engineError ||
       (!cameraVisible
@@ -218,6 +220,7 @@ function openScannerCamera({ mode = 'collection', binder = null, onReview, onClo
         detection: priorDetection,
       });
       if (!active || paused || request !== cameraRequest || !isTop()) return;
+      lookupError = '';
       if (scannerIsIgnoredCard(result)) clearIgnored();
       previewSuppressed =
         scannerIsIgnoredCard(result) ||
@@ -261,7 +264,9 @@ function openScannerCamera({ mode = 'collection', binder = null, onReview, onClo
       }
     } catch (error) {
       if (!active || paused || request !== cameraRequest || error.name === 'AbortError') return;
-      if (engine?.disposed) {
+      if (error.recoverable) {
+        lookupError = error.message;
+      } else if (engine?.disposed) {
         engine = null;
         engineError = error.message;
       } else cameraError = error.message || 'Scanning stopped. Try again.';

@@ -5,11 +5,8 @@ const APP_VERSION = DECKHAND_VERSION;
 
 const CHANGELOG_NOTES = {
   en: [
-    'Light-theme deck, folder and binder artwork uses pale translucent overlays with dark text',
-    'Floating add buttons share animated, separate action bubbles and matching deck-editor add controls',
-    'AI Judge availability moves to the hammer button with a busy indicator and live cooldown countdown',
-    'Unsorted shows only unfiled spare copies, excludes Wants, and keeps Playing copies safe during bulk moves and removals',
-    'Narrower page margins give content and search fields more screen space',
+    'Floating action menus align smaller circular option icons above the circular close button',
+    'Collection selected-card actions use the same animated floating menu as the add buttons',
   ],
 };
 
@@ -20,6 +17,26 @@ const CHANGELOG_NOTES = {
 const APP_DATE = DECKHAND_RELEASE_DATE;
 
 const CHANGELOG_HISTORY = [
+  {
+    v: '2.1.0',
+    d: '2026-11-10',
+    en: [
+      'The complete scanner catalog now lives on the server and automatically checks for new cards every six hours',
+      'Phones keep camera processing and Milo1 recognition on-device, sending only the small recognition fingerprint for matching',
+      'Verified incremental catalog updates keep the last good version available; scanning resumes automatically after connection problems',
+    ],
+  },
+  {
+    v: '2.0.43',
+    d: '2026-11-10',
+    en: [
+      'Light-theme deck, folder and binder artwork uses pale translucent overlays with dark text',
+      'Floating add buttons share animated, separate action bubbles and matching deck-editor add controls',
+      'AI Judge availability moves to the hammer button with a busy indicator and live cooldown countdown',
+      'Unsorted shows only unfiled spare copies, excludes Wants, and keeps Playing copies safe during bulk moves and removals',
+      'Narrower page margins give content and search fields more screen space',
+    ],
+  },
   {
     v: '2.0.42',
     d: '2026-11-10',

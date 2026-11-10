@@ -761,12 +761,11 @@ Its 384×384 ImageNet RGB input and named `corners`, `presence`, `sharpness` out
 use the existing worker contract; sharpness remains the confidence gate because
 this model's compatibility presence output is constant. The committed manifest
 selects its versioned model URL. A detector-specific manifest query bypasses old
-Cornelius manifests while preserving the unchanged Milo model, catalog and runtime
-caches. New builds select Fastweb-Single instead of Cornelius. The build hash
+Cornelius manifests while preserving the unchanged Milo model and runtime caches. New builds select Fastweb-Single instead of Cornelius. The build hash
 includes detector metadata and the shipped manifest.
 
 After the first page loads, `src/features/scanner/session.js` warms one shared
-worker in idle time. It loads the models/catalog and warms both inference graphs
+worker in idle time. It loads the models and warms both inference graphs
 with a procedural image and the bundled public card sample before reporting readiness.
 `performance.mjs` benchmarks WebGPU separately for each model against threaded
 WASM. A GPU must reproduce CPU outputs within numerical tolerance on both inputs
@@ -810,11 +809,9 @@ browsers require prior interaction and device vibration must be permitted.
 `scannerRequestVibration` retains the last request result in memory, including
 whether it came from a scan or a manual test. It distinguishes no API, a hidden
 page, missing sticky activation, browser rejection and request acceptance.
-Acceptance is explicitly not proof of physical vibration: a browser or device
-can silently suppress its motor. Settings → Card scanner → Test vibration sends
-`[180, 100, 180]` directly from the click handler. The optional camera timing
-overlay provides the same test with the camera active and displays actual scan
-request status. No diagnostic data is stored or sent to the server.
+Acceptance is not proof of physical vibration: a browser or device can silently
+suppress its motor. No vibration test controls are shown in Settings or the
+camera. No diagnostic data is stored or sent to the server.
 Chromium's Android `VibrationManagerAndroid.vibrate()` skips the motor call when
 `AudioManager.getRingerMode()` is `RINGER_MODE_SILENT`, even if the JavaScript
 request was accepted. Native touch feedback can still work. Changing pulse
@@ -822,30 +819,46 @@ duration cannot override that phone setting.
 
 Strong matches (score at least 0.85 and the requested ID threshold) skip the
 second orientation. Uncertain matches check both; the last confidently matched
-orientation is tried first on later frames. The full 109,711-row f16 catalog is
-retained and searched exactly, with four independent accumulation lanes.
-Perspective sampling shares coordinates across RGB channels without allocating
-an array per pixel. Model input/output tensors are disposed after every run.
+orientation is tried first on later frames. Both corner detection and Milo1
+embedding inference remain on-device. The browser sends only `{model, embedding}`
+(a normalized 128-number vector) to `POST /api/scanner/lookup`. No camera frame,
+photo, crop, user data or search catalog is uploaded/downloaded by that request.
+The server returns the best printing, score, Oracle ID and catalog version.
 
-Models, WASM and reference data are served by Deckhand (about 70 MB on first
-initialization). Model/catalog buffers are cached in IndexedDB. The service
-worker caches the manifest and ONNX runtime under a scanner-bundle-specific
-cache name. App updates retain this cache; a changed scanner bundle or runtime
-policy replaces it. The threaded-runtime policy changes the cache suffix once
-so old responses without isolation headers are not reused. First-party worker
-helpers are included in the build hash and use a versioned import URL.
-The small scanner worker source is also part of the offline app shell.
-Photos stay on-device. A successful match can request its Scryfall card details
-through the existing paced proxy; no photo is uploaded and scanning does not
-require the separate local Oracle library. Camera tracks stop on back, close,
-navigation, backgrounding and late permission replies. Camera permission is
-requested only when the user enters scanning. There is no photo picker.
+`server/scanner/worker.mjs` holds the complete packed-f16 catalog and performs
+exact similarity search outside the HTTP event loop. `service.mjs` validates
+model fingerprints and normalized vectors, limits request size, bounds the lookup
+queue and applies a per-visitor scanning rate limit. It restarts a failed worker.
+`GET /api/scanner/status` reports readiness, catalog version/rows/source timestamp,
+update status and last check. Neither endpoint requires an account or stores
+embeddings. Failed lookups show a short connection/busy message, back off for two
+seconds and retry without disposing warm inference models or stopping corners.
+Offline launches can warm models, then resume matching after reconnecting.
 
-The catalog is the prepared `milo1-scryfall-mtg-2026-07-09` snapshot with 109,711
-reference entries. Newer cards may be absent. Recognition remains visibly
-**Experimental**: confirm the card and printing, and choose foil/condition when
-adding. Sleeves, glare, unusual frames and partly hidden cards can reduce accuracy.
-License, source provenance and notices are linked from the scanner.
+`server/scanner/catalog.mjs` checks the official moving v2 feed on startup and
+every six hours. It requires the exact Milo1 model SHA-256, dimensions and layout.
+The vendored upstream client verifies gzip asset lengths and SHA-256, reconstructs
+exact predecessor deltas, and downloads a new base when the retained delta chain
+cannot extend the local version. Decompression and download sizes are bounded.
+Catalog parsing and downloads happen in the worker. An update keeps the previous
+catalog active until the new snapshot has passed validation and been saved.
+A failed update retains the last good catalog and retries after five minutes.
+Persistent generations under `var/scanner-catalog/` use an atomic pointer and
+checksummed records/matrix; the previous generation is retained for recovery.
+The catalog is not in SQLite backups: it is public, reproducible reference data.
+
+Models, WASM and the sample frame remain served by Deckhand. Model buffers use
+content-hash IndexedDB keys and the service worker keeps the runtime across app
+updates. Obsolete browser catalog entries are removed without touching models,
+accounts, decks or collections. Camera permission is only requested on scanner
+entry. Closing clears photos and frame buffers; backgrounding stops the camera.
+
+To bootstrap or force a check: `node scripts/update-scanner-catalog.mjs` (optional
+directory argument). Normal app startup does this automatically. Native runs use
+`SCANNER_CATALOG_DIR` or a directory next to SQLite. Tests use a tiny deterministic
+public sample catalog with `SCANNER_CATALOG_AUTO_UPDATE=0`; production keeps the
+entire upstream MTG catalog. License/provenance: `server/scanner/vendor/NOTICE.txt`.
+Recognition remains **Experimental**; confirm printing, foil and condition.
 
 `tests/browser/scanner.spec.mjs` exercises real model inference on a photographed
 Scrying Glass, upside-down recognition, blank rejection, full-screen camera

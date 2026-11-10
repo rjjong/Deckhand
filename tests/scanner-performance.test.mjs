@@ -234,7 +234,7 @@ test('strong matches skip the second orientation, while uncertain and upside-dow
   });
   vm.runInContext(
     'this.Runtime = class { ' +
-      worker.slice(worker.indexOf('  async identify('), worker.indexOf('  search(query)')) +
+      worker.slice(worker.indexOf('  async identify('), worker.indexOf('  async search(query)')) +
       ' }',
     context,
   );

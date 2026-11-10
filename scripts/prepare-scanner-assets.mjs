@@ -30,7 +30,7 @@ async function installed() {
 
 async function prepareBundle() {
   if (await installed()) return;
-  console.log('Preparing CollectorVision models and reference data (one-time download)…');
+  console.log('Preparing CollectorVision models and runtime (one-time download)…');
   const response = await fetch(scannerBundleUrl, { signal: AbortSignal.timeout(120000) });
   if (!response.ok)
     throw new Error('CollectorVision assets could not download: HTTP ' + response.status);

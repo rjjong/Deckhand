@@ -56,13 +56,15 @@ Different sets and artwork remain separate, even with the same name. Settings ap
 when the camera opens and sync with your account.
 Brief messages explain when the session setting ignores a card.
 Blank Card predictions from a covered camera are ignored silently.
-Photos stay in your browser. Models and reference data are served by Deckhand, with no OCR or external recognition service.
+Photos stay in your browser. Only a normalized 128-number Milo1 embedding is sent to Deckhand for matching.
+The full [CollectorVisionCatalog v2](https://github.com/HanClinto/CollectorVisionCatalog) stays on your server; it updates at startup and every six hours.
+Recognition requires a connection to your Deckhand server, with no external recognition service.
 Closing the scanner clears logged photos, capture canvases and worker image buffers;
-the recognition models and reference catalog stay cached.
+the recognition models stay cached on-device. The catalog stays on the server.
 Recognition initializes in the background after startup and stays ready while the app is open.
 On capable devices, corner outlines update independently while cards are identified.
 Successful scans give a short vibration when supported by the phone and browser.
-Its roughly 70 MB of data is cached across launches. Recognition is experimental; confirm printing, foil and condition yourself.
+Models and runtime files are cached across launches. Recognition is experimental; confirm printing, foil and condition yourself.
 
 In **Menu → Account & sync**, create an optional email/password account,
 verify your email, and sign in on each device. Decks, collections, settings and

@@ -44,7 +44,7 @@ function openScannerReview(result, card, trigger, options = {}) {
       </section>
       ${deckMode ? '' : `<section class="scanner-collection" aria-label="Collection details">${collectionAddFieldsHtml(card, { binder: options.binder })}</section>`}
       <div class="scanner-credits"><span class="scanner-badge">Experimental</span>
-        <p>Photos stay on your device. Powered by <a href="https://github.com/HanClinto/CollectorVision" target="_blank" rel="noopener">CollectorVision</a> · <a href="${SCANNER_ASSET_BASE}/NOTICE.txt" target="_blank" rel="noopener">Licenses &amp; source</a></p>
+        <p>Photos stay on your device. Recognition needs a connection. Powered by <a href="https://github.com/HanClinto/CollectorVision" target="_blank" rel="noopener">CollectorVision</a> · <a href="${SCANNER_ASSET_BASE}/NOTICE.txt" target="_blank" rel="noopener">Licenses &amp; source</a></p>
       </div>
     </main>
     <footer class="scanner-footer"><button type="button" class="primary-btn" id="${deckMode ? 'scannerReviewDeckAdd' : 'acAdd'}"${deckMode && options.added ? ' disabled' : ''}>${deckMode ? (options.added ? 'Added to deck' : 'Add to deck') : 'Add to collection'}</button></footer>

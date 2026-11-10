@@ -8,12 +8,16 @@ The vendored worker and Deckhand's scanner integration are available as source
 in the served worker and the application's JavaScript source map.
 
 Inference uses CollectorVision's Fastweb-Single 1.39 and Milo 1.0.0 models and its
-prepared MTG reference catalog dated 2026-07-09. Recognition is experimental;
-newer cards may be absent, and printing, foil and condition need confirmation.
+live MTG reference catalog from https://github.com/HanClinto/CollectorVisionCatalog.
+Deckhand checks for compatible Milo1 catalog updates every six hours.
+Recognition is experimental; printing, foil and condition need confirmation.
 
 ONNX Runtime Web 1.24.3 by Microsoft and contributors
 https://github.com/microsoft/onnxruntime
 MIT License: ONNXRUNTIME-LICENSE.txt
 
 Reference card images and names belong to their respective rights holders.
-All models and reference assets are served by Deckhand. Photos stay on-device.
+Models are served by Deckhand and cached on-device. Only the normalized
+128-dimensional Milo1 embedding is sent to Deckhand for catalog lookup.
+Photos stay on-device. Scanning requires a connection to Deckhand.
+Server catalog client source and license: server/scanner/vendor/NOTICE.txt.
