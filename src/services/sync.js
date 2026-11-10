@@ -342,8 +342,6 @@ async function syncApply(changes, linked = syncState(), generation = _syncGenera
   }
   if (sources.has('priceWatch')) state._pw = null;
   if (sources.has('settings:app')) {
-    state.theme = 'dark';
-    state.guild = 'izzet';
     await loadSettings();
   }
   state._ownedSet = null;

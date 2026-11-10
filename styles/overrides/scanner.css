@@ -460,11 +460,13 @@ html #cardScannerCamera .scanner-camera-stage {
     sans-serif;
   font-variant-numeric: tabular-nums;
   pointer-events: none;
+  max-width: 70%;
 }
 .scanner-framerate small {
   display: block;
   font-size: 10px;
   text-align: right;
+  white-space: pre-line;
 }
 .scanner-camera-statusbar {
   position: sticky;

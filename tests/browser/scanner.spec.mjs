@@ -2,6 +2,7 @@ import { markCurrentReleaseSeen } from './helpers/version.mjs';
 import { test, expect } from '@playwright/test';
 import { mkdir, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { createServer } from 'node:http';
 import { scannerBundleDirectory } from '../../scripts/scanner-assets.mjs';
 import { makeScannerPerspectiveScenes } from './helpers/scanner-perspective.mjs';
 
@@ -24,12 +25,16 @@ test.beforeEach(async ({ page }) => {
     window.scannerWorkerStops = 0;
     window.scannerCameraRequests = 0;
     window.scannerFramesSent = 0;
+    window.scannerCornerFrames = 0;
+    window.scannerScanPulses = [];
+    navigator.vibrate = (pattern) => { if (pattern === 70) scannerScanPulses.push(pattern); return true; };
     window.scannerFramesCleared = 0;
     const OriginalWorker = window.Worker;
     window.Worker = class extends OriginalWorker {
       constructor(url, options) {
         super(url, options);
         this.isScanner = String(url).includes('/collectorvision/scanner.worker.mjs');
+        this.isCorner = String(url).includes('/collectorvision/corner.worker.mjs');
         if (this.isScanner) {
           scannerWorkerCreates++;
           this.addEventListener('message', ({ data }) => {
@@ -39,6 +44,7 @@ test.beforeEach(async ({ page }) => {
       }
       postMessage(message, ...args) {
         if (this.isScanner && message.type === 'frame') scannerFramesSent++;
+        if (this.isCorner && message.type === 'frame') scannerCornerFrames++;
         return super.postMessage(message, ...args);
       }
       terminate() {
@@ -62,6 +68,13 @@ test.beforeEach(async ({ page }) => {
   await page.goto('/');
   await expect.poll(() => page.evaluate(() => state.homeLoaded)).toBe(true);
   await page.evaluate(() => {
+    // Recognition-only fixtures test log/settings behaviour independently from
+    // the real corner model. Dedicated tests below exercise both live workers.
+    window.scannerMockEngine = async () => {
+      const engine = await scannerGetEngine();
+      Object.defineProperty(engine, 'canPreviewCorners', { value: false, configurable: true });
+      return engine;
+    };
     state.guild = 'dimir';
     applyTheme();
     state.collection.items = [];
@@ -100,7 +113,7 @@ async function mockCamera(page, { width, height, source } = {}) {
           if (scannerTestShowCard)
             context.drawImage(
               photo,
-              (canvas.width - photo.width * scale) / 2,
+              (canvas.width - photo.width * scale) / 2 + (window.scannerTestOffset || 0),
               (canvas.height - photo.height * scale) / 2,
               photo.width * scale,
               photo.height * scale,
@@ -116,6 +129,106 @@ async function mockCamera(page, { width, height, source } = {}) {
     { width, height, source },
   );
 }
+
+test('scanner exposes the full catalog, threaded backend and live processing timings', async ({ page }, info) => {
+  test.setTimeout(90000);
+  const diagnostics = await page.evaluate(async () => ({
+    isolated: crossOriginIsolated,
+    ...(await scannerGetEngine()).diagnostics,
+  }));
+  expect(diagnostics.isolated).toBe(true);
+  expect(diagnostics.numThreads).toBe(info.project.name === 'mobile' ? 2 : 4);
+  expect(diagnostics.catalogRows).toBe(109711);
+  expect(diagnostics.catalogRows).toBe(diagnostics.catalogTotalRows);
+  expect(diagnostics.inferenceMode).toMatch(/WASM|WebGPU/);
+  await page.evaluate(() => { state.scannerShowFramerate = true; });
+  await mockCamera(page);
+  await openCollectionScanner(page);
+  await expect(page.locator('.scanner-detection-name')).toHaveText(['Scrying Glass'], { timeout: 15000 });
+  await expect(page.locator('#scannerBackend')).toContainText('CPU threads');
+  await expect(page.locator('#scannerProcessing')).toContainText('Frame');
+  await expect(page.locator('#scannerTimings')).toContainText('Lookup');
+  await expect(page.locator('#scannerTimings')).toContainText('Warp');
+  await page.locator('#scannerCameraBack').click();
+  await expect(page.locator('#cardScannerCamera')).toHaveCount(0);
+  await page.evaluate(() => clearInterval(scannerTestTimer));
+});
+
+test('thread isolation still loads external images without requiring cross-origin headers', async ({ page, context }) => {
+  const cookies = [];
+  const imageServer = createServer((req, res) => {
+    cookies.push(req.headers.cookie || '');
+    res.writeHead(200, { 'content-type': 'image/png' });
+    res.end(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jB6kAAAAASUVORK5CYII=', 'base64'));
+  });
+  await new Promise((resolve) => imageServer.listen(0, '127.0.0.1', resolve));
+  try {
+    const url = `http://127.0.0.1:${imageServer.address().port}/pixel.png`;
+    await context.addCookies([{ name: 'image-test', value: 'private', domain: '127.0.0.1', path: '/' }]);
+    await page.route(url, (route) => route.continue());
+    const width = await page.evaluate(async (url) => {
+      const image = new Image();
+      image.src = url;
+      await image.decode();
+      return image.naturalWidth;
+    }, url);
+    expect(width).toBe(1);
+    expect(cookies).toEqual(['']);
+  } finally { await new Promise((resolve) => imageServer.close(resolve)); }
+});
+
+test('corners follow a moving card while identification is blocked, then success vibrates once', async ({ page }) => {
+  test.setTimeout(90000);
+  await page.evaluate(async () => {
+    const engine = await scannerGetEngine();
+    if (!engine.canPreviewCorners) throw new Error('Expected independent corner worker');
+    state.scannerShowFramerate = true;
+    window.scanMainCalls = 0;
+    window.scanMainInFlight = 0;
+    window.scanMainMax = 0;
+    const recognize = engine.recognize.bind(engine);
+    engine.recognize = async (...args) => {
+      scanMainMax = Math.max(scanMainMax, ++scanMainInFlight);
+      try {
+        if (++scanMainCalls === 1) await new Promise(resolve => { window.releaseScanRecognition = resolve; });
+        return await recognize(...args);
+      } finally { scanMainInFlight--; }
+    };
+  });
+  await mockCamera(page);
+  await openCollectionScanner(page);
+  await expect.poll(() => page.evaluate(() => !!window.releaseScanRecognition)).toBe(true);
+  const before = await page.evaluate(() => scannerCornerFrames);
+  const points = await page.locator('#scannerDetectedBorder polygon').getAttribute('points');
+  await page.evaluate(() => { window.scannerTestOffset = 18; });
+  await expect.poll(() => page.evaluate(() => scannerCornerFrames)).toBeGreaterThanOrEqual(before + 4);
+  await expect.poll(() => page.locator('#scannerDetectedBorder polygon').getAttribute('points')).not.toBe(points);
+  expect(await page.evaluate(() => scanMainCalls)).toBe(1);
+  expect(await page.evaluate(() => scannerScanPulses.length)).toBe(0);
+  await expect(page.locator('#scannerCornerRate')).toContainText('Corners');
+  await page.evaluate(() => releaseScanRecognition());
+  await expect(page.locator('.scanner-detection-name')).toHaveText(['Scrying Glass'], { timeout: 15000 });
+  expect(await page.evaluate(() => scannerScanPulses)).toEqual([70]);
+  expect(await page.evaluate(() => scanMainMax)).toBe(1);
+  await expect(page.locator('#scannerCameraVibrationStatus')).toContainText('browser accepted request');
+  await page.locator('#scannerCameraBack').click();
+  await expect(page.locator('#cardScannerCamera')).toHaveCount(0);
+  await page.evaluate(() => clearInterval(scannerTestTimer));
+});
+
+test('corner-worker failure keeps ordinary card scanning available', async ({ page }) => {
+  test.setTimeout(90000);
+  await page.route('**/collectorvision/corner.worker.mjs*', route => route.abort());
+  await page.evaluate(() => scannerReleaseSession());
+  expect(await page.evaluate(async () => (await scannerGetEngine()).canPreviewCorners)).toBe(false);
+  await mockCamera(page);
+  await openCollectionScanner(page);
+  await expect(page.locator('.scanner-detection-name')).toHaveText(['Scrying Glass'], { timeout: 15000 });
+  expect(await page.evaluate(() => scannerScanPulses)).toEqual([70]);
+  await page.locator('#scannerCameraBack').click();
+  await expect(page.locator('#cardScannerCamera')).toHaveCount(0);
+  await page.evaluate(() => clearInterval(scannerTestTimer));
+});
 
 test('startup warms recognition without opening the camera; collection and binders reuse it', async ({
   page,
@@ -175,7 +288,11 @@ test('live camera logs stable cards once, rearms after removal and keeps the log
     lookups = [];
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('request', (request) => {
-    if (request.method() !== 'GET') uploads.push(request.url());
+    if (request.method() !== 'GET') uploads.push({
+      path: new URL(request.url()).pathname,
+      body: request.postData(),
+      contentType: request.headers()['content-type'],
+    });
     if (new URL(request.url()).pathname === '/api/scryfall/cards/' + card.id)
       lookups.push(request.url());
   });
@@ -196,17 +313,23 @@ test('live camera logs stable cards once, rearms after removal and keeps the log
     .poll(() => page.evaluate(() => scannerFramesSent), { timeout: 8000 })
     .toBeGreaterThanOrEqual(before + 3);
   await expect(names).toHaveCount(1);
+  expect(await page.evaluate(() => scannerScanPulses.length)).toBe(1);
   const blank = await page.evaluate(() => {
     scannerTestShowCard = false;
-    return scannerFramesSent;
+    window.scannerBlankStarted = performance.now();
+    return scannerFramesSent + scannerCornerFrames;
   });
   await expect
-    .poll(() => page.evaluate(() => scannerFramesSent), { timeout: 10000 })
+    .poll(() => page.evaluate(() => scannerFramesSent + scannerCornerFrames), { timeout: 10000 })
     .toBeGreaterThanOrEqual(blank + 4);
+  // Removal is a time-based guard, independent of the now faster scan cadence.
+  await expect.poll(() => page.evaluate(() => performance.now() - scannerBlankStarted))
+    .toBeGreaterThanOrEqual(1800);
   await page.evaluate(() => {
     scannerTestShowCard = true;
   });
   await expect(names).toHaveText(['Scrying Glass', 'Scrying Glass'], { timeout: 10000 });
+  expect(await page.evaluate(() => scannerScanPulses.length)).toBe(2);
   const stage = await camera.locator('.scanner-camera-stage').boundingBox();
   const log = await camera.locator('.scanner-log-scroll').boundingBox();
   expect(log.y).toBeGreaterThanOrEqual(stage.y + stage.height);
@@ -266,7 +389,18 @@ test('live camera logs stable cards once, rearms after removal and keeps the log
   expect(await page.evaluate(() => scannerWorkerCreates)).toBe(1);
   expect(await page.evaluate(() => scannerIsReady())).toBe(true);
   await page.evaluate(() => clearInterval(scannerTestTimer));
-  expect(uploads).toEqual([]);
+  // Collection repricing may POST card identifiers after adding a scan; camera
+  // pixels must never be sent. Check the payload rather than banning metadata.
+  for (const request of uploads) {
+    expect(request.path).toBe('/api/scryfall/cards/collection');
+    expect(request.contentType).toContain('application/json');
+    const body = JSON.parse(request.body);
+    expect(Object.keys(body)).toEqual(['identifiers']);
+    for (const identifier of body.identifiers) {
+      expect(Object.keys(identifier).every((key) => ['name', 'set', 'id', 'collector_number'].includes(key))).toBe(true);
+      expect(JSON.stringify(identifier)).not.toMatch(/data:|base64|blob:/);
+    }
+  }
   expect(errors).toEqual([]);
 });
 
@@ -390,7 +524,7 @@ test('log order follows detection time even when earlier card details arrive lat
       secondaryId: card.oracle_id,
     };
     window.detailLookups = 0;
-    (await scannerGetEngine()).recognize = async () => ({ ...liveResult });
+    (await scannerMockEngine()).recognize = async () => ({ ...liveResult });
     scannerResolveCard = (result) => {
       detailLookups++;
       if (result.cardId === card.id)
@@ -431,7 +565,7 @@ test('a failed card lookup stays in the log and retries only when tapped', async
   await page.evaluate(async (card) => {
     window.fakeFrames = 0;
     window.detailLookups = 0;
-    (await scannerGetEngine()).recognize = async () => {
+    (await scannerMockEngine()).recognize = async () => {
       fakeFrames++;
       return {
         cardPresent: true,
@@ -451,6 +585,7 @@ test('a failed card lookup stays in the log and retries only when tapped', async
   await openCollectionScanner(page);
   const names = page.locator('.scanner-detection-name');
   await expect(names).toHaveText(['Card details unavailable'], { timeout: 10000 });
+  expect(await page.evaluate(() => scannerScanPulses)).toEqual([]);
   const frames = await page.evaluate(() => fakeFrames);
   await expect
     .poll(() => page.evaluate(() => fakeFrames), { timeout: 8000 })
@@ -459,19 +594,19 @@ test('a failed card lookup stays in the log and retries only when tapped', async
   await page.getByRole('button', { name: 'Retry card details', exact: true }).click();
   await expect(names).toHaveText(['Scrying Glass']);
   expect(await page.evaluate(() => detailLookups)).toBe(2);
+  expect(await page.evaluate(() => scannerScanPulses)).toEqual([70]);
   await page.locator('#scannerCameraBack').click();
   await expect(page.locator('#cardScannerCamera')).toHaveCount(0);
   await page.evaluate(() => clearInterval(scannerTestTimer));
 });
 
-test('session setting ignores matching names across printings and resets on a new camera session', async ({
+test('session setting distinguishes sets and artwork with the same name and Oracle ID, then ignores only repeat printings', async ({
   page,
 }) => {
   test.setTimeout(90000);
   await page.waitForFunction(() => scannerIsReady(), null, { timeout: 75000 });
   await page.evaluate(async (card) => {
     state.scannerIgnoreSession = true;
-    state.scannerDebounceMs = 0;
     await persistSettings();
     window.liveResult = {
       cardPresent: true,
@@ -482,13 +617,17 @@ test('session setting ignores matching names across printings and resets on a ne
       secondaryId: card.oracle_id,
     };
     window.fakeFrames = 0;
-    (await scannerGetEngine()).recognize = async () => {
+    (await scannerMockEngine()).recognize = async () => {
       fakeFrames++;
       return { ...liveResult };
     };
     scannerResolveCard = async (result) => ({
       ...card,
       id: result.cardId,
+      set: result.cardId === '11111111-1111-4111-8111-111111111111' ? 'm3c' : card.set,
+      set_name: result.cardId === '11111111-1111-4111-8111-111111111111' ? 'Commander variant' : card.set_name,
+      collector_number: result.cardId === '11111111-1111-4111-8111-111111111111' ? '300' : card.collector_number,
+      illustration_id: result.cardId === card.id ? 'art-a' : 'art-b',
       name: result.cardId === '33333333-3333-4333-8333-333333333333' ? 'Sol Ring' : card.name,
     });
   }, card);
@@ -496,21 +635,22 @@ test('session setting ignores matching names across printings and resets on a ne
   await openCollectionScanner(page);
   const visibleNames = page.locator('.scanner-detection:not([hidden]) .scanner-detection-name');
   await expect(visibleNames).toHaveText(['Scrying Glass'], { timeout: 10000 });
-  await expect(page.locator('#scannerIgnored')).toContainText('Already scanned this session');
+  await expect(page.locator('#scannerIgnored')).toContainText('Already scanned this printing');
   await expect(page.locator('#scannerIgnored')).toBeHidden({ timeout: 4500 });
   const changed = await page.evaluate(() => {
     liveResult = {
       ...liveResult,
       cardId: '11111111-1111-4111-8111-111111111111',
-      secondaryId: '22222222-2222-4222-8222-222222222222',
     };
     return fakeFrames;
   });
   await expect
     .poll(() => page.evaluate(() => fakeFrames), { timeout: 10000 })
     .toBeGreaterThanOrEqual(changed + 3);
-  await expect(visibleNames).toHaveText(['Scrying Glass']);
-  await expect(page.locator('#scannerLogCount')).toHaveText('1 card');
+  await expect(visibleNames).toHaveText(['Scrying Glass', 'Scrying Glass']);
+  await expect(page.locator('#scannerLogCount')).toHaveText('2 cards');
+  await expect(page.locator('.scanner-detection-set')).toHaveText(['Commander variant · #300', "Urza's Destiny · #137"]);
+  expect(await page.evaluate(() => scannerScanPulses)).toEqual([70, 70]);
   await page.evaluate(() => {
     liveResult = {
       ...liveResult,
@@ -518,12 +658,18 @@ test('session setting ignores matching names across printings and resets on a ne
       secondaryId: '44444444-4444-4444-8444-444444444444',
     };
   });
-  await expect(visibleNames).toHaveText(['Sol Ring', 'Scrying Glass'], { timeout: 10000 });
+  await expect(visibleNames).toHaveText(['Sol Ring', 'Scrying Glass', 'Scrying Glass'], { timeout: 10000 });
+  expect(await page.evaluate(() => scannerScanPulses)).toEqual([70, 70, 70]);
+  await page.evaluate((card) => { liveResult = { ...liveResult, cardId: card.id, secondaryId: card.oracle_id }; }, card);
+  await expect(page.locator('#scannerIgnored')).toContainText('Already scanned this printing');
+  await expect(visibleNames).toHaveCount(3);
+  expect(await page.evaluate(() => scannerScanPulses)).toEqual([70, 70, 70]);
   await page.locator('#scannerCameraBack').click();
   await expect(page.locator('#cardScannerCamera')).toHaveCount(0);
   await page.evaluate(() => clearInterval(scannerTestTimer));
   await openCollectionScanner(page);
-  await expect(visibleNames).toHaveText(['Sol Ring'], { timeout: 10000 });
+  await expect(visibleNames).toHaveText(['Scrying Glass'], { timeout: 10000 });
+  expect(await page.evaluate(() => scannerScanPulses)).toEqual([70, 70, 70, 70]);
   expect(await page.evaluate(() => scannerWorkerCreates)).toBe(1);
   await page.locator('#scannerCameraBack').click();
   await expect(page.locator('#cardScannerCamera')).toHaveCount(0);
@@ -535,13 +681,12 @@ test('live scanning applies thresholds, interval and optional framerate using th
 }, info) => {
   test.setTimeout(90000);
   await page.evaluate(async (card) => {
-    const engine = await scannerGetEngine();
+    const engine = await scannerMockEngine();
     Object.assign(state, {
       scannerIdThreshold: 0.5,
       scannerCornerThreshold: 0.08,
       scannerIntervalMs: 900,
       scannerShowFramerate: true,
-      scannerDebounceMs: 10000,
     });
     await persistSettings();
     window.scanSettingsFrames = [];
@@ -586,7 +731,7 @@ test('live scanning applies thresholds, interval and optional framerate using th
   await expect(fps).toBeVisible();
   await expect(fps).toHaveText(/^\d+\.\d FPS$/);
   await expect(page.locator('#scannerDetectedBorder')).toBeVisible();
-  await expect(page.locator('#scannerIgnored')).toContainText('Within repeat delay');
+  await expect(page.locator('#scannerIgnored')).toBeHidden();
   await expect.poll(() => page.evaluate(() => scanSettingsFrames.length)).toBeGreaterThanOrEqual(3);
   const firstSession = await page.evaluate(() => ({
     frames: scanSettingsFrames,
@@ -683,7 +828,7 @@ test('scan log scroll releases and reopens the camera; multiple scans can be sel
         },
       ];
       window.scanLogStep = 0;
-      const engine = await scannerGetEngine();
+      const engine = await scannerMockEngine();
       engine.recognize = async (canvas) => {
         const step = scanLogStep++;
         const found =
@@ -876,10 +1021,9 @@ test('Scan deck preserves every physical copy and registers ownership for existi
       state.guild = 'dimir';
       applyTheme();
       state.scannerIgnoreSession = true;
-      state.scannerDebounceMs = 60000;
       state.scannerIntervalMs = 100;
       window.deckScanQueue = [card, card, other, other, card, card];
-      (await scannerGetEngine()).recognize = async (canvas) => {
+      (await scannerMockEngine()).recognize = async (canvas) => {
         const found = deckScanQueue.shift();
         return found
           ? {
@@ -908,7 +1052,7 @@ test('Scan deck preserves every physical copy and registers ownership for existi
   await expect(page.locator('.scanner-camera-header .brand-txt')).toHaveText('Scan deck');
   await expect(page.locator('.scanner-detection[data-state="ready"]')).toHaveCount(3);
   expect(
-    await page.evaluate(() => state.scannerIgnoreSession && state.scannerDebounceMs === 60000),
+    await page.evaluate(() => state.scannerIgnoreSession),
   ).toBe(true);
   await expect(page.locator('#scannerAddAll')).toBeDisabled();
   await page.locator('#scannerAddAll').dispatchEvent('click');
@@ -1071,7 +1215,7 @@ test('slow inference preserves preview quality; refocus and resolution reporting
       };
       return stream;
     };
-    (await scannerGetEngine()).recognize = async (canvas) => {
+    (await scannerMockEngine()).recognize = async (canvas) => {
       analysisReused = analysisReused && (!window.analysisFirst || analysisFirst === canvas);
       window.analysisFirst = canvas;
       analysisSizes.push({ width: canvas.width, height: canvas.height });
@@ -1142,7 +1286,6 @@ test('Blank Card predictions never create rows, lookups, borders or ignore notic
   await page.evaluate(async () => {
     Object.assign(state, {
       scannerIgnoreSession: true,
-      scannerDebounceMs: 60000,
       scannerIntervalMs: 100,
     });
     window.blankTestFrames = 0;
@@ -1160,7 +1303,7 @@ test('Blank Card predictions never create rows, lookups, borders or ignore notic
         [0.1, 0.9],
       ],
     };
-    (await scannerGetEngine()).recognize = async (canvas) => {
+    (await scannerMockEngine()).recognize = async (canvas) => {
       blankTestFrames++;
       return { ...blankTestResult, sourceFrame: canvas.scannerSource };
     };
@@ -1169,6 +1312,7 @@ test('Blank Card predictions never create rows, lookups, borders or ignore notic
   await openCollectionScanner(page);
   await expect.poll(() => page.evaluate(() => blankTestFrames)).toBeGreaterThanOrEqual(4);
   await expect(page.locator('.scanner-detection')).toHaveCount(0);
+  expect(await page.evaluate(() => scannerScanPulses)).toEqual([]);
   await expect(page.locator('#scannerIgnored')).toBeHidden();
   await expect(page.locator('#scannerDetectedBorder')).toBeHidden();
   await expect(page.locator('.scanner-camera-hint')).toHaveCount(0);
@@ -1178,7 +1322,7 @@ test('Blank Card predictions never create rows, lookups, borders or ignore notic
   }, card);
   await expect(page.locator('.scanner-detection-name')).toHaveText(['Scrying Glass']);
   await expect(page.locator('#scannerDetectedBorder')).toBeVisible();
-  await expect(page.locator('#scannerIgnored')).toContainText('Already scanned this session');
+  await expect(page.locator('#scannerIgnored')).toContainText('Already scanned this printing');
   const changed = await page.evaluate(() => {
     blankTestResult = {
       ...blankTestResult,

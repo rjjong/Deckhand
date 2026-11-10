@@ -9,7 +9,9 @@ const SYNC_SCALARS = [
   'budgetFloor',
   'lifeFmt',
   'decksView',
+  'deckSort',
   'colView',
+  'tileCovers',
   'dlView',
   'ptSmart',
 ];
@@ -19,13 +21,15 @@ const SYNC_SETTING_FIELDS = [
   'guild',
   'startupPage',
   'hideCollectionFolderPrices',
-  'scannerDebounceMs',
   'scannerIgnoreSession',
   'scannerIdThreshold',
   'scannerCornerThreshold',
   'scannerIntervalMs',
   'scannerShowFramerate',
 ];
+// Older app versions may still submit this record in otherwise valid batches.
+// Accept it for compatibility, but never project or restore it in current clients.
+const SYNC_RETIRED_SETTING_FIELDS = ['scannerDebounceMs'];
 
 function syncItemKey(item) {
   return (
@@ -53,7 +57,11 @@ function syncRecordSource(key) {
   )
     return 'collection';
   if (key.startsWith('folder:')) return 'folders';
-  if (key.startsWith('setting:') && SYNC_SETTING_FIELDS.includes(key.slice(8)))
+  if (
+    key.startsWith('setting:') &&
+    (SYNC_SETTING_FIELDS.includes(key.slice(8)) ||
+      SYNC_RETIRED_SETTING_FIELDS.includes(key.slice(8)))
+  )
     return 'settings:app';
   if (key.startsWith('saved-game:')) return 'lifeSaves';
   return SYNC_SCALARS.includes(key) ? key : null;
@@ -119,7 +127,8 @@ function syncRestoreStorage(source, records, previous) {
   const entries = Object.entries(records).filter(([key]) => syncRecordSource(key) === source);
   if (source === 'settings:app') {
     const out = {};
-    for (const [key, raw] of entries) out[key.slice(8)] = JSON.parse(raw);
+    for (const [key, raw] of entries)
+      if (SYNC_SETTING_FIELDS.includes(key.slice(8))) out[key.slice(8)] = JSON.parse(raw);
     return JSON.stringify(out);
   }
   if (source === 'folders') return JSON.stringify(entries.map(([, raw]) => JSON.parse(raw)));

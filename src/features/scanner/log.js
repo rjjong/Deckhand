@@ -8,6 +8,7 @@ function scannerCreateLog(
     mode = 'collection',
     onReview,
     onIgnored,
+    onAccepted,
     onChange = () => {},
     settings = {},
   },
@@ -18,10 +19,9 @@ function scannerCreateLog(
   const cards = new Map(),
     entries = [],
     selected = new Set();
-  const identityNames = new Map(),
+  const identifiedCards = new Map(),
     silentIdentities = new Set();
   const repeatOptions = {
-    debounceMs: settings.scannerDebounceMs,
     ignoreSession: settings.scannerIgnoreSession,
   };
   let repeats = scannerCreateRepeatFilter(repeatOptions),
@@ -55,12 +55,12 @@ function scannerCreateLog(
     let total = 0;
     for (const entry of entries) {
       if (entry.silent) continue;
-      const reason = entry.card ? repeats.reason(entry.card.name, entry.at) : null;
+      const reason = entry.card ? repeats.reason(entry.result) : null;
       entry.row.hidden = !!reason;
-      if (entry.card && !reason) repeats.accept(entry.card.name, entry.at);
+      if (entry.card && !reason) repeats.accept(entry.result);
       if (reason && !entry.notified && !entry.deleted) {
         entry.notified = true;
-        onIgnored?.({ name: entry.card.name, reason });
+        onIgnored?.(repeatNotice(entry.card, entry.result, reason));
       }
       if (reason || entry.deleted) selected.delete(entry);
       if (!entry.row.hidden && !entry.deleted) total++;
@@ -73,7 +73,22 @@ function scannerCreateLog(
     empty.hidden = total > 0;
     count.textContent = `${total} ${total === 1 ? 'card' : 'cards'}`;
     ownership();
+    // Exact printing IDs make unrelated metadata lookups independent. Each
+    // accepted printing can signal success as soon as its details are ready.
+    for (const entry of entries) {
+      if (!entry.card || entry.deleted || entry.row.hidden || entry.feedbackSent) continue;
+      entry.feedbackSent = true;
+      onAccepted?.(entry.card);
+    }
     onChange({ total, selected: selected.size, addable: pending().length });
+  }
+  function repeatNotice(card, detection, reason) {
+    return {
+      name: card.name,
+      printingId: scannerPrintingIdentity(detection),
+      printing: [card.set?.toUpperCase(), card.collector_number].filter(Boolean).join(' #'),
+      reason,
+    };
   }
   function releasePhoto(entry) {
     entry.result.thumb = null;
@@ -106,15 +121,12 @@ function scannerCreateLog(
       );
     return cards.get(result.cardId);
   }
-  function ignored(detection, at = Date.now()) {
-    if (
-      scannerIsIgnoredCard(detection) ||
-      silentIdentities.has(detection.secondaryId || detection.cardId)
-    )
-      return null;
-    const name = identityNames.get(detection.secondaryId || detection.cardId);
-    const reason = name ? repeats.reason(name, at) : null;
-    return reason ? { name, reason } : null;
+  function ignored(detection) {
+    const identity = scannerPrintingIdentity(detection);
+    if (scannerIsIgnoredCard(detection) || !identity || silentIdentities.has(identity)) return null;
+    const card = identifiedCards.get(identity);
+    const reason = card ? repeats.reason(detection) : null;
+    return reason ? repeatNotice(card, detection, reason) : null;
   }
   function dispose() {
     if (disposed) return;
@@ -123,7 +135,7 @@ function scannerCreateLog(
     entries.length = 0;
     selected.clear();
     cards.clear();
-    identityNames.clear();
+    identifiedCards.clear();
     silentIdentities.clear();
     list.replaceChildren();
     repeats = scannerCreateRepeatFilter(repeatOptions);
@@ -186,9 +198,9 @@ function scannerCreateLog(
     append(detection) {
       if (!live() || scannerIsIgnoredCard(detection)) return;
       const at = new Date(),
-        identity = detection.secondaryId || detection.cardId;
-      if (silentIdentities.has(identity)) return;
-      const repeat = ignored(detection, at.getTime());
+        identity = scannerPrintingIdentity(detection);
+      if (identity && silentIdentities.has(identity)) return;
+      const repeat = ignored(detection);
       if (repeat) {
         onIgnored?.(repeat);
         return;
@@ -258,7 +270,7 @@ function scannerCreateLog(
           const card = await details(result);
           if (!live() || entry.deleted) return;
           if (scannerIsIgnoredCard(card) || (mode !== 'deck' && isCollectionBasicLand(card))) {
-            silentIdentities.add(identity);
+            if (identity) silentIdentities.add(identity);
             entry.silent = true;
             entry.deleted = true;
             selected.delete(entry);
@@ -268,7 +280,7 @@ function scannerCreateLog(
             return;
           }
           entry.card = card;
-          identityNames.set(identity, card.name);
+          if (identity) identifiedCards.set(identity, card);
           name.textContent = card.name;
           set.textContent =
             (card.set_name || card.set?.toUpperCase() || '') +
@@ -282,6 +294,7 @@ function scannerCreateLog(
           set.textContent = 'Tap to try again';
           button.setAttribute('aria-label', 'Retry card details');
           row.dataset.state = 'error';
+          refresh();
         } finally {
           if (live() && !entry.deleted) button.setAttribute('aria-busy', 'false');
         }

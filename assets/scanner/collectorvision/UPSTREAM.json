@@ -7,7 +7,14 @@
     "Stamp worker import build placeholder with upstream commit.",
     "Use one WASM thread when cross-origin isolation is unavailable.",
     "Warm detector and embedder with empty tensors before reporting readiness; no camera frame is used.",
-    "Clear camera pixel buffers on request while retaining loaded models and reference data."
+    "Clear camera pixel buffers on request while retaining loaded models and reference data.",
+    "Benchmark CPU and WebGPU on a procedural image and the bundled card sample; reject inaccurate or slower GPU inference and fall back after driver failures.",
+    "Use up to two CPU threads on Android and four on desktop when cross-origin isolated; retain the single-thread iOS path.",
+    "Check a second orientation only for uncertain matches, remembering the last confidently matched orientation.",
+    "Optimize perspective sampling and exact packed-f16 catalog search without dropping any catalog rows; release inference tensors after each run.",
+    "Expose backend choice, benchmark results and per-frame processing timings.",
+    "Support a detector-only worker with one CPU thread and no embedder/catalog, so corner previews can run independently of identification.",
+    "Reuse precomputed corners with their exact captured frame and normalize RGB bytes through an exact float32 lookup table."
   ],
   "catalog": "milo1-scryfall-mtg-2026-07-09",
   "detector": "fastweb-single-1.39",

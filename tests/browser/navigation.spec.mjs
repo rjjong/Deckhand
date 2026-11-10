@@ -901,15 +901,13 @@ test('Decks and Collection search bars fill the page width and scroll with conte
     const input=page.locator(id);
     if(name==='Decks') await expect(input).toHaveAttribute('placeholder','Search decks...');
     if(name==='Decks'){
-      const toggle=page.locator('.decks-searchbar #folderViewToggle');
-      await expect(toggle).toBeVisible();
-      const field=await input.boundingBox(), button=await toggle.boundingBox();
+      const sort=page.locator('.decks-searchbar #deckSortBtn');
+      await expect(sort).toBeVisible();
+      await expect(page.locator('#folderViewToggle')).toHaveCount(0);
+      const field=await input.boundingBox(), button=await sort.boundingBox();
       expect(button.x).toBeGreaterThan(field.x+field.width);
       expect(button.y).toBeCloseTo(field.y,0);
       expect(button.height).toBe(field.height);
-      await toggle.click();
-      await expect(toggle).toHaveText('Tile view');
-      expect(await page.evaluate(()=>localStorage.getItem(LS_PREFIX+'decksView'))).toBe('list');
     } else {
       await expect(page.locator('#folderViewToggle')).toHaveCount(0);
       await page.locator('#colChev').click();
@@ -2388,6 +2386,8 @@ test('Spoilers header filters share the Search icon and open a full-screen slidi
 
 test('pulling down refreshes the visible random card and its button sits below it', async ({ page }, info) => {
   await page.evaluate(async()=>{
+    window.randomRefreshPulses = [];
+    navigator.vibrate = pattern => { randomRefreshPulses.push(pattern); return true; };
     await bulkIndexReady();
     _bulkIdx = {cards:[{n:'Sol Ring',id:'aa-fixture',tl:'Artifact',ly:'normal',lg:'legal'}, {n:'Arcane Signet',id:'bb-fixture',tl:'Artifact',ly:'normal',lg:'legal'}]};
     state.cotd = {card:bulkToCardish(_bulkIdx.cards[0])};
@@ -2422,13 +2422,16 @@ test('pulling down refreshes the visible random card and its button sits below i
   await expect(card).toHaveAttribute('alt','Sol Ring');
   await pull(0,100,true);
   await expect(card).toHaveAttribute('alt','Sol Ring');
+  expect(await page.evaluate(() => randomRefreshPulses)).toEqual([]);
   await pull(0,100);
   await expect(card).toHaveAttribute('alt','Arcane Signet');
+  expect(await page.evaluate(() => randomRefreshPulses)).toEqual([70]);
   await page.locator('#cotdReroll').click();
   await expect(card).toHaveAttribute('alt','Sol Ring');
   await page.evaluate(()=>{state.searchRan=true;setCotdVisible(false);});
   await pull(0,100);
   expect(await page.evaluate(()=>state.cotd.card.name)).toBe('Sol Ring');
+  expect(await page.evaluate(() => randomRefreshPulses)).toEqual([70]);
 });
 
 test('Packages has no settings, search, card action, or inspiration entry and is excluded from sync', async ({ page }) => {

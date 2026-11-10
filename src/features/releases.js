@@ -5,8 +5,10 @@ const APP_VERSION = DECKHAND_VERSION;
 
 const CHANGELOG_NOTES = {
   en: [
-    'Fixed cloud sync rejecting the hide binder and folder prices preference, including its default false value',
-    'Sync now distinguishes rejected data and cloud storage limits from connection failures while preserving pending local changes',
+    'The deck overview always uses tiles and shows every deck in expandable format sections, with custom folders still available',
+    'Sort decks by last changed, name or price from the search bar; the choice syncs across devices',
+    'Pulling down to refresh the random card gives a short vibration',
+    'Device appearance sets the default scheme: Rakdos in dark mode and Azorius in light mode; saved colour choices take priority',
   ],
 };
 
@@ -17,6 +19,86 @@ const CHANGELOG_NOTES = {
 const APP_DATE = DECKHAND_RELEASE_DATE;
 
 const CHANGELOG_HISTORY = [
+  {
+    v: '2.0.41',
+    d: '2026-11-10',
+    en: [
+      'News scrolls directly with the page, without a surrounding panel; the logo slides away as you read',
+      'Scrollbars are hidden throughout the app, with a subtle edge animation at scroll boundaries that respects reduced-motion settings',
+      'Taller deck, folder and binder tiles fill their backgrounds with card artwork',
+      'Automatic folders no longer show a bottom label; binder symbols float at the bottom right without a background strip',
+    ],
+  },
+  {
+    v: '2.0.40',
+    d: '2026-11-09',
+    en: [
+      'Decks, folders and binders share equal-size tiles with full-cover card artwork and readable blurred information overlays',
+      'Hold a tile to choose its cover art or restore Automatic; default artwork uses the commander or first card',
+      'Cover choices are saved on this device and included in account sync and backups, including automatic folders',
+    ],
+  },
+  {
+    v: '2.0.39',
+    d: '2026-11-08',
+    en: [
+      'Removed vibration test buttons from scanner settings and the camera preview; successful scans still give vibration feedback',
+    ],
+  },
+  {
+    v: '2.0.38',
+    d: '2026-11-08',
+    en: [
+      'Test vibration in scanner settings sends two noticeable pulses and reports whether the browser accepted the request',
+      'The optional camera timing display can test vibration with the camera open and shows the result of scan vibration requests',
+      'Vibration diagnostics distinguish unsupported browsers, missing interaction, background pages and rejected requests without claiming the phone motor moved',
+    ],
+  },
+  {
+    v: '2.0.37',
+    d: '2026-11-08',
+    en: [
+      'Scanner duplicate filtering uses exact printing IDs, so different sets and artwork are logged separately even with the same card name',
+      'Printing confirmation also uses exact IDs instead of grouping printings by Oracle identity',
+      'Stronger 70 ms success vibration fires as soon as an accepted scan is ready, without waiting for unrelated card lookups',
+    ],
+  },
+  {
+    v: '2.0.36',
+    d: '2026-11-08',
+    en: [
+      'Live corner outlines update independently while card identification runs, using the same accurate card detector',
+      'Faster pixel preparation preserves the detector input exactly; recognition reuses corners from the same captured frame',
+      'Successfully logged scans give a short vibration; ignored, held and failed scans stay silent',
+      'The optional timing display shows corner update speed separately from completed card scans',
+    ],
+  },
+  {
+    v: '2.0.35',
+    d: '2026-11-08',
+    en: [
+      'Removed the scanner debounce-time setting and repeat delay; obsolete saved values no longer affect scans',
+      'Session duplicate filtering and held-card protection remain available, with sync compatibility for older app versions',
+    ],
+  },
+  {
+    v: '2.0.34',
+    d: '2026-11-08',
+    en: [
+      'Faster live scanning uses a 200 ms default interval while retaining two-scan confirmation and the complete card catalog',
+      'Scanner benchmarks WebGPU against CPU inference and keeps the faster accurate backend, with CPU fallback',
+      'Threaded inference, faster perspective correction and conditional orientation checks reduce recognition work',
+      'Show scan framerate also displays processing timings and the active inference backend',
+    ],
+  },
+  {
+    v: '2.0.33',
+    d: '2026-11-08',
+    en: [
+      'Fixed cloud sync rejecting the hide binder and folder prices preference, including its default false value',
+      'Sync now distinguishes rejected data and cloud storage limits from connection failures while preserving pending local changes',
+    ],
+  },
   {
     v: '2.0.32',
     d: '2026-11-08',

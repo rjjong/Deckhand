@@ -104,7 +104,17 @@ function scannerLoadMessage(progress) {
     : 'Preparing recognition…';
 }
 
-async function scannerCreateEngine({ signal, onProgress = () => {} } = {}) {
+function scannerCanRunCornerWorker(device = globalThis.navigator) {
+  return (
+    globalThis.crossOriginIsolated === true &&
+    (device?.hardwareConcurrency || 1) >= 4 &&
+    (device?.deviceMemory || 4) >= 4 &&
+    !/iPad|iPhone|iPod/.test(device?.userAgent || '') &&
+    !(device?.platform === 'MacIntel' && device?.maxTouchPoints > 1)
+  );
+}
+
+async function scannerCreateEngine({ signal, onProgress = () => {}, detectorOnly = false } = {}) {
   if (!window.Worker || !window.OffscreenCanvas || !window.createImageBitmap)
     throw new Error(
       'This browser cannot run the scanner. Try a current Chrome, Safari or Firefox.',
@@ -119,14 +129,18 @@ async function scannerCreateEngine({ signal, onProgress = () => {} } = {}) {
     throw new Error('Card recognition could not load. Check your connection and try again.');
   const manifest = await response.json();
   signal?.throwIfAborted();
-  const worker = new Worker(SCANNER_ASSET_BASE + '/scanner.worker.mjs?v=' + DECKHAND_BUILD, {
+  const workerFile = detectorOnly ? 'corner.worker.mjs' : 'scanner.worker.mjs';
+  const worker = new Worker(SCANNER_ASSET_BASE + '/' + workerFile + '?v=' + DECKHAND_BUILD, {
     type: 'module',
   });
   let disposed = false,
+    diagnostics = null,
     pending = null,
     frameQueue = Promise.resolve(),
     readyResolve,
-    readyReject;
+    readyReject,
+    cornerEngine = null,
+    cornerController = null;
   const ready = new Promise((resolve, reject) => {
     readyResolve = resolve;
     readyReject = reject;
@@ -134,7 +148,7 @@ async function scannerCreateEngine({ signal, onProgress = () => {} } = {}) {
   const startupTimeout = setTimeout(
     () =>
       dispose(new Error('Recognition took too long to load. Check your connection and try again.')),
-    120000,
+    detectorOnly ? 15000 : 120000,
   );
   const aborted = () => dispose(new DOMException('Scanner closed', 'AbortError'));
   function dispose(error = new DOMException('Scanner closed', 'AbortError')) {
@@ -147,6 +161,8 @@ async function scannerCreateEngine({ signal, onProgress = () => {} } = {}) {
     pending?.reject(error);
     pending = null;
     worker.terminate();
+    cornerController?.abort();
+    cornerEngine?.dispose();
   }
   signal?.addEventListener('abort', aborted, { once: true });
   worker.onerror = () =>
@@ -159,6 +175,13 @@ async function scannerCreateEngine({ signal, onProgress = () => {} } = {}) {
     }
     if (data.type === 'ready') {
       clearTimeout(startupTimeout);
+      diagnostics = {
+        inferenceMode: data.inferenceMode,
+        numThreads: data.numThreads,
+        backendTimings: data.backendTimings,
+        catalogRows: data.catalogRows,
+        catalogTotalRows: data.catalogTotalRows,
+      };
       readyResolve();
       return;
     }
@@ -167,6 +190,7 @@ async function scannerCreateEngine({ signal, onProgress = () => {} } = {}) {
       return;
     }
     if (data.type !== 'result') return;
+    if (diagnostics && data.inferenceMode) diagnostics.inferenceMode = data.inferenceMode;
     try {
       if (disposed || !pending) return;
       const result = {
@@ -175,6 +199,11 @@ async function scannerCreateEngine({ signal, onProgress = () => {} } = {}) {
         frameHeight: pending.frameHeight,
         sourceFrame: pending.sourceFrame,
         thumb: null,
+        diagnostics: {
+          ...diagnostics,
+          inferenceMode: data.inferenceMode || diagnostics?.inferenceMode,
+        },
+        roundTripMs: performance.now() - pending.started,
       };
       if (data.cropBitmap && !pending.signal?.aborted) {
         const thumb = document.createElement('canvas');
@@ -203,16 +232,47 @@ async function scannerCreateEngine({ signal, onProgress = () => {} } = {}) {
     manifest,
     assetBasePath: SCANNER_ASSET_BASE + '/assets',
     catalogMode: 'v1',
-    enableWebGpu: false,
+    enableWebGpu: true,
     rotationInvariant: true,
     minCornerConfidence: 0.02,
+    detectorOnly,
   });
   if (signal?.aborted) aborted();
   await ready;
+  if (!detectorOnly && scannerCanRunCornerWorker()) {
+    cornerController = new AbortController();
+    try {
+      cornerEngine = await scannerCreateEngine({
+        signal: cornerController.signal,
+        detectorOnly: true,
+      });
+      diagnostics.cornerPreview = cornerEngine.diagnostics;
+    } catch {
+      // A restricted or memory-constrained browser can keep the ordinary scan loop.
+    }
+  }
+  signal?.throwIfAborted();
+  if (disposed) throw new DOMException('Scanner closed', 'AbortError');
   return {
     dispose,
     get disposed() {
       return disposed;
+    },
+    get diagnostics() {
+      return diagnostics;
+    },
+    get canPreviewCorners() {
+      return !!cornerEngine && !cornerEngine.disposed;
+    },
+    async detect(canvas, options = {}) {
+      if (!cornerEngine || cornerEngine.disposed) return null;
+      try {
+        return await cornerEngine.recognize(canvas, { ...options, thumbnail: false });
+      } catch (error) {
+        if (error.name === 'AbortError') throw error;
+        cornerEngine.dispose();
+        return null;
+      }
     },
     clearFrames() {
       // Queue behind in-flight inference, ahead of any later camera session.
@@ -220,11 +280,20 @@ async function scannerCreateEngine({ signal, onProgress = () => {} } = {}) {
         if (!disposed) worker.postMessage({ type: 'clearFrames' });
       });
       frameQueue = operation.catch(() => {});
-      return operation;
+      return Promise.all([operation, cornerEngine?.clearFrames()]);
     },
-    recognize(canvas, { signal, thumbnail = true, cornerThreshold = 0.02 } = {}) {
+    recognize(
+      canvas,
+      {
+        signal,
+        thumbnail = true,
+        cornerThreshold = 0.02,
+        idThreshold = 0.6,
+        detection = null,
+      } = {},
+    ) {
       const operation = frameQueue.then(() =>
-        scanFrame(canvas, signal, thumbnail, cornerThreshold),
+        scanFrame(canvas, signal, thumbnail, cornerThreshold, idThreshold, detection),
       );
       frameQueue = operation.then(
         () => {},
@@ -233,9 +302,10 @@ async function scannerCreateEngine({ signal, onProgress = () => {} } = {}) {
       return scannerWaitFor(operation, signal);
     },
   };
-  async function scanFrame(canvas, signal, thumbnail, cornerThreshold) {
+  async function scanFrame(canvas, signal, thumbnail, cornerThreshold, idThreshold, detection) {
     signal?.throwIfAborted();
     if (disposed) throw new DOMException('Scanner closed', 'AbortError');
+    const started = performance.now();
     const bitmap = await createImageBitmap(canvas);
     if (disposed || signal?.aborted) {
       bitmap.close();
@@ -249,6 +319,7 @@ async function scannerCreateEngine({ signal, onProgress = () => {} } = {}) {
         frameWidth: canvas.width,
         frameHeight: canvas.height,
         sourceFrame: canvas.scannerSource,
+        started,
         timeout: setTimeout(
           () => dispose(new Error('This scan took too long. Close the scanner and try again.')),
           30000,
@@ -257,8 +328,10 @@ async function scannerCreateEngine({ signal, onProgress = () => {} } = {}) {
       try {
         // Configure inside the frame queue so each request uses its own threshold
         // while the cached worker and loaded models stay ready between sessions.
-        worker.postMessage({ type: 'config', minCornerConfidence: cornerThreshold });
-        worker.postMessage({ type: 'frame', bitmap, includeDebugBitmaps: thumbnail }, [bitmap]);
+        worker.postMessage({ type: 'config', minCornerConfidence: cornerThreshold, idThreshold });
+        worker.postMessage({ type: 'frame', bitmap, includeDebugBitmaps: thumbnail, detection }, [
+          bitmap,
+        ]);
       } catch (error) {
         bitmap.close();
         dispose(error);

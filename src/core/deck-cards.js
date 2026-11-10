@@ -193,7 +193,7 @@ function openFolderPickPopup(d, onPick) {
       <button class="dp-row" data-fid="">
         <div class="dp-txt">
           No folder
-          <div class="dp-meta">${escapeHtml(d.name)} stays in its format folder</div>
+          <div class="dp-meta">Appears under ${escapeHtml(fmtLabelOf(deckFormat(d)))} on Decks</div>
         </div>
       </button>
       ${flds

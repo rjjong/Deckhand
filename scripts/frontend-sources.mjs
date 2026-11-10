@@ -24,6 +24,8 @@ export const scripts = [
   'src/pages/judge/availability.js',
   'src/pages/judge/stream.js',
   'src/pages/judge/index.js',
+  'src/ui/library-tiles.js',
+  'src/pages/decks/sort.js',
   'src/pages/decks/index.js',
   'src/pages/collection/index.js',
   'src/pages/collection/playing.js',
@@ -109,6 +111,7 @@ export const scripts = [
   'src/core/readiness.js',
   'src/ui/card-skeleton.js',
   'src/services/reconnect.js',
+  'src/platform/scroll-feedback.js',
   'src/app/start.js',
   'src/pages/references/index.js',
   'src/pages/menu/index.js',
@@ -165,6 +168,10 @@ export const styles = [
   'styles/overrides/card-transfers.css',
   'styles/overrides/scanner.css',
   'styles/overrides/accounts.css',
+  'styles/overrides/library-tiles.css',
+  'styles/overrides/news.css',
+  'styles/overrides/scroll-feedback.css',
+  'styles/overrides/deck-library.css',
 ];
 
 export const media = ['assets/images/deckhand-badge.webp'];

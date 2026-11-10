@@ -13,6 +13,18 @@ async function listen(app) {
   return `http://127.0.0.1:${app.server.address().port}`;
 }
 
+test('app and worker resources enable scanner threads without blocking public cross-origin images', async (t) => {
+  const app = createApp({ databasePath: ':memory:', env: {}, fetchImpl: async () => Response.json({}) });
+  t.after(() => app.close());
+  const base = await listen(app);
+  for (const path of ['/', '/sw.js', '/assets/scanner/collectorvision/scanner.worker.mjs', '/assets/scanner/collectorvision/corner.worker.mjs', '/assets/scanner/collectorvision/performance.mjs']) {
+    const response = await fetch(base + path, { method: 'HEAD' });
+    assert.equal(response.status, 200, path);
+    assert.equal(response.headers.get('cross-origin-opener-policy'), 'same-origin');
+    assert.equal(response.headers.get('cross-origin-embedder-policy'), 'credentialless');
+  }
+});
+
 test('local news aggregates sources and shares its cache across concurrent requests', async (t) => {
   let calls = 0;
   const app = createApp({

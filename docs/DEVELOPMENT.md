@@ -576,19 +576,21 @@ view, covering the underlying page and navigation. Recognition runs continuously
 while this view is visible, with a newest-first detection log below the preview.
 There is no shutter button. Hold one card steady with all corners visible.
 
-Two matching frames confirm an identity. The same held card is logged once;
+Two matching frames of the exact printing ID confirm an identity. The same held card is logged once;
 moving it out of view for about 1.2 seconds allows another copy to be scanned.
 Changing to a different card can be confirmed immediately without a blank frame.
-Printings sharing an Oracle identity are treated as one held card to avoid
-duplicate entries from prediction jitter. Only confirming frames request image
+Different printing IDs remain separate even when they share a name or Oracle
+identity. Prediction changes must settle on two frames of the same printing.
+Only confirming frames request image
 thumbnails, reducing bitmap transfers and memory pressure on mobile browsers.
 
-**Settings → Card scanner** adds an optional debounce time (0–60 seconds) and
-**Ignore previously scanned cards**. Debounce compares normalized card names,
-including different printings, against the last accepted scan of that name.
-Ignored detections do not extend the cooldown. The session option logs each name
+**Settings → Card scanner** offers **Ignore previously scanned printings**, off by
+default. The session option compares exact Scryfall printing IDs and logs each printing
 once until the camera closes; reviewing/adding a card keeps the session intact.
-Both default to off, preserving the held-card suppression described above.
+Held-card suppression described above always applies. The former debounce-time
+preference is removed from storage on load and excluded from current sync
+projection/restoration. The server still accepts the retired numeric record in
+older clients' batches so it cannot break syncing unrelated data.
 Settings are saved in `settings:app`, included in backups and account sync, and
 read when opening the camera. Older preferences use these defaults. Name checks
 run after resolving card details, in detection order even if lookups finish out
@@ -596,7 +598,9 @@ of order; known identities are filtered before another row or lookup is created.
 
 Recognition settings in the same section include **ID threshold** (0–1, default
 0.60), **Corner threshold** (0–1, default 0.02) and **Scan interval** (100–10,000 ms,
-default 650 ms). Higher thresholds require stronger identity/detector confidence;
+default 200 ms). The former 650 ms default upgrades once per device; custom
+intervals are preserved and 650 ms can still be selected afterwards.
+Higher thresholds require stronger identity/detector confidence;
 valid card geometry is always required. Both thresholds are applied before stable
 confirmation and retained for card-detail lookups, including ID thresholds below
 the old fixed 0.60 cutoff. Each queued worker request uses CollectorVision's
@@ -605,7 +609,10 @@ models and avoids leaking a previous session's threshold into later requests.
 The interval is the minimum start-to-start time; inference remains serialized
 and slower devices can take longer. **Show scan framerate** is off by default.
 It overlays completed scans per second, averaged over the last six completions,
-including interval/inference time. It resets on pause, review and reopening.
+including interval/inference time, plus the active backend, CPU thread count,
+frame time, orientation count and detection/warp/embedding/catalog timings.
+It resets on pause, review and reopening. Confirmation still requires two
+matching observations; the 1.2-second removal guard is unchanged.
 All scanner preferences are normalized, backed up and account-synced.
 
 Each entry is inserted when detected, so slow card details never reorder the
@@ -636,9 +643,10 @@ clears on missing/invalid corners, pause and close. Cards can be smaller, off-ce
 or tilted: the existing homography and bilinear sampling straighten the detected
 four corners before embedding, without requiring a fixed alignment rectangle.
 
-Repeat settings report `session` or `debounce` when a name is ignored, including
-different printings resolved asynchronously. A small camera notice identifies
-the name and reason for 2.5 seconds. Held repeats notify once per presentation,
+Session filtering reports `session` when the same printing ID is ignored.
+Different sets/artwork remain separate, regardless of matching card names or
+Oracle IDs. Missing IDs never fall back to name matching. A small camera notice
+identifies the name, set and collector number for 2.5 seconds. Held repeats notify once per presentation,
 then rearm when a card is removed or another card is presented. Default held-card
 suppression alone does not claim that a user setting ignored the card.
 
@@ -707,7 +715,7 @@ The Decks FAB opens `openCardScanner({ mode: 'deck' })`. An open deck passes
 `deckId` as well, restricting both bulk and review transfers to that captured
 destination while keeping the proxy choice. Closing the camera refreshes the
 deck editor. In this mode the camera,
-selection and photo lifecycle are shared, but repeat delay/session suppression are
+selection and photo lifecycle are shared, but session duplicate suppression is
 disabled in the session snapshot so a physical deck can contain repeated names.
 Saved preferences are not modified and held-card suppression still applies.
 `log.prepareAdd()` captures a batch with a validity check and a one-use commit;
@@ -758,20 +766,75 @@ caches. New builds select Fastweb-Single instead of Cornelius. The build hash
 includes detector metadata and the shipped manifest.
 
 After the first page loads, `src/features/scanner/session.js` warms one shared
-worker in idle time. It loads the models/catalog and runs both inference graphs
-with empty tensors before reporting readiness. This never opens the camera or
+worker in idle time. It loads the models/catalog and warms both inference graphs
+with a procedural image and the bundled public card sample before reporting readiness.
+`performance.mjs` benchmarks WebGPU separately for each model against threaded
+WASM. A GPU must reproduce CPU outputs within numerical tolerance on both inputs
+and be at least 10% faster to be selected. Unsupported, inaccurate, slower or
+timed-out GPU probes retain WASM; a later GPU run failure retries on WASM.
+This never opens the camera or
 requests permission. Opening/closing the scanner reuses that worker for the app
 session. Closing a view cancels its wait/scan, leaving initialization and other
 views intact; inference requests are serialized and canceled results discarded.
 Failures stay quiet during startup and can be retried when opening the camera
 or reconnecting. A full page exit releases the worker; backgrounding stops the
-camera while keeping recognition ready.
+camera while keeping recognition ready. Static responses use COOP `same-origin`
+and COEP `credentialless` to enable SharedArrayBuffer without blocking public
+cross-origin card/news images. Android uses at most two WASM threads, desktop
+four; iOS and contexts without isolation keep one. GPU performance remains
+device/model dependent and must be measured on the target phone.
+
+On isolated devices with at least four logical CPUs and 4 GB reported memory,
+the shared engine also warms `corner.worker.mjs`. iOS and smaller devices keep
+the ordinary single-worker loop. The extra worker loads only Fastweb and uses
+one CPU thread; it does not load Milo or a second catalog. Camera corners run
+at most every 120 ms independently from one outstanding identification. That
+identification receives a separate copy of the exact frame and its precomputed
+corners, avoiding both a second detection and a moving-frame mismatch. No frame
+queue accumulates. A failed extra worker falls back to the ordinary scan loop.
+Both workers clear camera buffers on close and remain warm until page exit.
+The timing overlay reports corner update FPS separately from identification FPS.
+
+ImageNet RGB normalization uses a 768-value float32 lookup. Every possible byte
+produces exactly the original model input, avoiding per-pixel division without
+lowering detector resolution or changing recognition thresholds.
+
+An accepted log entry calls `scannerScanFeedback()` once for a 70 ms vibration.
+Exact-printing duplicate filtering runs first. A ready card signals immediately,
+without waiting for earlier, unrelated metadata lookups. Held, session-ignored,
+blank, excluded, failed and canceled detections
+do not produce success feedback. Refreshing or retrying an already accepted
+entry does not repeat the vibration. Unsupported/blocked vibration is harmless;
+browsers require prior interaction and device vibration must be permitted.
+
+`scannerRequestVibration` retains the last request result in memory, including
+whether it came from a scan or a manual test. It distinguishes no API, a hidden
+page, missing sticky activation, browser rejection and request acceptance.
+Acceptance is explicitly not proof of physical vibration: a browser or device
+can silently suppress its motor. Settings → Card scanner → Test vibration sends
+`[180, 100, 180]` directly from the click handler. The optional camera timing
+overlay provides the same test with the camera active and displays actual scan
+request status. No diagnostic data is stored or sent to the server.
+Chromium's Android `VibrationManagerAndroid.vibrate()` skips the motor call when
+`AudioManager.getRingerMode()` is `RINGER_MODE_SILENT`, even if the JavaScript
+request was accepted. Native touch feedback can still work. Changing pulse
+duration cannot override that phone setting.
+
+Strong matches (score at least 0.85 and the requested ID threshold) skip the
+second orientation. Uncertain matches check both; the last confidently matched
+orientation is tried first on later frames. The full 109,711-row f16 catalog is
+retained and searched exactly, with four independent accumulation lanes.
+Perspective sampling shares coordinates across RGB channels without allocating
+an array per pixel. Model input/output tensors are disposed after every run.
 
 Models, WASM and reference data are served by Deckhand (about 70 MB on first
 initialization). Model/catalog buffers are cached in IndexedDB. The service
 worker caches the manifest and ONNX runtime under a scanner-bundle-specific
-cache name. App updates retain this cache; a changed scanner bundle replaces
-it. The small scanner worker source is also part of the offline app shell.
+cache name. App updates retain this cache; a changed scanner bundle or runtime
+policy replaces it. The threaded-runtime policy changes the cache suffix once
+so old responses without isolation headers are not reused. First-party worker
+helpers are included in the build hash and use a versioned import URL.
+The small scanner worker source is also part of the offline app shell.
 Photos stay on-device. A successful match can request its Scryfall card details
 through the existing paced proxy; no photo is uploaded and scanning does not
 require the separate local Oracle library. Camera tracks stop on back, close,

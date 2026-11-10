@@ -210,7 +210,11 @@ export function createApp({ databasePath = resolve('./var/deckhand.dev.sqlite'),
       } else return json(res, 404, { ok: false, error: 'not_found' });
       const info = await stat(file);
       res.writeHead(200, { 'content-type': MIME[file.split('.').pop()] || 'application/octet-stream',
-        'content-length': info.size, 'cache-control': 'no-cache', 'x-content-type-options': 'nosniff' });
+        'content-length': info.size, 'cache-control': 'no-cache', 'x-content-type-options': 'nosniff',
+        // SharedArrayBuffer unlocks threaded scanner inference. Credentialless
+        // keeps public Scryfall/news images working without requiring CORP.
+        'cross-origin-opener-policy': 'same-origin',
+        'cross-origin-embedder-policy': 'credentialless' });
       if (req.method === 'HEAD') return res.end();
       await pipeline(createReadStream(file), res);
     } catch (error) {

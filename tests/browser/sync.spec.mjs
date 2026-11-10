@@ -97,7 +97,7 @@ test('offline changes remain pending and are sent to SQLite when the device reco
     state.collection.items[0].qty = 9;
     saveCollection();
     state.guild = 'boros';
-    state.scannerDebounceMs = 2500;
+    state.scannerDebounceMs = 2500; // An obsolete value must never be persisted or uploaded.
     state.scannerIgnoreSession = true;
     state.scannerIdThreshold = 0.72;
     state.scannerCornerThreshold = 0.08;
@@ -118,7 +118,7 @@ test('offline changes remain pending and are sent to SQLite when the device reco
   expect(JSON.parse(stored['deck:sync-Offline'].v).name).toBe('Edited offline');
   expect(JSON.parse(stored['saved-game:game-Offline'].v).d.players[0].life).toBe(11);
   expect(stored['setting:guild'].v).toBe('"boros"');
-  expect(stored['setting:scannerDebounceMs'].v).toBe('2500');
+  expect(stored['setting:scannerDebounceMs']).toBeUndefined();
   expect(stored['setting:scannerIgnoreSession'].v).toBe('true');
   expect(stored['setting:scannerIdThreshold'].v).toBe('0.72');
   expect(stored['setting:scannerCornerThreshold'].v).toBe('0.08');
@@ -275,6 +275,7 @@ test('unlinking during an in-flight response prevents remote data from being app
   await prepare(page);
   await seed(page, 'Cancel');
   await link(page);
+  const originalGuild = await page.evaluate(() => state.guild);
   const remote = await page.evaluate(async () =>
     syncCall({ op: 'sync', changes: { 'setting:guild': { t: Date.now() + 50, v: '"simic"' } } }),
   );
@@ -303,7 +304,7 @@ test('unlinking during an in-flight response prevents remote data from being app
   release();
   await page.evaluate(() => window.cancelledSync);
   expect(await page.evaluate(() => syncState())).toBeNull();
-  expect(await page.evaluate(() => state.guild)).toBe('izzet');
+  expect(await page.evaluate(() => state.guild)).toBe(originalGuild);
   expect(await page.evaluate(() => state.decksIndex[0].name)).toBe('Cancel deck');
 });
 

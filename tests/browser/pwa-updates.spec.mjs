@@ -133,7 +133,7 @@ test('a deployment preserves editing and saved data, then refreshes on return', 
   const app = await releases();
   try {
     await open(page, app);
-    const scannerCache = 'deckhand-scanner-' + scannerBundleHash.slice(0, 12);
+    const scannerCache = 'deckhand-scanner-' + scannerBundleHash.slice(0, 12) + '-threads-v1';
     await page.evaluate(async (scannerCache) => {
       const deck = { id: 'update-test', name: 'Keep my deck', format: 'commander', cards: [] };
       state.decksIndex.push(deck);

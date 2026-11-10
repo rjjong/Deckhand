@@ -4,8 +4,8 @@
 
 /* ---------- Formats ----------
    ONE app. Every deck carries its own format; what may go in it is the
-   card's legality in that format, and the format folders keep the decks
-   apart. Nothing else splits the app. */
+   card's legality in that format. The library groups decks by format.
+   Nothing else splits the app. */
 
 function fmtName(d) {
   const f = d && d.format ? d.format : 'commander';
@@ -81,7 +81,7 @@ function ctxFmt() {
    what used to be the dark red), side = the SURFACE role (panels and fields,
    what used to be the dark blue) — Stef's fixed assignment, guild by guild.
    GUILD_SWATCH mirrors the CSS palettes' ink and panel hexes for the picker's
-   swatches. Izzet is the default. */
+   swatches. Device defaults use Rakdos in dark mode and Azorius in light mode. */
 const GUILDS = [
   { k: 'azorius', n: 'Azorius', main: 'W', side: 'U' },
   { k: 'dimir', n: 'Dimir', main: 'U', side: 'B' },
@@ -104,10 +104,10 @@ const GUILD_SWATCH = {
 };
 
 function currentGuild() {
-  return GUILDS.find((g) => g.k === state.guild) || GUILDS.find((g) => g.k === 'izzet');
+  return GUILDS.find((g) => g.k === state.guild) || GUILDS.find((g) => g.k === 'rakdos');
 }
 
-/* Format catalog — the buildable formats, in the order their auto folders
+/* Format catalog — the buildable formats, in the order their library groups
    appear on My Decks. Labels live here (not in FORMAT_RULES, declared much
    later) so early renders never trip a temporal dead zone. */
 const FMT_ORDER = [
@@ -191,8 +191,8 @@ function fmtLeaderWord(id) {
   return FMT_LEADER[id] || null;
 }
 
-/* Auto format folders: virtual, never stored. A deck with no user folder is
-   filed under its own format's folder; a user-placed deck stays where it was put. */
+/* Legacy virtual format IDs remain valid in saved folder parents and imports.
+   The deck library presents formats as sections rather than folder tiles. */
 const FMT_FOLDER_PREFIX = '__fmt__:';
 
 function isFmtFolder(id) {

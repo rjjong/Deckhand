@@ -1,21 +1,72 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// Apply repeat rules to confirmed card names, independent of printing IDs.
-function scannerCreateRepeatFilter({ debounceMs = 0, ignoreSession = false } = {}) {
-  const seen = new Map();
-  const key = (name) => String(name).normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase();
-  const reason = (name, at) => {
-    const previous = seen.get(key(name));
-    if (previous === undefined) return null;
-    if (ignoreSession) return 'session';
-    return debounceMs > 0 && at - previous < debounceMs ? 'debounce' : null;
+let scannerLastVibration = null;
+
+function scannerRequestVibration(pattern, source = 'scan') {
+  const device = globalThis.navigator;
+  const visible = globalThis.document?.visibilityState !== 'hidden';
+  const activated = device?.userActivation?.hasBeenActive;
+  let status;
+  try {
+    if (typeof device?.vibrate !== 'function') status = 'unsupported';
+    else if (!visible) status = 'hidden';
+    else if (activated === false) status = 'needs-tap';
+    else status = device.vibrate(pattern) === true ? 'requested' : 'rejected';
+  } catch {
+    status = 'rejected';
+  }
+  scannerLastVibration = { status, source, at: Date.now(), visible, activated: activated ?? null };
+  return scannerLastVibration;
+}
+
+function scannerScanFeedback() {
+  return scannerRequestVibration(70);
+}
+
+function scannerVibrationMessage(result, compact = false) {
+  switch (result?.status) {
+    case 'requested':
+      return compact
+        ? 'Vibration: browser accepted request'
+        : 'Browser accepted the request. If you felt no pulses, check Silent/Do Not Disturb and your phone’s vibration settings; the phone or browser may be suppressing it.';
+    case 'needs-tap':
+      return 'Tap a control to allow vibration on this page.';
+    case 'hidden':
+      return 'Vibration skipped: the app was in the background.';
+    case 'unsupported':
+      return 'This browser does not provide web vibration.';
+    case 'rejected':
+      return 'The browser rejected the vibration request.';
+    default:
+      return 'No scan vibration requested yet.';
+  }
+}
+
+// A printing ID distinguishes sets/artwork. Names and Oracle IDs group printings
+// together and must never be used to suppress separate physical versions.
+function scannerPrintingIdentity(card) {
+  const id = card?.cardId || card?.id;
+  return typeof id === 'string'
+    ? id
+        .trim()
+        .toLowerCase()
+        .replace(/_back$/, '')
+    : '';
+}
+
+function scannerCreateRepeatFilter({ ignoreSession = false } = {}) {
+  const seen = new Set();
+  const reason = (card) => {
+    const key = scannerPrintingIdentity(card);
+    return ignoreSession && key && seen.has(key) ? 'session' : null;
   };
-  const isRepeat = (name, at) => reason(name, at) !== null;
+  const isRepeat = (card) => reason(card) !== null;
   return {
     isRepeat,
     reason,
-    accept(name, at) {
-      if (isRepeat(name, at)) return false;
-      seen.set(key(name), at);
+    accept(card) {
+      if (isRepeat(card)) return false;
+      const key = scannerPrintingIdentity(card);
+      if (ignoreSession && key) seen.add(key);
       return true;
     },
   };
@@ -40,8 +91,7 @@ function scannerCreateTracker({
         return null;
       }
       missingSince = null;
-      // Alternate printing predictions for the same card are one detection.
-      const key = result.secondaryId || result.cardId;
+      const key = scannerPrintingIdentity(result);
       if (key === lastKey) {
         candidate = null;
         return null;

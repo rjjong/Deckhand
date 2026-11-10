@@ -15,7 +15,6 @@ test('scanner preferences project, validate and persist as independent numeric/b
   const code = (await handle({ op: 'create' }, ctx)).json.code;
   const raw = {
     theme: 'dark',
-    scannerDebounceMs: 2500,
     scannerIgnoreSession: true,
     scannerIdThreshold: 0.72,
     scannerCornerThreshold: 0.08,
@@ -23,7 +22,7 @@ test('scanner preferences project, validate and persist as independent numeric/b
     scannerShowFramerate: true,
   };
   const projected = records.syncProjectStorage('settings:app', JSON.stringify(raw));
-  assert.equal(projected['setting:scannerDebounceMs'], '2500');
+  assert.equal(projected['setting:scannerDebounceMs'], undefined);
   assert.equal(projected['setting:scannerIgnoreSession'], 'true');
   const changes = Object.fromEntries(
     Object.entries(projected).map(([key, v]) => [key, { t: 1, v }]),
@@ -60,6 +59,29 @@ test('scanner preferences project, validate and persist as independent numeric/b
   assert.equal(records.syncRecordValid('setting:scannerShowFramerate', 'true'), true);
   assert.equal(records.syncRecordValid('setting:scannerShowFramerate', 'false'), true);
   assert.equal(records.syncRecordValid('setting:scannerShowFramerate', '1'), false);
+});
+
+test('obsolete scanner debounce does not reject old-client batches or return in current preferences', async (t) => {
+  const storage = openStorage(':memory:');
+  t.after(() => storage.close());
+  const ctx = { sync: storage.sync };
+  const code = (await handle({ op: 'create' }, ctx)).json.code;
+  const reply = await handle({ op: 'sync', code, changes: {
+    'setting:scannerDebounceMs': { t: 1, v: '60000' },
+    'setting:scannerIgnoreSession': { t: 1, v: 'true' },
+    'setting:theme': { t: 1, v: '"dark"' },
+  } }, ctx);
+  assert.equal(reply.status, 200);
+  const saved = (await handle({ op: 'sync', code, since: 0 }, ctx)).json.changes;
+  const values = Object.fromEntries(Object.entries(saved).map(([key, record]) => [key, record.v]));
+  assert.deepEqual(JSON.parse(records.syncRestoreStorage('settings:app', values)), {
+    scannerIgnoreSession: true, theme: 'dark',
+  });
+  const projected = records.syncProjectStorage('settings:app', JSON.stringify({
+    scannerDebounceMs: 60000, scannerIgnoreSession: true,
+  }));
+  assert.equal(projected['setting:scannerDebounceMs'], undefined);
+  assert.equal(projected['setting:scannerIgnoreSession'], 'true');
 });
 
 test('sync codes isolate SQLite data across restarts without storing credentials or the code', async (t) => {
@@ -165,6 +187,29 @@ test('collection records preserve independent cards, binders, wants, and printin
     qty: 1,
   });
   assert.equal(JSON.parse(records.syncRestoreStorage('collection', projected)).items.length, 3);
+});
+
+test('library cover choices survive sync for decks, folders, binders and automatic folders', async (t) => {
+  const storage = openStorage(':memory:');
+  t.after(() => storage.close());
+  const ctx = { sync: storage.sync };
+  const code = (await handle({ op: 'create' }, ctx)).json.code;
+  const coverArt = { key: 'printing', name: 'Cover card', image: 'https://cards.scryfall.io/art_crop/front/a/b/card.jpg' };
+  const sources = {
+    folders: [{ id: 'folder', name: 'Projects', coverArt }],
+    collection: { items: [], binders: [{ id: 'binder', name: 'Trades', coverArt }], wantsManual: [], wantsExclude: [] },
+    tileCovers: { 'collection:__all__': coverArt, 'deck:__fmt__:commander': coverArt },
+    deckSort: { sort: 'price', sortDir: 'desc' },
+  };
+  const projected = {};
+  for (const [source, value] of Object.entries(sources)) Object.assign(projected, records.syncProjectStorage(source, JSON.stringify(value)));
+  projected['deck:deck'] = JSON.stringify({ id: 'deck', cards: [], coverArt });
+  const changes = Object.fromEntries(Object.entries(projected).map(([key, v]) => [key, { t: 1, v }]));
+  assert.equal((await handle({ op: 'sync', code, changes }, ctx)).status, 200);
+  const saved = (await handle({ op: 'sync', code, since: 0 }, ctx)).json.changes;
+  const values = Object.fromEntries(Object.entries(saved).map(([key, record]) => [key, record.v]));
+  for (const [source, value] of Object.entries(sources)) assert.deepEqual(JSON.parse(records.syncRestoreStorage(source, values)), value);
+  assert.deepEqual(JSON.parse(values['deck:deck']).coverArt, coverArt);
 });
 
 test('SQLite sync validates whole changesets before writing and returns winners for rejected old edits', async (t) => {

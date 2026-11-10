@@ -4,12 +4,13 @@ import vm from 'node:vm';
 import { readFile } from 'node:fs/promises';
 import records from '../shared/sync-records.cjs';
 
-async function setup() {
+async function setup({ dark = true } = {}) {
   const stored = new Map();
   const context = vm.createContext({
     state: {},
     LS_PREFIX: 'test:',
-    GUILDS: [{ k: 'dimir' }],
+    GUILDS: [{ k: 'dimir' }, { k: 'rakdos' }, { k: 'azorius' }],
+    matchMedia: () => ({ matches: dark }),
     loadCollection: () => ({ items: [], binders: [] }),
     loadPriceCache: () => ({}),
     applyTheme() {},
@@ -27,6 +28,24 @@ async function setup() {
   vm.runInContext(source.slice(0, source.indexOf('function applyTheme')), context);
   return { context, stored };
 }
+
+test('device appearance defaults use Rakdos in dark mode and Azorius in light mode', async () => {
+  for (const dark of [true, false]) {
+    const { context, stored } = await setup({ dark });
+    await context.loadSettings();
+    assert.equal(context.state.theme, dark ? 'dark' : 'light');
+    assert.equal(context.state.guild, dark ? 'rakdos' : 'azorius');
+    stored.set('test:settings:app', JSON.stringify({ theme: 'dark', guild: 'dimir' }));
+    await context.loadSettings();
+    assert.equal(context.state.theme, 'dark');
+    assert.equal(context.state.guild, 'dimir');
+    stored.set('test:settings:app', JSON.stringify({ theme: 'invalid', guild: 'missing', scannerIgnoreSession: true }));
+    await context.loadSettings();
+    assert.equal(context.state.theme, dark ? 'dark' : 'light');
+    assert.equal(context.state.guild, dark ? 'rakdos' : 'azorius');
+    assert.equal(context.state.scannerIgnoreSession, true);
+  }
+});
 
 test('scanner startup and hidden collection totals survive saving, loading and independent preference sync', async () => {
   const { context, stored } = await setup();
@@ -86,4 +105,35 @@ test('existing or malformed preferences show collection totals by default', asyn
     await context.loadSettings();
     assert.equal(context.state.hideCollectionFolderPrices, false);
   }
+});
+
+test('scanner timing upgrades the old default once while preserving custom and later choices', async () => {
+  const { context, stored } = await setup();
+  stored.set('test:settings:app', JSON.stringify({ scannerIntervalMs: 650, scannerIdThreshold: 0.8 }));
+  await context.loadSettings();
+  assert.equal(context.state.scannerIntervalMs, 200);
+  assert.equal(context.state.scannerIdThreshold, 0.8);
+  assert.equal(JSON.parse(stored.get('test:settings:app')).scannerIntervalMs, 200);
+  context.state.scannerIntervalMs = 650;
+  await context.persistSettings();
+  await context.loadSettings();
+  assert.equal(context.state.scannerIntervalMs, 650);
+  const custom = await setup();
+  custom.stored.set('test:settings:app', JSON.stringify({ scannerIntervalMs: 900 }));
+  await custom.context.loadSettings();
+  assert.equal(custom.context.state.scannerIntervalMs, 900);
+});
+
+test('removed scanner debounce is discarded from saved and backed-up preferences', async () => {
+  const { context, stored } = await setup();
+  stored.set('test:settings:app', JSON.stringify({
+    scannerDebounceMs: 60000, scannerIntervalMs: 500, scannerIgnoreSession: true,
+  }));
+  await context.loadSettings();
+  assert.equal(Object.hasOwn(context.state, 'scannerDebounceMs'), false);
+  assert.equal(Object.hasOwn(JSON.parse(stored.get('test:settings:app')), 'scannerDebounceMs'), false);
+  assert.equal(context.state.scannerIntervalMs, 500);
+  assert.equal(context.state.scannerIgnoreSession, true);
+  await context.persistSettings();
+  assert.equal(Object.hasOwn(JSON.parse(stored.get('test:settings:app')), 'scannerDebounceMs'), false);
 });

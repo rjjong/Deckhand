@@ -28,17 +28,15 @@ test('scanner preferences save, survive reload and keep other app preferences', 
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.evaluate(async () => {
+    state.theme = 'dark';
     state.guild = 'dimir';
     state.startupPage = 'collection';
     await persistSettings();
   });
   await openSettings(page);
-  const delay = page.locator('#scannerDebounceSeconds');
   const ignore = page.locator('#scannerIgnoreSession');
-  await expect(delay).toHaveValue('0');
+  await expect(page.locator('#scannerDebounceSeconds')).toHaveCount(0);
   await expect(ignore).not.toBeChecked();
-  await delay.fill('2.5');
-  await delay.press('Tab');
   await ignore.check();
   for (const [id, value] of [
     ['scannerIdThreshold', '0.75'],
@@ -56,7 +54,6 @@ test('scanner preferences save, survive reload and keep other app preferences', 
     guild: 'dimir',
     startupPage: 'collection',
     hideCollectionFolderPrices: false,
-    scannerDebounceMs: 2500,
     scannerIgnoreSession: true,
     scannerIdThreshold: 0.75,
     scannerCornerThreshold: 0.08,
@@ -66,7 +63,7 @@ test('scanner preferences save, survive reload and keep other app preferences', 
   await page.reload();
   await expect(page.locator('#brandTitle')).toHaveText('COLLECTION');
   await openSettings(page);
-  await expect(delay).toHaveValue('2.5');
+  await expect(page.locator('#scannerDebounceSeconds')).toHaveCount(0);
   await expect(ignore).toBeChecked();
   await expect(page.locator('#scannerIdThreshold')).toHaveValue('0.75');
   await expect(page.locator('#scannerCornerThreshold')).toHaveValue('0.08');
@@ -83,33 +80,48 @@ test('scanner preferences save, survive reload and keep other app preferences', 
         .evaluate((el) => el.scrollWidth <= el.clientWidth + 1),
     ).toBe(true);
   }
-  await delay.fill('0');
-  await delay.press('Tab');
   await ignore.uncheck();
   expect(
     await page.evaluate(() => ({
-      delay: state.scannerDebounceMs,
+      obsoleteSaved: Object.hasOwn(
+        JSON.parse(localStorage.getItem(LS_PREFIX + 'settings:app')),
+        'scannerDebounceMs',
+      ),
       ignore: state.scannerIgnoreSession,
     })),
-  ).toEqual({ delay: 0, ignore: false });
+  ).toEqual({ obsoleteSaved: false, ignore: false });
   expect(errors).toEqual([]);
 });
 
-test('older settings use defaults and invalid delay input is bounded', async ({ page }) => {
+test('older settings discard debounce and remaining numeric inputs are bounded', async ({
+  page,
+}) => {
   await page.evaluate(async () => {
     localStorage.setItem(
       LS_PREFIX + 'settings:app',
-      JSON.stringify({ theme: 'dark', guild: 'dimir', startupPage: 'home' }),
+      JSON.stringify({
+        theme: 'dark',
+        guild: 'dimir',
+        startupPage: 'home',
+        scannerDebounceMs: 60000,
+      }),
     );
     await loadSettings();
   });
   await openSettings(page);
-  const delay = page.locator('#scannerDebounceSeconds');
-  await expect(delay).toHaveValue('0');
+  await expect(page.locator('#scannerDebounceSeconds')).toHaveCount(0);
+  expect(
+    await page.evaluate(() =>
+      Object.hasOwn(
+        JSON.parse(localStorage.getItem(LS_PREFIX + 'settings:app')),
+        'scannerDebounceMs',
+      ),
+    ),
+  ).toBe(false);
   await expect(page.locator('#scannerIgnoreSession')).not.toBeChecked();
   await expect(page.locator('#scannerIdThreshold')).toHaveValue('0.6');
   await expect(page.locator('#scannerCornerThreshold')).toHaveValue('0.02');
-  await expect(page.locator('#scannerIntervalMs')).toHaveValue('650');
+  await expect(page.locator('#scannerIntervalMs')).toHaveValue('200');
   await expect(page.locator('#scannerShowFramerate')).not.toBeChecked();
   for (const [id, input, expected] of [
     ['scannerIdThreshold', '5', '1'],
@@ -121,18 +133,12 @@ test('older settings use defaults and invalid delay input is bounded', async ({ 
     await page.locator('#' + id).press('Tab');
     await expect(page.locator('#' + id)).toHaveValue(expected);
   }
-  await delay.fill('100');
-  await delay.press('Tab');
-  await expect(delay).toHaveValue('60');
-  expect(await page.evaluate(() => state.scannerDebounceMs)).toBe(60000);
-  await delay.fill('-5');
-  await delay.press('Tab');
-  await expect(delay).toHaveValue('0');
 });
 
-test('scanner cooldown keeps detection order when matching names resolve out of order', async ({
+test('session filtering preserves different printings and signals ready cards without waiting for unrelated lookups', async ({
   page,
 }) => {
+  await page.mouse.click(4, 4); // Vibration requires prior interaction with this page.
   const start = Date.parse('2026-11-07T12:00:00Z');
   await page.clock.setFixedTime(start);
   await page.evaluate(() => {
@@ -142,40 +148,47 @@ test('scanner cooldown keeps detection order when matching names resolve out of 
       '<span id="scannerLogCount"></span><p id="scannerLogEmpty">Empty</p><ul id="scannerDetections"></ul>';
     document.body.append(root);
     window.pendingCards = {};
+    window.scanHaptics = [];
+    navigator.vibrate = pattern => { scanHaptics.push(pattern); return true; };
     scannerResolveCard = (result) =>
       new Promise((resolve) => {
         pendingCards[result.cardId] = resolve;
       });
     window.testLog = scannerCreateLog(root, {
       signal: new AbortController().signal,
-      settings: { scannerDebounceMs: 3000, scannerIgnoreSession: false },
+      settings: { scannerIgnoreSession: true },
+      onAccepted: scannerScanFeedback,
       onReview() {},
     });
-    testLog.append({ cardId: 'first-printing', secondaryId: 'first-identity' });
-    testLog.append({ cardId: 'other-printing', secondaryId: 'other-identity' });
+    testLog.append({ cardId: 'first-printing', secondaryId: 'shared-oracle' });
+    testLog.append({ cardId: 'other-printing', secondaryId: 'shared-oracle' });
     testLog.append({ cardId: 'opt', secondaryId: 'opt' });
+    testLog.append({ cardId: 'first-printing', secondaryId: 'shared-oracle' });
   });
   await expect.poll(() => page.evaluate(() => Object.keys(pendingCards).length)).toBe(3);
   await page.evaluate(() => {
-    pendingCards['other-printing']({ name: 'SOL RING' });
+    pendingCards['other-printing']({ id: 'other-printing', name: 'Sol Ring', set: 'm3c', collector_number: '300', illustration_id: 'art-b' });
     pendingCards.opt({ name: 'Opt' });
   });
   await expect(page.locator('#testScannerLog [data-state="ready"]')).toHaveCount(2);
-  await page.evaluate(() => pendingCards['first-printing']({ name: 'Sol Ring' }));
+  expect(await page.evaluate(() => scanHaptics)).toEqual([70, 70]);
+  await page.evaluate(() => pendingCards['first-printing']({ id: 'first-printing', name: 'Sol Ring', set: 'c21', collector_number: '121', illustration_id: 'art-a' }));
   const visibleNames = page.locator(
     '#testScannerLog .scanner-detection:not([hidden]) .scanner-detection-name',
   );
-  await expect(visibleNames).toHaveText(['Opt', 'Sol Ring']);
-  await expect(page.locator('#testScannerLog #scannerLogCount')).toHaveText('2 cards');
+  await expect(visibleNames).toHaveText(['Opt', 'Sol Ring', 'Sol Ring']);
+  await expect(page.locator('#testScannerLog #scannerLogCount')).toHaveText('3 cards');
+  expect(await page.evaluate(() => scanHaptics)).toEqual([70, 70, 70]);
   await page.clock.setFixedTime(start + 2500);
   await page.evaluate(() =>
     testLog.append({ cardId: 'other-printing', secondaryId: 'other-identity' }),
   );
-  await expect(page.locator('#testScannerLog .scanner-detection')).toHaveCount(3);
+  await expect(page.locator('#testScannerLog .scanner-detection')).toHaveCount(4);
   await page.clock.setFixedTime(start + 3000);
   await page.evaluate(() =>
     testLog.append({ cardId: 'other-printing', secondaryId: 'other-identity' }),
   );
-  await expect(visibleNames).toHaveText(['SOL RING', 'Opt', 'Sol Ring']);
+  await expect(visibleNames).toHaveText(['Opt', 'Sol Ring', 'Sol Ring']);
   await expect(page.locator('#testScannerLog #scannerLogCount')).toHaveText('3 cards');
+  expect(await page.evaluate(() => scanHaptics)).toEqual([70, 70, 70]);
 });

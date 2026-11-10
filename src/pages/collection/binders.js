@@ -729,66 +729,73 @@ async function binderResort() {
   brMovedSheet(moved);
 }
 
-function binderTileHtml(b) {
-  const items = collectionTrackedItems().filter((it) => it.binder === b.id);
-  const qty = items.reduce((a, it) => a + (it.qty || 1), 0);
-  const eur = items.reduce((a, it) => a + (it.eur != null ? it.eur : 0) * (it.qty || 1), 0);
-  return /* HTML */ `<div class="folder-tile binder-tile binder-no-art" data-binderopen="${b.id}">
-    <div class="binder-glyph-row">${binderTileGlyphs(b)}</div>
-    ${binderHasRules(b) ? `<button type="button" class="br-info" data-brinfo="${b.id}" aria-label="Auto-fill">i</button>` : ''}
-    <div class="folder-name">${escapeHtml(b.name)}</div>
-    <div class="folder-sub">
-      ${qty}
-      card${qty === 1 ? '' : 's'}${!state.hideCollectionFolderPrices && eur ? ` · €${eur.toFixed(2)}` : ''}
+function collectionFolderItems(id) {
+  if (id === '__wants__') return computeWants();
+  if (id === '__playing__') return computePlaying();
+  const items = collectionTrackedItems();
+  return id === '__all__' ? items : items.filter((item) => item.binder === id);
+}
+
+function collectionFolderTitle(id) {
+  return (
+    { __all__: 'All cards', __playing__: 'Playing', __wants__: 'Wants' }[id] ||
+    state.collection.binders.find((binder) => binder.id === id)?.name ||
+    'Binder'
+  );
+}
+
+function openCollectionCoverPicker(id) {
+  const binder = state.collection.binders.find((entry) => entry.id === id);
+  openLibraryCoverPicker({
+    title: collectionFolderTitle(id),
+    cards: collectionFolderItems(id),
+    selected: binder ? binder.coverArt : libraryFolderCovers()['collection:' + id],
+    onSelect(cover) {
+      if (!binder) setLibraryFolderCover('collection:' + id, cover);
+      else {
+        if (cover) binder.coverArt = cover;
+        else delete binder.coverArt;
+        saveCollection();
+      }
+    },
+  });
+}
+
+function collectionFolderTileHtml(id, glyph, binder) {
+  const items = collectionFolderItems(id);
+  const qty = items.reduce((total, item) => total + (item.qty || 1), 0);
+  const eur = collectionTotalValue(items);
+  const cover = binder ? binder.coverArt : libraryFolderCovers()['collection:' + id];
+  return /* HTML */ `<div class="folder-tile binder-tile library-tile" data-binderopen="${id}">
+    ${libraryTileArtHtml(items[0], cover, glyph)}
+    <div class="library-tile-body">
+      <div class="library-tile-heading">
+        <div class="folder-name">${escapeHtml(collectionFolderTitle(id))}</div>
+        <div class="folder-sub">
+          ${qty}
+          card${qty === 1 ? '' : 's'}${!state.hideCollectionFolderPrices && eur ? ` · €${eur.toFixed(2)}` : ''}
+        </div>
+      </div>
+      ${binder ? `<div class="library-tile-details library-binder-symbols"><div class="binder-glyph-row">${binderTileGlyphs(binder)}</div></div>` : ''}
     </div>
+    ${binder && binderHasRules(binder) ? `<button type="button" class="br-info" data-brinfo="${id}" aria-label="Auto-fill">i</button>` : ''}
   </div>`;
+}
+
+function binderTileHtml(binder) {
+  return collectionFolderTileHtml(binder.id, ICONS.collection, binder);
 }
 
 function collectionBindersGridHtml() {
   const binders = state.collection.binders;
-  const qtyAll = collectionTrackedItems().reduce((a, it) => a + (it.qty || 1), 0);
-  const eurAll = collectionTrackedItems().reduce(
-    (a, it) => a + (it.eur != null ? it.eur : 0) * (it.qty || 1),
-    0,
-  );
-  // Wants are computed, not stored — same tally as the wants view itself.
-  let qtyW = 0,
-    eurW = 0;
-  try {
-    computeWants().forEach((it) => {
-      qtyW += it.qty || 1;
-      eurW += (it.eur != null ? it.eur : 0) * (it.qty || 1);
-    });
-  } catch (e) {}
-  // Automatic folders are computed views, not stored lists: All cards is
-  // simply every card you own — filed or loose — so filing a card into any
-  // binder "adds" it here by definition, and nothing can ever desync.
-  const allTile = `<div class="folder-tile binder-tile" data-binderopen="__all__">
-      <div class="folder-face colfold-ico">${ICONS.collection}</div>
-      <div class="folder-name">All cards</div>
-      <div class="folder-sub">${qtyAll} card${qtyAll === 1 ? '' : 's'}${!state.hideCollectionFolderPrices && eurAll ? ` · €${eurAll.toFixed(2)}` : ''}</div>
-    </div>`;
-  const wantsTile = `<div class="folder-tile binder-tile" data-binderopen="__wants__">
-      <div class="folder-face"><span style="font-size:44px;line-height:1;">🔖</span></div>
-      <div class="folder-name">Wants</div>
-      <div class="folder-sub">${qtyW} card${qtyW === 1 ? '' : 's'}${!state.hideCollectionFolderPrices && eurW ? ` · €${eurW.toFixed(2)}` : ''}</div>
-    </div>`;
-  const playing = computePlaying();
-  const qtyPlaying = playing.reduce((sum, item) => sum + item.qty, 0);
-  const eurPlaying = collectionTotalValue(playing);
-  const playingTile = `<div class="folder-tile binder-tile" data-binderopen="__playing__">
-      <div class="folder-face colfold-ico">${ICONS.decks}</div>
-      <div class="folder-name">Playing</div>
-      <div class="folder-sub">${qtyPlaying} card${qtyPlaying === 1 ? '' : 's'}${!state.hideCollectionFolderPrices && eurPlaying ? ` · €${eurPlaying.toFixed(2)}` : ''}</div>
-    </div>`;
-  const _gc = folderView('col') === 'list' ? 'deck-grid as-list' : 'deck-grid';
+  const gridClass = folderView('col') === 'list' ? 'deck-grid as-list' : 'deck-grid';
   return `<section class="collection-folder-section" aria-labelledby="collectionBindersTitle">
     <h2 class="section-label" id="collectionBindersTitle">Binders</h2>
-    ${binders.length ? `<div class="${_gc}">${binders.map(binderTileHtml).join('')}</div>` : '<p class="empty-note">Use + to create your first binder.</p>'}
+    ${binders.length ? `<div class="${gridClass}">${binders.map(binderTileHtml).join('')}</div>` : '<p class="empty-note">Use + to create your first binder.</p>'}
   </section>
   <section class="collection-folder-section" aria-labelledby="collectionAutomaticTitle">
     <h2 class="section-label" id="collectionAutomaticTitle">Automatic folders</h2>
-    <div class="${_gc}">${allTile}${playingTile}${wantsTile}</div>
+    <div class="${gridClass}">${collectionFolderTileHtml('__all__', ICONS.collection)}${collectionFolderTileHtml('__playing__', ICONS.decks)}${collectionFolderTileHtml('__wants__', ICONS.bookmark || ICONS.collection)}</div>
   </section>
   <button class="deck-fab" id="colFab" title="Add cards or binder">＋</button>`;
 }
@@ -810,10 +817,17 @@ function openBinderLongMenu(binder, x, y) {
   pop.id = 'binderLongPop';
   pop.style.cssText =
     'position:fixed;z-index:120;background:var(--pop-bg);border:1.5px solid var(--pop-line);border-radius:12px;overflow:hidden;box-shadow:0 12px 30px rgba(0,0,0,0.5);display:flex;flex-direction:column;min-width:200px;';
-  pop.innerHTML = /* HTML */ `<button data-a="ren">${mIco('edit')}${trS('Rename')}</button
-    ><button data-a="del" style="color:var(--danger);">
-      ${mIco('trash')}${trS('Delete binder')}
-    </button>`;
+  const automatic = ['__all__', '__playing__', '__wants__'].includes(binder.id);
+  pop.innerHTML = automatic
+    ? ''
+    : /* HTML */ `<button data-a="ren">${mIco('edit')}${trS('Rename')}</button
+        ><button data-a="del" style="color:var(--danger);">
+          ${mIco('trash')}${trS('Delete binder')}
+        </button>`;
+  pop.insertAdjacentHTML(
+    'afterbegin',
+    `<button data-a="cover">${mIco('image')}Cover art…</button>`,
+  );
   pop
     .querySelectorAll('button')
     .forEach(
@@ -825,7 +839,11 @@ function openBinderLongMenu(binder, x, y) {
   pop.style.left =
     Math.max(8, Math.min(window.innerWidth - pop.offsetWidth - 8, x - pop.offsetWidth / 2)) + 'px';
   pop.style.top = Math.max(8, Math.min(window.innerHeight - pop.offsetHeight - 8, y)) + 'px';
-  pop.querySelector('[data-a="ren"]').addEventListener('click', () => {
+  pop.querySelector('[data-a="cover"]').addEventListener('click', () => {
+    pop.remove();
+    openCollectionCoverPicker(binder.id);
+  });
+  pop.querySelector('[data-a="ren"]')?.addEventListener('click', () => {
     pop.remove();
     openInAppPrompt('Rename binder', 'New binder name', binder.name, (name) => {
       if (name && name.trim()) {
@@ -835,7 +853,7 @@ function openBinderLongMenu(binder, x, y) {
       }
     });
   });
-  pop.querySelector('[data-a="del"]').addEventListener('click', () => {
+  pop.querySelector('[data-a="del"]')?.addEventListener('click', () => {
     pop.remove();
     const q = `Delete the binder "${binder.name}"? Its cards stay in your collection, just unfiled.`;
     openInAppConfirm(

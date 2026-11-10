@@ -88,14 +88,14 @@ test('Collection headings lead their folders and Unsorted shows only unfiled car
   await mkdir('var/previews', { recursive: true });
   await page.screenshot({ path: `var/previews/collection-folders-${info.project.name}.png` });
   const binder = page.locator('[data-binderopen="blue"]');
-  await expect(binder.locator('img, .folder-face')).toHaveCount(0);
+  await expect(binder.locator('.library-tile-art')).toHaveAttribute('src', '/icon-192.png');
   await expect(binder.locator('.binder-glyph-row')).toBeVisible();
   await expect(binder).toContainText('2 cards');
   await binder.dispatchEvent('pointerdown', { pointerType: 'touch', clientX: 120, clientY: 250 });
   await expect(page.locator('#binderLongPop')).toBeVisible();
   await binder.dispatchEvent('pointerup');
-  await expect(page.locator('#binderLongPop button')).toHaveCount(2);
-  await expect(page.locator('#binderLongPop')).not.toContainText('Choose cover art');
+  await expect(page.locator('#binderLongPop button')).toHaveCount(3);
+  await expect(page.locator('#binderLongPop')).toContainText('Cover art');
 });
 
 test('Collection header actions follow the folder and Trade is available from Menu', async ({
@@ -145,7 +145,6 @@ test('Scan cards from a binder adds selected scans and reviewed cards to that bi
   page.on('pageerror', (error) => errors.push(error.message));
   await page.route('**/api/scryfall/cards/' + card.id, (route) => route.fulfill({ json: card }));
   await page.evaluate((card) => {
-    state.scannerDebounceMs = 0;
     state.scannerIgnoreSession = false;
     state.collection.items = [
       {

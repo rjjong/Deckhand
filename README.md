@@ -49,15 +49,20 @@ existing command slot. Other scans append to the main deck, with the deck editor
 available for legality review. Collection contents are unchanged in this mode.
 
 In **Settings → Card scanner**, adjust the ID match threshold, corner threshold,
-scan interval and optional framerate display. Set a repeat-card debounce time or
-ignore card names already scanned during the current camera session, including
-different printings. Settings apply when the camera opens and sync with your account.
-Brief messages explain when the repeat delay or session setting ignores a card.
+scan interval (200 ms by default) and optional framerate/timing display.
+Recognition selects WebGPU only when its startup accuracy and speed check beats
+CPU inference, with a CPU fallback. The complete card catalog is retained.
+Optionally ignore exact printings already scanned during the current camera session.
+Different sets and artwork remain separate, even with the same name. Settings apply
+when the camera opens and sync with your account.
+Brief messages explain when the session setting ignores a card.
 Blank Card predictions from a covered camera are ignored silently.
 Photos stay in your browser. Models and reference data are served by Deckhand, with no OCR or external recognition service.
 Closing the scanner clears logged photos, capture canvases and worker image buffers;
 the recognition models and reference catalog stay cached.
 Recognition initializes in the background after startup and stays ready while the app is open.
+On capable devices, corner outlines update independently while cards are identified.
+Successful scans give a short vibration when supported by the phone and browser.
 Its roughly 70 MB of data is cached across launches. Recognition is experimental; confirm printing, foil and condition yourself.
 
 In **Menu → Account & sync**, create an optional email/password account,

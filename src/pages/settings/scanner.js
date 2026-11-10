@@ -65,8 +65,10 @@ function scannerSettingsHtml() {
       </label>
       <label class="scanner-setting-toggle" for="scannerShowFramerate">
         <span
-          ><strong>Show scan framerate</strong
-          ><small>Show completed scans per second over the camera preview.</small></span
+          ><strong>Show scan framerate and timings</strong
+          ><small
+            >Show scan speed, processing times and acceleration over the camera preview.</small
+          ></span
         >
         <input
           id="scannerShowFramerate"
@@ -74,33 +76,12 @@ function scannerSettingsHtml() {
           ${settings.scannerShowFramerate ? ' checked' : ''}
         />
       </label>
-      <label class="scanner-setting-field" for="scannerDebounceSeconds">
-        <span
-          ><strong>Debounce time</strong
-          ><small
-            >Ignore repeat detections of the same card name for 0–60 seconds. Set to 0 to disable
-            the delay.</small
-          ></span
-        >
-        <span class="scanner-setting-number"
-          ><input
-            id="scannerDebounceSeconds"
-            type="number"
-            inputmode="decimal"
-            min="0"
-            max="60"
-            step="any"
-            value="${settings.scannerDebounceMs / 1000}"
-            aria-describedby="scannerDebounceUnit"
-          /><span id="scannerDebounceUnit">seconds</span></span
-        >
-      </label>
       <label class="scanner-setting-toggle" for="scannerIgnoreSession">
         <span
-          ><strong>Ignore previously scanned cards</strong
+          ><strong>Ignore previously scanned printings</strong
           ><small
-            >Log each card name once until you close the scanner, including different
-            printings.</small
+            >Log each exact printing once per session. Other sets and artwork are scanned
+            separately.</small
           ></span
         >
         <input
@@ -131,7 +112,6 @@ function wireScannerSettings() {
     ['scannerIdThreshold', 'scannerIdThreshold', 1],
     ['scannerCornerThreshold', 'scannerCornerThreshold', 1],
     ['scannerIntervalMs', 'scannerIntervalMs', 1],
-    ['scannerDebounceSeconds', 'scannerDebounceMs', 1000],
   ]) {
     const input = document.getElementById(id);
     input?.addEventListener('change', () => {

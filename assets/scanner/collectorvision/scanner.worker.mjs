@@ -20,6 +20,7 @@
 //   { type: 'error',    message }
 
 import * as ort from "./vendor/onnxruntime-web/ort.webgpu.min.mjs?v=8b295ab80a99";
+import { rectifyRgba, searchPackedCatalog, selectInferenceSession, runModel, normalizeRgba } from "./performance.mjs?v=__DECKHAND_BUILD__";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -29,8 +30,6 @@ const EMBEDDER_SIZE = 448;
 const DEWARP_W = EMBEDDER_SIZE;
 const DEWARP_H = EMBEDDER_SIZE;
 const DEFAULT_MIN_CORNER_CONFIDENCE = 0.02;
-const IMAGENET_MEAN = [0.485, 0.456, 0.406];
-const IMAGENET_STD = [0.229, 0.224, 0.225];
 
 const ASSET_DB_NAME = "collectorvision-web-scanner";
 const ASSET_STORE_NAME = "assets";
@@ -475,6 +474,13 @@ async function configureWebGpu() {
   if (!adapter) {
     return false;
   }
+  // Software adapters do not accelerate the scanner and can exhaust a browser
+  // GPU process while compiling these models. Keep them on threaded WASM.
+  const info = adapter.info || {};
+  if (adapter.isFallbackAdapter || info.isFallbackAdapter ||
+      /swiftshader|llvmpipe|lavapipe|software/i.test(`${info.vendor} ${info.device} ${info.description}`)) {
+    return false;
+  }
 
   const requestedStorageBuffers = Math.min(
     10,
@@ -509,18 +515,7 @@ async function configureWebGpu() {
 
 function fillInputTensorFromContext(ctx, size, tensor) {
   const { data } = ctx.getImageData(0, 0, size, size);
-  const plane = size * size;
-
-  for (let i = 0; i < size * size; i += 1) {
-    const r = data[i * 4] / 255;
-    const g = data[i * 4 + 1] / 255;
-    const b = data[i * 4 + 2] / 255;
-    tensor[i] = (r - IMAGENET_MEAN[0]) / IMAGENET_STD[0];
-    tensor[plane + i] = (g - IMAGENET_MEAN[1]) / IMAGENET_STD[1];
-    tensor[plane * 2 + i] = (b - IMAGENET_MEAN[2]) / IMAGENET_STD[2];
-  }
-
-  return tensor;
+  return normalizeRgba(data, size * size, tensor);
 }
 
 function createInputTensor(size) {
@@ -595,10 +590,18 @@ class WorkerRuntime {
     this._lastDetectorInput = null;
   }
 
-  updateConfig({ minCornerConfidence } = {}) {
+  updateConfig({ minCornerConfidence, idThreshold } = {}) {
     if (minCornerConfidence !== undefined) {
       this.minCornerConfidence = clamp01(minCornerConfidence);
     }
+    if (idThreshold !== undefined) this.idThreshold = clamp01(idThreshold);
+  }
+
+  get inferenceMode() {
+    const detector = this.detector?.provider || 'WASM';
+    if (this.detectorOnly) return detector;
+    const embedder = this.embedder?.provider || 'WASM';
+    return detector === embedder ? detector : `${detector} detector / ${embedder} recognition`;
   }
 
   async load(onStage) {
@@ -616,7 +619,7 @@ class WorkerRuntime {
       modelSizes[this.detectorConfig.modelKey],
       (ratio, loaded, total, cached) => onStage?.("detector", ratio, loaded, total, cached),
     );
-    const embedderBuffer = await fetchBufferCached(
+    const embedderBuffer = this.detectorOnly ? null : await fetchBufferCached(
       `${this.assetBasePath}/${this.manifest.models.milo}`,
       embedderVersion,
       modelSizes.milo,
@@ -631,22 +634,40 @@ class WorkerRuntime {
     // iOS WebKit is prone to killing memory-heavy WASM pages.  Keep the iOS
     // path single-threaded to avoid the extra worker/SAB overhead; other
     // platforms keep the capped multi-threaded fast path.
-    const numThreads = isIOS() || !self.crossOriginIsolated ? 1 : Math.min(navigator.hardwareConcurrency || 1, 4);
+    const mobile = /Android/i.test(navigator.userAgent);
+    const numThreads = this.detectorOnly || isIOS() || !self.crossOriginIsolated ? 1 : Math.min(navigator.hardwareConcurrency || 1, mobile ? 2 : 4);
     ort.env.wasm.numThreads = numThreads;
     this.numThreads = numThreads;
-    // EP selection: WASM is the safe default.
-    // WebGPU is proven broken on Android ARM (issues #9 and #12) but may work
-    // on iOS (Metal) and desktop.  The enableWebGpu flag in the init message
-    // lets the user opt in from Settings — see ARCHITECTURE.md Lessons Learned.
-    const ep = this.useWebGpu ? "webgpu" : "wasm";
-    this.detector = await ort.InferenceSession.create(detectorBuffer, {
-      executionProviders: [ep],
-    });
-    this.embedder = await ort.InferenceSession.create(embedderBuffer, {
-      executionProviders: [ep],
-    });
+    // Compare real model outputs against WASM before trusting an Android GPU.
+    // This public sample is bundled with CollectorVision; no camera is opened.
+    let sample = null;
+    try {
+      const response = await fetch(`${this.assetBasePath}/samples/mtg-sample.jpg`);
+      if (response.ok) sample = await createImageBitmap(await response.blob());
+    } catch { /* Procedural calibration also works offline without the sample. */ }
+    const inputs = (size) => {
+      const canvas = new OffscreenCanvas(size, size);
+      const context = canvas.getContext('2d', { willReadFrequently: true });
+      const gradient = context.createLinearGradient(0, 0, size, size);
+      gradient.addColorStop(0, '#1d4c91'); gradient.addColorStop(1, '#e9b651');
+      context.fillStyle = gradient; context.fillRect(0, 0, size, size);
+      const pattern = fillInputTensorFromContext(context, size, createInputTensor(size));
+      if (sample) context.drawImage(sample, 0, 0, size, size);
+      else { context.fillStyle = '#ddd'; context.fillRect(size / 4, size / 8, size / 2, size * 3 / 4); }
+      return [pattern, fillInputTensorFromContext(context, size, createInputTensor(size))];
+    };
+    try {
+      this.detector = await selectInferenceSession({ ort, buffer: detectorBuffer,
+        inputs: inputs(this.detectorConfig.inputSize), size: this.detectorConfig.inputSize, webgpu: this.useWebGpu });
+      if (!this.detectorOnly) this.embedder = await selectInferenceSession({ ort, buffer: embedderBuffer,
+        inputs: inputs(EMBEDDER_SIZE), size: EMBEDDER_SIZE, webgpu: this.useWebGpu });
+    } finally { sample?.close(); }
 
     this.inputNames.detector = this.detector.inputNames[0];
+    if (this.detectorOnly) {
+      this.catalogRows = this.catalogTotalRows = 0;
+      return;
+    }
     this.inputNames.embedder = this.embedder.inputNames[0];
 
     if (this.catalogMode === "v2") {
@@ -784,18 +805,16 @@ class WorkerRuntime {
       this.detectorInputTensor,
     );
     const t2 = performance.now();
-    const outputs = await this.detector.run({
-      [this.inputNames.detector]: new ort.Tensor("float32", input, [1, 3, detectorSize, detectorSize]),
-    });
+    const outputs = await runModel(ort, this.detector, input, detectorSize);
     const t3 = performance.now();
     const outputNames = this.detectorConfig.outputs;
     const cornersName = outputNames.corners ?? this.detector.outputNames[0];
     const presenceName = outputNames.presence ?? this.detector.outputNames[1];
     const sharpnessName = outputNames.sharpness ?? this.detector.outputNames[2];
-    const cornersRaw = Array.from(outputs[cornersName].data).slice(0, 8);
-    const presenceLogit = outputs[presenceName].data[0];
+    const cornersRaw = Array.from(outputs[cornersName]).slice(0, 8);
+    const presenceLogit = outputs[presenceName][0];
     const sharpness = sharpnessName && outputs[sharpnessName]
-      ? outputs[sharpnessName].data[0]
+      ? outputs[sharpnessName][0]
       : null;
 
     const points = [];
@@ -859,16 +878,7 @@ class WorkerRuntime {
     const dstData = this.dewarpImageData;
     const t2 = performance.now();
 
-    for (let y = 0; y < DEWARP_H; y += 1) {
-      for (let x = 0; x < DEWARP_W; x += 1) {
-        const [sx, sy] = applyHomography(inverse, x, y);
-        const offset = (y * DEWARP_W + x) * 4;
-        dstData.data[offset] = sampleBilinear(srcData.data, width, height, sx, sy, 0);
-        dstData.data[offset + 1] = sampleBilinear(srcData.data, width, height, sx, sy, 1);
-        dstData.data[offset + 2] = sampleBilinear(srcData.data, width, height, sx, sy, 2);
-        dstData.data[offset + 3] = 255;
-      }
-    }
+    rectifyRgba(srcData.data, width, height, dstData.data, DEWARP_W, DEWARP_H, inverse);
 
     const t3 = performance.now();
     this.dewarpCtx.putImageData(dstData, 0, 0);
@@ -900,11 +910,9 @@ class WorkerRuntime {
       this.embedderInputTensor,
     );
     const t2 = performance.now();
-    const outputs = await this.embedder.run({
-      [this.inputNames.embedder]: new ort.Tensor("float32", input, [1, 3, EMBEDDER_SIZE, EMBEDDER_SIZE]),
-    });
+    const outputs = await runModel(ort, this.embedder, input, EMBEDDER_SIZE);
     const t3 = performance.now();
-    const embedding = normalizeEmbedding(Float32Array.from(outputs[this.embedder.outputNames[0]].data));
+    const embedding = normalizeEmbedding(outputs[this.embedder.outputNames[0]]);
     const t4 = performance.now();
     return {
       embedding,
@@ -919,41 +927,33 @@ class WorkerRuntime {
   }
 
   async identify(cropCanvas) {
-    const upright = await this.embed(cropCanvas);
+    // Try the most recently successful orientation first. Strong matches need
+    // one embedding; uncertain matches still check both orientations.
+    const rotateFirst = this.preferredOrientation === 'rotated_180';
+    const upright = await this.embed(cropCanvas, rotateFirst);
     const tSearchStart = performance.now();
-    let best = { ...this.search(upright.embedding), orientation: "upright" };
+    let best = { ...this.search(upright.embedding), orientation: rotateFirst ? 'rotated_180' : 'upright' };
     let searchMs = performance.now() - tSearchStart;
     let timing = upright.timing;
 
-    if (this.rotationInvariant) {
-      const rotated = await this.embed(cropCanvas, true);
+    let orientationPasses = 1;
+    if (this.rotationInvariant && best.score < Math.max(0.85, this.idThreshold || 0)) {
+      const rotated = await this.embed(cropCanvas, !rotateFirst);
       const tRotatedSearchStart = performance.now();
-      const rotatedBest = { ...this.search(rotated.embedding), orientation: "rotated_180" };
+      const rotatedBest = { ...this.search(rotated.embedding), orientation: rotateFirst ? 'upright' : 'rotated_180' };
       searchMs += performance.now() - tRotatedSearchStart;
       timing = sumTiming(timing, rotated.timing);
       best = chooseBetterMatch(best, rotatedBest);
+      orientationPasses++;
     }
-
-    return { best, timing, searchMs };
+    if (best.score >= 0.85) this.preferredOrientation = best.orientation;
+    return { best, timing: { ...timing, orientationPasses }, searchMs };
   }
 
   search(query) {
     const dims = this.catalogDims ?? this.manifest.catalog.dims;
     const rows = this.catalogRows ?? this.manifest.catalog.rows;
-    let bestScore = -Infinity;
-    let bestIndex = -1;
-
-    for (let row = 0; row < rows; row += 1) {
-      const offset = row * dims;
-      let score = 0;
-      for (let col = 0; col < dims; col += 1) {
-        score += FLOAT16_LOOKUP[this.embeddings[offset + col]] * query[col];
-      }
-      if (score > bestScore) {
-        bestScore = score;
-        bestIndex = row;
-      }
-    }
+    const { bestScore, bestIndex } = searchPackedCatalog(this.embeddings, query, rows, dims, FLOAT16_LOOKUP);
 
     const secondaryId = this.secondaryIds?.[bestIndex] ?? null;
     const best = {
@@ -979,7 +979,7 @@ let runtime = null;
 let frameCanvas = null;
 let frameCtx = null;
 
-async function processFrame(bitmap, captureRequested = false, includeDebugBitmaps = false) {
+async function processFrame(bitmap, captureRequested = false, includeDebugBitmaps = false, priorDetection = null) {
   const tFrameStart = performance.now();
   if (!frameCanvas || frameCanvas.width !== bitmap.width || frameCanvas.height !== bitmap.height) {
     frameCanvas = new OffscreenCanvas(bitmap.width, bitmap.height);
@@ -998,17 +998,27 @@ async function processFrame(bitmap, captureRequested = false, includeDebugBitmap
   }
   const tCaptureReady = performance.now();
 
-  const detection = await runtime.detect(frameCanvas);
+  const detection = priorDetection || await runtime.detect(frameCanvas);
   const baseTiming = {
     frameDrawMs: tFrameReady - tFrameStart,
     captureMs: tCaptureReady - tFrameReady,
     ...detection.timing,
   };
 
+  if (runtime.detectorOnly) {
+    self.postMessage({ type: 'result', ...detection,
+      cornersValid: detection.cardPresent && isUsableQuad(detection.corners),
+      inferenceMode: runtime.detector.provider,
+      timing: roundTiming({ ...baseTiming, totalMs: performance.now() - tFrameStart }),
+    });
+    return;
+  }
+
   if (!detection.cardPresent) {
     const transfer0 = captureFrameBitmap ? [captureFrameBitmap] : [];
     self.postMessage({
       type: "result",
+      inferenceMode: runtime.inferenceMode,
       captureRequested,
       captureFrameBitmap,
       cardPresent: false,
@@ -1043,6 +1053,7 @@ async function processFrame(bitmap, captureRequested = false, includeDebugBitmap
     if (captureFrameBitmap) transfer1.push(captureFrameBitmap);
     self.postMessage({
       type: "result",
+      inferenceMode: runtime.inferenceMode,
       captureRequested,
       captureFrameBitmap,
       cardPresent: true,
@@ -1088,6 +1099,7 @@ async function processFrame(bitmap, captureRequested = false, includeDebugBitmap
     secondaryIdField: best.secondaryIdField,
     score: best.score,
     orientation: best.orientation,
+    inferenceMode: runtime.inferenceMode,
     rawCorners: runtime._lastRawCorners,
     detectorInput: runtime._lastDetectorInput,
     detectorBitmap,
@@ -1144,6 +1156,7 @@ function clearFrameData() {
   runtime._lastRawCorners = null;
   runtime._lastDetectorInput = null;
   runtime._lastDewarpTiming = null;
+  runtime.preferredOrientation = 'upright';
 }
 
 self.onmessage = async ({ data }) => {
@@ -1151,7 +1164,10 @@ self.onmessage = async ({ data }) => {
     if (data.type === "init") {
       const enableWebGpu = data.enableWebGpu === true;
       const disableReason = enableWebGpu ? webGpuDisableReason() : null;
-      const webgpuReady = enableWebGpu && !disableReason ? await configureWebGpu() : false;
+      let webgpuReady = false;
+      if (enableWebGpu && !disableReason) {
+        try { webgpuReady = await configureWebGpu(); } catch { /* CPU remains available. */ }
+      }
       const useWebGpu = webgpuReady; // only true if both requested and available
       const inferenceMode = useWebGpu
         ? "WebGPU"
@@ -1171,26 +1187,16 @@ self.onmessage = async ({ data }) => {
         data.minCornerConfidence,
         data.catalogMode,
       );
+      runtime.detectorOnly = data.detectorOnly === true;
       await runtime.load((stage, ratio, loaded, total, cached) => {
         self.postMessage({ type: "progress", stage, ratio, loaded, total, cached });
       });
 
-      // Warm both graphs before declaring readiness, without a camera frame.
-      self.postMessage({ type: "progress", stage: "warmup", ratio: 0 });
-      for (const [session, input, values, size] of [
-        [runtime.detector, runtime.inputNames.detector, runtime.detectorInputTensor, runtime.detectorConfig.inputSize],
-        [runtime.embedder, runtime.inputNames.embedder, runtime.embedderInputTensor, EMBEDDER_SIZE],
-      ]) {
-        const tensor = new ort.Tensor("float32", values, [1, 3, size, size]);
-        const outputs = await session.run({ [input]: tensor });
-        for (const output of Object.values(outputs)) output.dispose?.();
-        tensor.dispose?.();
-      }
-
       self.postMessage({
         type: "ready",
-        inferenceMode,
+        inferenceMode: runtime.inferenceMode,
         numThreads: runtime.numThreads ?? 1,
+        backendTimings: { detector: runtime.detector.timings, embedder: runtime.embedder?.timings },
         catalogRows: runtime.catalogRows,
         catalogTotalRows: runtime.catalogTotalRows,
         catalogLimit: runtime.catalogLimit,
@@ -1204,6 +1210,7 @@ self.onmessage = async ({ data }) => {
         data.bitmap,
         data.captureRequested ?? false,
         data.includeDebugBitmaps ?? false,
+        data.detection ?? null,
       );
     } else if (data.type === "clearFrames") {
       clearFrameData();
@@ -1211,6 +1218,7 @@ self.onmessage = async ({ data }) => {
     } else if (data.type === "config") {
       runtime?.updateConfig({
         minCornerConfidence: data.minCornerConfidence,
+        idThreshold: data.idThreshold,
       });
     }
   } catch (error) {

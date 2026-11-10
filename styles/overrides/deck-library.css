@@ -1,0 +1,26 @@
+.deck-format-group {
+  margin: 20px 0 0;
+}
+
+.deck-format-group > .section-label {
+  margin: 0 0 8px;
+}
+
+html .app .decks-page :is(.section-label, .deck-group-toggle, .col-group-name) {
+  background: none;
+  color: var(--main-text);
+  -webkit-text-fill-color: currentColor;
+}
+
+.deck-group-toggle .col-group-name {
+  flex: 0 1 auto;
+}
+
+html .deck-format-grid[hidden] {
+  display: none !important;
+}
+
+html .decks-searchbar #deckSortBtn {
+  flex: none;
+  padding: 0 11px;
+}

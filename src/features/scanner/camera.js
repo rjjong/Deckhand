@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// One inference at a time; the preview stays live while detections fill the log.
+// One corner pass and one identification at a time; neither builds a frame backlog.
 function openScannerCamera({ mode = 'collection', binder = null, onReview, onClose, onAdd }) {
   if (document.getElementById('cardScannerCamera')) return;
   const settings = normalizeScannerSettings(state);
   const deckMode = mode === 'deck';
   // A deck can contain several physical copies, even when collection scanning
-  // is configured to ignore names seen earlier in the session.
+  // is configured to ignore printings seen earlier in the session.
   if (deckMode) {
     settings.scannerIgnoreSession = false;
-    settings.scannerDebounceMs = 0;
   }
   const el = document.createElement('div');
   el.id = 'cardScannerCamera';
@@ -27,7 +26,7 @@ function openScannerCamera({ mode = 'collection', binder = null, onReview, onClo
     <main class="scanner-camera-stage"><video id="scannerVideo" muted playsinline autoplay></video>
       <button type="button" id="scannerFocus" class="scanner-camera-focus" aria-label="Refocus camera" hidden></button>
       <svg id="scannerDetectedBorder" class="scanner-camera-border" preserveAspectRatio="none" aria-hidden="true" hidden><polygon /></svg>
-      <div class="scanner-framerate"${settings.scannerShowFramerate ? '' : ' hidden'}><output id="scannerFramerate" aria-label="Scan framerate" aria-live="off">— FPS</output><small id="scannerCameraResolution" aria-label="Camera resolution"></small></div>
+      <div class="scanner-framerate"${settings.scannerShowFramerate ? '' : ' hidden'}><output id="scannerFramerate" aria-label="Scan framerate" aria-live="off">— FPS</output><small id="scannerCornerRate"></small><small id="scannerCameraResolution" aria-label="Camera resolution"></small><small id="scannerBackend"></small><small id="scannerProcessing"></small><small id="scannerTimings"></small><small id="scannerCameraVibrationStatus" role="status"></small></div>
       <p id="scannerIgnored" class="scanner-ignored" role="status" hidden></p>
     </main>
     <div class="scanner-camera-statusbar">
@@ -70,6 +69,7 @@ function openScannerCamera({ mode = 'collection', binder = null, onReview, onClo
     cornerThreshold: settings.scannerCornerThreshold,
   });
   const framerate = scannerCreateFramerate();
+  const cornerFramerate = scannerCreateFramerate();
   const fps = el.querySelector('#scannerFramerate');
   const log = scannerCreateLog(el, {
     mode,
@@ -94,6 +94,14 @@ function openScannerCamera({ mode = 'collection', binder = null, onReview, onClo
       });
     },
     onIgnored: notifyIgnored,
+    onAccepted() {
+      const result = scannerScanFeedback();
+      if (settings.scannerShowFramerate)
+        el.querySelector('#scannerCameraVibrationStatus').textContent = scannerVibrationMessage(
+          result,
+          true,
+        );
+    },
     onChange: updateActions,
     settings,
   });
@@ -104,6 +112,11 @@ function openScannerCamera({ mode = 'collection', binder = null, onReview, onClo
     captureCanvas,
     timer,
     frameController,
+    cornerController,
+    recognitionCanvas,
+    recognitionBusy = false,
+    lastRecognitionAt = -Infinity,
+    previewSuppressed = false,
     cameraPending = false,
     cameraVisible = true,
     enginePending = false,
@@ -145,15 +158,12 @@ function openScannerCamera({ mode = 'collection', binder = null, onReview, onClo
     notice.hidden = true;
     lastNotice = null;
   }
-  function notifyIgnored({ name, reason }) {
+  function notifyIgnored({ name, printingId, printing, reason }) {
     if (!active || !isTop() || scannerIsIgnoredCard({ name })) return;
-    const key = name.toLowerCase() + ':' + reason;
+    const key = (printingId || name.toLowerCase()) + ':' + reason;
     if (lastNotice === key) return;
     lastNotice = key;
-    notice.textContent =
-      reason === 'session'
-        ? `${name} ignored · Already scanned this session`
-        : `${name} ignored · Within repeat delay`;
+    notice.textContent = `${name}${printing ? ` (${printing})` : ''} ignored · Already scanned this printing`;
     notice.hidden = false;
     clearTimeout(noticeTimer);
     noticeTimer = setTimeout(() => {
@@ -165,6 +175,8 @@ function openScannerCamera({ mode = 'collection', binder = null, onReview, onClo
     el.dataset.scanning = String(!!canScan());
     if (!canScan()) {
       framerate.reset();
+      cornerFramerate.reset();
+      el.querySelector('#scannerCornerRate').textContent = '';
       fps.textContent = '— FPS';
       border.clear();
       clearIgnored();
@@ -192,31 +204,43 @@ function openScannerCamera({ mode = 'collection', binder = null, onReview, onClo
     clearTimeout(timer);
     if (active && !paused) timer = setTimeout(scanFrame, delay);
   }
-  async function scanFrame() {
-    if (!active || paused) return;
-    if (busy || !canScan()) {
-      if (!isTop()) tracker.pause();
-      update();
-      schedule();
-      return;
-    }
-    busy = true;
-    const started = performance.now();
-    const request = cameraRequest;
-    frameController = new AbortController();
+  async function recognizeFrame(canvas, priorDetection, started, request) {
+    recognitionBusy = true;
+    lastRecognitionAt = performance.now();
+    const job = new AbortController();
+    frameController = job;
     try {
-      captureCanvas = scannerImageCanvas(video, stage, captureCanvas);
-      const result = await engine.recognize(captureCanvas, {
-        signal: frameController.signal,
+      const result = await engine.recognize(canvas, {
+        signal: job.signal,
         thumbnail: tracker.needsThumbnail,
         cornerThreshold: settings.scannerCornerThreshold,
+        idThreshold: settings.scannerIdThreshold,
+        detection: priorDetection,
       });
       if (!active || paused || request !== cameraRequest || !isTop()) return;
       if (scannerIsIgnoredCard(result)) clearIgnored();
-      border.update(result);
+      previewSuppressed =
+        scannerIsIgnoredCard(result) ||
+        !result.cardPresent ||
+        !result.cornersValid ||
+        result.confidence < settings.scannerCornerThreshold;
+      if (!engine.canPreviewCorners) border.update(result);
+      else if (previewSuppressed) border.clear();
       if (settings.scannerShowFramerate) {
         const rate = framerate.record(performance.now());
         fps.textContent = rate === null ? '— FPS' : `${rate.toFixed(1)} FPS`;
+        const info = result.diagnostics || engine.diagnostics;
+        const timing = result.timing || {};
+        const ms = (key) => Math.round(timing[key] || 0);
+        el.querySelector('#scannerBackend').textContent = info?.inferenceMode
+          ? `${info.inferenceMode} · ${info.numThreads || 1} CPU thread${info.numThreads > 1 ? 's' : ''}`
+          : '';
+        el.querySelector('#scannerProcessing').textContent = result.timing
+          ? `Frame ${Math.round(performance.now() - started)} ms · ${timing.orientationPasses || 0} orientation${timing.orientationPasses === 1 ? '' : 's'}`
+          : '';
+        el.querySelector('#scannerTimings').textContent = result.timing
+          ? `Detect ${ms('detectMs')} · Warp ${ms('dewarpMs')}\nModel ${ms('embedMs')} · Lookup ${ms('searchMs')} ms`
+          : '';
       }
       const detection = tracker.observe(result);
       if (noticeHeldKey !== tracker.heldKey) {
@@ -226,7 +250,7 @@ function openScannerCamera({ mode = 'collection', binder = null, onReview, onClo
       if (detection) log.append(detection);
       else if (
         tracker.heldKey &&
-        tracker.heldKey === (result.secondaryId || result.cardId) &&
+        tracker.heldKey === scannerPrintingIdentity(result) &&
         !scannerRecognitionError(result, {
           idThreshold: settings.scannerIdThreshold,
           cornerThreshold: settings.scannerCornerThreshold,
@@ -242,11 +266,83 @@ function openScannerCamera({ mode = 'collection', binder = null, onReview, onClo
         engineError = error.message;
       } else cameraError = error.message || 'Scanning stopped. Try again.';
     } finally {
-      busy = false;
-      frameController = null;
+      if (frameController === job) {
+        recognitionBusy = false;
+        frameController = null;
+      }
       update();
-      // Respect the chosen interval without queuing overlapping inference.
-      schedule(Math.max(0, settings.scannerIntervalMs - (performance.now() - started)));
+      if (
+        canScan() &&
+        engine.canPreviewCorners &&
+        !busy &&
+        performance.now() - lastRecognitionAt >= settings.scannerIntervalMs
+      )
+        schedule(0);
+    }
+  }
+  async function scanFrame() {
+    if (!active || paused) return;
+    if (busy || !canScan()) {
+      if (!isTop()) tracker.pause();
+      update();
+      schedule();
+      return;
+    }
+    busy = true;
+    const started = performance.now(),
+      request = cameraRequest;
+    try {
+      captureCanvas = scannerImageCanvas(video, stage, captureCanvas);
+      if (engine.canPreviewCorners) {
+        cornerController = new AbortController();
+        const outline = await engine.detect(captureCanvas, {
+          signal: cornerController.signal,
+          cornerThreshold: settings.scannerCornerThreshold,
+        });
+        if (!canScan() || request !== cameraRequest) return;
+        if (outline) {
+          el.dataset.cornerFrames = String(Number(el.dataset.cornerFrames || 0) + 1);
+          if (!outline.cardPresent) {
+            previewSuppressed = false;
+            tracker.observe(outline);
+          }
+          if (previewSuppressed) border.clear();
+          else border.update(outline);
+          if (settings.scannerShowFramerate) {
+            const rate = cornerFramerate.record(performance.now());
+            el.querySelector('#scannerCornerRate').textContent =
+              `Corners ${rate === null ? '—' : rate.toFixed(1)} FPS · ${Math.round(outline.timing?.detectMs || 0)} ms`;
+          }
+          if (
+            !outline.cardPresent ||
+            !outline.cornersValid ||
+            recognitionBusy ||
+            performance.now() - lastRecognitionAt < settings.scannerIntervalMs
+          )
+            return;
+          // Preserve the exact frame that produced these corners. The preview
+          // can capture its next frame while identification uses this copy.
+          recognitionCanvas ||= document.createElement('canvas');
+          if (recognitionCanvas.width !== captureCanvas.width)
+            recognitionCanvas.width = captureCanvas.width;
+          if (recognitionCanvas.height !== captureCanvas.height)
+            recognitionCanvas.height = captureCanvas.height;
+          recognitionCanvas.getContext('2d').drawImage(captureCanvas, 0, 0);
+          recognitionCanvas.scannerSource = captureCanvas.scannerSource;
+          void recognizeFrame(recognitionCanvas, outline, started, request);
+          return;
+        }
+      }
+      if (!recognitionBusy) await recognizeFrame(captureCanvas, null, started, request);
+    } catch (error) {
+      if (canScan() && request === cameraRequest && error.name !== 'AbortError')
+        cameraError = error.message || 'Scanning stopped. Try again.';
+    } finally {
+      busy = false;
+      cornerController = null;
+      update();
+      const interval = engine?.canPreviewCorners ? 120 : settings.scannerIntervalMs;
+      schedule(Math.max(0, interval - (performance.now() - started)));
     }
   }
   const stopCamera = () => {
@@ -257,6 +353,7 @@ function openScannerCamera({ mode = 'collection', binder = null, onReview, onClo
     resolution.textContent = '';
     clearTimeout(timer);
     frameController?.abort();
+    cornerController?.abort();
     tracker.pause();
     border.clear();
     clearIgnored();
@@ -268,6 +365,8 @@ function openScannerCamera({ mode = 'collection', binder = null, onReview, onClo
     video.load();
     if (captureCanvas) captureCanvas.width = captureCanvas.height = 0;
     captureCanvas = null;
+    if (recognitionCanvas) recognitionCanvas.width = recognitionCanvas.height = 0;
+    recognitionCanvas = null;
   };
   const cleanup = () => {
     if (!active) return;

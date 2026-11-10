@@ -7,22 +7,24 @@
 function homePageHtml() {
   return /* HTML */ ` <main class="home-page">
     <div class="home-sea"></div>
-    <div class="home-hero-wrap">
-      <div class="home-glow"></div>
-      <span class="home-logo-clip"
-        ><img
-          class="home-logo"
-          id="homeModeLogo"
-          src="${DECKHAND_BADGE}"
-          alt="Deckhand"
-          title="About this app"
-      /></span>
-    </div>
-    <div class="home-rule">
-      <span class="home-rule-line"></span><span class="home-rule-star">⚔</span
-      ><span class="home-rule-line"></span>
-    </div>
-    <p class="home-kicker">Your deck builder for Commander &amp; beyond</p>
+    <section class="home-branding" aria-label="Deckhand">
+      <div class="home-hero-wrap">
+        <div class="home-glow"></div>
+        <span class="home-logo-clip"
+          ><img
+            class="home-logo"
+            id="homeModeLogo"
+            src="${DECKHAND_BADGE}"
+            alt="Deckhand"
+            title="About this app"
+        /></span>
+      </div>
+      <div class="home-rule">
+        <span class="home-rule-line"></span><span class="home-rule-star">⚔</span
+        ><span class="home-rule-line"></span>
+      </div>
+      <p class="home-kicker">Your deck builder for Commander &amp; beyond</p>
+    </section>
     <div class="home-news" id="homeNews"><span class="l2">Loading news…</span></div>
   </main>`;
 }
@@ -73,12 +75,22 @@ function wireHomePage() {
   document.getElementById('homeModeLogo')?.addEventListener('click', openHomeAbout);
   const nb = document.getElementById('homeNews');
   if (nb) loadMtgNews(nb);
-  requestAnimationFrame(fitHomeNews);
-  setTimeout(fitHomeNews, 300);
-  if (!window._homeNewsRs) {
-    window._homeNewsRs = true;
-    window.addEventListener('resize', () => {
-      if (state.screen === 'home') fitHomeNews();
-    });
-  }
+  const viewport = document.querySelector('.home-page .tab-viewport');
+  const branding = document.querySelector('.home-branding');
+  if (!viewport || !branding || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  let frame = 0;
+  const updateBranding = () => {
+    frame = 0;
+    const progress = Math.max(0, viewport.scrollTop);
+    branding.style.setProperty('--home-brand-offset', `${-Math.min(progress * 0.25, 32)}px`);
+    branding.style.opacity = String(Math.max(0, 1 - progress / 180));
+  };
+  viewport.addEventListener(
+    'scroll',
+    () => {
+      if (!frame) frame = requestAnimationFrame(updateBranding);
+    },
+    { passive: true },
+  );
+  requestAnimationFrame(updateBranding);
 }

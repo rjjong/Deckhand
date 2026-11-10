@@ -42,102 +42,33 @@ function paintDeckPrice(d) {
   if (!d) return;
   const el = document.querySelector(`[data-deckprice="${d.id}"]`);
   if (el) el.innerHTML = deckPriceLabel(d);
+  queueDeckPriceSort();
 }
 
-/* The card whose art fronts a deck's tile: the one picked by hand (long
-   press on the tile -> Cover art), else the leader, else the deck's
-   signature card -- the most copies, a creature before a spell, the
-   higher mana value on a tie. Basic lands never front a deck. */
+/* A chosen cover wins; otherwise show the commander or the first card. */
 function deckCoverCard(d) {
   if (!d) return null;
-  const all = deckLeaders(d).concat(d.cards || [], d.maybeboard || []);
-  if (d.cover) {
-    const c = all.find((x) => x && x.name === d.cover);
-    if (c) return c;
-  }
-  if (d.admiral) return d.admiral;
-  const cnt = new Map();
-  (d.cards || []).forEach((c) => {
-    if (c && c.name && !/Basic Land/.test(c.type_line || ''))
-      cnt.set(c.name, (cnt.get(c.name) || 0) + 1);
-  });
-  let best = null,
-    score = -1;
-  cnt.forEach((n, name) => {
-    const c = d.cards.find((x) => x && x.name === name);
-    const sc = n * 100 + (/Creature/.test(c.type_line || '') ? 50 : 0) + (c.cmc || 0);
-    if (sc > score) {
-      score = sc;
-      best = c;
-    }
-  });
-  return best;
+  const cards = deckLeaders(d).concat(d.cards || [], d.maybeboard || []);
+  return cards.find((card) => card && card.name === d.cover) || cards.find(Boolean) || null;
 }
 
 function openCoverPicker(d) {
-  document.getElementById('coverPicker')?.remove();
-  const seen = new Set(),
-    pool = [];
-  deckLeaders(d)
-    .concat(d.cards || [], d.maybeboard || [])
-    .forEach((c) => {
-      if (!c || !c.name || seen.has(c.name) || /Basic Land/.test(c.type_line || '')) return;
-      seen.add(c.name);
-      pool.push(c);
-    });
-
-  const el = document.createElement('div');
-  el.className = 'deckpick-scrim';
-  el.id = 'coverPicker';
-  el.style.alignItems = 'center';
-  // Bottom-up: "Automatic" sits at the foot, the cards climb above it.
-  el.innerHTML = /* HTML */ `<div
-    class="deckpick"
-    style="border-radius:16px;margin:auto;max-width:420px;display:flex;flex-direction:column;"
-  >
-    <h4>${'Cover art'}</h4>
-    <div class="cover-grid">
-      ${pool.map((c, i) => `<button type="button" class="cover-opt ${d.cover === c.name ? 'on' : ''}" data-cover="${i}"><img loading="lazy" src="${cardImageMed(c)}" alt="${escapeHtml(c.name)}"></button>`).join('')}
-    </div>
-    <button class="ghost-btn" id="coverAuto" style="width:100%;margin-top:8px;">
-      ${'Automatic'}
-    </button>
-    <button class="dp-cancel" id="coverCancel" style="margin-top:8px;">${'Cancel'}</button>
-  </div>`;
-  document.body.appendChild(el);
-  const close = () => {
-    el.remove();
-    const st = state.overlayStack;
-    if (st.length && st[st.length - 1].id === 'coverPicker') st.pop();
-  };
-  pushOverlay(
-    'coverPicker',
-    () => {
-      document.getElementById('coverPicker')?.remove();
+  openLibraryCoverPicker({
+    title: d.name,
+    cards: deckLeaders(d).concat(d.cards || [], d.maybeboard || []),
+    selected: d.coverArt,
+    onSelect(cover) {
+      if (cover) d.coverArt = cover;
+      else delete d.coverArt;
+      delete d.cover;
+      persistDeck(d);
     },
-    true,
-  );
-  const set = (name) => {
-    if (name) d.cover = name;
-    else delete d.cover;
-    persistDeck(d);
-    close();
-    render();
-  };
-  el.querySelectorAll('[data-cover]').forEach((b) =>
-    b.addEventListener('click', () => set(pool[+b.dataset.cover].name)),
-  );
-  document.getElementById('coverAuto').addEventListener('click', () => set(null));
-  document.getElementById('coverCancel').addEventListener('click', close);
-  el.addEventListener('click', (ev) => {
-    if (ev.target === el) close();
   });
-  const g = el.querySelector('.cover-grid');
-  if (g) g.scrollTop = g.scrollHeight;
 }
 
 /* Tiles or a Moxfield-style list, per page, remembered on this phone. */
 function folderView(page) {
+  if (page === 'decks') return 'tiles';
   try {
     return localStorage.getItem(LS_PREFIX + page + 'View') === 'list' ? 'list' : 'tiles';
   } catch (e) {
@@ -146,6 +77,7 @@ function folderView(page) {
 }
 
 function setFolderView(page, v) {
+  if (page === 'decks') v = 'tiles';
   try {
     localStorage.setItem(LS_PREFIX + page + 'View', v === 'list' ? 'list' : 'tiles');
   } catch (e) {}
@@ -378,39 +310,40 @@ async function saltFillDecks() {
 }
 
 function deckTileHtml(d) {
-  const _cv = deckCoverCard(d);
-  const art = _cv ? cardImageLarge(_cv) : '';
   const isActive = state.activeDeckId === d.id;
-  const price = deckPriceFromCache(d);
-  return /* HTML */ `<div class="deck-tile ${isActive ? 'active-marker' : ''}" data-id="${d.id}">
-      <button class="tile-fav ${d.fav ? 'on' : ''}" data-fav="${d.id}" title="${d.fav ? 'Unfavorite' : 'Favorite'}">${d.fav ? '★' : '☆'}</button>
-      
-      <div class="art" style="${art ? `background-image:url('${art}')` : ''}">${art ? '' : `<div class="ph">${fmtFolderGlyph(deckFormat(d), 34)}</div>`}</div>
-      <div class="id-strip" style="background:${identityStripCss(d.admiral && deckColorIdentity(d))}"></div>
-      <div class="body">
-        <div class="nm">${escapeHtml(d.name || 'Untitled deck')}</div>
-        <div class="meta"><span${deckCountState(d) === 'bad' ? ' style="color:var(--count-bad-tile);"' : ''}>${deckCountLabel(d)}${d.primer && d.primer.trim() ? ' · ✎' : ''}</span><span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;"><span class="pips-mini">${d.admiral ? pipsHtml(deckColorIdentity(d), 'sm') : ''}</span>${deckKind(d) === 'cmdr' ? `<span class="bkt-mini" title="Bracket estimate">B${bracketEstimate(d, null).b}</span>` : ''}</span></div>
-        <div class="edited"><span data-deckprice="${d.id}">${deckPriceLabel(d)}</span><span data-decksalt="${d.id}">${deckSaltLabel(d)}</span></div>
-      </div>
-    </div>`;
-}
-
-function fmtFolderTileHtml(fmt) {
-  const n = fmtFolderDecks(fmt).length,
-    sub = childFolders(fmtFolderId(fmt)).length;
-  const bits = [];
-  if (n) bits.push(n + ' deck' + (n === 1 ? '' : 's'));
-  if (sub) bits.push(sub + ' folder' + (sub === 1 ? '' : 's'));
   return /* HTML */ `<div
-    class="folder-tile"
-    data-folder="${fmtFolderId(fmt)}"
-    data-fmtfolder="${fmt}"
+    class="deck-tile library-tile ${isActive ? 'active-marker' : ''}"
+    data-id="${d.id}"
   >
-    <div class="folder-face" style="font-size:44px;line-height:1;color:var(--brass);">
-      ${fmtFolderGlyph(fmt, 40)}
+    ${libraryTileArtHtml(deckCoverCard(d), d.coverArt, fmtFolderGlyph(deckFormat(d), 42))}
+    <button
+      class="tile-fav ${d.fav ? 'on' : ''}"
+      data-fav="${d.id}"
+      aria-label="${d.fav ? 'Unfavorite' : 'Favorite'}"
+      title="${d.fav ? 'Unfavorite' : 'Favorite'}"
+    >
+      ${d.fav ? '★' : '☆'}
+    </button>
+    <div class="body library-tile-body">
+      <div class="library-tile-heading">
+        <div class="nm">${escapeHtml(d.name || 'Untitled deck')}</div>
+        <div class="library-tile-format">${escapeHtml(fmtLabelOf(deckFormat(d)))}</div>
+      </div>
+      <div class="library-tile-details">
+        <div class="meta">
+          <span class="${deckCountState(d) === 'bad' ? 'library-count-bad' : ''}"
+            >${deckCountLabel(d)}${d.primer && d.primer.trim() ? ' · ✎' : ''}</span
+          ><span class="library-deck-identity"
+            ><span class="pips-mini">${pipsHtml(deckColorIdentity(d), 'sm')}</span
+            >${deckKind(d) === 'cmdr' ? `<span class="bkt-mini" title="Bracket estimate">B${bracketEstimate(d, null).b}</span>` : ''}</span
+          >
+        </div>
+        <div class="edited">
+          <span data-deckprice="${d.id}">${deckPriceLabel(d)}</span
+          ><span data-decksalt="${d.id}">${deckSaltLabel(d)}</span>
+        </div>
+      </div>
     </div>
-    <div class="folder-name">${fmtLabelOf(fmt)}</div>
-    <div class="folder-sub">${bits.join(' · ') || 'empty'} · auto</div>
   </div>`;
 }
 
@@ -420,10 +353,15 @@ function folderTileHtml(f) {
   const bits = [];
   if (deckN) bits.push(deckN + ' deck' + (deckN > 1 ? 's' : ''));
   if (subN) bits.push(subN + ' folder' + (subN > 1 ? 's' : ''));
-  return /* HTML */ `<div class="folder-tile" data-folder="${f.id}">
-    <div class="folder-face">${folderIconSvg(f.icon, 56, folderIsNaval(f))}</div>
-    <div class="folder-name">${escapeHtml(f.name)}</div>
-    <div class="folder-sub">${bits.join(' · ') || 'empty'}</div>
+  const card = folderCoverDecks(f.id).map(deckCoverCard).find(Boolean);
+  return /* HTML */ `<div class="folder-tile library-tile" data-folder="${f.id}">
+    ${libraryTileArtHtml(card, f.coverArt, folderIconSvg(f.icon, 48, folderIsNaval(f)))}
+    <div class="library-tile-body">
+      <div class="library-tile-heading">
+        <div class="folder-name">${escapeHtml(f.name)}</div>
+        <div class="folder-sub">${bits.join(' · ') || 'Empty'}</div>
+      </div>
+    </div>
   </div>`;
 }
 
@@ -439,75 +377,96 @@ function countFolderDecks(folderId) {
   return total;
 }
 
+function deckLibraryFolders(nav) {
+  return nav
+    ? childFolders(nav)
+    : (state.folders || []).filter((folder) => !folder.parentId || isFmtFolder(folder.parentId));
+}
+
+function deckFormatGroupsHtml(decks, nav) {
+  state.deckGroupCollapsed ||= {};
+  return FMT_ORDER.map((format) => {
+    const cards = sortLibraryDecks(decks.filter((deck) => deckFormat(deck) === format));
+    if (!cards.length) return '';
+    const key = encodeURIComponent(JSON.stringify([nav || null, format]));
+    const id = 'deckFormat-' + format;
+    const collapsed = !!state.deckGroupCollapsed[key];
+    return `<section class="deck-format-group" data-deckformat="${format}">
+      <h2 class="section-label"><button type="button" class="col-group-toggle deck-group-toggle" data-deckgroup="${key}" aria-expanded="${!collapsed}" aria-controls="${id}">
+        <span class="col-group-name">${escapeHtml(fmtLabelOf(format))}</span><span class="cg-n">· ${cards.length}</span>
+        <svg class="col-group-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+      </button></h2>
+      <div class="deck-grid deck-format-grid" id="${id}"${collapsed ? ' hidden' : ''}>${cards.map(deckTileHtml).join('')}</div>
+    </section>`;
+  }).join('');
+}
+
+function wireDeckGroups() {
+  document.querySelectorAll('[data-deckgroup]').forEach((button) =>
+    button.addEventListener('click', () => {
+      const collapsed = button.getAttribute('aria-expanded') === 'true';
+      state.deckGroupCollapsed[button.dataset.deckgroup] = collapsed;
+      button.setAttribute('aria-expanded', String(!collapsed));
+      document.getElementById(button.getAttribute('aria-controls')).hidden = collapsed;
+    }),
+  );
+}
+
 function homeHtml() {
+  // Virtual format folders from older history entries now lead to the overview.
+  if (isFmtFolder(state.folderNav)) state.folderNav = null;
+  const nav = state.folderNav || null;
   const q = (state.deckFilter || '').trim().toLowerCase();
   const searching = !!q;
-  // When searching, flatten across all folders; otherwise show current folder.
-  const nav = state.folderNav || null;
-  const matchDeck = (d) =>
-    (d.name || '').toLowerCase().includes(q) ||
-    deckLeaders(d).some((L) => (L.name || '').toLowerCase().includes(q));
-  // ONE decks page: every format together, the auto format folders sort them.
-  const fmtNav = fmtOfFolder(nav); // inside an auto format folder?
-  const favs = searching
-    ? []
-    : fmtNav
-      ? fmtFolderDecks(fmtNav).filter((d) => d.fav)
-      : state.decksIndex.filter((d) => d.fav && !d.collected && (d.folderId || null) === nav);
-  const shownDecks = searching
-    ? state.decksIndex.filter(matchDeck)
-    : fmtNav
-      ? fmtFolderDecks(fmtNav).filter((d) => !d.fav)
-      : nav
-        ? decksInFolder(nav).filter((d) => !d.fav && !d.collected)
-        : []; // root: unfiled decks live in their format folders
-  const fmtFolders =
-    searching || nav
-      ? []
-      : FMT_ORDER.filter((f) => fmtFolderDecks(f).length || childFolders(fmtFolderId(f)).length);
-  const fmtTiles = fmtFolders.map(fmtFolderTileHtml).join('');
-  // ♥ Collected: decks saved from other players' shared pages — shown on the
-  // top level as their own shelf (they can be organised into folders too).
-  const collected =
-    searching || nav
-      ? []
-      : state.decksIndex.filter((d) => d.collected && (d.folderId || null) === null);
-  const shownFolders = searching ? [] : childFolders(nav); // format folders hold user folders too
-  const path = nav ? folderPath(nav) : [];
-  const crumb = '';
-  const favTiles = favs.map(deckTileHtml).join('');
-  const folderTiles = shownFolders.map(folderTileHtml).join('');
-  const deckTiles = shownDecks.map(deckTileHtml).join('');
-  const hasAny = state.decksIndex.length || (state.folders || []).length;
-  const _html = `
-  <main class="decks-page">
+  const shownDecks = state.decksIndex.filter((deck) => {
+    if (!searching && nav && deck.folderId !== nav) return false;
+    return (
+      !q ||
+      (deck.name || '').toLowerCase().includes(q) ||
+      deckLeaders(deck).some((leader) => (leader.name || '').toLowerCase().includes(q))
+    );
+  });
+  const folders = searching ? [] : deckLibraryFolders(nav);
+  const choice = deckSortChoice();
+  return /* HTML */ `<main class="decks-page">
     <div class="account-warning-slot">${accountWarningHtml()}</div>
     <div class="searchbar page-searchbar decks-searchbar">
-      <input id="deckFilter" placeholder="Search decks..." value="${escapeHtml(state.deckFilter || '')}">
-      ${folderViewToggleHtml('decks')}
+      <input
+        id="deckFilter"
+        placeholder="Search decks..."
+        value="${escapeHtml(state.deckFilter || '')}"
+      />
+      <button
+        type="button"
+        class="ghost-btn search-tool${choice.sort !== 'updated' || choice.sortDir !== 'desc' ? ' active' : ''}"
+        id="deckSortBtn"
+        aria-label="Sort decks"
+        title="Sort decks"
+        aria-haspopup="menu"
+      >
+        ${SORT_ICON}
+      </button>
     </div>
     <button class="deck-fab" id="deckFab" title="New">＋</button>
-    ${crumb}
     ${
       !state.homeLoaded
-        ? `<div class="status"><div class="spinner"></div>Loading your decks…</div>`
-        : favTiles || folderTiles || deckTiles || fmtTiles || collected.length
-          ? `
-         ${favs.length ? `<div class="section-label">★ Favorites</div><div class="deck-grid">${favTiles}</div>` : ''}
-         ${shownFolders.length ? `<div class="section-label">Folders</div><div class="deck-grid">${folderTiles}</div>` : ''}
-         ${shownDecks.length ? `${favs.length || shownFolders.length ? `<div class="section-label">${searching ? 'Results' : 'Decks'}</div>` : ''}<div class="deck-grid">${deckTiles}</div>` : ''}
-         ${collected.length ? `<div class="section-label">♥ Collected</div><div class="deck-grid">${collected.map(deckTileHtml).join('')}</div>` : ''}
-         ${fmtTiles ? `<div class="section-label">Formats</div><div class="deck-grid">${fmtTiles}</div>` : ''}
-         ${!favTiles && !folderTiles && !deckTiles && nav ? `<div class="empty-note">${fmtNav ? `No ${fmtLabelOf(fmtNav)} decks yet.` : 'This folder is empty.'}</div>` : ''}
-       `
-          : searching
-            ? `<div class="empty-note">No decks match “${escapeHtml(state.deckFilter)}”.</div>`
-            : `<div class="empty-home"><div class="seal lg">${formatSealSvg(false)}</div><p>No decks yet. Start a new deck, pick its format and add your cards.</p><button id="newDeckBtn2">New Deck</button></div>`
+        ? '<div class="status"><div class="spinner"></div>Loading your decks…</div>'
+        : `${folders.length ? `<div class="section-label">Folders</div><div class="deck-grid">${folders.map(folderTileHtml).join('')}</div>` : ''}
+         ${
+           shownDecks.length
+             ? deckFormatGroupsHtml(shownDecks, nav)
+             : searching
+               ? `<div class="empty-note">No decks match “${escapeHtml(state.deckFilter)}”.</div>`
+               : nav
+                 ? '<div class="empty-note">This folder is empty.</div>'
+                 : !folders.length
+                   ? '<div class="empty-home"><div class="seal lg">' +
+                     formatSealSvg(false) +
+                     '</div><p>No decks yet. Start a new deck, pick its format and add your cards.</p><button id="newDeckBtn2">New Deck</button></div>'
+                   : ''
+         }`
     }
   </main>`;
-  return folderView('decks') === 'list'
-    ? _html.replace(/class="deck-grid"/g, 'class="deck-grid as-list"')
-    : _html;
 }
 
 /* Gentle persistence guidance: a one-time note that decks live in this
@@ -608,7 +567,12 @@ async function sweepDeckPrices() {
 }
 
 function wireHome() {
-  wireFolderViewToggle('decks');
+  wireLibraryTileImages();
+  wireDeckGroups();
+  document.getElementById('deckSortBtn')?.addEventListener('click', (event) => {
+    event.stopPropagation();
+    openDeckSortMenu(event.currentTarget);
+  });
   sweepDeckPrices();
   setTimeout(() => {
     if (state.screen === 'decks') saltFillDecks();
@@ -735,7 +699,7 @@ function wireHome() {
 }
 
 function navToFolder(id) {
-  state.folderNav = id || null;
+  state.folderNav = isFmtFolder(id) ? null : id || null;
   // Push a history entry tagged with this folder so the hardware back button
   // steps up the folder tree before leaving My Decks.
   try {
@@ -783,6 +747,12 @@ function openDeckTileMenu(id, anchorEl) {
 }
 
 function openFolderMenu(id, anchorEl) {
+  if (isFmtFolder(id)) {
+    openTileMenu(anchorEl, [
+      { label: mIco('image') + 'Cover art…', fn: () => openFolderCoverPicker(id) },
+    ]);
+    return;
+  }
   const f = (state.folders || []).find((x) => x.id === id);
   if (!f) return;
   openTileMenu(anchorEl, [
@@ -802,8 +772,8 @@ function openFolderMenu(id, anchorEl) {
         }),
     },
     {
-      label: modeGlyph() + ' ' + 'Change icon',
-      fn: () => openFolderIconPicker(f),
+      label: mIco('image') + 'Cover art…',
+      fn: () => openFolderCoverPicker(f.id),
     },
     { label: mIco('folderPlus') + trS('New subfolder'), fn: () => openNewFolderPrompt(f.id) },
     {
@@ -931,20 +901,11 @@ function folderDescendantIds(id) {
   return out;
 }
 
-/* The Move picker shows the same tiles as My Decks -- format folders with
-   their glyph, your folders with their own icon and counts -- two across,
-   bottom-up like the page (first tile at the foot, the list opens at its
-   foot). Tap a tile to step into it; "Move to …" commits at the level shown.
-   The first tile makes a new folder right here. Back closes the picker. */
-function fpTileHtml(kind, id) {
-  const t =
-    kind === 'fmt'
-      ? fmtFolderTileHtml(id)
-      : folderTileHtml((state.folders || []).find((f) => f.id === id));
-  // Same face, own wiring: the page's .folder-tile handlers look for data-folder.
-  return t
-    .replace(/class="folder-tile"/, 'class="folder-tile fp-tile"')
-    .replace(/ data-folder="([^"]+)"( data-fmtfolder="[^"]+")?/, ' data-fpinto="$1"');
+/* Moving uses custom folders. Format is edited separately from organisation. */
+function fpTileHtml(id) {
+  return folderTileHtml((state.folders || []).find((folder) => folder.id === id))
+    .replace('class="folder-tile', 'class="folder-tile fp-tile')
+    .replace(/ data-folder="([^"]+)"/, ' data-fpinto="$1"');
 }
 
 function renderFolderPicker() {
@@ -964,32 +925,19 @@ function renderFolderPicker() {
   const nav = state._fpNav;
   const mvFolder = state._fpIsFolder;
   const banned = mvFolder ? folderDescendantIds(d.id) : new Set(); // a folder can't move into itself
-  const here = childFolders(nav).filter((f) => !banned.has(f.id));
+  const here = deckLibraryFolders(nav).filter((f) => !banned.has(f.id));
   const path = nav ? folderPath(nav) : [];
-  const fmtAnc = fmtAncestorOf(nav);
   const crumb =
     `<button class="fp-crumb" data-fp="root">${modeGlyph()} Top</button>` +
-    (fmtAnc
-      ? `<span class="fc-sep">›</span><button class="fp-crumb" data-fp="${fmtFolderId(fmtAnc)}">${fmtLabelOf(fmtAnc)}</button>`
-      : '') +
     path
       .map(
-        (f) =>
-          `<span class="fc-sep">›</span><button class="fp-crumb" data-fp="${f.id}">${escapeHtml(f.name)}</button>`,
+        (folder) =>
+          `<span class="fc-sep">›</span><button class="fp-crumb" data-fp="${folder.id}">${escapeHtml(folder.name)}</button>`,
       )
       .join('');
-  const curName = isFmtFolder(nav)
-    ? fmtLabelOf(fmtOfFolder(nav))
-    : nav
-      ? folderPath(nav).slice(-1)[0].name
-      : mvFolder
-        ? 'Top level'
-        : 'Top level (auto-filed by format)';
+  const curName = nav ? folderPath(nav).slice(-1)[0].name : 'Decks';
   const newTile = `<button type="button" class="folder-tile fp-tile fp-new" id="fpNewSub"><div class="folder-face">${ICONS.folderPlus || '＋'}</div><div class="folder-name">${'New folder'}</div><div class="folder-sub">${'here'}</div></button>`;
-  const tiles =
-    newTile +
-    (!nav ? FMT_ORDER.map((f) => fpTileHtml('fmt', f)).join('') : '') +
-    here.map((f) => fpTileHtml('folder', f.id)).join('');
+  const tiles = newTile + here.map((folder) => fpTileHtml(folder.id)).join('');
   el.innerHTML = /* HTML */ `<div
     class="deckpick fp-sheet"
     style="border-radius:16px;margin:auto;max-width:400px;"
@@ -1062,9 +1010,7 @@ function renderFolderPicker() {
     d.folderId = dest;
     const _now = deckFormat(d); // the folder's format takes over
     persistDeck(d);
-    const where = dest
-      ? folderPath(dest).slice(-1)[0].name
-      : fmtLabelOf(deckFormat(d)) + ' (auto folder)';
+    const where = dest ? folderPath(dest).slice(-1)[0].name : 'Decks';
     close();
     if (_now !== _was)
       setTimeout(() => {

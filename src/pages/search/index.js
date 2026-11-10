@@ -604,7 +604,13 @@ function wireRandomCardRefresh() {
       const refresh = start && distance >= 80 && eligible();
       if (start && distance >= 10) e.preventDefault();
       clear();
-      if (refresh) loadCardOfTheDay(true);
+      if (refresh) {
+        // Keep the pulse inside the trusted release gesture, before loading.
+        try {
+          navigator.vibrate?.(70);
+        } catch {}
+        loadCardOfTheDay(true);
+      }
     },
     { passive: false },
   );

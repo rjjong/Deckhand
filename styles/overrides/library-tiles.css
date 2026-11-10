@@ -1,0 +1,404 @@
+/* One artwork tile for decks, their folders, binders and automatic folders. */
+html :is(.deck-grid:not(.as-list), .fp-grid) .library-tile {
+  position: relative;
+  display: block;
+  aspect-ratio: 1.1;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  isolation: isolate;
+  box-sizing: border-box;
+  border: 1px solid rgb(255 255 255 / 0.16);
+  border-radius: 16px;
+  background: linear-gradient(145deg, var(--main-dk), var(--ink));
+  color: #fff;
+}
+
+html .library-tile-art {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
+}
+
+html .library-tile-art[hidden] {
+  display: none;
+}
+
+.library-tile-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgb(255 255 255 / 0.24);
+  pointer-events: none;
+}
+
+.library-tile-placeholder > svg {
+  width: 48px;
+  height: 48px;
+}
+
+html :is(.deck-grid:not(.as-list), .fp-grid) .library-tile-body {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0;
+  pointer-events: none;
+}
+
+html :is(.deck-grid:not(.as-list), .fp-grid) .library-tile-heading,
+html :is(.deck-grid:not(.as-list), .fp-grid) .library-tile-details {
+  padding: 9px 10px;
+  background: rgb(9 13 18 / 0.62);
+  -webkit-backdrop-filter: blur(7px);
+  backdrop-filter: blur(7px);
+  color: #fff;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.75);
+}
+
+html :is(.deck-grid:not(.as-list), .fp-grid) .deck-tile .library-tile-heading {
+  padding-right: 35px;
+}
+
+html .library-tile :is(.nm, .folder-name) {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  margin: 0;
+  font:
+    700 14px/1.22 'Inter',
+    system-ui,
+    sans-serif;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+html .library-tile :is(.folder-name, .folder-sub, .nm, .meta, .edited, .dk-salt) {
+  background: none;
+  color: #fff;
+  -webkit-text-fill-color: currentColor;
+  opacity: 1;
+}
+
+html .library-tile .folder-sub,
+.library-tile-format {
+  margin: 3px 0 0;
+  font:
+    400 11px/1.35 'Inter',
+    system-ui,
+    sans-serif;
+  text-align: left;
+}
+
+html .library-tile .meta,
+html .library-tile .edited {
+  gap: 5px;
+  font-size: 10px;
+  line-height: 1.3;
+}
+
+html .library-tile .edited:has(> span:empty + span:empty) {
+  display: none;
+}
+
+.library-deck-identity {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+}
+
+html .library-tile .bkt-mini {
+  background: none;
+  color: #fff;
+  -webkit-text-fill-color: currentColor;
+}
+
+html .library-tile .library-count-bad {
+  color: #ffc8bd;
+}
+
+html :is(.deck-grid:not(.as-list), .fp-grid) .library-tile .tile-fav {
+  left: auto;
+  right: 5px;
+  top: 5px;
+  width: 26px;
+  height: 26px;
+  background: rgb(0 0 0 / 0.2);
+  color: #fff;
+  font-size: 19px;
+}
+
+html .deck-grid .library-tile .tile-fav.on {
+  color: #ffdc6a;
+}
+
+html .library-tile .binder-glyph-row {
+  justify-content: flex-end;
+  min-height: 15px;
+  margin: 0;
+  color: #fff;
+}
+
+html .library-tile .binder-glyph-row > svg {
+  max-width: 20px;
+  max-height: 20px;
+}
+
+html .library-tile .br-info {
+  top: 8px;
+  right: 8px;
+  bottom: auto;
+  z-index: 2;
+  color: #fff;
+  border-color: rgb(255 255 255 / 0.5);
+  background: rgb(9 13 18 / 0.6);
+}
+
+html :is(.deck-grid:not(.as-list), .fp-grid) .library-tile .library-binder-symbols {
+  align-self: stretch;
+  background: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.85));
+}
+
+html :is(.deck-grid:not(.as-list), .fp-grid) .library-tile:has(.br-info) .library-tile-heading {
+  padding-right: 40px;
+}
+
+html :is(.deck-grid:not(.as-list), .fp-grid) .library-tile.active-marker {
+  border-color: #ffdc6a;
+}
+
+html .deck-grid.as-list .library-tile {
+  position: relative;
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  height: 94px;
+  min-height: 94px;
+  padding: 10px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  box-sizing: border-box;
+}
+
+html .deck-grid.as-list .library-tile-art,
+html .deck-grid.as-list .library-tile-placeholder {
+  position: static;
+  grid-column: 1;
+  grid-row: 1;
+  width: 64px;
+  height: 72px;
+  border-radius: 7px;
+}
+
+html .deck-grid.as-list .library-tile-body {
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding: 0;
+  gap: 3px;
+}
+
+html .deck-grid.as-list .library-tile .tile-fav {
+  position: absolute;
+  right: 7px;
+  top: 7px;
+  color: var(--main-text);
+}
+
+html .deck-grid.as-list .deck-tile .library-tile-heading {
+  padding-right: 24px;
+}
+
+html .deck-grid.as-list .library-tile :is(.nm, .folder-name, .folder-sub, .meta, .edited, .dk-salt),
+html .deck-grid.as-list .library-tile-format {
+  color: var(--main-text);
+}
+
+html .library-cover-picker {
+  align-items: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+html .library-cover-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 540px);
+  height: min(680px, 82dvh);
+  min-height: 0;
+  margin: auto;
+  padding: 18px;
+  box-sizing: border-box;
+  border: 1px solid color-mix(in srgb, var(--main-text) 20%, transparent);
+  border-radius: 20px;
+  background: var(--ink);
+  color: var(--main-text);
+}
+
+.library-cover-dialog > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex: none;
+}
+
+.library-cover-dialog h2 {
+  margin: 0;
+  font:
+    600 20px/1.3 'Cinzel',
+    serif;
+}
+
+.library-cover-dialog header p {
+  margin: 5px 0 12px;
+  color: var(--main-sub);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.library-cover-close {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  padding: 6px;
+  border: none;
+  background: none;
+  color: var(--main-text);
+}
+
+.library-cover-close svg {
+  width: 22px;
+  height: 22px;
+}
+
+html .library-cover-dialog .page-searchbar {
+  position: static;
+  flex: none;
+  margin: 0 0 12px;
+}
+
+.library-cover-results {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+html .library-cover-dialog .cover-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  max-height: none;
+  padding: 0;
+  overflow: visible;
+}
+
+html .library-cover-dialog .cover-opt {
+  position: relative;
+  aspect-ratio: 1.38;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: var(--panel);
+  color: #fff;
+}
+
+html .library-cover-dialog .cover-opt.on {
+  border-color: var(--gold);
+}
+
+html .library-cover-dialog .cover-opt img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0;
+}
+
+.library-cover-dialog .cover-opt span {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 6px;
+  background: rgb(9 13 18 / 0.72);
+  font:
+    500 11px/1.3 'Inter',
+    system-ui,
+    sans-serif;
+  text-align: left;
+}
+
+.library-cover-dialog footer {
+  display: flex;
+  gap: 10px;
+  flex: none;
+  padding-top: 14px;
+}
+
+html .library-cover-dialog footer > button {
+  flex: 1;
+  min-height: 44px;
+  margin: 0;
+  border: 1px solid color-mix(in srgb, var(--main-text) 20%, transparent);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--main-text);
+}
+
+.library-cover-empty {
+  color: var(--main-sub);
+  line-height: 1.5;
+}
+
+@media (min-width: 600px) {
+  html .library-tile :is(.nm, .folder-name) {
+    font-size: 17px;
+  }
+  html .library-tile .folder-sub,
+  .library-tile-format {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 359px) {
+  html :is(.deck-grid:not(.as-list), .fp-grid) .library-tile {
+    aspect-ratio: 1;
+  }
+
+  html .library-tile :is(.nm, .folder-name) {
+    font-size: 13px;
+  }
+
+  html :is(.deck-grid:not(.as-list), .fp-grid) .library-tile-heading,
+  html :is(.deck-grid:not(.as-list), .fp-grid) .library-tile-details {
+    padding: 7px 8px;
+  }
+
+  html .library-tile .folder-sub,
+  .library-tile-format {
+    font-size: 10px;
+  }
+}

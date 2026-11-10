@@ -87,6 +87,8 @@ export async function buildFrontend({ advanceVersion = false } = {}) {
     .update(JSON.stringify(scannerDetector));
   digest.update(await readFile(resolve(root, 'assets/scanner/collectorvision/manifest.json')));
   digest.update(await readFile(resolve(root, 'assets/scanner/collectorvision/scanner.worker.mjs')));
+  digest.update(await readFile(resolve(root, 'assets/scanner/collectorvision/performance.mjs')));
+  digest.update(await readFile(resolve(root, 'assets/scanner/collectorvision/corner.worker.mjs')));
   for (const [file, content] of shellFiles) digest.update(file).update(content);
   const hash = digest.digest('hex').slice(0, 12);
   javascript.code =
@@ -129,7 +131,12 @@ export async function buildFrontend({ advanceVersion = false } = {}) {
       ),
     ),
     ...scannerAssets.map(async ({ source, target }) =>
-      writeChanged(resolve(root, 'public', target), await readFile(resolve(root, source))),
+      writeChanged(
+        resolve(root, 'public', target),
+        source.endsWith('/scanner.worker.mjs') || source.endsWith('/corner.worker.mjs')
+          ? (await readFile(resolve(root, source), 'utf8')).replaceAll('__DECKHAND_BUILD__', hash)
+          : await readFile(resolve(root, source)),
+      ),
     ),
   ]);
   return {

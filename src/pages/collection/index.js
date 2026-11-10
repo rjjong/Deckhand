@@ -418,6 +418,7 @@ function artCropFrom(img) {
 }
 
 function wireCollectionPage() {
+  wireLibraryTileImages();
   document.getElementById('colSortBtn')?.addEventListener('click', (event) => {
     event.stopPropagation();
     openCollectionSortMenu(event.currentTarget);
@@ -439,9 +440,12 @@ function wireCollectionPage() {
     // Long-press manages the binder; a plain tap opens it.
     let lpT = null,
       lpFired = false;
-    const binder = state.collection.binders.find((x) => x.id === t.dataset.binderopen);
+    const id = t.dataset.binderopen;
+    const binder = state.collection.binders.find((x) => x.id === id) || {
+      id,
+      name: collectionFolderTitle(id),
+    };
     const arm = (e) => {
-      if (!binder) return; // the Wants tile has nothing to manage
       lpFired = false;
       clearTimeout(lpT);
       const px = e.touches && e.touches[0] ? e.touches[0].clientX : e.clientX;

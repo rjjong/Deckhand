@@ -38,6 +38,8 @@ export const scannerAssets = [
   },
   ...[
     'scanner.worker.mjs',
+    'corner.worker.mjs',
+    'performance.mjs',
     'LICENSE',
     'ONNXRUNTIME-LICENSE.txt',
     'UPSTREAM.json',

@@ -15,12 +15,12 @@ const VERSION = 'deckhand-shell-' + BUILD;
 // NOT version-named, so activating a new version never wipes it.
 const ASSETS = 'admiral-assets-v1';
 // Runtime files are immutable within the pinned scanner bundle and survive app updates.
-const SCANNER_ASSETS = 'deckhand-scanner-__DECKHAND_SCANNER_BUNDLE__';
+const SCANNER_ASSETS = 'deckhand-scanner-__DECKHAND_SCANNER_BUNDLE__-threads-v1';
 // How long the page may wait for a fresh copy before the cached one wins.
 // Long enough that a quick connection still serves the newest deploy at once,
 // short enough that a slow one never holds the launcher's icon hostage.
 const SHELL_WAIT = 1200;
-const SHELL = ['./', './index.html', './assets/app.js?v=' + BUILD, './assets/app.css?v=' + BUILD, './assets/images/deckhand-badge.webp', './runtime-config.js', './manifest.json', './icon-192.png', './icon-512.png', './icon-512-maskable.png', './assets/scanner/collectorvision/scanner.worker.mjs?v=' + BUILD];
+const SHELL = ['./', './index.html', './assets/app.js?v=' + BUILD, './assets/app.css?v=' + BUILD, './assets/images/deckhand-badge.webp', './runtime-config.js', './manifest.json', './icon-192.png', './icon-512.png', './icon-512-maskable.png', './assets/scanner/collectorvision/scanner.worker.mjs?v=' + BUILD, './assets/scanner/collectorvision/corner.worker.mjs?v=' + BUILD];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL.map(url => new Request(url, { cache: 'reload' })))).then(() => self.skipWaiting()));

@@ -1,0 +1,65 @@
+/* Keep scrolling, keyboard navigation and touch gestures; hide only the chrome. */
+* {
+  scrollbar-width: none !important;
+  scrollbar-gutter: auto !important;
+}
+
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.scroll-boundary-feedback {
+  position: fixed;
+  z-index: 1000;
+  height: 28px;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+}
+
+.scroll-boundary-feedback::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 0 0 50% 50%;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--accent-ink, #d4b45c) 36%, transparent),
+    transparent
+  );
+  transform-origin: center top;
+  animation: scroll-boundary-pulse 460ms ease-out both;
+}
+
+.scroll-boundary-feedback[data-edge='bottom']::before {
+  border-radius: 50% 50% 0 0;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--accent-ink, #d4b45c) 36%, transparent),
+    transparent
+  );
+  transform-origin: center bottom;
+}
+
+@keyframes scroll-boundary-pulse {
+  0% {
+    transform: scaleY(0.15);
+    opacity: 0;
+  }
+  28% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleY(0.2);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-boundary-feedback {
+    display: none;
+  }
+}

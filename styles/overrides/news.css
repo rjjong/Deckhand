@@ -1,0 +1,45 @@
+/* News shares the page's scroll viewport; the branding leaves with the page. */
+html .home-page .home-branding {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 14px 0 4px;
+  transform: translateY(var(--home-brand-offset, 0));
+}
+
+html .home-page .home-rule {
+  flex: none;
+  min-height: 18px;
+  margin: 6px auto;
+}
+
+html .home-page .home-kicker {
+  margin: 6px 0 10px;
+}
+
+html .home-page .home-news,
+html.desk .home-page .home-news {
+  width: 100%;
+  max-width: none;
+  height: auto;
+  max-height: none;
+  margin: 14px 0 0;
+  padding: 0;
+  overflow: visible;
+  border: none;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+html .home-page .home-news .news-item {
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html .home-page .home-branding {
+    transform: none;
+  }
+}

@@ -1139,21 +1139,3 @@ function openCROverlay(startMode) {
     if (rules && mode === 'rules' && !q.value.trim()) showToc(rules);
   });
 }
-
-/* The news box takes exactly the room between its own top and the nav bar
-   — no dead strip beneath it on any screen height. */
-function fitHomeNews() {
-  if (isDesk()) {
-    const nb0 = document.getElementById('homeNews');
-    if (nb0) nb0.style.height = '';
-    return;
-  }
-  try {
-    const nb = document.getElementById('homeNews');
-    if (!nb) return;
-    const nav = document.querySelector('.brand-banner');
-    const navTop = nav ? nav.getBoundingClientRect().top : window.innerHeight;
-    const h = Math.floor(navTop - nb.getBoundingClientRect().top - 12);
-    if (h > 140) nb.style.height = h + 'px';
-  } catch (e) {}
-}

@@ -6,16 +6,24 @@ function normalizeScannerSettings(value = {}) {
       ? Math.max(min, Math.min(max, value[key]))
       : fallback;
   return {
-    scannerDebounceMs: Math.round(number('scannerDebounceMs', 0, 0, 60000)),
     scannerIgnoreSession: value?.scannerIgnoreSession === true,
     scannerIdThreshold: number('scannerIdThreshold', 0.6, 0, 1),
     scannerCornerThreshold: number('scannerCornerThreshold', 0.02, 0, 1),
-    scannerIntervalMs: Math.round(number('scannerIntervalMs', 650, 100, 10000)),
+    scannerIntervalMs: Math.round(number('scannerIntervalMs', 200, 100, 10000)),
     scannerShowFramerate: value?.scannerShowFramerate === true,
   };
 }
 
+function deviceAppearanceDefaults() {
+  const dark =
+    typeof globalThis.matchMedia === 'function'
+      ? globalThis.matchMedia('(prefers-color-scheme: dark)').matches
+      : true;
+  return { theme: dark ? 'dark' : 'light', guild: dark ? 'rakdos' : 'azorius' };
+}
+
 async function loadSettings() {
+  Object.assign(state, deviceAppearanceDefaults());
   state.priceCache = loadPriceCache();
   state.collection = loadCollection();
   state.startupPage = 'home';
@@ -25,8 +33,22 @@ async function loadSettings() {
     const raw = localStorage.getItem(LS_PREFIX + 'settings:app');
     if (raw) {
       const s = JSON.parse(raw);
-      if (s.theme) state.theme = s.theme;
+      if (Object.hasOwn(s, 'scannerDebounceMs')) {
+        delete s.scannerDebounceMs;
+        localStorage.setItem(LS_PREFIX + 'settings:app', JSON.stringify(s));
+      }
+      if (s.theme === 'dark' || s.theme === 'light') state.theme = s.theme;
       if (s.guild && GUILDS.some((g) => g.k === s.guild)) state.guild = s.guild;
+      // Upgrade the former default once per device; preserve custom intervals
+      // and allow the user to choose 650 ms again after this upgrade.
+      const timingKey = LS_PREFIX + 'scanner:timing-v2';
+      if (!localStorage.getItem(timingKey)) {
+        if (s.scannerIntervalMs === 650) {
+          s.scannerIntervalMs = 200;
+          localStorage.setItem(LS_PREFIX + 'settings:app', JSON.stringify(s));
+        }
+        localStorage.setItem(timingKey, '1');
+      }
       if (STARTUP_PAGES.includes(s.startupPage)) state.startupPage = s.startupPage;
       state.hideCollectionFolderPrices = s.hideCollectionFolderPrices === true;
       Object.assign(state, normalizeScannerSettings(s));

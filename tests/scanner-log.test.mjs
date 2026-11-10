@@ -197,6 +197,7 @@ test('closing during inference skips thumbnails and clears frames before a later
     DOMException,
     setTimeout,
     clearTimeout,
+    performance,
     DECKHAND_BUILD: 'test',
     fetch: async () => ({ ok: true, json: async () => ({}) }),
     document: {

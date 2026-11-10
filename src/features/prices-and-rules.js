@@ -915,8 +915,7 @@ async function loadMtgNews(box) {
         return `<a class="news-item" data-ni="${ni}" href="${escapeHtml(a.u)}" target="_blank" rel="noopener noreferrer">${im}<span class="nw-body"><span class="nw-t">${escapeHtml(a.t)}</span><span class="nw-m">${fl ? `<span class="nw-fmt">${escapeHtml(fl)}</span>` : ''}${escapeHtml(a.src || '')}${ds ? ' · ' + ds : ''}</span></span></a>`;
       })
       .join('');
-    // 1.27: a wide screen reads the news in rows of three. The box stays
-    // column-reverse, so the first row (newest) sits at its foot.
+    // A wide screen reads the news in rows of three, newest first.
     try {
       if (window.matchMedia('(min-width: 1000px)').matches) {
         const items = Array.from(box.querySelectorAll(':scope > .news-item'));

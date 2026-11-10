@@ -21,29 +21,71 @@ vm.runInContext(
   context,
 );
 
-test('scanner repeat delay uses accepted scan times and treats matching names across printings equally', () => {
-  const filter = context.scannerCreateRepeatFilter({ debounceMs: 3000 });
-  assert.equal(filter.accept('Sol Ring', 0), true);
-  assert.equal(filter.accept('  SOL RING  ', 500), false);
-  assert.equal(filter.reason('Sol Ring', 500), 'debounce');
-  assert.equal(filter.accept('Island', 1000), true);
-  assert.equal(filter.accept('Sol Ring', 2999), false);
-  assert.equal(filter.accept('Sol Ring', 3000), true);
-  assert.equal(filter.reason('Island', 4000), null);
-  assert.equal(filter.accept('Sol Ring', 5000), false);
-  const disabled = context.scannerCreateRepeatFilter();
-  assert.equal(disabled.accept('Sol Ring', 0), true);
-  assert.equal(disabled.accept('Sol Ring', 1), true);
+test('removed debounce preferences never suppress repeat scans', () => {
+  const filter = context.scannerCreateRepeatFilter({ debounceMs: 60000 });
+  const card = { id: 'printing-a', name: 'Sol Ring' };
+  assert.equal(filter.accept(card, 0), true);
+  assert.equal(filter.accept(card, 1), true);
+  assert.equal(filter.reason(card, 2), null);
 });
 
-test('session repeat filtering overrides the delay and a new session accepts cards again', () => {
-  const filter = context.scannerCreateRepeatFilter({ debounceMs: 1000, ignoreSession: true });
-  assert.equal(filter.accept('Sol Ring', 0), true);
-  assert.equal(filter.accept('Island', 10000), true);
-  assert.equal(filter.accept('Sol Ring', 100000), false);
-  assert.equal(filter.reason('Sol Ring', 100000), 'session');
+test('scanner haptics use one short pulse and unsupported browsers do not interrupt scanning', () => {
+  const calls = [];
+  context.navigator = { vibrate: (pattern) => { calls.push(pattern); return true; } };
+  assert.equal(context.scannerScanFeedback().status, 'requested');
+  assert.deepEqual(calls, [70]);
+  context.navigator = {};
+  assert.equal(context.scannerScanFeedback().status, 'unsupported');
+  context.navigator = { vibrate: () => { throw new Error('Blocked by browser'); } };
+  assert.equal(context.scannerScanFeedback().status, 'rejected');
+  delete context.navigator;
+});
+
+test('vibration diagnostics distinguish missing activation, background pages and rejected requests', () => {
+  const calls = [];
+  context.document = { visibilityState: 'visible' };
+  context.navigator = { userActivation: { hasBeenActive: false }, vibrate: (pattern) => { calls.push(pattern); return true; } };
+  assert.equal(context.scannerScanFeedback().status, 'needs-tap');
+  assert.equal(calls.length, 0);
+  context.navigator.userActivation.hasBeenActive = true;
+  context.document.visibilityState = 'hidden';
+  assert.equal(context.scannerScanFeedback().status, 'hidden');
+  assert.equal(calls.length, 0);
+  context.document.visibilityState = 'visible';
+  assert.equal(context.scannerRequestVibration([180, 100, 180], 'test').source, 'test');
+  assert.equal(calls.length, 1);
+  context.navigator.vibrate = () => false;
+  const rejected = context.scannerScanFeedback();
+  assert.equal(rejected.status, 'rejected');
+  assert.match(context.scannerVibrationMessage(rejected), /rejected/);
+  assert.match(context.scannerVibrationMessage({ status: 'requested' }), /may be suppressing/);
+  delete context.navigator;
+  delete context.document;
+});
+
+test('independent corners reserve extra memory only on capable isolated devices', () => {
+  context.crossOriginIsolated = true;
+  const android = { userAgent: 'Android', hardwareConcurrency: 8, deviceMemory: 8 };
+  assert.equal(context.scannerCanRunCornerWorker(android), true);
+  assert.equal(context.scannerCanRunCornerWorker({ ...android, hardwareConcurrency: 2 }), false);
+  assert.equal(context.scannerCanRunCornerWorker({ ...android, deviceMemory: 2 }), false);
+  assert.equal(context.scannerCanRunCornerWorker({ ...android, userAgent: 'iPhone' }), false);
+  context.crossOriginIsolated = false;
+  assert.equal(context.scannerCanRunCornerWorker(android), false);
+});
+
+test('session filtering ignores exact printing IDs, while sets, artwork and similar names remain separate', () => {
+  const filter = context.scannerCreateRepeatFilter({ ignoreSession: true });
+  const first = { id: 'printing-a', name: 'Sol Ring', oracle_id: 'same-oracle', set: 'c21', illustration_id: 'art-a' };
+  const other = { ...first, id: 'printing-b', set: 'm3c', illustration_id: 'art-b' };
+  assert.equal(filter.accept(first), true);
+  assert.equal(filter.accept(other), true);
+  assert.equal(filter.accept({ ...other, id: 'printing-c', name: 'Sol Ring Variant' }), true);
+  assert.equal(filter.accept({ ...first, name: 'Renamed card' }), false);
+  assert.equal(filter.reason({ cardId: 'PRINTING-A', secondaryId: 'different-oracle' }), 'session');
+  assert.equal(filter.reason({ name: 'Sol Ring', oracle_id: 'same-oracle' }), null);
   assert.equal(
-    context.scannerCreateRepeatFilter({ ignoreSession: true }).accept('Sol Ring', 100000),
+    context.scannerCreateRepeatFilter({ ignoreSession: true }).accept(first),
     true,
   );
 });
@@ -51,23 +93,19 @@ test('session repeat filtering overrides the delay and a new session accepts car
 test('scanner settings normalize missing, malformed and out-of-range saved values', () => {
   const normalize = (value) => JSON.parse(JSON.stringify(context.normalizeScannerSettings(value)));
   const defaults = {
-    scannerDebounceMs: 0,
     scannerIgnoreSession: false,
     scannerIdThreshold: 0.6,
     scannerCornerThreshold: 0.02,
-    scannerIntervalMs: 650,
+    scannerIntervalMs: 200,
     scannerShowFramerate: false,
   };
   assert.deepEqual(normalize({}), defaults);
   assert.deepEqual(normalize(null), defaults);
   assert.deepEqual(normalize({ scannerDebounceMs: 2500, scannerIgnoreSession: true }), {
     ...defaults,
-    scannerDebounceMs: 2500,
     scannerIgnoreSession: true,
   });
-  assert.equal(normalize({ scannerDebounceMs: Infinity }).scannerDebounceMs, 0);
-  assert.equal(normalize({ scannerDebounceMs: -100 }).scannerDebounceMs, 0);
-  assert.equal(normalize({ scannerDebounceMs: 100000 }).scannerDebounceMs, 60000);
+  assert.equal(Object.hasOwn(normalize({ scannerDebounceMs: 60000 }), 'scannerDebounceMs'), false);
   assert.equal(
     normalize({ scannerDebounceMs: '3000', scannerIgnoreSession: 'true' }).scannerIgnoreSession,
     false,
@@ -310,14 +348,16 @@ test('live tracking confirms stable cards once and allows another copy after rem
   assert.equal(tracker.observe(card, 11900), card);
 });
 
-test('live tracking follows card changes, groups printings and keeps the strongest stable match', () => {
+test('live tracking confirms each printing independently even when Oracle IDs are identical', () => {
   const tracker = context.scannerCreateTracker();
   const a = trackedCard();
   const otherPrinting = trackedCard('11111111-1111-4111-8111-111111111111', a.secondaryId, 0.8);
   const b = trackedCard('22222222-2222-4222-8222-222222222222');
   tracker.observe(a, 0);
-  assert.equal(tracker.observe(otherPrinting, 650), a);
-  assert.equal(tracker.observe(otherPrinting, 1300), null);
+  assert.equal(tracker.observe(otherPrinting, 650), null, 'Two different printings must not combine into confirmation');
+  assert.equal(tracker.observe(otherPrinting, 1300), otherPrinting);
+  assert.equal(tracker.heldKey, otherPrinting.cardId);
+  assert.equal(tracker.observe(otherPrinting, 1400), null);
   tracker.observe(b, 1950);
   assert.equal(tracker.observe(b, 2600), b);
   tracker.observe(a, 3250);
@@ -326,6 +366,13 @@ test('live tracking follows card changes, groups printings and keeps the stronge
   tracker.pause();
   tracker.observe({}, 50000);
   assert.equal(tracker.observe(a, 50650), null, 'A review/pause must not count as card removal');
+});
+
+test('stable printing tracking keeps the strongest match across confirmations', () => {
+  const tracker = context.scannerCreateTracker();
+  const first = trackedCard(), stronger = { ...first, score: 0.99 };
+  tracker.observe(first, 0);
+  assert.equal(tracker.observe(stronger, 200), stronger);
 });
 
 async function sessionContext(factory) {
