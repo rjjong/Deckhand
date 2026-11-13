@@ -15,7 +15,7 @@ function refreshCardCollectionQuantities() {
 
 function cardCollectionQuantityHtml(card) {
   if (isCollectionBasicLand(card)) return '';
-  return `<div class="card-collection-quantity" data-card-name="${escapeHtml(card.name)}">
+  return `<div class="card-quantity card-collection-quantity" data-card-name="${escapeHtml(card.name)}">
     <span>In collection <strong data-collection-count aria-live="polite">0</strong></span>
     <div><button type="button" data-collection-increase aria-label="Add one to collection" title="Add one to collection">${ICONS.plus}</button>
     <button type="button" data-collection-decrease aria-label="Remove one from collection" title="Remove one from collection" disabled>${ICONS.minus}</button></div>

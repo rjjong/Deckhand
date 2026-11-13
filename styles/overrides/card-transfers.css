@@ -9,7 +9,7 @@ html .card-transfer-backdrop {
   backdrop-filter: blur(6px);
 }
 
-html :is(#addCollOverlay, #csAddSheet, #binderConflict) > .card-transfer-dialog {
+html :is(#addCollOverlay, #csAddSheet, #binderConflict, #dvSheet) > .card-transfer-dialog {
   display: flex;
   flex-direction: column;
   flex: 0 1 auto;
@@ -24,6 +24,60 @@ html :is(#addCollOverlay, #csAddSheet, #binderConflict) > .card-transfer-dialog 
   border: 1px solid var(--transfer-line);
   border-radius: 22px;
   background: var(--page-backdrop);
+}
+
+.deck-versions-backdrop :is(.dv-description, .dv-empty) {
+  margin: 0;
+  color: var(--main-sub);
+  font:
+    400 13px/1.6 'Inter',
+    system-ui,
+    sans-serif;
+}
+.deck-versions-backdrop .dv-list {
+  flex: none;
+  flex-direction: column;
+  max-height: none;
+  overflow: visible;
+  gap: 10px;
+  margin: 0;
+}
+.deck-versions-backdrop .dv-row {
+  flex-wrap: wrap;
+  padding: 14px;
+  border: 1px solid var(--transfer-line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--main-text) 4%, var(--ink));
+}
+.deck-versions-backdrop .dv-txt {
+  flex-basis: 100%;
+  gap: 6px;
+  overflow-wrap: anywhere;
+}
+.deck-versions-backdrop .dv-txt b {
+  color: var(--main-text);
+  font:
+    600 14px/1.5 'Inter',
+    system-ui,
+    sans-serif;
+}
+.deck-versions-backdrop .dv-txt span {
+  color: var(--main-sub);
+  font:
+    400 12px/1.5 'Inter',
+    system-ui,
+    sans-serif;
+}
+.dv-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex: 1;
+  gap: 8px;
+}
+html .deck-versions-backdrop .dv-actions button {
+  min-height: 40px;
+  padding: 8px 14px;
+  font-size: 13px;
 }
 
 .card-transfer-body {

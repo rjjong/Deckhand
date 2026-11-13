@@ -1986,11 +1986,10 @@ test('Deck card details share the header and retain editing, updated metrics and
   await expect(sheet.locator('#csSaltRow')).toContainText('0.00');
   await expect(sheet.locator('#csSaltRow')).toBeEnabled();
   await sheet.locator('#csAddOne').click();
-  await page.locator('#csAddSheet [data-addk="deck"]').click();
   await expect.poll(()=>page.evaluate(()=>window.detailDeck.cards.length)).toBe(2);
   await expect(page.locator('#csAddSheet')).toHaveCount(0);
-  await expect(sheet).toHaveCount(0);
-  await page.evaluate(()=>openCardActionSheet(window.detailDeck,window.detailDeck.cards[0],'main',0));
+  await expect(sheet).toBeVisible();
+  await expect(sheet.locator('[data-deck-count]')).toHaveText('2');
   await expect(sheet.locator('.card-details-subtitle')).toHaveText('Archive Adept');
   await expect(sheet.locator('#csPrice')).toContainText('€1.50');
   const section=sheet.locator('.detail-sec:has(#sheetOracle)');

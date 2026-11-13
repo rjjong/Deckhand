@@ -5,8 +5,10 @@ const APP_VERSION = DECKHAND_VERSION;
 
 const CHANGELOG_NOTES = {
   en: [
-    'Floating action menus align smaller circular option icons above the circular close button',
-    'Collection selected-card actions use the same animated floating menu as the add buttons',
+    'Card-type counts move into deck Stats, where tapping a type filters the deck list',
+    'Deck actions group management, history and notes, and sharing, with Bulk edit removed from the menu',
+    'Proxy changes in deck card details update ownership without rebuilding the page or losing its scroll position',
+    'Collection Value shows rising card prices in green in both light and dark themes',
   ],
 };
 
@@ -17,6 +19,70 @@ const CHANGELOG_NOTES = {
 const APP_DATE = DECKHAND_RELEASE_DATE;
 
 const CHANGELOG_HISTORY = [
+  {
+    v: '2.1.7',
+    d: '2026-11-12',
+    en: [
+      'Monarch and initiative indicators appear only in the normal life view, keeping player option buttons in place',
+      'Counter pickers align with the right-corner # button and animate from it, respecting reduced-motion preferences',
+      'The mana picker places Back to counters at the left of the color row',
+    ],
+  },
+  {
+    v: '2.1.6',
+    d: '2026-11-12',
+    en: [
+      'Life player controls use larger buttons and a wider Done button, with the counter picker at the right corner',
+      'Player names remain centered independently of commander tax and other counters',
+      'Counter and mana strips drag in every player orientation without changing counts or triggering hold resets',
+    ],
+  },
+  {
+    v: '2.1.5',
+    d: '2026-11-12',
+    en: [
+      'Player options keep Done centered at the bottom with compact monarch, dungeon and counter controls',
+      'Symbol pickers enable commander tax, colored mana, storm, energy and experience counters independently for each player',
+      'Tap counters to increase, hold to reset; commander tax increases by two mana and long counter rows scroll horizontally',
+      'Mana colors and amounts stay with saved games and account sync; old mana counters become colorless mana',
+    ],
+  },
+  {
+    v: '2.1.4',
+    d: '2026-11-11',
+    en: [
+      'Deck card details show a deck quantity with direct plus and minus controls above collection quantities',
+      'Saved deck versions use a themed dialog with newest versions first and fixed close controls',
+      'Deck Inspiration categories can be expanded or collapsed, remember their state while browsing, and no longer show a land-base button',
+    ],
+  },
+  {
+    v: '2.1.3',
+    d: '2026-11-11',
+    en: [
+      'Stacks focus lower in the viewport and allow the final cards to be fully revealed',
+      'Deck issues appear inline in red with a warning icon, without a duplicate validity popup',
+      'Deck Inspiration replaces the Deck Log tab; games and notes remain available from Deck actions',
+      'Swipe navigation slides the deck content, and existing-deck actions no longer offer replacement import',
+    ],
+  },
+  {
+    v: '2.1.2',
+    d: '2026-11-10',
+    en: [
+      'Decklist, Stats and Deck Log use full-width tabs with swipe and keyboard navigation that stops at either end',
+      'Deck sorting moves beside advanced search filters; display mode sits beside the price, with one issue-review action',
+      'Stacks automatically reveal a full card as you scroll and keep proxy, ownership and transform controls inside that card',
+    ],
+  },
+  {
+    v: '2.1.1',
+    d: '2026-11-10',
+    en: [
+      'Floating action menus align smaller circular option icons above the circular close button',
+      'Collection selected-card actions use the same animated floating menu as the add buttons',
+    ],
+  },
   {
     v: '2.1.0',
     d: '2026-11-10',

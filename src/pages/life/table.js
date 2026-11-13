@@ -113,13 +113,6 @@ function lifeRolesHtml(p) {
   </div>`;
 }
 
-function lifePlayerStatusFooterHtml(p) {
-  const roles = lifeRolesHtml(p);
-  return roles
-    ? `<div class="life-player-footer life-player-status-footer"><div class="life-role-corner">${roles}</div></div>`
-    : '';
-}
-
 function lifePlayerNameHtml(p, idx, editable = true) {
   return `<div class="life-player-name">
     ${editable ? `<input class="pname-input" data-idx="${idx}" aria-label="Player ${idx + 1} name" value="${escapeHtml(p.name).replace(/"/g, '&quot;')}" size="${Math.max(4, Math.min(14, p.name.length || 8))}">` : `<span class="life-name-text">${escapeHtml(p.name)}</span>`}
@@ -129,11 +122,13 @@ function lifePlayerNameHtml(p, idx, editable = true) {
 function lifePlayerFooterHtml(p, idx) {
   return `<div class="life-player-footer">
     <div class="life-role-corner">${lifeRolesHtml(p)}</div>
+    <div class="life-leading-counters">${lifeCounterChipHtml(p, idx, 'commander')}</div>
     <div class="life-player-name">
-      ${lifeCounterChipHtml(p, idx, 'commander')}
       <input class="pname-input" data-idx="${idx}" aria-label="Player ${idx + 1} name" value="${escapeHtml(p.name).replace(/"/g, '&quot;')}" size="${Math.max(4, Math.min(14, p.name.length || 8))}">
     </div>
-    <div class="life-extra-counters">${LIFE_COUNTERS.filter(({ id }) => id !== 'commander')
+    <div class="life-extra-counters" role="group" aria-label="${escapeHtml(p.name).replace(/"/g, '&quot;')} counters">${LIFE_VISIBLE_COUNTERS.filter(
+      ({ id }) => id !== 'commander',
+    )
       .map(({ id }) => lifeCounterChipHtml(p, idx, id))
       .join('')}</div>
   </div>`;
@@ -161,7 +156,7 @@ function lifeCardHtml(p, idx, count) {
           class="dmg-overlay ${lethalDmg() && taken >= lethalDmg() ? 'lethal' : ''}"
           data-dmgfrom="${idx}"
         >
-          ${lifePlayerNameHtml(p, idx, false)}${lifePlayerStatusFooterHtml(p)}
+          ${lifePlayerNameHtml(p, idx, false)}
           <div class="tap-zone left" data-dmgside="minus"><span class="tap-glyph">−</span></div>
           <div class="tap-zone right" data-dmgside="plus"><span class="tap-glyph">+</span></div>
           <div class="lval-row">
@@ -198,31 +193,36 @@ function lifeCardHtml(p, idx, count) {
         <div class="lval-row">${ldeltaHtml(p._pzDelta, p._pzFresh)}<div class="lval2 pz-val ${p.poison >= 10 ? 'danger' : ''}">${p.poison}</div>${ldeltaHtml(p._pzDelta, p._pzFresh, true)}</div>`
               : `<div class="pz-label" style="max-width:80%;white-space:normal;text-transform:none;">${trS('Tap another player to count the damage you took from them.')}</div>`
           }
+          ${lifeCounterPickerHtml(p, idx)}
           <div class="lf-extras">
-            <button
-              type="button"
-              class="lf-x${p.monarch ? ' on' : ''}"
-              data-lmonarch="${idx}"
-              title="Monarch"
-              aria-label="Monarch"
-              aria-pressed="${!!p.monarch}"
-            >
-              ${CROWN_SVG}<span>Monarch</span></button
-            ><button
-              type="button"
-              class="lf-x${p.dg ? ' on' : ''}"
-              data-ldungeon="${idx}"
-              title="Dungeon"
-              aria-label="Dungeon"
-            >
-              ${DUNGEON_SVG}<span>${p.dg ? escapeHtml(p.dg.room) : 'Dungeon'}</span>
-            </button>
+            <div class="life-role-actions">
+              <button
+                type="button"
+                class="lf-x${p.monarch ? ' on' : ''}"
+                data-lmonarch="${idx}"
+                title="Monarch"
+                aria-label="Monarch"
+                aria-pressed="${!!p.monarch}"
+              >
+                ${CROWN_SVG}<span>Monarch</span></button
+              ><button
+                type="button"
+                class="lf-x${p.dg ? ' on' : ''}"
+                data-ldungeon="${idx}"
+                title="Dungeon"
+                aria-label="Dungeon"
+              >
+                ${DUNGEON_SVG}<span>${p.dg ? escapeHtml(p.dg.room) : 'Dungeon'}</span>
+              </button>
+            </div>
             <button
               type="button"
               class="lf-x"
               data-lcounters="${idx}"
               aria-label="Player counters"
               title="Counters"
+              aria-expanded="${state.life.counterPicker?.idx === idx}"
+              aria-controls="lifeCounterPicker-${idx}"
             >
               <span class="life-hash" aria-hidden="true">#</span>
             </button>
@@ -230,7 +230,6 @@ function lifeCardHtml(p, idx, count) {
               ✓ <span>Done</span>
             </button>
           </div>
-          ${lifePlayerStatusFooterHtml(p)}
         </div>
       </div>
     </div>`;
@@ -289,6 +288,16 @@ function lifeCardHtml(p, idx, count) {
 function renderLifeGrid() {
   const box = document.getElementById('lifeGrid');
   if (!box) return;
+  const counterScroll = new Map(
+    Array.from(box.querySelectorAll('.life-card-v2')).map((card) => [
+      card.dataset.idx,
+      {
+        counters: card.querySelector('.life-extra-counters')?.scrollLeft || 0,
+        picker: card.querySelector('.life-counter-picker-scroll')?.scrollLeft || 0,
+        pickerView: card.querySelector('.life-counter-picker')?.getAttribute('aria-label'),
+      },
+    ]),
+  );
   const players = ensureLifePlayers();
   const lay = lifeLayout();
   const cols = lay.areas[0].split(' ').length;
@@ -319,6 +328,14 @@ function renderLifeGrid() {
   });
   wireLifeGrid();
   layoutLifeCards();
+  box.querySelectorAll('.life-card-v2').forEach((card) => {
+    const saved = counterScroll.get(card.dataset.idx);
+    const row = card.querySelector('.life-extra-counters');
+    if (row) row.scrollLeft = saved?.counters || 0;
+    const picker = card.querySelector('.life-counter-picker');
+    if (picker && picker.getAttribute('aria-label') === saved?.pickerView)
+      picker.querySelector('.life-counter-picker-scroll').scrollLeft = saved.picker;
+  });
   requestAnimationFrame(layoutLifeCards);
   if (state.life.setupDone) lifeAutosave(); // 1.46
   {
@@ -456,6 +473,7 @@ function layoutLifeCards() {
         card._cutIdx = k;
       }
       card.style.clipPath = clip;
+      card.dataset.lifeCut = card._cutKind + '-' + card._cutIdx;
       card.classList.toggle('life-bottom-notch', card._cutKind === 'edge' && card._cutIdx === 2);
       card.classList.toggle(
         'life-bottom-corner',
@@ -551,7 +569,7 @@ function wireLifeGrid() {
     inp.addEventListener('input', () => {
       ensureLifePlayers()[+inp.dataset.idx].name = inp.value || 'Player ' + (+inp.dataset.idx + 1);
     });
-    inp.addEventListener('blur', renderLifeGrid);
+    inp.addEventListener('blur', lifeAutosave);
     inp.addEventListener('click', (e) => e.stopPropagation());
   });
   document.querySelectorAll('.lval2[data-setlife]').forEach((v) => {
@@ -579,18 +597,22 @@ function wireLifeGrid() {
       openLifeDungeon(+b.dataset.ldungeon);
     });
   });
-  document.querySelectorAll('[data-lcounters], [data-life-counter]').forEach((button) => {
+  document.querySelectorAll('[data-lcounters]').forEach((button) => {
     ['pointerdown', 'touchstart'].forEach((event) =>
       button.addEventListener(event, (e) => e.stopPropagation(), { passive: true }),
     );
     button.addEventListener('click', (e) => {
       e.stopPropagation();
-      openLifeCounters(
-        Number(button.dataset.lcounters ?? button.dataset.player),
-        button.dataset.lifeCounter,
-      );
+      openLifeCounters(Number(button.dataset.lcounters));
     });
   });
+  document.querySelectorAll('[data-life-counter]').forEach(wireLifeCounterChip);
+  document
+    .querySelectorAll('.life-extra-counters, .life-counter-picker-scroll')
+    .forEach(wireLifeCounterStrip);
+  document
+    .querySelectorAll('.life-card-v2.focused')
+    .forEach((card) => wireLifeCounterPicker(card, Number(card.dataset.idx)));
   document.querySelectorAll('.revive-btn').forEach((b) => {
     b.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -608,8 +630,10 @@ function wireLifeGrid() {
       if (state.life.expandedIdx === idx) {
         closeTopOverlay(); // Done — pops the damage-mode history entry
       } else {
+        state.life.counterPicker = null;
         state.life.expandedIdx = idx;
         pushOverlay('lifeDamage', () => {
+          state.life.counterPicker = null;
           state.life.expandedIdx = null;
           renderLifeGrid();
         });

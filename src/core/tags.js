@@ -75,7 +75,7 @@ function getCardTags(d, name) {
   let g = ensureGlobalTags()[name] || [];
   // In a deck, a card starts WITH its Scryfall recommended tags. They are not
   // copied anywhere: removing one simply hides it in this deck, like any tag.
-  // 1.45: the deck's "Scryfall tags" switch (Sort Decklist) can turn them off;
+  // Honor the automatic-tag preference in older decks and backups;
   // tags you added yourself always stay.
   if (d && d.scryTags !== false) {
     let auto = null;

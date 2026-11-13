@@ -372,7 +372,6 @@ function render() {
   // with the defaults \u2014 every category unfolded, the Maybeboard folded.
   if (state.screen !== 'decklist' && Object.keys(state.collapsed || {}).length)
     state.collapsed = {};
-  if (state.screen !== 'decklist' && state.legalityOpen) state.legalityOpen = false;
   // Opening a deck (re)loads the banlist at most once a day — the whole
   // legality check is otherwise offline name comparison, zero per-deck
   // network. ensureCmdrBans throttles itself via its 24h freshness stamp.
@@ -513,6 +512,8 @@ function layoutPageViewport(page) {
 }
 
 function renderInner() {
+  stopDeckTabMotion();
+  cleanupDeckStacks();
   closeFabMenu({ immediate: true });
   const root = document.getElementById('root');
   const previousViewport = root.querySelector('.tab-viewport');

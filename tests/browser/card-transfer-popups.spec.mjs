@@ -54,10 +54,9 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-async function openDeckCardAdd(page) {
+async function openDeckCard(page) {
   await page.evaluate(() => openCardActionSheet(transferDeck, transferDeck.cards[0], 'main', 0));
-  await page.locator('#csAddOne').click();
-  await expect(page.locator('#csAddSheet .card-transfer-dialog')).toBeVisible();
+  await expect(page.locator('.card-deck-quantity')).toBeVisible();
 }
 
 async function expectFits(page, dialog) {
@@ -78,30 +77,84 @@ async function expectFits(page, dialog) {
   await expect(dialog.locator('.card-transfer-close')).toBeInViewport();
 }
 
-test('deck Card Details uses a themed Add to deck popup with quantity controls and working cancellation', async ({
+test('deck quantities sit above collection quantities and edit directly without removing unrelated cards', async ({
   page,
 }, info) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await openDeckCardAdd(page);
-  const dialog = page.getByRole('dialog', { name: 'Add to deck', exact: true });
-  await expectFits(page, dialog);
-  await expect(dialog.getByRole('button', { name: 'Decrease amount' })).toBeDisabled();
-  await dialog.getByRole('button', { name: 'Increase amount' }).click();
-  await expect(dialog.locator('#csAddQ')).toHaveText('2');
-  await dialog.getByRole('button', { name: 'Decrease amount' }).click();
-  await expect(dialog.locator('#csAddQ')).toHaveText('1');
+  await openDeckCard(page);
+  const sheet = page.locator('#cardSheetOverlay');
+  const deck = sheet.locator('.card-deck-quantity');
+  const collection = sheet.locator('.card-collection-quantity');
+  const count = deck.locator('[data-deck-count]');
+  await expect(count).toHaveText('1');
+  const a = await deck.boundingBox(),
+    b = await collection.boundingBox();
+  expect(a.y + a.height).toBeLessThanOrEqual(b.y);
+  for (const button of ['#csAddOne', '#csRemove']) {
+    const deckButton = await deck.locator(button).boundingBox();
+    const collectionButton = await collection.locator('button').first().boundingBox();
+    expect(deckButton.width).toBe(collectionButton.width);
+    expect(deckButton.height).toBe(collectionButton.height);
+  }
+  for (const n of ['2', '3', '4']) {
+    await sheet.locator('#csAddOne').click();
+    await expect(count).toHaveText(n);
+  }
+  await expect(sheet.locator('#csAddOne')).toBeDisabled();
+  await expect(page.locator('#csAddSheet')).toHaveCount(0);
   await mkdir('var/previews', { recursive: true });
-  await page.screenshot({ path: `var/previews/card-transfer-deck-${info.project.name}.png` });
-  await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
-  await expect(dialog).toHaveCount(0);
-  expect(await page.evaluate(() => transferDeck.cards.length)).toBe(2);
-  await page.locator('#csAddOne').click();
-  await dialog.getByRole('button', { name: 'Increase amount' }).click();
-  await dialog.locator('[data-addk="deck"]').click();
-  await expect(page.locator('#csAddSheet, #cardSheetOverlay')).toHaveCount(0);
-  expect(await page.evaluate(() => transferDeck.cards.length)).toBe(4);
+  await page.screenshot({ path: `var/previews/deck-card-quantities-${info.project.name}.png` });
+  for (const n of ['3', '2', '1', '0']) {
+    await sheet.locator('#csRemove').click();
+    await expect(count).toHaveText(n);
+  }
+  await expect(sheet.locator('#csRemove')).toBeDisabled();
+  await expect(sheet).toBeVisible();
+  expect(await page.evaluate(() => transferDeck.cards.map((card) => card.name))).toEqual([
+    'Tidal Mage',
+  ]);
+  await expect(sheet.locator('#csChangePrinting, #csToMaybe, #csProxy')).toHaveCount(0);
+  await sheet.locator('#csAddOne').click();
+  await expect(count).toHaveText('1');
+  await expect(sheet.locator('#csChangePrinting')).toBeEnabled();
+  expect(await page.evaluate(() => transferDeck.cards.map((card) => card.name))).toEqual([
+    'Tidal Mage',
+    'Archive Adept',
+  ]);
+  await sheet.locator('#csProxy').check();
+  await expect(count).toHaveText('1');
+  expect(await page.evaluate(() => transferDeck.cards[1].proxy)).toBe(true);
+  await sheet.locator('#csRemove').click();
+  expect(await page.evaluate(() => transferDeck.cards.map((card) => card.name))).toEqual([
+    'Tidal Mage',
+  ]);
   expect(errors).toEqual([]);
+});
+
+test('deck quantity limits include the sideboard, and sideboard edits affect the correct pool', async ({
+  page,
+}) => {
+  await page.evaluate(() => {
+    const card = transferDeck.cards[0];
+    transferDeck.cards.push({ ...card }, { ...card });
+    transferDeck.maybeboard = [{ ...card }];
+    openCardActionSheet(transferDeck, transferDeck.maybeboard[0], 'maybe', 0);
+  });
+  const sheet = page.locator('#cardSheetOverlay');
+  await expect(sheet.locator('.card-deck-quantity')).toContainText('In sideboard');
+  await expect(sheet.locator('[data-deck-count]')).toHaveText('1');
+  await expect(sheet.locator('#csAddOne')).toBeDisabled();
+  await sheet.locator('#csRemove').click();
+  await expect(sheet.locator('[data-deck-count]')).toHaveText('0');
+  await expect(sheet.locator('#csAddOne')).toBeEnabled();
+  await sheet.locator('#csAddOne').click();
+  expect(
+    await page.evaluate(() => [
+      copiesIn(transferDeck.cards, 'Archive Adept'),
+      transferDeck.maybeboard.length,
+    ]),
+  ).toEqual([3, 1]);
 });
 
 test('collection popup retains chosen quantity, finish, condition and binder and fits a small screen', async ({
@@ -109,9 +162,9 @@ test('collection popup retains chosen quantity, finish, condition and binder and
 }, info) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await openDeckCardAdd(page);
-  await page.locator('#csAddSheet [data-q="1"]').click();
-  await page.locator('#csAddSheet [data-addk="coll"]').click();
+  await openDeckCard(page);
+  await page.evaluate(() => openAddToCollection(transferDeck.cards[0]));
+  await page.locator('#acQplus').click();
   const dialog = page.getByRole('dialog', { name: 'Add to collection', exact: true });
   await expect(dialog.locator('#acQty')).toHaveValue('2');
   await expectFits(page, dialog);
@@ -158,7 +211,7 @@ test('selected deck cards share the collection popup and add the chosen amount p
   expect(await page.evaluate(() => transferDeck.cards.length)).toBe(2);
 });
 
-test('both card transfer popups stay readable in every guild and light or dark mode', async ({
+test('deck quantities and collection popup stay readable in every guild and light or dark mode', async ({
   page,
 }) => {
   test.setTimeout(90000);
@@ -188,20 +241,71 @@ test('both card transfer popups stay readable in every guild and light or dark m
         { guild, theme },
       );
       for (const target of ['deck', 'collection']) {
-        if (target === 'deck') await openDeckCardAdd(page);
-        else await page.evaluate(() => openAddToCollection(transferDeck.cards[0]));
-        const samples = await auditContrast(page, '.card-transfer-dialog');
+        if (target === 'deck') {
+          await openDeckCard(page);
+          await page.locator('.card-deck-quantity').scrollIntoViewIfNeeded();
+        } else await page.evaluate(() => openAddToCollection(transferDeck.cards[0]));
+        const samples = await auditContrast(
+          page,
+          target === 'deck' ? '.cs-actions-grid' : '.card-transfer-dialog',
+        );
         expect(samples.length).toBeGreaterThan(2);
         expect(
           samples.filter((sample) => sample.ratio < sample.minimum),
           `${guild} ${theme} ${target}`,
         ).toEqual([]);
-        await page.locator('.card-transfer-close').click();
-        await expect(page.locator('.card-transfer-dialog')).toHaveCount(0);
+        if (target === 'collection') {
+          await page.locator('.card-transfer-close').click();
+          await expect(page.locator('.card-transfer-dialog')).toHaveCount(0);
+        }
         if (target === 'deck') {
           await page.evaluate(() => closeTopOverlay());
           await expect(page.locator('#cardSheetOverlay')).toHaveCount(0);
         }
       }
     }
+});
+
+test('proxy toggles preserve the card-details scroll position and update ownership in place', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 600 });
+  await page.evaluate(() => {
+    transferDeck.cards.forEach((card) => {
+      card.proxy = false;
+    });
+    ensurePlayingOwnership(transferDeck, transferDeck.cards);
+  });
+  await openDeckCard(page);
+  const sheet = page.locator('#cardSheetOverlay'),
+    content = sheet.locator('main.card-detail'),
+    proxy = sheet.locator('#csProxy');
+  await expect(proxy).not.toBeChecked();
+  await expect(sheet.locator('[data-collection-count]')).toHaveText('1');
+  await page.evaluate(() => document.fonts.ready);
+  await sheet.locator('#dcImg').evaluate((img) => img.decode());
+  await content.hover();
+  await page.mouse.wheel(0, 400);
+  await proxy.scrollIntoViewIfNeeded();
+  await page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+  );
+  const before = await content.evaluate((el) => el.scrollTop);
+  expect(before).toBeGreaterThan(50);
+  await proxy.check();
+  await expect(proxy).toBeChecked();
+  await expect(proxy).toBeFocused();
+  await expect(sheet.locator('[data-collection-count]')).toHaveText('0');
+  expect(
+    await page.evaluate(() => computeWants().some((card) => card.name === 'Archive Adept')),
+  ).toBe(true);
+  expect(await content.evaluate((el) => el.scrollTop)).toBeCloseTo(before, 0);
+  await proxy.uncheck();
+  await expect(proxy).not.toBeChecked();
+  await expect(proxy).toBeFocused();
+  await expect(sheet.locator('[data-collection-count]')).toHaveText('1');
+  expect(await content.evaluate((el) => el.scrollTop)).toBeCloseTo(before, 0);
+  expect(
+    await page.evaluate(() => computeWants().some((card) => card.name === 'Archive Adept')),
+  ).toBe(false);
 });

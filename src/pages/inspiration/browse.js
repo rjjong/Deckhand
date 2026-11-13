@@ -21,7 +21,7 @@ async function loadDeckMeta(d) {
     box.innerHTML = /* HTML */ `<div class="status"><div class="spinner"></div></div>`;
   await loadMetaData();
   const live = document.getElementById('inspireResults');
-  if (!live || state.screen !== 'inspiration') return;
+  if (!live || !isDeckInspirationActive(d.id)) return;
   const F = metaFormat(fmt);
   if (!F) {
     live.innerHTML = /* HTML */ `<div class="empty-note">

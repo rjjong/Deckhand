@@ -145,7 +145,31 @@ function castabilitySummaryHtml(d) {
   </div>`;
 }
 
+function deckTypeCountsHtml(d) {
+  const kinds = [
+    'Creature',
+    'Instant',
+    'Sorcery',
+    'Artifact',
+    'Enchantment',
+    'Planeswalker',
+    'Battle',
+    'Land',
+  ];
+  const all = deckLeaders(d).concat(d.cards);
+  return kinds
+    .map((k) => {
+      const n = all.filter((c) => (c.type_line || '').split('//')[0].includes(k)).length;
+      return n
+        ? `<button type="button" class="deck-type-link" data-deck-filter-type="${k}" data-deck-type="${k === 'Sorcery' ? 'Sorceries' : k + 's'}">${DOCK_TYPE_ICONS[k]}<span>${k === 'Sorcery' ? 'Sorceries' : k + 's'}</span><strong>${n}</strong></button>`
+        : '';
+    })
+    .filter(Boolean)
+    .join('');
+}
+
 function statsTabHtml(d) {
+  const typeLinks = deckTypeCountsHtml(d);
   const curve = [0, 0, 0, 0, 0, 0, 0];
   const typeCounts = {};
   const rarityCounts = {};
@@ -189,6 +213,7 @@ function statsTabHtml(d) {
           : `<div class="empty-note" style="padding:8px 0;">No changes logged yet — new edits will appear here.</div>`
       }
     </div>
+    ${typeLinks ? `<section class="panel-card deck-card-types" aria-label="Card types"><div class="panel-h">Card types</div><div class="deck-type-links">${typeLinks}</div></section>` : ''}
     <div class="panel-card">
       <div
         class="panel-h"
@@ -406,6 +431,11 @@ function applyDeckStatsFilter(d, filter) {
 
 function wireStatsTab(d) {
   loadDeckPrice(d);
+  document.querySelectorAll('.deck-card-types [data-deck-filter-type]').forEach((button) => {
+    button.addEventListener('click', () =>
+      applyDeckStatsFilter(d, { type: button.dataset.deckFilterType }),
+    );
+  });
   // Castability picker: choose any deck card, see its colour odds by its
   // own turn — hypergeometric P(pips-needed sources among cards seen).
   {
@@ -1015,7 +1045,7 @@ ${escapeHtml(local.note)}</textarea>
       state._localCsClose = null;
       closeOverlayThen(() => {
         if (state.screen !== 'decklist' || state.activeDeckId !== d.id) return;
-        renderBuilderBody(d);
+        if (!refreshDeckLog(d)) renderBuilderBody(d);
         document.getElementById('logGameBtn')?.focus({ preventScroll: true });
       });
       toast(entry.res === 'W' ? 'Victory logged. ⚔' : 'Logged — every loss is data.');
@@ -1085,153 +1115,19 @@ function toggleDlPanel(d, panelKey) {
 function wireBuilderBody(d) {
   syncDeckEditorModal();
   if (state.builderTab === 'list') {
-    document.getElementById('descAddBtn')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      state.builderTab = 'primer';
-      state._dpEdit = true; // the combined panel must open on its text boxes
-      state._focusDeckDesc = true;
-      render();
-    });
-    document.querySelector('.dl-desc-text')?.addEventListener('click', () => {
-      // Straight to the pen: Deck Log tab, description field focused, cursor
-      // at the end — the tap IS the edit intent.
-      state.builderTab = 'primer';
-      state._dpEdit = true; // the combined panel must open on its text boxes
-      state._focusDeckDesc = true;
-      render();
-    });
+    document
+      .querySelector('.dl-desc-text')
+      ?.addEventListener('click', () => openDeckLog(d, { editDescription: true }));
     ensureDeckPriced(d);
     wireDeckListTools(d);
     wireDlPanel(d);
     wireDecklistInteractions(d);
   } else if (state.builderTab === 'stats') {
     wireStatsTab(d);
+  } else if (state.builderTab === 'inspiration') {
+    wireInspirationPage();
   } else if (state.builderTab === 'primer') {
-    const ta = document.getElementById('primerText');
-    ta?.addEventListener('input', () => {
-      d.primer = ta.value;
-      scheduleSave(d);
-    });
-    document.getElementById('dpSaveEdit')?.addEventListener('click', () => {
-      if (document.getElementById('primerText')) {
-        // Save: commit both boxes, show the rendered view
-        const t1 = document.getElementById('deckDescText'),
-          t2 = document.getElementById('primerText');
-        if (t1) d.description = t1.value;
-        if (t2) d.primer = t2.value;
-        scheduleSave(d);
-        state._dpEdit = false;
-      } else {
-        // Edit: back to the two boxes
-        state._dpEdit = true;
-      }
-      const box = document.getElementById('builderBody');
-      box.innerHTML = primerTabHtml(d);
-      wireBuilderBody(d);
-    });
-    // Hand tester: goldfish opening hands from the maindeck. Classic
-    // simulator mulligan: redraw with one fewer card each time.
-    {
-      const hand = [];
-      let lib = [],
-        mull = 7;
-      const paint = () => {
-        const b = document.getElementById('htHand');
-        if (!b) return;
-        b.innerHTML =
-          hand
-            .map((c) => {
-              const u = cardImageMed(c);
-              return u
-                ? `<img src="${u}" style="width:23%;border-radius:6px;" alt="">`
-                : `<span style="font-size:12px;border:2px solid var(--line);border-radius:6px;padding:4px;">${escapeHtml(c.name)}</span>`;
-            })
-            .join('') || `<span class="hint">${'Draw an opening hand.'}</span>`;
-        const m = document.getElementById('htMull'),
-          dr = document.getElementById('htDraw');
-        if (m) {
-          m.disabled = !hand.length || mull <= 1;
-          m.textContent = 'Mulligan' + (hand.length && mull > 1 ? ' (' + (mull - 1) + ')' : '');
-        }
-        if (dr) dr.disabled = !hand.length;
-      };
-      const shuffle = () => {
-        lib = d.cards.slice();
-        for (let i = lib.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [lib[i], lib[j]] = [lib[j], lib[i]];
-        }
-      };
-      const deal = (n) => {
-        shuffle();
-        hand.length = 0;
-        for (let i = 0; i < n && lib.length; i++) hand.push(lib.pop());
-        paint();
-      };
-      document.getElementById('htNew')?.addEventListener('click', () => {
-        mull = 7;
-        deal(7);
-      });
-      document.getElementById('ptOpen')?.addEventListener('click', () => openPlaytest(d));
-      document.getElementById('htMull')?.addEventListener('click', () => {
-        mull = Math.max(1, mull - 1);
-        deal(mull);
-      });
-      document.getElementById('htDraw')?.addEventListener('click', () => {
-        if (lib.length) {
-          hand.push(lib.pop());
-          paint();
-        }
-      });
-      paint();
-    }
-    document.getElementById('logGameBtn')?.addEventListener('click', () => openLogGameOverlay(d));
-    if (deckIsConstructed(d)) wireMatchupPanel(d);
-    const dta = document.getElementById('deckDescText');
-    dta?.addEventListener('input', () => {
-      d.description = dta.value;
-      scheduleSave(d);
-    });
-    if (state._focusDeckDesc && dta) {
-      state._focusDeckDesc = false;
-      requestAnimationFrame(() => {
-        try {
-          dta.focus();
-          dta.setSelectionRange(dta.value.length, dta.value.length);
-          dta.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } catch (e) {}
-      });
-    }
-    document.getElementById('glogToggle')?.addEventListener('click', () => {
-      state._glogOpen = !state._glogOpen;
-      const l = document.getElementById('glogList');
-      if (l) l.style.display = state._glogOpen ? '' : 'none';
-      const t = document.getElementById('glogToggle');
-      if (t) t.innerHTML = foldIcoHtml(state._glogOpen) + ' ' + escapeHtml(t.dataset.lbl || '');
-    });
-    document.querySelectorAll('.glog-row').forEach((r) =>
-      r.addEventListener('click', (e) => {
-        if (e.target.closest('.glog-del')) return; // deleting is not expanding
-        r.classList.toggle('open');
-      }),
-    );
-    document.querySelectorAll('[data-dellog]').forEach((b) =>
-      b.addEventListener('click', () => {
-        const i = parseInt(b.dataset.dellog, 10);
-        openInAppConfirm(
-          trS('Delete this game from the log?'),
-          (ok) => {
-            if (!ok) return;
-            d.playLog.splice(i, 1);
-            scheduleSave(d);
-            const box = document.getElementById('builderBody');
-            box.innerHTML = primerTabHtml(d);
-            wireBuilderBody(d);
-          },
-          { danger: true, ok: trS('Delete') },
-        );
-      }),
-    );
+    wireDeckLog(d, document.getElementById('builderBody'));
   }
 }
 

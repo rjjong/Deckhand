@@ -1292,7 +1292,10 @@ async function ensureComboTagRanks(comboKey) {
   };
   const [th, ty] = await Promise.all([grab('themes'), grab('typal')]);
   state._comboRanks[comboKey] = { loading: false, t: Date.now(), themes: th, typal: ty };
-  if ((state.screen === 'browse' || state.screen === 'inspiration') && (th || ty)) render();
+  if ((state.screen === 'browse' || isDeckInspirationActive()) && (th || ty)) {
+    if (isEmbeddedDeckInspiration()) repaintDeckInspiration();
+    else render();
+  }
 }
 
 /* The deck's colour-combo key, matched into EDHREC_COMBO_SLUGS regardless of
@@ -1337,7 +1340,7 @@ async function ensureCommanderThemes(d) {
   } catch (e) {
     state._cmdrThemes[key] = { loading: false, themes: [] };
   }
-  if (state.screen === 'inspiration' && state.inspireDeckId === d.id) render();
+  if (isDeckInspirationActive(d.id)) repaintDeckInspiration();
 }
 
 function commanderThemeRanks(d) {

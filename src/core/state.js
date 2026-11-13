@@ -101,7 +101,6 @@ let state = {
   },
   spAdvOpen: false,
   _priceRun: 0,
-  legalityOpen: false,
   deckFilter: '',
   deckGroupCollapsed: {},
   exportFmt: 'plain',

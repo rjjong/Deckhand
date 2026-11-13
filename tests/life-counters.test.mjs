@@ -88,3 +88,38 @@ test('saved games and account sync retain independent counter values and visibil
   assert.equal(next[1].counters.energy.value, 9);
   assert.equal(next[1].counters.mana.enabled, false);
 });
+
+test('legacy mana becomes colorless once, and color selections keep independent amounts', async () => {
+  const { context } = await setup();
+  const player = { counters: { mana: { enabled: true, value: 12 } } };
+  context.ensureLifeCounters(player);
+  assert.equal(player.counters.manaC.enabled, true);
+  assert.equal(player.counters.manaC.value, 12);
+  player.counters.manaC.enabled = false;
+  player.counters.manaU = { enabled: true, value: 3 };
+  context.ensureLifeCounters(player);
+  assert.equal(player.counters.manaC.enabled, false);
+  assert.equal(player.counters.manaU.value, 3);
+  assert.equal(player.counters.manaR.value, 0);
+});
+
+test('commander casts display twice their value as tax, and colored mana survives save and sync', async () => {
+  const { context, stored, flush } = await setup();
+  const player = context.ensureLifePlayers()[0];
+  player.counters.commander.value = 3;
+  assert.equal(context.lifeCounterDisplay('commander', player.counters.commander), 6);
+  player.counters.manaW = { enabled: true, value: 4 };
+  player.counters.manaU = { enabled: true, value: 8 };
+  player.counters.manaR = { enabled: false, value: 2 };
+  context.lifeAutosave();
+  flush();
+  const projected = syncRecords.syncProjectStorage('lifeSaves', stored.get('test:lifeSaves'));
+  const restored = JSON.parse(syncRecords.syncRestoreStorage('lifeSaves', projected));
+  context.state.life.players = restored[0].d.players;
+  const next = context.ensureLifePlayers()[0];
+  assert.equal(context.lifeCounterDisplay('commander', next.counters.commander), 6);
+  assert.equal(next.counters.manaW.value, 4);
+  assert.equal(next.counters.manaU.value, 8);
+  assert.equal(next.counters.manaR.value, 2);
+  assert.equal(next.counters.manaR.enabled, false);
+});

@@ -50,9 +50,13 @@ function inspirationPageHtml() {
     <div class="browse-selects">
       ${sel.theme && !both ? '' : `<div class="bs-row">${cselectHtml('inspKindred', [{ v: '', l: trS('Kindred — none'), gen: '🐾' }].concat(kinList.map((t) => ({ v: t.slug, l: escapeHtml(t.label), art: inspSlugArt(t.slug, d) }))), sel.kindred || '', trS('Kindred — none'), { search: true, tiles: true })}</div>`}
       ${sel.kindred && !both ? '' : `<div class="bs-row">${cselectHtml('inspTheme', [{ v: '', l: trS('Theme — none'), gen: '📜' }].concat(thList.map((t) => ({ v: t.slug, l: escapeHtml(t.label), art: inspSlugArt(t.slug, d) }))), sel.theme || '', trS('Theme — none'), { search: true, tiles: true })}</div>`}
-      <div class="bs-row insp-land-row">
+      ${
+        isEmbeddedDeckInspiration()
+          ? ''
+          : `<div class="bs-row insp-land-row">
         <button type="button" class="ghost-btn" id="inspLandBase">⛰ ${'Land base'}</button>
-      </div>
+      </div>`
+      }
     </div>
     <div id="inspireResults"></div>
   </main>`;
@@ -94,8 +98,11 @@ function wireInspirationPage() {
     return;
   }
   document.getElementById('goDecklistBtn')?.addEventListener('click', () => {
-    state.activeDeckId = d.id;
-    switchPage('decklist');
+    if (isEmbeddedDeckInspiration()) selectDeckTab(d, 'list');
+    else {
+      state.activeDeckId = d.id;
+      switchPage('decklist');
+    }
   });
   // 1.37: lands for THIS deck (its commander's EDHREC landbase, its own pips)
   document.getElementById('inspLandBase')?.addEventListener('click', () => openLandSuggest(d));
@@ -109,7 +116,7 @@ function wireInspirationPage() {
   // (scroll preserved by csRerender). Fresh keys fill in lazily per tile.
   hydrateTileArtReady().then((did) => {
     try {
-      if (did && state.screen === 'inspiration' && state.openCSelect) csRerender();
+      if (did && isDeckInspirationActive() && state.openCSelect) csRerender();
     } catch (e) {}
   });
   // EDHREC serves one theme page at a time: picking a Kindred clears the
@@ -119,13 +126,13 @@ function wireInspirationPage() {
     const both = false;
     state.inspireSel = { kindred: v || '', theme: both ? state.inspireSel.theme || '' : '' };
     state._inspShown = {};
-    render();
+    repaintDeckInspiration();
   };
   _csHandlers.inspTheme = (v) => {
     const both = false;
     state.inspireSel = { kindred: both ? state.inspireSel.kindred || '' : '', theme: v || '' };
     state._inspShown = {};
-    render();
+    repaintDeckInspiration();
   };
   wireCSelects();
   if (state._cutsDeck !== d.id) {
@@ -336,7 +343,7 @@ async function inspEdhCombo(d, kSlug, tSlug) {
    page once more now that it is (the pool keeps loading underneath). */
 function inspThemesArrived(key) {
   const d = getDeck(state.inspireDeckId);
-  if (state.screen !== 'inspiration' || !d || !d.admiral || inspLeaderKey(d) !== key) return;
+  if (!isDeckInspirationActive() || !d || !d.admiral || inspLeaderKey(d) !== key) return;
   if (state.openCSelect) return;
   if (
     document.querySelector('#inspKindred, [data-cs="inspKindred"]') &&
@@ -345,13 +352,13 @@ function inspThemesArrived(key) {
     return;
   state._inspMenusFor = key;
   const y = pageScroller().scrollTop;
-  render();
+  repaintDeckInspiration();
   pageScroller().scrollTo(0, y);
 }
 
 function inspPaintIfCurrent(key, slug) {
   const d = getDeck(state.inspireDeckId);
-  if (state.screen !== 'inspiration' || !d || !d.admiral || inspLeaderKey(d) !== key) return;
+  if (!isDeckInspirationActive() || !d || !d.admiral || inspLeaderKey(d) !== key) return;
   const cur = state.inspireSel.kindred || state.inspireSel.theme || '';
   if (cur !== slug) return;
   const part = state._inspPartial && state._inspPartial[key];
@@ -373,7 +380,7 @@ async function loadInspiration(d) {
   state._inspRepaint = null;
   const current = () =>
     seq === _inspSeq &&
-    state.screen === 'inspiration' &&
+    isDeckInspirationActive() &&
     state.inspireDeckId === d.id &&
     document.getElementById('inspireResults');
   const key = inspLeaderKey(d);
@@ -419,7 +426,7 @@ async function loadInspiration(d) {
   if (slug) {
     toast(trS('No themed play data for this leader.'));
     state.inspireSel = { kindred: '', theme: '' };
-    render();
+    repaintDeckInspiration();
     return;
   }
   // EDHREC unreachable: the colour-wide Scryfall list, as before, with a way back.
@@ -1355,7 +1362,7 @@ async function askCutsAi(d, plan) {
     res && res.ok && res.kind === 'cuts' ? { key, res } : { key, err: deckAiErrText(res) };
   if (res && res.ok && res.kind === 'cuts') cutsAiStoreSet(d, key, res);
   if (
-    state.screen === 'inspiration' &&
+    isDeckInspirationActive() &&
     document.getElementById('cutSlot') &&
     getDeck(state.activeDeckId) === d
   )
@@ -1535,7 +1542,7 @@ function wireCutsBlock(d, plan) {
     // Fits now: the page draws again, without the Cuts row and with the
     // Theme / Kindred menus back to one at a time.
     if (deckCutOver(d) <= 0) {
-      render();
+      repaintDeckInspiration();
       return;
     }
     if (typeof state._inspRepaint === 'function') state._inspRepaint();
@@ -1602,9 +1609,11 @@ function renderInspEdh(d, entry, keepScroll, partial, okSet) {
   }
   // EDHREC's own sections; bottom-up, its best ones (New Cards, High
   // Synergy, Top Cards …) end at the page FOOT where reading starts.
-  const groups = edhGroupPool(pool, entry.sections || [])
-    .map((g) => ({ title: trS(g.title), cards: g.cards }))
-    .reverse();
+  const groups = edhGroupPool(pool, entry.sections || []).map((g) => ({
+    title: trS(g.title),
+    cards: g.cards,
+  }));
+  if (!isEmbeddedDeckInspiration()) groups.reverse();
   const CAP = 10;
   state._inspShown = state._inspShown || {};
   const shownOf = (g) => Math.min(g.cards.length, state._inspShown[g.title] || CAP);
@@ -1619,19 +1628,20 @@ function renderInspEdh(d, entry, keepScroll, partial, okSet) {
         shown.push(...cards);
         // Label at the section's foot (order:10), More at its top, as on the
         // recommendations page.
-        return `<div class="edh-sec" data-isec="${i}"><div class="section-label" style="margin-top:14px;">${escapeHtml(g.title)}</div>${g.cards.length > n ? `<button class="ghost-btn edh-more" data-si="${i}" style="width:100%;margin:0 0 6px;">${trS('More')}</button>` : ''}<div class="sr-grid">${cards.map((c) => searchRowHtml(c, d)).join('')}</div></div>`;
+        const content = `${g.cards.length > n ? `<button class="ghost-btn edh-more" data-si="${i}" style="width:100%;margin:0 0 6px;">${trS('More')}</button>` : ''}<div class="sr-grid">${cards.map((c) => searchRowHtml(c, d)).join('')}</div>`;
+        if (isEmbeddedDeckInspiration()) return deckInspirationCategoryHtml(d, g, i, content);
+        return `<div class="edh-sec" data-isec="${i}"><div class="section-label" style="margin-top:14px;">${escapeHtml(g.title)}</div>${content}</div>`;
       })
       .join('') +
     `<div class="edh-jump-row insp-jump"><button class="icon-btn edh-jump" id="inspJump" title="${trS('Jump to section')}">☰</button></div>`;
   bindInspJump();
+  wireDeckInspirationCategories(box, d);
   document.getElementById('inspJump')?.addEventListener('click', (e) => {
     e.stopPropagation();
     const items = groups.map((g, i) => ({
       label: g.title,
       fn: () => {
-        document
-          .querySelector(`.edh-sec[data-isec="${i}"]`)
-          ?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        jumpToDeckInspirationCategory(box, i);
       },
     }));
     openTileMenu(e.currentTarget, items);
@@ -1686,6 +1696,7 @@ async function loadInspirationScryfall(d) {
   const { results, error } = await searchAndVerifyLegal(clause, 'edhrec', 100, {
     format: deckFormat(d),
   });
+  if (!isDeckInspirationActive(d.id)) return;
   if (cacheKey !== inspireCacheKey(d)) return; // selection changed mid-flight
   if (error) {
     const b = document.getElementById('inspireResults');
@@ -1755,6 +1766,7 @@ function inspireGroups(display) {
 
 function renderInspireFromCache(cacheKey, d, keepScroll) {
   const box = document.getElementById('inspireResults');
+  if (!box || !isDeckInspirationActive(d.id)) return;
   const pool = state.inspireCache[cacheKey] || [];
   const inDeck = new Set(
     d.cards.map((c) => c.name).concat((d.maybeboard || []).map((c) => c.name)),
@@ -1781,16 +1793,19 @@ function renderInspireFromCache(cacheKey, d, keepScroll) {
   // Categories like Recommendations: grouped by card type, biggest section
   // at the FOOT (bottom-up), golden stripe under each name, ☰ to jump.
   const groups = inspireGroups(display);
+  if (isEmbeddedDeckInspiration()) groups.reverse();
   box.innerHTML =
     groups
-      .map(
-        (g, i) =>
-          `<div class="edh-sec" data-isec="${i}"><div class="section-label" style="margin-top:14px;border-bottom:2px solid var(--line);">${escapeHtml(g.title)}</div><div class="sr-grid">${g.cards.map((c) => searchRowHtml(c, d)).join('')}</div></div>`,
-      )
+      .map((g, i) => {
+        const content = `<div class="sr-grid">${g.cards.map((c) => searchRowHtml(c, d)).join('')}</div>`;
+        if (isEmbeddedDeckInspiration()) return deckInspirationCategoryHtml(d, g, i, content);
+        return `<div class="edh-sec" data-isec="${i}"><div class="section-label" style="margin-top:14px;border-bottom:2px solid var(--line);">${escapeHtml(g.title)}</div>${content}</div>`;
+      })
       .join('') +
     `<div class="edh-jump-row insp-jump"><button class="icon-btn edh-jump" id="inspJump" title="${trS('Jump to section')}">☰</button></div>` +
     edhNote;
   bindInspJump();
+  wireDeckInspirationCategories(box, d);
   document.getElementById('inspJump')?.addEventListener('click', (e) => {
     e.stopPropagation();
     openTileMenu(
@@ -1798,9 +1813,7 @@ function renderInspireFromCache(cacheKey, d, keepScroll) {
       groups.map((g, i) => ({
         label: g.title,
         fn: () => {
-          document
-            .querySelector(`.edh-sec[data-isec="${i}"]`)
-            ?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+          jumpToDeckInspirationCategory(box, i);
         },
       })),
     );
@@ -1827,7 +1840,7 @@ async function refillInspireCache(cacheKey, d) {
       );
       state.inspireCache[cacheKey] = filtered;
       if (
-        state.screen === 'inspiration' &&
+        isDeckInspirationActive() &&
         state.inspireDeckId === d.id &&
         cacheKey === inspireCacheKey(d)
       ) {

@@ -399,7 +399,8 @@ ${escapeHtml(local.notes)}</textarea>
       scheduleSave(d);
       history.back();
       setTimeout(() => {
-        if (state.builderTab === 'primer') rerenderMatchupPanel(d);
+        if (document.getElementById('deckLogBody') || state.builderTab === 'primer')
+          rerenderMatchupPanel(d);
         else if (state.builderTab === 'list') renderBuilderBody(d);
       }, 60);
       toast(trS('Plan saved.'));
@@ -1083,12 +1084,11 @@ function setDlView(v) {
 
 function dlGroupGridHtml(groups, arr, loc) {
   const v = dlView();
-  // Stack: the group's FIRST card is the bottom one, shown whole; every next
-  // card peeks out above it by its name bar (later DOM paints on top, so the
-  // list is written last-to-first).
+  // Stacks follow the same top-to-bottom sort order as the other views.
+  // One card opens in place; the total stack height stays constant.
   if (v === 'stack')
     return /* HTML */ `<div class="visual-grid vg-stack">
-      ${(isDesk() ? groups.slice() : groups.slice().reverse()).map((g) => cardTileHtml(arr[g.i], g.i, loc, g.qty)).join('')}
+      ${groups.map((g, index) => cardTileHtml(arr[g.i], g.i, loc, g.qty, index === 0)).join('')}
     </div>`;
   if (v === 'text')
     return /* HTML */ `<div class="visual-grid vg-text">
@@ -1169,7 +1169,7 @@ function cardRowHtml(card, idx, loc, qty) {
   </div>`;
 }
 
-function cardTileHtml(card, idx, loc, qty) {
+function cardTileHtml(card, idx, loc, qty, stackActive = false) {
   // No quick-remove cross on tiles: it was too easy to hit by accident.
   // Removing a card is a deliberate act — tap the card, then Remove.
   // A card the format check would flag (banned, or not legal and not a
@@ -1184,7 +1184,7 @@ function cardTileHtml(card, idx, loc, qty) {
         : 'legal';
   const _ill = _v === 'banned' || _v === 'not_legal';
   return /* HTML */ `<div
-    class="vg-card${_ill ? ' vg-illegal' : ''}"
+    class="vg-card${_ill ? ' vg-illegal' : ''}${stackActive ? ' stack-active' : ''}"
     data-idx="${idx}"
     data-loc="${loc}"
   >

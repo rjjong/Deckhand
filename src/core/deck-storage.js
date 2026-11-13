@@ -714,43 +714,35 @@ async function openDeckVersions(id) {
   }
   document.getElementById('dvSheet')?.remove();
   const el = document.createElement('div');
-  el.className = 'deckpick-scrim';
+  el.className = 'deckpick-scrim card-transfer-backdrop deck-versions-backdrop';
   el.id = 'dvSheet';
   el.style.zIndex = 205;
-  el.style.alignItems = 'flex-end';
   const d = id ? getDeck(id) : null;
   const rows = recs
     .map((r, i) => {
       const isNow = !!id && i === 0; // every change is noted, so the newest is what is there now
       return `<div class="dv-row">
       <div class="dv-txt"><b>${escapeHtml(id ? dvWhen(r.t) : r.name || '?')}</b><span>${id ? '' : escapeHtml(dvWhen(r.t)) + ' · '}${r.n} ${r.n === 1 ? 'card' : 'cards'} · ${escapeHtml(dvWhyLabel(r.why))}${isNow ? ' · <i>now</i>' : ''}</span></div>
-      ${isNow ? '' : `<button type="button" class="ghost-btn" data-dvi="${i}" data-dvc="0">${'Restore'}</button>`}
-      <button type="button" class="ghost-btn" data-dvi="${i}" data-dvc="1">${'As copy'}</button>
+      <div class="dv-actions">${isNow ? '' : `<button type="button" class="ghost-btn" data-dvi="${i}" data-dvc="0">${'Restore'}</button>`}
+      <button type="button" class="ghost-btn" data-dvi="${i}" data-dvc="1">${'As copy'}</button></div>
     </div>`;
     })
     .join('');
-  // column-reverse sheet: DOM-first = foot -- the newest version nearest the thumb
-  el.innerHTML = /* HTML */ `<div class="deckpick br-sheet bk-sheet dv-sheet">
-    <div class="dv-list">
-      ${rows || `<div class="bk-hint" style="text-align:center;">${id ? 'No earlier versions yet — they appear by themselves as you edit the deck.' : 'No deleted decks to restore.'}</div>`}
-    </div>
-    <div class="br-title">
-      <b
-        >${inlIco('restore', 16)}${id ? 'Versions of ' + escapeHtml(d ? d.name : '') : 'Deleted decks'}</b
-      ><span
-        >${
-          id
-            ? 'One version per editing session, plus a copy before every sync. Restoring keeps what is there now as well.'
-            : 'Deleted decks are kept for 60 days.'
-        }</span
-      >
-    </div>
-  </div>`;
+  el.innerHTML = cardTransferDialogHtml(
+    id ? 'Deck versions' : 'Deleted decks',
+    d?.name || '',
+    `<p class="dv-description">${
+      id
+        ? 'One version per editing session, plus a copy before every sync. Restoring keeps the current deck as a version.'
+        : 'Deleted decks are kept for 60 days.'
+    }</p>
+    <div class="dv-list">${rows || `<p class="dv-empty">${id ? 'No earlier versions yet — they appear as you edit the deck.' : 'No deleted decks to restore.'}</p>`}</div>`,
+    '<button type="button" class="ghost-btn" id="dvDone">Done</button>',
+  );
   brSheetOpen(el, 'dvSheet');
   const close = () => brSheetClose('dvSheet');
-  el.addEventListener('click', (e) => {
-    if (e.target === el) close();
-  });
+  wireCardTransferDialog(el, close);
+  el.querySelector('#dvDone').addEventListener('click', close);
   el.querySelectorAll('[data-dvi]').forEach((b) =>
     b.addEventListener('click', () => {
       const r = recs[+b.dataset.dvi];

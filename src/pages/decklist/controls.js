@@ -36,37 +36,44 @@ function deckSummaryCount(d) {
   return `${count} / ${deckTotal(d)}`;
 }
 
+function deckIssueMessage(issues) {
+  return issues.length
+    ? issues
+        .map((issue) => {
+          const label = issue.text || issue.label || '';
+          return issue.cards?.length ? label + ': ' + issue.cards.join(', ') : label;
+        })
+        .join('\n')
+    : 'No deck-building issues found.';
+}
+
 function deckSummaryHtml(d) {
   const issues = checkDeckLegality(d);
   const constructed = deckIsConstructed(d);
   const bracket = deckFormat(d) === 'commander' ? bracketEstimate(d, null) : null;
   return /* HTML */ `<section
-    class="deck-overview ${constructed ? 'deck-overview-constructed' : ''}"
+    class="deck-overview ${constructed ? 'deck-overview-constructed' : ''}${issues.length ? ' has-issues' : ''}"
     aria-label="Deck overview"
   >
+    <span
+      class="deck-issue-flag"
+      role="img"
+      aria-label="Deck needs attention"
+      title="Deck needs attention"
+      ${issues.length ? '' : ' hidden'}
+      >${ICONS.warn}</span
+    >
     ${constructed ? '' : `<div class="deck-overview-leaders">${leaderZoneHtml(d)}<div class="dl-leader-cat">${leaderNoun(deckFormat(d), deckLeaders(d).length > 1)}</div></div>`}
     <div class="deck-overview-info">
       <span class="deck-format">${ICONS.shield}${escapeHtml(fmtLabelOf(deckFormat(d)))}</span>
       ${bracket ? `<span class="dl-bracket" id="dlBracket" title="Estimate from Game Changers and 2-card combos">⚔ Bracket ~${bracket.b} · ${bracket.gc} GC</span>` : ''}
-      <button
-        type="button"
-        class="deck-review"
-        id="deckReview"
-        aria-expanded="${!!state.legalityOpen}"
-        aria-controls="legalityWrap"
-      >
-        <span id="deckLegalityStatus" class="deck-status ${issues.length ? 'needs-review' : ''}"
-          >${issues.length ? `${issues.length} issue${issues.length === 1 ? '' : 's'} · Review` : 'Legal deck · Review'}</span
-        >${ICONS.chevRight}
-      </button>
-      <p class="deck-issue-preview" id="deckIssueText">
-        ${escapeHtml(issues[0]?.text || issues[0]?.label || 'No deck-building issues found.')}
+      <p class="deck-issue-preview" id="deckIssueText" role="status">
+        ${escapeHtml(deckIssueMessage(issues))}
       </p>
       <div class="dl-desc-text">
         ${d.description ? escapeHtml(d.description).replace(/\n/g, '<br>') : `<button type="button" class="deck-note-action" id="descAddBtn">${ICONS.edit}<span>Add deck description</span></button>`}
       </div>
     </div>
-    <div id="legalityWrap">${legalityHtml(d)}</div>
   </section>`;
 }
 
@@ -95,18 +102,15 @@ function deckListToolsHtml(d) {
   return /* HTML */ `<div class="deck-list-tools">
     <h2>Cards</h2>
     <div class="deck-toolbar-metrics">
-      <button
-        type="button"
+      <span
         class="deck-toolbar-metric"
         id="capDeckCount"
         aria-label="Deck card count"
-        aria-expanded="${!!state.legalityOpen}"
-        aria-controls="legalityWrap"
         title="${hint}"
       >
         <strong id="deckCardCountValue">${deckSummaryCount(d)}</strong
         ><span class="sr-only" id="deckCountHint">${hint}</span>
-      </button>
+      </span>
       <button
         type="button"
         class="deck-toolbar-metric"
@@ -116,17 +120,8 @@ function deckListToolsHtml(d) {
       >
         <strong id="deckPriceValue">${deckSummaryPriceHtml(d)}</strong>
       </button>
+      ${deckViewPickerHtml()}
     </div>
-    ${deckViewPickerHtml()}
-    <button
-      type="button"
-      class="deck-sort"
-      id="deckSortBtn"
-      aria-label="Sort deck cards"
-      title="Sort cards"
-    >
-      ${SORT_ICON}
-    </button>
   </div>`;
 }
 
@@ -150,6 +145,7 @@ function syncDeckEditorModal() {
   deckEditorInertElements = [];
   const panel = document.querySelector('#dlPanelBox.dl-cover');
   if (!panel) return;
+  stopDeckTabMotion();
   // Keep the panel's ancestor chain active while disabling the editor and
   // navigation behind it. Preserve elements that were already inert.
   for (
@@ -167,13 +163,21 @@ function syncDeckEditorModal() {
 }
 
 function wireDeckListTools(d) {
-  document.getElementById('deckSortBtn')?.addEventListener('click', () => openModal('sort'));
-  for (const id of ['deckReview', 'capDeckCount'])
-    document.getElementById(id)?.addEventListener('click', () => {
-      state.legalityOpen = !state.legalityOpen;
-      refreshLegality(d);
-    });
   wireDeckViewPicker(d);
+}
+
+function openDeckSortMenu(anchor, d) {
+  openCardSortMenu(
+    anchor,
+    SORT_MODES.map(({ key, label }) => [key, 'asc', label]),
+    state.sortMode,
+    'asc',
+    (mode) => {
+      state.sortMode = mode;
+      showDeckList(d);
+      refreshDecklistBox(d);
+    },
+  );
 }
 
 function wireDeckViewPicker(d) {
@@ -183,6 +187,7 @@ function wireDeckViewPicker(d) {
   const options = [...picker.querySelectorAll('[data-dlview]')];
   picker.addEventListener('toggle', () => {
     if (!picker.open) return;
+    stopDeckTabMotion();
     const menu = picker.querySelector('.deck-view-menu');
     const bounds = summary.getBoundingClientRect();
     menu.style.left = Math.max(8, Math.min(bounds.right - 156, innerWidth - 164)) + 'px';
@@ -249,21 +254,6 @@ function showDeckList(d) {
   syncTabsUI();
 }
 
-function goToDeckCategory(d, key) {
-  showDeckList(d);
-  if (state.collapsed[key]) {
-    state.collapsed[key] = false;
-    refreshDecklistBox(d);
-  }
-  requestAnimationFrame(() =>
-    requestAnimationFrame(() => {
-      document
-        .querySelector(`.cat-head[data-cat="${CSS.escape(key)}"]`)
-        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }),
-  );
-}
-
 function openDeckActions(d) {
   if (state.menuOpen) return;
   const root = document.createElement('div');
@@ -293,22 +283,19 @@ function openDeckActions(d) {
             </button>
           </div>
         </div>
-        ${group('Build & explore', [
-          ['dockInspire', ICONS.spark, 'Inspiration', 'Find cards that work with this deck'],
-          ['deckBulkEdit', ICONS.bulk, 'Bulk edit', 'Edit the complete card list'],
-        ])}
         ${group('Manage deck', [
           ['mFormat', ICONS.shield, 'Change format', fmtLabelOf(deckFormat(d))],
           ['mAddFolder', ICONS.decks, 'Move to folder', 'Organize your decks'],
-        ])}
-        ${group('Share & copies', [
-          ['mImport', ICONS.imp, 'Import deck', 'Replace this deck from text or a file'],
-          ['mExport', ICONS.exp, 'Export deck', 'Copy, download, or print your deck list'],
-          ['mShare', ICONS.share, 'Share deck', 'Create a link to this deck'],
-          ['mVersions', ICONS.history || ICONS.save, 'Versions', 'Browse saved deck versions'],
           ['mDuplicate', ICONS.copy, 'Duplicate deck', 'Make a separate copy'],
         ])}
-        ${d.cards.length || deckLeaders(d).length ? `<section class="deck-menu-group"><h2>Card types</h2><div class="deck-type-links">${dockTypeCounts(d)}</div></section>` : ''}
+        ${group('History & notes', [
+          ['deckLog', ICONS.history, 'Deck Log', 'Games, playtesting and deck notes'],
+          ['mVersions', ICONS.history || ICONS.save, 'Versions', 'Browse saved deck versions'],
+        ])}
+        ${group('Share & export', [
+          ['mShare', ICONS.share, 'Share deck', 'Create a link to this deck'],
+          ['mExport', ICONS.exp, 'Export deck', 'Copy, download, or print your deck list'],
+        ])}
         <section class="deck-menu-group deck-danger-group">
           ${menuCardHtml('mDelete', ICONS.trash, 'Delete deck', 'Permanently remove this deck')}
         </section>
@@ -338,11 +325,7 @@ function wireMenu(d) {
       popDeckMenu();
       run();
     });
-  action('dockInspire', () => {
-    state.inspireDeckId = d.id;
-    switchPage('inspiration');
-  });
-  action('deckBulkEdit', () => toggleDlPanel(d, 'bulk'));
+  action('deckLog', () => openDeckLog(d));
   action('renameDeckBtn', () =>
     openDeckNamePrompt('Rename this deck', d.name, (name) => {
       if (name === null) return;
@@ -351,7 +334,6 @@ function wireMenu(d) {
       render();
     }),
   );
-  action('mImport', () => toggleDlPanel(d, 'import'));
   action('mExport', () => toggleDlPanel(d, 'export'));
   action('mAddFolder', () => openFolderPicker(d));
   action('mFormat', () => openFormatPicker(d));
@@ -359,18 +341,6 @@ function wireMenu(d) {
   action('mVersions', () => openDeckVersions(d.id));
   action('mShare', () => shareDeck(d));
   action('mDelete', () => openModal('delete'));
-  document.querySelectorAll('#menuPop [data-deck-type]').forEach((button) =>
-    button.addEventListener('click', () => {
-      popDeckMenu();
-      showDeckList(d);
-      const name = button.dataset.deckType.toLowerCase();
-      const head = [...document.querySelectorAll('.cat-group > .cat-head')].find((el) =>
-        el.querySelector('.t')?.textContent.trim().toLowerCase().startsWith(name),
-      );
-      if (head) goToDeckCategory(d, head.dataset.cat);
-      else document.querySelector('.deck-overview')?.scrollIntoView({ block: 'start' });
-    }),
-  );
 }
 
 function popDeckMenu() {

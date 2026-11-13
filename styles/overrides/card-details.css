@@ -141,7 +141,7 @@ html .card-details-page main.card-detail {
     sans-serif;
   white-space: normal;
 }
-.card-collection-quantity,
+.card-quantity,
 .card-editing-actions,
 .card-action-wide,
 .card-discovery-actions,
@@ -165,7 +165,7 @@ html
   > .ghost-btn {
   grid-column: auto;
 }
-.card-collection-quantity {
+.card-quantity {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -179,16 +179,16 @@ html
     500 12px/1.5 'Inter',
     sans-serif;
 }
-.card-collection-quantity strong {
+.card-quantity strong {
   margin-left: 8px;
   font-size: 16px;
   font-variant-numeric: tabular-nums;
 }
-.card-collection-quantity > div {
+.card-quantity > div {
   display: flex;
   gap: 6px;
 }
-.card-collection-quantity button {
+.card-quantity button {
   display: grid;
   place-items: center;
   width: 36px;
@@ -201,11 +201,11 @@ html
   font-size: 22px;
   line-height: 1;
 }
-.card-collection-quantity button svg {
+.card-quantity button svg {
   width: 20px;
   height: 20px;
 }
-.card-collection-quantity button:disabled {
+.card-quantity button:disabled {
   color: var(--main-sub);
   background: color-mix(in srgb, var(--main-text) 8%, var(--ink));
   opacity: 0.5;

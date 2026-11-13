@@ -307,6 +307,7 @@ function wireDecklistInteractions(d, root = document) {
     });
     if (state._dlSel && state._dlSel.has(key)) parent.classList.add('dl-msel');
   });
+  wireDeckStacks();
 }
 
 function dlSelToggle(d, key, tile) {
@@ -373,8 +374,6 @@ function updateDeckMeter(d) {
 }
 
 function refreshLegality(d) {
-  const wrap = document.getElementById('legalityWrap');
-  if (wrap) wrap.innerHTML = legalityHtml(d);
   refreshCapDeckCount(d);
 }
 
@@ -386,30 +385,23 @@ function refreshCapDeckCount(d) {
   const value = document.getElementById('deckCardCountValue');
   if (value) value.textContent = deckSummaryCount(deck);
   const issues = checkDeckLegality(deck);
-  const status = document.getElementById('deckLegalityStatus');
-  if (status) {
-    status.textContent = issues.length
-      ? `${issues.length} issue${issues.length === 1 ? '' : 's'} · Review`
-      : 'Legal deck · Review';
-    status.classList.toggle('needs-review', !!issues.length);
-  }
   const hint = document.getElementById('deckCountHint');
   if (hint)
     hint.textContent = deckIsConstructed(deck)
       ? `${ensureMaybeboard(deck).length} in sideboard`
       : 'Including commander';
   const issue = document.getElementById('deckIssueText');
-  if (issue)
-    issue.textContent = issues[0]?.text || issues[0]?.label || 'No deck-building issues found.';
-  document
-    .getElementById('capDeckCount')
-    ?.setAttribute('aria-expanded', String(!!state.legalityOpen));
-  document
-    .getElementById('deckReview')
-    ?.setAttribute('aria-expanded', String(!!state.legalityOpen));
+  if (issue) issue.textContent = deckIssueMessage(issues);
+  const frame = document.querySelector('.deck-overview');
+  frame?.classList.toggle('has-issues', !!issues.length);
+  const flag = frame?.querySelector('.deck-issue-flag');
+  if (flag) flag.hidden = !issues.length;
 }
 
 function wireMeterRow(d) {
+  document.getElementById('deckSortBtn')?.addEventListener('click', (event) => {
+    openDeckSortMenu(event.currentTarget, d);
+  });
   const input = document.getElementById('dockSearchInput');
   input?.addEventListener('input', () => {
     state.dlSearchQ = input.value;

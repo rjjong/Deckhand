@@ -318,6 +318,19 @@ test('All cards stats keep total value and old history when search filters hide 
     10, 12, 15,
   ]);
   await expect(page.locator('#phOverlay main')).toContainText('Biggest risers');
+  const riser = page.locator('#phOverlay .ph-movers [data-phcard]').first().locator('span').last();
+  await expect(riser).toContainText('+€');
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate((theme) => {
+      state.theme = theme;
+      applyTheme();
+    }, theme);
+    const green = await riser.evaluate((el) => {
+      const [r, g, b] = getComputedStyle(el).color.match(/\d+/g).map(Number);
+      return g > r && g > b;
+    });
+    expect(green, `${theme} collection riser is green`).toBe(true);
+  }
   await page.evaluate(() => closeTopOverlay());
   await expect(page.locator('#phOverlay')).toHaveCount(0);
   await expect(query).toHaveValue('Loose');

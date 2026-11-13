@@ -330,9 +330,12 @@ test('Import cards from Stats preserves commanders and adds to the existing mayb
   await page.setViewportSize({ width: 320, height: 480 });
   const dialog = page.getByRole('dialog', { name: 'Import cards', exact: true });
   await expect(dialog).toBeVisible();
-  const bounds = await dialog.boundingBox();
-  expect(bounds.x).toBeGreaterThanOrEqual(0);
-  expect(bounds.x + bounds.width).toBeLessThanOrEqual(320);
+  await expect(async () => {
+    const bounds = await dialog.boundingBox();
+    expect(bounds).not.toBeNull();
+    expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(320);
+  }).toPass({ timeout: 5000 });
   await page
     .locator('#importText')
     .fill('Commander\n1 Scanned Adept\n\nMaybeboard\n1 Scanned Adept');

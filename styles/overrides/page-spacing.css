@@ -6,8 +6,8 @@ html.desk {
   --dw: min(1600px, calc(100vw - 24px));
 }
 
-html .app > main:is(.page-frame, .search-page),
-html.desk .app > main:is(.page-frame, .search-page),
+html .app > main:is(.page-frame, .search-page):not(.deck-workspace),
+html.desk .app > main:is(.page-frame, .search-page):not(.deck-workspace),
 html .app > main.page-frame.hub-page {
   max-width: var(--dw, 100%);
   padding-inline: var(--page-gutter) !important;
@@ -23,7 +23,7 @@ html .app > main.search-page > .search-content {
 
 html .app .deck-workspace .deck-controls {
   margin-inline: calc(-1 * var(--page-gutter));
-  padding-inline: var(--page-gutter);
+  padding-inline: 0;
 }
 
 html .app > main .page-searchbar.sticky-searchbar::before {

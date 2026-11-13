@@ -333,7 +333,7 @@ function appBackStep(viaHistory) {
   // The Cuts fold on deck Inspiration works like Theme and Kindred: an open
   // fold eats the back press and closes, the page stays where it is.
   if (
-    state.screen === 'inspiration' &&
+    isDeckInspirationActive() &&
     state._cutsOpenFor &&
     document.querySelector('#cutSlot .cut-body')
   ) {

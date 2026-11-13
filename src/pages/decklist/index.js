@@ -23,29 +23,6 @@ const DOCK_TYPE_ICONS = {
   Land: '<svg viewBox="0 0 32 32"><path fill="currentColor" d="M10.756 3.523l0.002-0.001c0.825-0.316 1.306 0.346 1.5 0.658 1.075 1.515 1.514 3.352 2.294 5.017 1.055 2.212 2.206 4.463 4.041 6.138 0.241 0.259 0.719 0.494 0.928 0.249 0.768-0.9 1.389-1.911 1.948-2.952 0.361-0.718 1.161-1.177 1.962-1.151 0.634-0.018 1.206 0.389 1.559 0.891 0.809 1.231 1.198 2.665 1.739 4.022 0.666 1.43 1.391 2.874 2.519 4.003 0.669 0.624 1.395 1.184 2.020 1.855 0.343 0.304 0.536 0.728 0.686 1.151l0.015 0.043c0.149 1.177-0.513 1.735-0.892 2.004-0.739 0.589-1.621 0.96-2.509 1.258-2.994 1.063-6.163 1.622-9.327 1.758-5.152 0.221-7.177 0.004-7.702-0.086-1.923-0.172-3.833-0.493-5.711-0.942-1.543-0.425-3.119-0.855-4.494-1.702-0.536-0.319-1.558-0.709-1.275-2.319l0.016-0.021c0.289-1.060 1.099-1.865 1.837-2.644 0.545-0.742 1.307-1.284 1.852-2.025 1.294-1.664 2.244-3.568 2.989-5.531 0.682-1.721 1.081-3.538 1.687-5.286 0.303-1.127 0.753-2.212 1.298-3.243 0.243-0.455 0.579-0.862 1.018-1.141z"></path></svg>',
 };
 
-function dockTypeCounts(d) {
-  const kinds = [
-    'Creature',
-    'Instant',
-    'Sorcery',
-    'Artifact',
-    'Enchantment',
-    'Planeswalker',
-    'Battle',
-    'Land',
-  ];
-  const all = deckLeaders(d).concat(d.cards);
-  return kinds
-    .map((k) => {
-      const n = all.filter((c) => (c.type_line || '').split('//')[0].includes(k)).length;
-      return n
-        ? `<button type="button" class="deck-type-link" data-deck-type="${k === 'Sorcery' ? 'Sorceries' : k + 's'}">${DOCK_TYPE_ICONS[k]}<span>${k === 'Sorcery' ? 'Sorceries' : k + 's'}</span><strong>${n}</strong></button>`
-        : '';
-    })
-    .filter(Boolean)
-    .join('');
-}
-
 function deckMeterHtml(d) {
   const selected = state._dlSel?.size || 0;
   const move =
@@ -67,6 +44,7 @@ function deckMeterHtml(d) {
       <input id="dockSearchInput" type="search" enterkeyhint="search" aria-label="Search this deck" placeholder="Search this deck…" value="${escapeHtml(state.dlSearchQ || '')}" autocomplete="off" autocapitalize="off" spellcheck="false">
       <button type="button" id="dockSearchBtn" aria-label="Clear deck search" title="Clear search" ${state.dlSearchQ || state.dlFilterOn ? '' : 'hidden'}>${ICONS.close}</button>
       <button type="button" id="dockFilterChev" aria-label="Filter deck cards" title="Filter cards" aria-expanded="${state.dlPanel === 'dsearch'}">${ICONS.filter}</button>
+      <button type="button" class="deck-sort" id="deckSortBtn" aria-label="Sort deck cards" title="Sort cards" aria-haspopup="menu">${SORT_ICON}</button>
     </div>`
     }
   </div>`;
@@ -88,30 +66,47 @@ function decklistPageHtml() {
       ${needDeckHtml('No deck open yet. Choose or create one from My Stuff.')}
     </main>`;
   return /* HTML */ ` <main class="has-dock deck-workspace">
-    <div class="builder-tabs" role="group" aria-label="Deck pages">
+    <div
+      class="builder-tabs"
+      role="tablist"
+      aria-label="Deck pages"
+      style="--deck-tab-index:${DECK_TABS.indexOf(state.builderTab)}"
+    >
       <button
         class="b-tab ${state.builderTab === 'list' ? 'active' : ''}"
         data-btab="list"
-        aria-pressed="${state.builderTab === 'list'}"
+        id="deckTab-list"
+        role="tab"
+        aria-controls="builderBody"
+        aria-selected="${state.builderTab === 'list'}"
+        tabindex="${state.builderTab === 'list' ? 0 : -1}"
       >
         Decklist
       </button>
       <button
         class="b-tab ${state.builderTab === 'stats' ? 'active' : ''}"
         data-btab="stats"
-        aria-pressed="${state.builderTab === 'stats'}"
+        id="deckTab-stats"
+        role="tab"
+        aria-controls="builderBody"
+        aria-selected="${state.builderTab === 'stats'}"
+        tabindex="${state.builderTab === 'stats' ? 0 : -1}"
       >
         Stats
       </button>
       <button
-        class="b-tab ${state.builderTab === 'primer' ? 'active' : ''}"
-        data-btab="primer"
-        aria-pressed="${state.builderTab === 'primer'}"
+        class="b-tab ${state.builderTab === 'inspiration' ? 'active' : ''}"
+        data-btab="inspiration"
+        id="deckTab-inspiration"
+        role="tab"
+        aria-controls="builderBody"
+        aria-selected="${state.builderTab === 'inspiration'}"
+        tabindex="${state.builderTab === 'inspiration' ? 0 : -1}"
       >
-        Deck Log
+        Inspiration
       </button>
     </div>
-    <div id="builderBody"></div>
+    <div id="builderBody" role="tabpanel" aria-labelledby="deckTab-${state.builderTab}"></div>
     ${deckMeterHtml(d)}
     <button
       type="button"
@@ -255,32 +250,6 @@ function checkDeckLegality(d) {
   return deckIsConstructed(d) ? checkConstructedLegality(d) : checkCommanderLegality(d);
 }
 
-function legalityHtml(d) {
-  if (!state.legalityOpen) return '';
-  const issues = checkDeckLegality(d);
-  if (!issues.length)
-    return /* HTML */ `<div class="legality ok" id="legalityBox">
-      <span class="lg-icon">✓</span><span class="lg-txt">${trS('Deck is legal')}</span>
-    </div>`;
-  const errors = issues.filter((i) => i.level === 'error').length;
-  return /* HTML */ `<div class="legality ${errors ? 'bad' : 'warn'} open" id="legalityBox">
-    <div class="lg-body" style="display:block;padding:10px 12px;">
-      ${issues
-        .map((i) => {
-          // Commander checks say {text} with no card list — reading
-          // i.cards.length on the latter crashed the whole screen.
-          const cards = i.cards || [];
-          const label = i.label != null ? i.label : i.text || '';
-          return /* HTML */ `<div class="lg-item ${i.level}">
-            <div class="lg-label">${escapeHtml(label)}</div>
-            ${cards.length ? `<div class="lg-cards">${cards.map((n) => `<span class="lg-card">${escapeHtml(n)}</span>`).join('')}</div>` : ''}
-          </div>`;
-        })
-        .join('')}
-    </div>
-  </div>`;
-}
-
 /* ---- pricing ------------------------------------------------------------
    Scryfall's `prices.eur` is Cardmarket's Trend Price (falling back to their
    1-day/7-day/average/suggested price when trend isn't available). We scan
@@ -319,17 +288,7 @@ function wireDecklistPage() {
       ensureFmtBans(deckFormat(d));
     } catch (e) {}
   }
-  document.querySelectorAll('.b-tab').forEach((b) =>
-    b.addEventListener('click', () => {
-      state.builderTab = b.dataset.btab;
-      state.dlPanel = null;
-      state.dockSet = 0;
-      renderBuilderBody(d);
-      updateDeckMeter(d);
-      syncTabsUI();
-      scrollToPageFoot();
-    }),
-  );
+  wireDeckTabs(d);
   wireMeterRow(d);
   refreshLegality(d);
   renderBuilderBody(d);

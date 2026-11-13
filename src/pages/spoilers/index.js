@@ -1192,8 +1192,15 @@ async function renderShowcaseCards(payload, admiralCard) {
 function syncTabsUI() {
   document.querySelectorAll('.b-tab').forEach((b) => {
     b.classList.toggle('active', b.dataset.btab === state.builderTab);
-    b.setAttribute('aria-pressed', String(b.dataset.btab === state.builderTab));
+    b.setAttribute('aria-selected', String(b.dataset.btab === state.builderTab));
+    b.tabIndex = b.dataset.btab === state.builderTab ? 0 : -1;
   });
+  document
+    .querySelector('.builder-tabs')
+    ?.style.setProperty('--deck-tab-index', DECK_TABS.indexOf(state.builderTab));
+  document
+    .getElementById('builderBody')
+    ?.setAttribute('aria-labelledby', 'deckTab-' + state.builderTab);
 }
 
 async function duplicateDeck(d) {
@@ -1209,11 +1216,13 @@ async function duplicateDeck(d) {
 }
 
 function renderBuilderBody(d) {
+  cleanupDeckStacks();
   const box = document.getElementById('builderBody');
   if (!box) return;
   box.classList.toggle('deck-log', state.builderTab === 'primer');
   if (state.builderTab === 'list') box.innerHTML = listTabHtml(d);
   else if (state.builderTab === 'stats') box.innerHTML = statsTabHtml(d);
+  else if (state.builderTab === 'inspiration') box.innerHTML = deckInspirationTabHtml(d);
   else box.innerHTML = primerTabHtml(d);
   wireBuilderBody(d);
 }

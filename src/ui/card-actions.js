@@ -97,7 +97,21 @@ function openCardActionSheet(d, card, loc, idx) {
   renderCardSheet(d, card, loc, idx);
 }
 
-function renderCardSheet(d, card, loc, idx) {
+function cardDeckQuantityHtml(d, card, loc) {
+  const leader = loc === 'admiral' || loc === 'partner';
+  const pool = loc === 'maybe' ? ensureMaybeboard(d) : d.cards;
+  const count = leader ? 1 : copiesIn(pool, card.name);
+  const label = loc === 'maybe' ? `In ${sideName(d).toLowerCase()}` : 'In deck';
+  const limited =
+    leader || atCopyLimit(d, card) || (loc === 'maybe' && !deckIsConstructed(d) && count > 0);
+  return `<div class="card-quantity card-deck-quantity">
+    <span>${escapeHtml(label)} <strong data-deck-count aria-live="polite">${count}</strong></span>
+    <div><button type="button" id="csAddOne" aria-label="Add one to deck" title="Add one to deck" ${limited ? 'disabled' : ''}>${ICONS.plus}</button>
+    <button type="button" id="csRemove" aria-label="Remove one from deck" title="Remove one from deck" ${leader || count === 0 ? 'disabled' : ''}>${ICONS.minus}</button></div>
+  </div>`;
+}
+
+function renderCardSheet(d, card, loc, idx, { scrollTop = null } = {}) {
   reconcilePlayingOwnership(d);
   _cardSheetGen++; // this render owns csPrice/csRulings from here on
   let el = document.getElementById('cardSheetOverlay');
@@ -168,15 +182,7 @@ function renderCardSheet(d, card, loc, idx) {
     );
     actions.push(_prt, _pairTC);
   } else {
-    // Keep deck-copy actions and commander choices available in the editor.
-    actions.push(
-      `<button class="ghost-btn" id="csAddOne" style="width:100%;"><span class="ib">${ICONS.addOne}</span>${trS('Add to deck')}</button>`,
-      _reco,
-    );
-    actions.push(
-      `<button class="ghost-btn" id="csRemove" style="width:100%;color:var(--danger);border-color:var(--danger);"><span class="ib">${ICONS.removeOne}</span>${trS('Remove from deck')}</button>`,
-      _sim,
-    );
+    // Deck quantities live above collection quantities; editing stays below.
     const _move =
       loc === 'main'
         ? `<button class="ghost-btn" id="csToMaybe" style="width:100%;"><span class="ib">${ICONS.maybe}</span>${trS('To maybeboard')}</button>`
@@ -194,7 +200,7 @@ function renderCardSheet(d, card, loc, idx) {
   }
 
   const editingActions = actions.filter(
-    (action) => ![_reco, _sim, _shr, _tag, _trio].includes(action),
+    (action) => ![_reco, _sim, _shr, _tag, _trio].includes(action) && !!deckCopy,
   );
   el.innerHTML = /* HTML */ `<div class="overlay-inner">
     ${cardDetailsHeaderHtml(card)}
@@ -211,7 +217,7 @@ function renderCardSheet(d, card, loc, idx) {
         >
       </div>
       <div class="cs-actions-grid">
-        ${cardCollectionQuantityHtml(card)}
+        ${cardDeckQuantityHtml(d, card, loc)} ${cardCollectionQuantityHtml(card)}
         ${inPlaying && deckCopy && !isCollectionBasicLand(deckCopy) ? playingProxyOptionHtml('csProxy', !!deckCopy.proxy, 'Proxy in this deck · Add to Wants') : ''}
         <div class="card-editing-actions">${editingActions.join('')}</div>
         <div class="card-secondary-actions">${_shr}${_tag}</div>
@@ -244,24 +250,25 @@ function renderCardSheet(d, card, loc, idx) {
     ${el.classList.contains('cs-pop') ? '' : overlayNavHtml()}
   </div>`;
 
-  pinSheetToTop(el);
+  if (scrollTop == null) pinSheetToTop(el);
+  else el.querySelector('main').scrollTop = scrollTop;
   wireCardDetailsNav(el, card);
   document
     .getElementById('dcImg')
     ?.addEventListener('click', () => showCardPreview(card, cardImageLarge(card)));
   wireCardCollectionQuantity(el, card);
+  // Saving updates the checkbox and quantities in place; rebuilding this
+  // sheet would reset the user's scroll position.
   el.querySelector('#csProxy')?.addEventListener('change', (event) => {
     setPlayingProxy(d, deckCopy, event.target.checked);
     refreshDecklistBox(d);
-    renderCardSheet(d, deckCopy, loc, idx);
-    el.querySelector('#csProxy')?.focus({ preventScroll: true });
   });
   try {
     paintPendingArt();
   } catch (e) {}
   document
     .getElementById('csChangePrinting')
-    .addEventListener('click', () => openPrintingPicker(d, card, loc, idx));
+    ?.addEventListener('click', () => openPrintingPicker(d, card, loc, idx));
   document.getElementById('csSimilar')?.addEventListener('click', () => openSimilarCards(card, d)); // 1.9: the deck's colours
   document.getElementById('csReco')?.addEventListener('click', () => openCardReco(card, d));
   document.getElementById('csShare')?.addEventListener('click', (e) => {
@@ -314,180 +321,46 @@ function renderCardSheet(d, card, loc, idx) {
   document
     .getElementById('csCollSheet')
     ?.addEventListener('click', () => openAddToCollection(card));
-  // 1.40: Add asks where -- this deck (as many as you set), the collection,
-  // or another deck
-  document.getElementById('csAddOne')?.addEventListener('click', () => {
-    document.getElementById('csAddSheet')?.remove();
-    const m = document.createElement('div');
-    m.className = 'deckpick-scrim card-transfer-backdrop';
-    m.id = 'csAddSheet';
-    m.style.zIndex = 1300;
-    let q = 1,
-      chosen = null;
-    m.innerHTML = cardTransferDialogHtml(
-      'Add to deck',
-      card.name,
-      /* HTML */ `
-        <div class="card-transfer-amount">
-          <span>Amount</span>
-          <div class="add-qty">
-            <button
-              type="button"
-              class="ghost-btn"
-              data-q="-1"
-              aria-label="Decrease amount"
-              disabled
-            >
-              ${ICONS.minus}
-            </button>
-            <b id="csAddQ" aria-live="polite">1</b>
-            <button type="button" class="ghost-btn" data-q="1" aria-label="Increase amount">
-              ${ICONS.plus}
-            </button>
-          </div>
-        </div>
-        <button type="button" class="primary-btn" data-addk="deck">
-          ${'Add to'} ${escapeHtml(d.name)}
-        </button>
-        <button type="button" class="hub-card" data-addk="coll">
-          <span class="hub-icon" aria-hidden="true">${ICONS.collection}</span>
-          <span class="hub-copy"
-            ><strong>Add to collection</strong><small>Choose printing and binder</small></span
-          >
-          <span class="hub-arrow" aria-hidden="true">›</span>
-        </button>
-        <button type="button" class="hub-card" data-addk="other">
-          <span class="hub-icon" aria-hidden="true">${ICONS.decks}</span>
-          <span class="hub-copy"
-            ><strong>Add to another deck</strong><small>Choose a destination deck</small></span
-          >
-          <span class="hub-arrow" aria-hidden="true">›</span>
-        </button>
-      `,
-      '<button type="button" class="ghost-btn card-transfer-cancel" id="csAddCancel">Cancel</button>',
-    );
-    m.querySelectorAll('[data-q]').forEach((b) =>
-      b.addEventListener('click', () => {
-        q = Math.max(1, Math.min(99, q + +b.dataset.q));
-        m.querySelector('#csAddQ').textContent = q;
-        m.querySelector('[data-q="-1"]').disabled = q === 1;
-        m.querySelector('[data-q="1"]').disabled = q === 99;
-      }),
-    );
-    if (isCollectionBasicLand(card)) m.querySelector('[data-addk="coll"]').remove();
-    m.querySelectorAll('[data-addk]').forEach((b) =>
-      b.addEventListener('click', () => {
-        chosen = b.dataset.addk;
-        brSheetClose('csAddSheet');
-      }),
-    );
-    m.querySelector('#csAddCancel').addEventListener('click', () => brSheetClose('csAddSheet'));
-    brSheetOpen(m, 'csAddSheet', () => {
-      const k = chosen;
-      chosen = null;
-      if (!k) return;
-      setTimeout(() => {
-        if (k === 'coll') {
-          openAddToCollection(card);
-          setTimeout(() => {
-            const qi = document.getElementById('acQty');
-            if (qi) qi.value = q;
-          }, 60);
-        } else if (k === 'other') openDeckPickPopup(card, 'main', () => {});
-        else csAddCopies(q);
-      }, 0);
-    });
-    wireCardTransferDialog(m, () => brSheetClose('csAddSheet'));
-  });
-  const csAddCopies = (q) => {
-    if (loc === 'maybe' && !deckIsConstructed(d)) {
-      toast('The Maybeboard keeps one of each — move it into the deck first.');
-      return;
-    }
-    let added = 0;
-    const playingCopies = [];
-    for (let i = 0; i < q; i++) {
-      if (deckIsConstructed(d)) {
-        if (atCopyLimit(d, card)) {
-          if (!added)
-            toast(
-              copyLimit(card, d) === 1
-                ? 'Restricted in Vintage — one copy only.'
-                : 'Four copies is the most a deck may run.',
-            );
-          break;
-        }
-        if (loc === 'maybe') {
-          const copy = playingDeckCopy(card);
-          ensureMaybeboard(d).push(copy);
-          playingCopies.push(copy);
-          logDeckChange(d, { type: 'addMaybe', name: card.name, card });
-          added++;
-          continue;
-        }
-      } else if (!allowsDuplicates(card)) {
-        toast('Singleton rules: only basic lands (and cards that say otherwise) may repeat.');
-        break;
-      }
+  // Keep the sheet open and resolve a remaining copy after every edit. Indices
+  // change when the final copy is removed or another card moves into its slot.
+  const changeDeckQuantity = (delta) => {
+    if (loc === 'admiral' || loc === 'partner') return;
+    const pool = loc === 'maybe' ? ensureMaybeboard(d) : d.cards;
+    if (delta > 0) {
+      if (
+        atCopyLimit(d, card) ||
+        (loc === 'maybe' && !deckIsConstructed(d) && copiesIn(pool, card.name))
+      )
+        return;
       const copy = playingDeckCopy(card);
-      d.cards.push(copy);
-      playingCopies.push(copy);
-      logDeckChange(d, { type: 'add', name: card.name, card });
-      added++;
+      pool.push(copy);
+      if (inPlaying) ensurePlayingOwnership(d, [copy]);
+      logDeckChange(d, { type: loc === 'maybe' ? 'addMaybe' : 'add', name: card.name, card: copy });
+    } else {
+      const target = pool.includes(deckCopy)
+        ? pool.indexOf(deckCopy)
+        : pool.findIndex((c) => c.name === card.name);
+      if (target < 0) return;
+      const [removed] = pool.splice(target, 1);
+      logDeckChange(d, {
+        type: loc === 'maybe' ? 'removeMaybe' : 'remove',
+        name: card.name,
+        card: removed,
+      });
     }
-    if (!added) return;
-    ensurePlayingOwnership(d, playingCopies);
     scheduleSave(d);
-    toast(added === 1 ? `Another ${card.name} added.` : `${added} × ${card.name} added.`);
-    closeTopOverlay();
     refreshDecklistBox(d);
+    const remaining = pool.findIndex(
+      (c) =>
+        c.name === card.name && c.set === card.set && c.collector_number === card.collector_number,
+    );
+    const next = remaining >= 0 ? remaining : pool.findIndex((c) => c.name === card.name);
+    renderCardSheet(d, next >= 0 ? pool[next] : card, loc, next, {
+      scrollTop: el.querySelector('main').scrollTop,
+    });
   };
-  document.getElementById('csAddOneLegacy')?.addEventListener('click', () => {
-    if (loc === 'maybe' && !deckIsConstructed(d)) {
-      toast('The Maybeboard keeps one of each — move it into the deck first.');
-      return;
-    }
-    if (deckIsConstructed(d)) {
-      if (atCopyLimit(d, card)) {
-        toast(
-          copyLimit(card, d) === 1
-            ? 'Restricted in Vintage — one copy only.'
-            : 'Four copies is the most a deck may run.',
-        );
-        return;
-      }
-      if (loc === 'maybe') {
-        const copy = playingDeckCopy(card);
-        ensureMaybeboard(d).push(copy);
-        ensurePlayingOwnership(d, [copy]);
-        logDeckChange(d, { type: 'addMaybe', name: card.name, card });
-        scheduleSave(d);
-        toast(`Another ${card.name} in the sideboard.`);
-        refreshDecklistBox(d);
-        return;
-      }
-    } else if (!allowsDuplicates(card)) {
-      toast('Singleton rules: only basic lands (and cards that say otherwise) may repeat.');
-      return;
-    }
-    const copy = playingDeckCopy(card);
-    d.cards.push(copy);
-    ensurePlayingOwnership(d, [copy]);
-    logDeckChange(d, { type: 'add', name: card.name, card });
-    scheduleSave(d);
-    toast(`Another ${card.name} added.`);
-    closeTopOverlay();
-    refreshDecklistBox(d);
-  });
-  document.getElementById('csRemove')?.addEventListener('click', () => {
-    const arr = loc === 'maybe' ? d.maybeboard : d.cards;
-    arr.splice(idx, 1);
-    logDeckChange(d, { type: loc === 'maybe' ? 'removeMaybe' : 'remove', name: card.name, card });
-    scheduleSave(d);
-    toast(`${card.name} removed.`);
-    closeTopOverlay();
-    refreshDecklistBox(d);
-  });
+  document.getElementById('csAddOne')?.addEventListener('click', () => changeDeckQuantity(1));
+  document.getElementById('csRemove')?.addEventListener('click', () => changeDeckQuantity(-1));
   document.getElementById('csMakeCommander')?.addEventListener('click', () => {
     // Both the card list and command zone change, including partner eligibility.
     const arr = loc === 'maybe' ? d.maybeboard : d.cards;

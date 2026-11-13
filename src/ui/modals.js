@@ -134,46 +134,6 @@ function renderModal() {
     renderLifeSetup(el, m);
   } else if (m.type === 'installApp') {
     renderPwaInstallHelp(el);
-  } else if (m.type === 'sort') {
-    el.innerHTML = /* HTML */ `<div class="modal-backdrop" id="mbd">
-      <div class="modal-sheet">
-        <h3>Sort Decklist</h3>
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          ${SORT_MODES.map((s) => {
-            const btn = `<button class="ghost-btn ${state.sortMode === s.key ? 'active' : ''}" data-sortpick="${s.key}" style="width:100%;text-align:left;">${s.label}</button>`;
-            if (s.key !== 'tags') return btn;
-            const dd = getDeck(state.activeDeckId);
-            return `<div class="sort-tags-row">${btn}<label class="sort-scry" title="Scryfall tags"><span class="toggle-switch"><input type="checkbox" id="scryTagsSw" ${!dd || dd.scryTags !== false ? 'checked' : ''}><span class="track"></span><span class="knob"></span></span><span class="sort-scry-l">Scryfall tags</span></label></div>`;
-          }).join('')}
-        </div>
-        <div class="modal-actions" style="margin-top:14px;">
-          <button class="cancel" id="cancelBtn">Close</button>
-        </div>
-      </div>
-    </div>`;
-    document.getElementById('scryTagsSw')?.addEventListener('change', (e) => {
-      const dd = getDeck(state.activeDeckId);
-      if (!dd) return;
-      dd.scryTags = !!e.target.checked;
-      scheduleSave(dd);
-      try {
-        if (dd.scryTags) ensureDeckOtags(dd).then(() => refreshDecklistBox(dd));
-      } catch (err) {}
-      refreshDecklistBox(dd);
-      toast(
-        dd.scryTags
-          ? 'Scryfall tags on for this deck.'
-          : 'Scryfall tags off for this deck; your own tags stay.',
-      );
-    });
-    document.querySelectorAll('[data-sortpick]').forEach((b) => {
-      b.addEventListener('click', () => {
-        state.sortMode = b.dataset.sortpick;
-        closeModal();
-        const d = getDeck(state.activeDeckId);
-        if (d) refreshDecklistBox(d);
-      });
-    });
   } else if (m.type === 'newdeck') {
     el.innerHTML = /* HTML */ `<div class="modal-backdrop new-deck-backdrop" id="mbd">
       <div

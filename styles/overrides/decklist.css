@@ -11,7 +11,9 @@
   color: var(--main-text);
 }
 
-html .app > main.deck-workspace {
+html .app > main.deck-workspace.page-frame {
+  max-width: none;
+  padding-inline: var(--page-gutter, 8px) !important;
   background: var(--page-backdrop);
   background-attachment: fixed;
 }
@@ -51,34 +53,51 @@ html .deck-workspace .deck-log button:disabled {
   cursor: not-allowed;
 }
 
-html .app .deck-workspace .page-content {
+html .app > main.deck-workspace.page-frame > .page-content {
   padding-top: 16px;
-  padding-bottom: 96px;
+  padding-bottom: max(96px, var(--deck-stack-tail, 0px));
+  overflow-x: hidden;
 }
 
 html .app .deck-workspace .deck-controls {
-  padding: 12px 16px;
-  gap: 10px;
+  padding: 0;
+  margin-block: 0;
+  gap: 0;
   border: 0;
   background: var(--ink);
 }
 
 html .app .deck-workspace .builder-tabs {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  padding: 4px;
-  gap: 4px;
-  border: 1px solid color-mix(in srgb, var(--main-text) 18%, transparent);
-  border-radius: 13px;
-  background: color-mix(in srgb, var(--main-text) 4%, var(--ink));
+  padding: 0;
+  gap: 0;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--main-text) 18%, transparent);
+  border-radius: 0;
+  background: transparent;
+}
+
+.deck-workspace .builder-tabs::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: calc(100% / 3);
+  height: 2px;
+  background: var(--accent-ink);
+  transform: translateX(calc(var(--deck-tab-index, 0) * 100%));
+  transition: transform 180ms ease-out;
+  pointer-events: none;
 }
 
 html .deck-workspace .b-tab {
-  min-height: 40px;
+  min-height: 46px;
   min-width: 0;
   padding: 8px 6px;
   border: 0;
-  border-radius: 9px;
+  border-radius: 0;
   background: none;
   color: var(--main-text);
   -webkit-text-fill-color: currentColor;
@@ -92,14 +111,14 @@ html .deck-workspace .b-tab {
 }
 
 html .deck-workspace .b-tab.active {
-  background: color-mix(in srgb, var(--accent-ink) 8%, var(--ink));
+  background: transparent;
   color: var(--accent-ink);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent-ink) 28%, transparent);
+  box-shadow: none;
 }
 
 html .app .deck-workspace .deck-controls > .deck-dock {
   display: block;
-  padding: 0;
+  padding: 10px var(--page-gutter, 8px);
   border: 0;
   background: none;
 }
@@ -150,6 +169,7 @@ html .app .deck-workspace .deck-controls > .deck-dock {
 }
 
 .deck-overview {
+  position: relative;
   display: grid;
   grid-template-columns: clamp(88px, 28vw, 150px) minmax(0, 1fr);
   align-items: start;
@@ -219,45 +239,51 @@ html .app .deck-workspace .deck-controls > .deck-dock {
     sans-serif;
 }
 
-.deck-review {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 44px;
+.deck-issue-preview {
+  margin: 0;
   padding: 0;
   border: 0;
   background: none;
-  color: var(--accent-ink);
   text-align: left;
-  font:
-    600 12px/1.5 'Inter',
-    system-ui,
-    sans-serif;
-  cursor: pointer;
-}
-
-.deck-review svg {
-  width: 16px;
-  height: 16px;
-  flex: none;
-}
-
-.deck-issue-preview {
-  margin: -4px 0 0;
   color: var(--main-text);
   font:
     400 12px/1.6 'Inter',
     system-ui,
     sans-serif;
   overflow-wrap: anywhere;
+  white-space: pre-line;
+  -webkit-text-fill-color: currentColor;
 }
 
-.deck-overview #legalityWrap {
-  grid-column: 1 / -1;
+.deck-overview.has-issues .deck-issue-preview,
+.deck-issue-flag {
+  color: var(--danger-ink);
 }
 
-.deck-overview #legalityWrap:empty {
+.deck-overview.has-issues .deck-format {
+  padding-right: 28px;
+}
+
+.deck-issue-flag {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+}
+
+.deck-issue-flag svg {
+  width: 22px;
+  height: 22px;
+}
+.deck-issue-flag[hidden] {
   display: none;
+}
+
+#capDeckCount.deck-toolbar-metric {
+  cursor: default;
 }
 
 .deck-overview .dl-desc-text {
@@ -537,6 +563,7 @@ html .deck-workspace .vg-row .vr-n {
 
 .deck-list-tools {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
   margin: 0 0 12px;
@@ -548,7 +575,7 @@ html .deck-workspace .vg-row .vr-n {
 
 .deck-list-tools h2 {
   flex: none;
-  margin: 0 2px;
+  margin: 0 auto 0 2px;
   color: var(--main-text);
   font:
     600 14px/1.4 'Inter',
@@ -596,7 +623,7 @@ html .deck-workspace .vg-row .vr-n {
 
 .deck-view-picker {
   flex: none;
-  margin-left: auto;
+  margin-left: 0;
   min-width: 0;
 }
 
@@ -720,6 +747,217 @@ html #menuPop.deck-actions-page > .overlay-inner {
   margin: 0;
   padding-bottom: 0;
   overflow: hidden;
+}
+
+html #deckLogOverlay {
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
+  overflow: hidden;
+  background: var(--page-backdrop);
+}
+
+html #deckLogOverlay > .overlay-inner {
+  max-width: none;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.deck-log-body {
+  flex: 1;
+  min-height: 0;
+  padding: 16px var(--page-gutter, 8px) 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+#deckLogBody {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.deck-inspiration {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  --ink-text: var(--main-text);
+  --sub-text: var(--main-sub);
+  --line: var(--main-field-line);
+}
+
+.deck-inspiration > .deck-title-row {
+  display: none;
+}
+
+html .deck-inspiration :is(.browse-selects, .need-deck, .edh-sec) {
+  position: static;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--main-text) 18%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--main-text) 4%, var(--ink));
+  color: var(--main-text);
+}
+
+html .deck-inspiration .browse-selects {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.deck-inspiration .bs-row {
+  margin: 0;
+  width: 100%;
+}
+.deck-inspiration .cselect {
+  width: 100%;
+}
+
+html .deck-inspiration :is(.ghost-btn, .cselect-btn) {
+  min-height: 44px;
+  border: 1px solid var(--main-field-line);
+  color: var(--main-text);
+  -webkit-text-fill-color: currentColor;
+  background-color: color-mix(in srgb, var(--main-text) 4%, var(--ink));
+  border-radius: 12px;
+  font:
+    500 14px/1.4 'Inter',
+    system-ui,
+    sans-serif;
+}
+
+html .deck-inspiration .cselect-btn .cs-label {
+  font: inherit;
+  color: inherit;
+  -webkit-text-fill-color: currentColor;
+}
+
+html .deck-inspiration .cselect-btn .cs-car {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--main-sub);
+  box-shadow: none;
+}
+
+html .deck-inspiration .need-deck button {
+  min-height: 44px;
+  border-radius: 12px;
+  background: var(--gold);
+  color: #241a04;
+}
+
+.deck-inspiration #inspireResults {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+html .deck-inspiration .edh-sec {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+html .deck-inspiration .section-label {
+  order: 0;
+  margin: 0 !important;
+  border: 0 !important;
+  color: var(--main-text);
+  background: none;
+  -webkit-text-fill-color: currentColor;
+  font:
+    600 12px/1.4 'Inter',
+    system-ui,
+    sans-serif;
+  letter-spacing: 0.08em;
+}
+html .deck-inspiration .sr-grid {
+  order: 1;
+  flex-wrap: wrap;
+}
+html .deck-inspiration .edh-more {
+  order: 2;
+}
+html .deck-inspiration .deck-inspiration-category {
+  display: block;
+  padding: 0;
+  overflow: hidden;
+}
+html .deck-inspiration .deck-inspiration-category > summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 14px 16px;
+  cursor: pointer;
+  list-style: none;
+}
+.deck-inspiration-category > summary::-webkit-details-marker {
+  display: none;
+}
+.deck-inspiration-category > summary > span:first-child {
+  flex: 1;
+}
+.deck-inspiration-category > summary:focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: -3px;
+  border-radius: 18px;
+}
+.inspiration-category-count {
+  color: var(--main-sub);
+  font-variant-numeric: tabular-nums;
+}
+.inspiration-category-chevron {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  font-size: 24px;
+  transform: rotate(0deg);
+  transition: transform 160ms ease;
+}
+.deck-inspiration-category[open] .inspiration-category-chevron {
+  transform: rotate(90deg);
+}
+.inspiration-category-chevron svg {
+  width: 20px;
+  height: 20px;
+}
+.inspiration-category-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 16px 16px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .inspiration-category-chevron {
+    transition: none;
+  }
+}
+.deck-inspiration > .hint {
+  margin: 0;
+  color: var(--main-sub);
+}
+
+html .deck-inspiration .nopr {
+  color: var(--main-sub);
+  -webkit-text-fill-color: currentColor;
+}
+
+html .deck-inspiration .edh-jump {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--gold);
+  color: #241a04;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.2);
 }
 
 .deck-actions-body {
@@ -846,28 +1084,58 @@ html .deck-menu-intro h1 {
 }
 
 @media (max-width: 379px) {
-  .deck-list-tools {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto 44px;
-  }
-
-  .deck-toolbar-metrics {
-    grid-column: 2 / -1;
-    justify-content: flex-end;
-  }
-
-  .deck-view-picker {
-    grid-column: 1 / 3;
-    width: 100%;
-    margin: 0;
-  }
-
-  .deck-list-tools .deck-sort {
-    grid-column: 3;
-  }
-
   .deck-overview {
     gap: 12px;
     padding: 12px;
+  }
+}
+
+/* Clip every badge to its own card. Only the open card exposes its controls. */
+html #decklistBox .visual-grid.vg-stack {
+  --stack-card-height: 300px;
+  --stack-peek: 36px;
+  flex-direction: column !important;
+  isolation: isolate;
+}
+
+html #decklistBox .vg-stack > .vg-card {
+  flex: none;
+  height: var(--stack-peek);
+  min-height: 0;
+  margin: 0;
+  aspect-ratio: auto;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+html #decklistBox .vg-stack.stack-ready > .vg-card {
+  transition: height 160ms ease-out;
+}
+
+html #decklistBox .vg-stack > .vg-card.stack-active {
+  height: var(--stack-card-height);
+}
+
+html
+  #decklistBox
+  .vg-stack
+  > .vg-card:not(.stack-active)
+  > :is(.card-badges, .dfc-flip-box, .foil-star, .gc-mark) {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+html #decklistBox .vg-stack > .vg-card:not(.stack-active) > .vg-qty {
+  top: 4px;
+  right: 4px;
+  padding: 1px 4px;
+  font-size: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deck-workspace .builder-tabs::after,
+  html #decklistBox .vg-stack.stack-ready > .vg-card {
+    transition: none;
   }
 }

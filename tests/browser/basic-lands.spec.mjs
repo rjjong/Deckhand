@@ -140,9 +140,9 @@ test('basic lands remain addable to decks without collection controls, proxies o
     0,
   );
   await page.locator('#csAddOne').click();
-  await expect(page.locator('#csAddSheet [data-addk="coll"]')).toHaveCount(0);
-  await page.locator('#csAddSheet [data-addk="deck"]').click();
-  await expect(page.locator('#csAddSheet, #cardSheetOverlay')).toHaveCount(0);
+  await expect(page.locator('#csAddSheet')).toHaveCount(0);
+  await expect(page.locator('#cardSheetOverlay')).toBeVisible();
+  await expect(page.locator('[data-deck-count]')).toHaveText('2');
   expect(await page.evaluate(() => getDeck('lands-deck').cards.length)).toBe(6);
   expect(await page.evaluate(() => state.collection.items[0].qty)).toBe(20);
   expect(await page.evaluate(() => computeWants().map((card) => card.name))).toEqual([

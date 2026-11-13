@@ -122,7 +122,7 @@ function openPriceHistory(card, key) {
         .slice(-20)
         .reverse();
       const row = (nm, dv) =>
-        `<div data-phcard="${encodeURIComponent(nm)}" role="button" style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;font-size:13.5px;cursor:pointer;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(nm)}</span><span style="font-family:'JetBrains Mono',monospace;color:${dv > 0 ? 'var(--brass)' : 'var(--danger)'};">${dv > 0 ? '+' : ''}€${dv.toFixed(2)}</span></div>`;
+        `<div data-phcard="${encodeURIComponent(nm)}" role="button" style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;font-size:13.5px;cursor:pointer;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(nm)}</span><span style="font-family:'JetBrains Mono',monospace;color:${dv > 0 ? 'var(--success-ink)' : 'var(--danger)'};">${dv > 0 ? '+' : ''}€${dv.toFixed(2)}</span></div>`;
       movers =
         up.length || down.length
           ? `<div style="max-width:520px;margin:14px auto 0;">

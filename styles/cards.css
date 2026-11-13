@@ -523,34 +523,6 @@ span.tag-chip.tag-scry:not(:has(button)) {
   padding-right: 10px;
 }
 
-.sort-tags-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.sort-tags-row > .ghost-btn {
-  flex: 1 1 auto;
-  min-width: 0;
-  margin: 0;
-}
-
-.sort-scry {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  flex: none;
-  cursor: pointer;
-}
-
-.sort-scry-l {
-  font-size: 10.5px;
-  font-weight: 700;
-  color: var(--sub-text);
-  white-space: nowrap;
-}
-
 .tag-chip {
   display: inline-flex;
   align-items: center;
